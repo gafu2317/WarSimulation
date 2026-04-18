@@ -156,11 +156,10 @@ public class Character : MonoBehaviour
         // "Character" レイヤーのみを無視するレイヤーマスクを作成
         // 自分自身と他キャラ、見る対象自体を判定から除外
         int layerMask = ~LayerMask.GetMask("Character");
-        RaycastHit hit;
         Debug.DrawRay(headPos, dirToTarget * distanceToTarget, Color.red, 1f);
 
         // レイがヒット => 視線を遮るオブジェクトがある
         // レイのヒット無し => 視線を遮るオブジェクトがない
-        return !Physics.Raycast(headPos, dirToTarget, out hit, distanceToTarget, layerMask);
+        return !Physics.Raycast(headPos, dirToTarget, distanceToTarget, layerMask);
     }
 }
