@@ -1,0 +1,80 @@
+using System;
+using UnityEngine;
+
+namespace WarSimulation.Combat.Map
+{
+    /// <summary>
+    /// <see cref="GroundState"/> を低解像度の 2D 配列で保持する純粋データクラス。
+    /// 見た目は連続 3D 地形でも、ゲームロジック（移動コスト・視界判定など）は
+    /// このグリッドへの問い合わせで行う。解像度は <see cref="HeightMap"/> より粗くて良い。
+    /// </summary>
+    public class GroundStateGrid
+    {
+        private readonly GroundState[,] _cells;
+
+        public int Width { get; }
+        public int Height { get; }
+        public float CellSize { get; }
+
+        public GroundStateGrid(int width, int height, float cellSize, GroundState defaultState = GroundState.Normal)
+        {
+            if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
+            if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
+            if (cellSize <= 0f) throw new ArgumentOutOfRangeException(nameof(cellSize));
+
+            Width = width;
+            Height = height;
+            CellSize = cellSize;
+            _cells = new GroundState[width, height];
+
+            if (defaultState != GroundState.Normal)
+            {
+                for (int z = 0; z < height; z++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        _cells[x, z] = defaultState;
+                    }
+                }
+            }
+        }
+
+        public GroundState GetCell(int x, int z) => _cells[x, z];
+
+        public void SetCell(int x, int z, GroundState state) => _cells[x, z] = state;
+
+        /// <summary>
+        /// 「上書きしてもよい状態」ルールに従ってセルに書き込む。
+        /// 優先度: Water > Snow > Swamp > Normal。低優先は高優先を上書きしない。
+        /// </summary>
+        public void PaintCell(int x, int z, GroundState state)
+        {
+            GroundState current = _cells[x, z];
+            if ((int)state >= (int)current)
+            {
+                _cells[x, z] = state;
+            }
+        }
+
+        public bool IsInBounds(int x, int z) =>
+            x >= 0 && x < Width && z >= 0 && z < Height;
+
+        public Vector2 WorldSize => new Vector2(Width * CellSize, Height * CellSize);
+
+        /// <summary>
+        /// ワールド XZ 座標からグリッドセルインデックスを返す（範囲外は端にクランプ）。
+        /// </summary>
+        public Vector2Int WorldToCell(Vector3 worldPos)
+        {
+            int x = Mathf.Clamp(Mathf.FloorToInt(worldPos.x / CellSize), 0, Width - 1);
+            int z = Mathf.Clamp(Mathf.FloorToInt(worldPos.z / CellSize), 0, Height - 1);
+            return new Vector2Int(x, z);
+        }
+
+        public GroundState SampleAt(Vector3 worldPos)
+        {
+            Vector2Int c = WorldToCell(worldPos);
+            return _cells[c.x, c.y];
+        }
+    }
+}
