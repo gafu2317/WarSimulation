@@ -27,14 +27,33 @@ namespace WarSimulation.Combat.Map
                 minCenter = maxCenter = config.WorldSize * 0.5f;
             }
 
+            int maxAttempts = Mathf.Max(1, config.LakeMaxPlacementAttempts);
+            float clearance = Mathf.Max(0f, config.LakeRiverClearance);
+
             for (int i = 0; i < config.LakeCount; i++)
             {
                 LakeStampShape shape = stamps[rng.NextInt(0, stamps.Count)];
                 if (shape == null) continue;
 
-                Vector2 center = new(
-                    Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()),
-                    Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()));
+                // 川（および既に置かれた湖）と重ならない中心を棄却サンプリングで探す。
+                // GroundStateGrid の Water セルは RiverPhase／前回までの LakePhase の両方が書き込んでいるので、
+                // これ 1 本で「川 vs 湖」「湖 vs 湖」両方の重なりを防げる。
+                float checkRadius = shape.Radius + clearance;
+                Vector2 center = default;
+                bool found = false;
+                for (int attempt = 0; attempt < maxAttempts; attempt++)
+                {
+                    Vector2 candidate = new(
+                        Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()),
+                        Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()));
+                    if (!map.GroundStates.HasAnyCellInCircle(candidate, checkRadius, GroundState.Water))
+                    {
+                        center = candidate;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) continue; // 置く余地が無い：この湖はスキップ
 
                 // 先に確率を引いておく（スタンプの適用順と無関係に、湖ごとに 1 回引く）。
                 bool freeze = config.LakeFreezeProbability > 0f

@@ -76,5 +76,34 @@ namespace WarSimulation.Combat.Map
             Vector2Int c = WorldToCell(worldPos);
             return _cells[c.x, c.y];
         }
+
+        /// <summary>
+        /// ワールド座標 (<paramref name="center"/>) を中心とする半径 <paramref name="radius"/> の円内に、
+        /// 指定 <paramref name="state"/> のセルが 1 つでも存在するか。
+        /// 山が川・湖に被らないか、湖が川に被らないか、などの配置バリデーション用の共通ヘルパ。
+        /// </summary>
+        public bool HasAnyCellInCircle(Vector2 center, float radius, GroundState state)
+        {
+            if (radius <= 0f) return false;
+
+            int cx = Mathf.FloorToInt(center.x / CellSize);
+            int cy = Mathf.FloorToInt(center.y / CellSize);
+            int r = Mathf.CeilToInt(radius / CellSize);
+            float rSqr = radius * radius;
+
+            for (int y = cy - r; y <= cy + r; y++)
+            {
+                for (int x = cx - r; x <= cx + r; x++)
+                {
+                    if (!IsInBounds(x, y)) continue;
+                    if (_cells[x, y] != state) continue;
+
+                    float wx = (x + 0.5f) * CellSize - center.x;
+                    float wy = (y + 0.5f) * CellSize - center.y;
+                    if (wx * wx + wy * wy <= rSqr) return true;
+                }
+            }
+            return false;
+        }
     }
 }

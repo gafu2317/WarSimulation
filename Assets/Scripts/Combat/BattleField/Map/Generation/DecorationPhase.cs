@@ -75,6 +75,10 @@ namespace WarSimulation.Combat.Map
             int maxAttempts = Mathf.Max(count * 40, 120);
             int remaining = count;
 
+            float baseHeight = config.BaseHeight;
+            float maxRelHeight = Mathf.Max(0f, config.MagicStoneMaxRelativeHeight);
+            float maxSlopeDeg = Mathf.Max(0f, config.MagicStoneMaxSlopeDeg);
+
             for (int attempt = 0; attempt < maxAttempts && remaining > 0; attempt++)
             {
                 float x = Mathf.Lerp(minX, maxX, rng.NextFloat());
@@ -83,6 +87,13 @@ namespace WarSimulation.Combat.Map
 
                 // 川・湖は不可
                 if (map.GroundStates.SampleAt(worldPos) == GroundState.Water) continue;
+
+                // 山の上／山の斜面は不可。
+                // - 高さが BaseHeight を大きく超える = 山の上（頂上は平らで Slope では弾けないのでここで弾く）
+                // - 斜度が大きい = 山の斜面・断崖
+                float height = map.Height.SampleAt(worldPos);
+                if (height - baseHeight > maxRelHeight) continue;
+                if (map.Height.SampleSlopeDeg(worldPos) > maxSlopeDeg) continue;
 
                 var candidate = new Vector2(x, z);
                 bool tooClose = false;
@@ -97,7 +108,6 @@ namespace WarSimulation.Combat.Map
                 if (tooClose) continue;
 
                 placed.Add(candidate);
-                float height = map.Height.SampleAt(worldPos);
                 map.AddFeature(new PlacedFeature(
                     type,
                     new Vector3(x, height, z),

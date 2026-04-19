@@ -78,42 +78,13 @@ namespace WarSimulation.Combat.Map
                     Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()),
                     Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()));
 
-                if (!OverlapsWaterCell(g, center, checkRadius))
+                if (!g.HasAnyCellInCircle(center, checkRadius, GroundState.Water))
                 {
                     return true;
                 }
             }
 
             center = default;
-            return false;
-        }
-
-        /// <summary>
-        /// <paramref name="center"/> を中心とする半径 <paramref name="radius"/> の円内に
-        /// GroundStateGrid 上の Water セル（川＋湖）があるかを判定する。
-        /// </summary>
-        private static bool OverlapsWaterCell(GroundStateGrid g, Vector2 center, float radius)
-        {
-            if (g == null || radius <= 0f) return false;
-
-            float gCell = g.CellSize;
-            int cx = Mathf.FloorToInt(center.x / gCell);
-            int cy = Mathf.FloorToInt(center.y / gCell);
-            int r = Mathf.CeilToInt(radius / gCell);
-            float rSqr = radius * radius;
-
-            for (int y = cy - r; y <= cy + r; y++)
-            {
-                for (int x = cx - r; x <= cx + r; x++)
-                {
-                    if (!g.IsInBounds(x, y)) continue;
-                    if (g.GetCell(x, y) != GroundState.Water) continue;
-
-                    float wx = (x + 0.5f) * gCell - center.x;
-                    float wy = (y + 0.5f) * gCell - center.y;
-                    if (wx * wx + wy * wy <= rSqr) return true;
-                }
-            }
             return false;
         }
     }

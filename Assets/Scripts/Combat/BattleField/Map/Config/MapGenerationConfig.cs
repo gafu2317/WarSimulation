@@ -85,6 +85,12 @@ namespace WarSimulation.Combat.Map
         [Tooltip("配置される 1 個の湖が凍結する確率（0〜1）。0 = 絶対に凍らない、1 = 必ず凍る、0.3 = 約 3 割が氷湖。")]
         [SerializeField, Range(0f, 1f)] private float _lakeFreezeProbability = 0f;
 
+        [Tooltip("湖を既存の Water セル（川）から最低限離す距離（メートル）。候補中心から (湖半径 + これ) 以内に川があれば棄却して別位置で再試行する。")]
+        [SerializeField, Min(0f)] private float _lakeRiverClearance = 2f;
+
+        [Tooltip("1 個の湖につき、川と被らない中心を探すリトライ上限。使い切るとその湖はスキップする。")]
+        [SerializeField, Min(1)] private int _lakeMaxPlacementAttempts = 30;
+
         [Header("Ground Patch Phase / Swamp・Snow")]
         [Tooltip("沼・雪などの地面状態パッチを配置するスタンプのリスト。")]
         [SerializeField] private List<GroundPatchStampShape> _groundPatchStamps = new();
@@ -134,6 +140,12 @@ namespace WarSimulation.Combat.Map
         [Tooltip("魔石の配置マージン。マップ端からこの距離は中心を置かない。")]
         [SerializeField, Min(0f)] private float _magicStonePlacementMargin = 4f;
 
+        [Tooltip("魔石を置ける最大斜度（度）。これを超える斜面は『山の斜面』とみなして棄却。")]
+        [SerializeField, Range(0f, 60f)] private float _magicStoneMaxSlopeDeg = 15f;
+
+        [Tooltip("魔石を置ける BaseHeight からの最大上振れ（メートル）。これを超える高地は『山の上』とみなして棄却。")]
+        [SerializeField, Min(0f)] private float _magicStoneMaxRelativeHeight = 0.8f;
+
         public float WorldSize => _worldSize;
         public int HeightMapResolution => _heightMapResolution;
 
@@ -167,6 +179,8 @@ namespace WarSimulation.Combat.Map
         public int LakeCount => _lakeCount;
         public float LakePlacementMargin => _lakePlacementMargin;
         public float LakeFreezeProbability => _lakeFreezeProbability;
+        public float LakeRiverClearance => _lakeRiverClearance;
+        public int LakeMaxPlacementAttempts => _lakeMaxPlacementAttempts;
 
         public IReadOnlyList<GroundPatchStampShape> GroundPatchStamps => _groundPatchStamps;
         public int GroundPatchStampCount => _groundPatchStampCount;
@@ -186,6 +200,8 @@ namespace WarSimulation.Combat.Map
         public float MainStoneBackBias => _mainStoneBackBias;
         public float MagicStoneMinDistance => _magicStoneMinDistance;
         public float MagicStonePlacementMargin => _magicStonePlacementMargin;
+        public float MagicStoneMaxSlopeDeg => _magicStoneMaxSlopeDeg;
+        public float MagicStoneMaxRelativeHeight => _magicStoneMaxRelativeHeight;
 
         public float HeightMapCellSize => _worldSize / _heightMapResolution;
 

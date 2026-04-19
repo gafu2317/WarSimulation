@@ -203,7 +203,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 $"Config[GroundPatch]: Count={config.GroundPatchStampCount}, StampListSize={groundPatchList}\n" +
                 $"Config[Rock]      : Count={config.RockCount}\n" +
                 $"Config[Bridge]    : PerRiver={config.BridgesPerRiver}, Rivers={config.CrossMapRiverCount}\n" +
-                $"Config[Lake]      : Count={config.LakeCount}, FreezeProb={config.LakeFreezeProbability:F2}\n" +
+                $"Config[Lake]      : Count={config.LakeCount}, FreezeProb={config.LakeFreezeProbability:F2}, RiverClear={config.LakeRiverClearance:F1}m\n" +
+                $"Config[MagicStone]: MaxSlope={config.MagicStoneMaxSlopeDeg:F1}deg, MaxRelH={config.MagicStoneMaxRelativeHeight:F2}m\n" +
                 $"Config[Climb]     : MaxSlopeDeg={config.MaxClimbableSlopeDeg:F1}";
         }
 
