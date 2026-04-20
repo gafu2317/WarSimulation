@@ -28,10 +28,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bb7794b4e6be5404386f2389a2a0c3d8, type: 2}
   - {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
   - {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
-  _structureStampCount: 14
+  _structureStampCount: 7
   _structurePlacementMargin: 5
-  _structureRiverClearance: 2
+  _structureRiverClearance: 0
   _structureMaxPlacementAttempts: 30
+  _structureMaxGlobalSearchIterations: 50000
+  _structureMinCenterSeparation: 6
+  _structureMinCenterDistanceFactor: 0.5
   _riverShape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
   _crossMapRiverCount: 2
   _riverMinPathLength: 30

@@ -3,9 +3,9 @@ using UnityEngine;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// パラメトリックに定義される高度スタンプ。
-    /// 形状種別・半径・ピーク高さなどの数値のみで決定されるため、
-    /// デザイナーが手で float[,] を編集する必要はない。
+    /// パラメトリックに定義される高度スタンプ（1 アセット＝1 プリセット）。
+    /// <see cref="HeightShapeKind"/> は形状の実装分岐が 3 種類あるだけで、
+    /// ゲーム上の「山のバリエーション」はアセットを増やして表現する。
     /// </summary>
     [CreateAssetMenu(menuName = "WarSim/Map/Height Stamp", fileName = "HeightStamp")]
     public sealed class HeightStampShape : StampShape
@@ -107,8 +107,42 @@ namespace WarSimulation.Combat.Map
                         _ => old + delta,
                     };
                     h.SetHeight(x, z, blended);
+
+                    // スタンプの「崖側スカート」（斜面）のみ茶色に一致。扇内の平らな部分は除外。
+                    if (IsCliffSkirtPaintCell(lx, lz, noiseSaltX, noiseSaltY) &&
+                        map.GroundStates.GetCell(x, z) != GroundState.Water)
+                    {
+                        map.Height.CliffFaces.MarkCliff(x, z);
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Dome/Cone で Cliff が有効なとき、<see cref="EvaluateWithFlatTop"/> と同じ inner/r で
+        /// 「台地・山頂の平らな部分」ではなく「外側へ落ちるスカート」だけを崖面として塗る。
+        /// 扇だけ見て cliffFactor が低いだけだと、平らな領域まで茶色になるため使わない。
+        /// </summary>
+        private bool IsCliffSkirtPaintCell(float lx, float lz, float noiseSaltX, float noiseSaltY)
+        {
+            if (_cliffArcDeg <= 0f) return false;
+            if (_kind == HeightShapeKind.Ridge) return false;
+
+            float cliff = ComputeCliffFactor(lx, lz);
+            // 緩側（扇の外側寄り）は崖面に含めない
+            if (cliff >= 0.5f) return false;
+
+            float effectiveRadius = ComputeEffectiveRadius(lx, lz, noiseSaltX, noiseSaltY);
+            float r = Mathf.Sqrt(lx * lx + lz * lz);
+            if (r >= effectiveRadius) return false;
+
+            float gentleInner = _flatTopRatio * effectiveRadius;
+            float cliffInner = effectiveRadius * (1f - Mathf.Max(0.001f, _cliffSkirtRatio));
+            if (cliffInner < gentleInner) cliffInner = gentleInner;
+            float inner = Mathf.Lerp(cliffInner, gentleInner, cliff);
+
+            // r <= inner は平らな頂／台地。r > inner が斜面（崖の見た目が付く帯）。
+            return r > inner;
         }
 
         /// <summary>

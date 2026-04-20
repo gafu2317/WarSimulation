@@ -6,6 +6,7 @@ namespace WarSimulation.Combat.Map
     /// <summary>
     /// 地形の高度（Y 座標）を 2D 配列で保持する純粋データクラス。
     /// ワールド座標はマップ左下（XZ 平面の原点）を基準とする。
+    /// <see cref="CliffFaces"/> は <see cref="HeightStampShape"/> が崖スカートと判定したセル（高さと同じセル対応）。
     /// </summary>
     public class HeightMap
     {
@@ -14,6 +15,11 @@ namespace WarSimulation.Combat.Map
         public int Width { get; }
         public int Height { get; }
         public float CellSize { get; }
+
+        /// <summary>
+        /// 崖面セル。スタンプ適用時に <see cref="HeightStampShape"/> と同一の幾何判定で書き込まれる。
+        /// </summary>
+        public CliffFaceGrid CliffFaces { get; }
 
         public HeightMap(int width, int height, float cellSize)
         {
@@ -25,6 +31,7 @@ namespace WarSimulation.Combat.Map
             Height = height;
             CellSize = cellSize;
             _values = new float[width, height];
+            CliffFaces = new CliffFaceGrid(width, height, cellSize);
         }
 
         public float GetHeight(int x, int z) => _values[x, z];
@@ -65,12 +72,12 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>
         /// ワールド XZ 座標における地形の勾配を度数で返す。
-        /// 水平方向の微小距離（1 セル）だけ前後に高度サンプリングし、中心差分から dy/dx と dy/dz を求めて勾配を計算する。
-        /// 断崖判定（移動ブロック）に使う想定。
+        /// 中心差分の基線は <see cref="CellSize"/> × <paramref name="sampleSpacingMultiplier"/>。
+        /// 既定 1 は 1 セル幅。マルチプライを大きくすると細かい凹凸の影響が減り、見た目より急に出る誤差が抑えられる。
         /// </summary>
-        public float SampleSlopeDeg(Vector3 worldPos)
+        public float SampleSlopeDeg(Vector3 worldPos, float sampleSpacingMultiplier = 1f)
         {
-            float eps = CellSize;
+            float eps = CellSize * Mathf.Max(0.25f, sampleSpacingMultiplier);
             float hE = SampleAt(new Vector3(worldPos.x + eps, 0f, worldPos.z));
             float hW = SampleAt(new Vector3(worldPos.x - eps, 0f, worldPos.z));
             float hN = SampleAt(new Vector3(worldPos.x, 0f, worldPos.z + eps));
@@ -81,5 +88,13 @@ namespace WarSimulation.Combat.Map
             float gradientMagnitude = Mathf.Sqrt(dydx * dydx + dydz * dydz);
             return Mathf.Atan(gradientMagnitude) * Mathf.Rad2Deg;
         }
+
+        /// <summary>グリッド (x,z) が崖面セルか。高さの値からは分からないので必ずこちらか <see cref="SampleCliffFace"/> を使う。</summary>
+        public bool IsCliffFaceCell(int x, int z) => CliffFaces.Get(x, z);
+
+        /// <summary>
+        /// ワールド位置が崖面セルに含まれるか。<see cref="CliffFaces"/> と同じ（スタンプと同一手順で付いたフラグ）。
+        /// </summary>
+        public bool SampleCliffFace(Vector3 worldPos) => CliffFaces.SampleAt(worldPos);
     }
 }

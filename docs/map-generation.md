@@ -118,6 +118,8 @@
 **Shape（形状データ、SO）** と **Placement（配置情報、値オブジェクト）** を分離する。
 同じ Shape を複数箇所に異なる配置で使い回せるようにするため。
 
+**用語（混同しない）**：`HeightShapeKind` は実装の分岐が Dome / Cone / Ridge の 3 つだけ。`MapGenerationConfig` の `Structure Stamps` に並ぶのは別々の `HeightStampShape` アセット（プリセット）であり、名前の違う山・丘・盆地を何種類でも並べられる。同じプリセットを複数要素にすると抽選で出やすくなる。
+
 | クラス | 責務 |
 |---|---|
 | `StampShape`（抽象 SO） | 全スタンプの基底。`Apply(MapData, StampPlacement)` を持つ |

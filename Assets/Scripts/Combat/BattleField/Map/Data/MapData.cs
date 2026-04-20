@@ -10,7 +10,7 @@ namespace WarSimulation.Combat.Map
     /// ユニットテストから直接インスタンス化できる。
     ///
     /// 3 レイヤ構成：
-    ///   - 地形   : <see cref="Height"/> （HeightMap、連続値の高低差）
+    ///   - 地形   : <see cref="Height"/> （HeightMap：高低差＋<see cref="HeightMap.CliffFaces"/>）
     ///   - 地面   : <see cref="GroundStates"/> （GroundStateGrid、セル毎の状態：沼/雪/水）
     ///   - オブジェクト : <see cref="Features"/> （木・岩・魔石・橋など一点配置）
     /// </summary>
@@ -18,11 +18,28 @@ namespace WarSimulation.Combat.Map
     {
         public HeightMap Height { get; }
         public GroundStateGrid GroundStates { get; }
+
+        /// <summary>地形と同じ解像度の崖面マスク。<see cref="Height.CliffFaces"/> と同一。</summary>
+        public CliffFaceGrid CliffFaces => Height.CliffFaces;
         public List<PlacedFeature> Features { get; }
         public List<RiverPath> Rivers { get; }
         public List<LakeRegion> Lakes { get; }
         public List<ForestRegion> ForestRegions { get; }
         public int Seed { get; }
+
+        /// <summary>
+        /// 直近の <see cref="StructurePhase"/> で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.StructureStampCount"/>）。
+        /// </summary>
+        public int StructureStampPlacedCount { get; set; }
+
+        /// <summary>StructurePhase が試行した候補総数（採用・棄却を含む）。</summary>
+        public int StructureTotalAttempts { get; set; }
+
+        /// <summary>候補中心が水チェック円で水セルを含み棄却された回数。</summary>
+        public int StructureWaterRejects { get; set; }
+
+        /// <summary>候補中心が既存スタンプとの距離条件で棄却された回数。</summary>
+        public int StructureDistanceRejects { get; set; }
 
         public MapData(HeightMap height, GroundStateGrid groundStates, int seed)
         {
@@ -33,6 +50,10 @@ namespace WarSimulation.Combat.Map
             Rivers = new List<RiverPath>();
             Lakes = new List<LakeRegion>();
             ForestRegions = new List<ForestRegion>();
+            StructureStampPlacedCount = 0;
+            StructureTotalAttempts = 0;
+            StructureWaterRejects = 0;
+            StructureDistanceRejects = 0;
         }
 
         public void AddFeature(PlacedFeature feature) => Features.Add(feature);

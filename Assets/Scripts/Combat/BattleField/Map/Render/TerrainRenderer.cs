@@ -45,7 +45,12 @@ namespace WarSimulation.Combat.Map
         /// 可視化ではプレイヤーに「ここは森」と分かる独自色で塗り分けたいため Terrain 側だけで追加する。
         /// </summary>
         private const int ForestFloorLayerIndex = 4;
-        private const int TotalLayerCount = 5;
+
+        /// <summary>
+        /// <see cref="HeightMap.CliffFaces"/>（スタンプの崖スカートと一致。勾配推定は使わない）。
+        /// </summary>
+        private const int CliffLayerIndex = 5;
+        private const int TotalLayerCount = 6;
 
         public Terrain Terrain => _terrain;
 
@@ -161,26 +166,38 @@ namespace WarSimulation.Combat.Map
             int regionCount = regions?.Count ?? 0;
 
             float worldSize = g.WorldSize.x;
+            CliffFaceGrid cliffs = map.Height.CliffFaces;
             for (int z = 0; z < res; z++)
             {
                 float worldZ = (z + 0.5f) / res * worldSize;
                 for (int x = 0; x < res; x++)
                 {
                     float worldX = (x + 0.5f) / res * worldSize;
-                    GroundState s = g.SampleAt(new Vector3(worldX, 0f, worldZ));
+                    Vector3 worldPos = new Vector3(worldX, 0f, worldZ);
+                    GroundState s = g.SampleAt(worldPos);
 
-                    // Normal セルが森ゾーンに入っているなら「森の地面」レイヤに塗り替える。
-                    // Water / Swamp / Snow はそれぞれ優先してその状態で見せる。
-                    if (s == GroundState.Normal && regionCount > 0 &&
-                        IsInsideAnyForest(regions, worldX, worldZ))
+                    // Water / Swamp / Snow は地面状態を優先。
+                    if (s == GroundState.Water || s == GroundState.Swamp || s == GroundState.Snow)
+                    {
+                        alphas[z, x, IndexOfLayer(s)] = 1f;
+                        continue;
+                    }
+
+                    bool inForest = s == GroundState.Normal && regionCount > 0 &&
+                        IsInsideAnyForest(regions, worldX, worldZ);
+                    if (inForest)
                     {
                         alphas[z, x, ForestFloorLayerIndex] = 1f;
+                        continue;
                     }
-                    else
+
+                    if (s == GroundState.Normal && cliffs.SampleAt(worldPos))
                     {
-                        int layerIdx = IndexOfLayer(s);
-                        alphas[z, x, layerIdx] = 1f;
+                        alphas[z, x, CliffLayerIndex] = 1f;
+                        continue;
                     }
+
+                    alphas[z, x, IndexOfLayer(s)] = 1f;
                 }
             }
             td.SetAlphamaps(0, 0, alphas);
@@ -224,6 +241,7 @@ namespace WarSimulation.Combat.Map
                 layers[i] = CreateSolidColorLayer(s_layerOrder[i]);
             }
             layers[ForestFloorLayerIndex] = CreateSolidColorLayer("ForestFloor", new Color(0.14f, 0.42f, 0.17f));
+            layers[CliffLayerIndex] = CreateSolidColorLayer("Cliff", new Color(0.30f, 0.18f, 0.10f));
             return layers;
         }
 

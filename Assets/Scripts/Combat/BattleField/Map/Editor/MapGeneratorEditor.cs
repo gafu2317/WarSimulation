@@ -53,7 +53,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 EditorGUILayout.HelpBox(_lastInfo, MessageType.Info);
             }
 
-            DrawPreview("Height Map (color ramp)", _heightTex);
+            DrawPreview("Height Map", _heightTex);
             DrawPreview("Terrain Grid", _terrainTex);
         }
 
@@ -80,7 +80,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             _lastInfo =
                 $"Seed: {data.Seed}\n" +
-                $"HeightMap: {data.Height.Width}x{data.Height.Height}  (cell={data.Height.CellSize:F3} m)\n" +
+                $"Structures placed: {data.StructureStampPlacedCount} / {(gen.Config != null ? gen.Config.StructureStampCount : 0)} (attempts={data.StructureTotalAttempts}, waterReject={data.StructureWaterRejects}, distReject={data.StructureDistanceRejects})\n" +
+                $"HeightMap: {data.Height.Width}x{data.Height.Height}  (cell={data.Height.CellSize:F3} m)  CliffCells={CountCliffCells(data.Height)}\n" +
                 $"GroundStateGrid: {data.GroundStates.Width}x{data.GroundStates.Height}  (cell={data.GroundStates.CellSize:F3} m)\n" +
                 $"Height range: {min:F2} .. {max:F2}\n" +
                 ConfigSummary(gen.Config) + "\n" +
@@ -143,7 +144,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             _lastInfo =
                 $"[3D Rendered] Seed: {data.Seed}\n" +
-                $"Height range: {min:F2} .. {max:F2}\n" +
+                $"Structures placed: {data.StructureStampPlacedCount} / {(gen.Config != null ? gen.Config.StructureStampCount : 0)} (attempts={data.StructureTotalAttempts}, waterReject={data.StructureWaterRejects}, distReject={data.StructureDistanceRejects})\n" +
+                $"Height range: {min:F2} .. {max:F2}  CliffCells={CountCliffCells(data.Height)}\n" +
                 ConfigSummary(gen.Config) + "\n" +
                 MagicStonesSummary(data) + "\n" +
                 $"Forests: {data.ForestRegions.Count}, Trees: {CountFeatures(data, FeatureType.Tree)}, Rocks: {CountFeatures(data, FeatureType.Rock)}\n" +
@@ -198,7 +200,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 }
             }
             return
-                $"Config[Structures]: Count={config.StructureStampCount}, StampListSize={stampList}, CliffStamps={cliffStamps}\n" +
+                $"Config[Structures]: Target={config.StructureStampCount}, StampListSize={stampList}, CliffStamps={cliffStamps}, GlobalCap={config.StructureMaxGlobalSearchIterations}, MinCenterSep={config.StructureMinCenterSeparation:F1}m, CenterDistFactor={config.StructureMinCenterDistanceFactor:F2}\n" +
                 $"Config[Forest]    : Count={config.ForestClusterCount}, StampListSize={forestList}\n" +
                 $"Config[GroundPatch]: Count={config.GroundPatchStampCount}, StampListSize={groundPatchList}\n" +
                 $"Config[Rock]      : Count={config.RockCount}\n" +
@@ -279,9 +281,21 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     int gx = Mathf.Clamp(Mathf.FloorToInt(worldX / gCell), 0, g.Width - 1);
                     int gy = Mathf.Clamp(Mathf.FloorToInt(worldZ / gCell), 0, g.Height - 1);
 
-                    Color32 color = g.GetCell(gx, gy) == GroundState.Water
-                        ? waterColor
-                        : HeightColorRamp(h.GetHeight(x, z), min, max);
+                    Color32 color;
+                    if (g.GetCell(gx, gy) == GroundState.Water)
+                    {
+                        color = waterColor;
+                    }
+                    else
+                    {
+                        color = HeightColorRamp(h.GetHeight(x, z), min, max);
+                        // HeightMap.CliffFaces（スタンプの崖スカート）を高さプレビューで識別可能に
+                        if (h.CliffFaces.Get(x, z))
+                        {
+                            Color32 cliffTint = new Color32(115, 62, 32, 255);
+                            color = Color32.Lerp(color, cliffTint, 0.72f);
+                        }
+                    }
 
                     pixels[z * h.Width + x] = color;
                 }
@@ -289,6 +303,19 @@ namespace WarSimulation.Combat.Map.EditorOnly
             tex.SetPixels32(pixels);
             tex.Apply(false);
             return tex;
+        }
+
+        private static int CountCliffCells(HeightMap h)
+        {
+            int n = 0;
+            for (int z = 0; z < h.Height; z++)
+            {
+                for (int x = 0; x < h.Width; x++)
+                {
+                    if (h.CliffFaces.Get(x, z)) n++;
+                }
+            }
+            return n;
         }
 
         private static Texture2D BuildTerrainTexture(GroundStateGrid g)

@@ -25,7 +25,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Range(5f, 85f)] private float _maxClimbableSlopeDeg = 30f;
 
         [Header("Structure Phase")]
-        [Tooltip("大構造（山・丘・盆地など）として使う高度スタンプ。")]
+        [Tooltip("大構造として使う HeightStampShape アプリセットのリスト（名前の違うアセットを複数並べてよい）。配置時はこの中からランダムに 1 つ選ぶので、同じプリセットを複数要素にすると出やすくなる。形状ファミリー（Dome/Cone/Ridge）は HeightStampShape 側の Kind を参照。")]
         [SerializeField] private List<HeightStampShape> _structureStamps = new();
 
         [Tooltip("1 マップあたりに配置する大構造スタンプの個数。")]
@@ -37,8 +37,17 @@ namespace WarSimulation.Combat.Map
         [Tooltip("山の円形フットプリントから水セル（川・湖）までに確保したい追加クリアランス（メートル）。大きいほど水辺から山が遠ざかる。")]
         [SerializeField, Min(0f)] private float _structureRiverClearance = 2f;
 
-        [Tooltip("1 個のスタンプ配置につき、水セル（川・湖）に被らない中心を探すリトライ回数の上限。尽きたらそのスタンプはスキップ。")]
-        [SerializeField, Min(1)] private int _structureMaxPlacementAttempts = 20;
+        [Tooltip("ランダムに選んだ 1 個のスタンプについて、水に被らない中心を乱択する試行回数。この回数で見つからなければ別のスタンプを選び直す（目標個数に達するまで繰り返す）。")]
+        [SerializeField, Min(1)] private int _structureMaxPlacementAttempts = 300;
+
+        [Tooltip("大構造を目標個数に届かせるための外側ループの最大回数（スタンプ選択＋中心探索を 1 回と数える）。水が多くて置けない場合はこの上限で打ち切り、目標未満で終わる。")]
+        [SerializeField, Min(1)] private int _structureMaxGlobalSearchIterations = 50000;
+
+        [Tooltip("既存スタンプとの中心距離に加算する余白（m）。StructureMinCenterDistanceFactor と併用。0 でも係数 1 なら『印の実効半径の和』は離す。")]
+        [SerializeField, Min(0f)] private float _structureMinCenterSeparation = 0f;
+
+        [Tooltip("既存スタンプとの距離に使う『実効半径の和』の係数。1=印同士が外接するくらい離す（従来の 1.3×ベース半径に相当）、0 に近いほど重なりを許す（係数 0 かつ余白 0 なら中心距離は不問）。")]
+        [SerializeField, Range(0f, 1f)] private float _structureMinCenterDistanceFactor = 1f;
 
         [Header("River Phase")]
         [Tooltip("川の断面形状を定義する SO。未設定の場合は川フェーズをスキップ。")]
@@ -162,6 +171,9 @@ namespace WarSimulation.Combat.Map
         public float StructurePlacementMargin => _structurePlacementMargin;
         public float StructureRiverClearance => _structureRiverClearance;
         public int StructureMaxPlacementAttempts => _structureMaxPlacementAttempts;
+        public int StructureMaxGlobalSearchIterations => _structureMaxGlobalSearchIterations;
+        public float StructureMinCenterSeparation => _structureMinCenterSeparation;
+        public float StructureMinCenterDistanceFactor => _structureMinCenterDistanceFactor;
 
         public RiverShape RiverShape => _riverShape;
         public int CrossMapRiverCount => _crossMapRiverCount;
