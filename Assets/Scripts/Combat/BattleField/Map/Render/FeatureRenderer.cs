@@ -163,7 +163,9 @@ namespace WarSimulation.Combat.Map
         {
             var tree = new GameObject($"Tree_{idx}");
             tree.transform.SetParent(parent, worldPositionStays: false);
-            tree.transform.SetPositionAndRotation(f.WorldPosition, f.Rotation);
+            // PlacedFeature の座標はマップローカル（親 MapGenerator 基準）。ワールド直指定だと親が動いているときだけ地形とズレる。
+            tree.transform.localPosition = f.WorldPosition;
+            tree.transform.localRotation = f.Rotation;
 
             // 木全体の高さを「幹 60% + 葉冠 40% だけ中心を押し上げる」で分ける。
             float trunkHeight = _treeHeight * 0.6f;
@@ -209,7 +211,8 @@ namespace WarSimulation.Combat.Map
 
             // Cube はローカル ±0.5 の立方体。根本を地面に合わせたいので Y 半分だけ上げる。
             Vector3 pos = f.WorldPosition + new Vector3(0f, _rockSize * sy * 0.5f, 0f);
-            rock.transform.SetPositionAndRotation(pos, f.Rotation * Quaternion.Euler(0f, yaw, 0f));
+            rock.transform.localPosition = pos;
+            rock.transform.localRotation = f.Rotation * Quaternion.Euler(0f, yaw, 0f);
             rock.transform.localScale = new Vector3(_rockSize * sx, _rockSize * sy, _rockSize * sz);
             rock.GetComponent<MeshFilter>().sharedMesh = cube;
             rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
@@ -234,7 +237,8 @@ namespace WarSimulation.Combat.Map
 
             // Y 軸 45° 回転で上から見たひし形に。f.Rotation は魔石では Quaternion.identity 前提だが、
             // 外部で明示的に向きを付けたケースを尊重するため、f.Rotation に 45° を後段合成する。
-            stone.transform.SetPositionAndRotation(pos, f.Rotation * Quaternion.Euler(0f, 45f, 0f));
+            stone.transform.localPosition = pos;
+            stone.transform.localRotation = f.Rotation * Quaternion.Euler(0f, 45f, 0f);
 
             // Cube はローカル ±0.5 なので、localScale = 目的のワールドサイズ。
             stone.transform.localScale = new Vector3(baseSize, height, baseSize);

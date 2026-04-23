@@ -45,7 +45,8 @@ namespace WarSimulation.Combat.Map
                 var go = new GameObject($"Bridge_{idx++}",
                     typeof(MeshFilter), typeof(MeshRenderer));
                 go.transform.SetParent(root.transform, worldPositionStays: false);
-                go.transform.SetPositionAndRotation(f.WorldPosition, f.Rotation);
+                go.transform.localPosition = f.WorldPosition;
+                go.transform.localRotation = f.Rotation;
                 go.transform.localScale = scale;
                 go.GetComponent<MeshFilter>().sharedMesh = cubeMesh;
                 go.GetComponent<MeshRenderer>().sharedMaterial = mat;
