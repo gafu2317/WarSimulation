@@ -68,10 +68,11 @@ namespace WarSimulation.Combat.Map
                 // 符号はシード由来で必ず ±、大きさは下限を付けてプレビューでも弧が残るようにする。
                 float mag01 = Mathf.PerlinNoise(noiseSeed * 0.31f, noiseSeed * 0.77f);
                 float mag = Mathf.Lerp(0.35f, 1f, mag01);
-                float bendSign = (Mathf.FloorToInt(noiseSeed * 173.918f + 11f) & 1) == 0 ? -1f : 1f;
+                Vector2 splineMid = (startW + endW) * 0.5f;
+                Vector2 center = new Vector2(height.Width * height.CellSize * 0.5f, height.Height * height.CellSize * 0.5f);
+                float bendSign = Vector2.Dot(center - splineMid, chordPerp) >= 0 ? 1f : -1f;
                 float bendSigned = bendSign * mag;
-                Vector2 mid = (startW + endW) * 0.5f;
-                control = mid + chordPerp * (spineCurveBendMeters * bendSigned);
+                control = splineMid + chordPerp * (spineCurveBendMeters * bendSigned);
                 sampleLen = 0.5f * (
                     Vector2.Distance(startW, control)
                     + Vector2.Distance(control, endW)
