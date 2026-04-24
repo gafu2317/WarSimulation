@@ -38,7 +38,7 @@ namespace WarSimulation.Combat.Map
                 // 川（および既に置かれた湖）と重ならない中心を棄却サンプリングで探す。
                 // GroundStateGrid の Water セルは RiverPhase／前回までの LakePhase の両方が書き込んでいるので、
                 // これ 1 本で「川 vs 湖」「湖 vs 湖」両方の重なりを防げる。
-                float checkRadius = shape.Radius + clearance;
+                float checkRadius = shape.OuterRadius + clearance;
                 Vector2 center = default;
                 bool found = false;
                 for (int attempt = 0; attempt < maxAttempts; attempt++)
@@ -73,7 +73,9 @@ namespace WarSimulation.Combat.Map
                         r.Radius,
                         r.WaterY,
                         isFrozen: true,
-                        waterTaggedRadius: r.WaterTaggedRadius);
+                        waterTaggedRadius: r.WaterTaggedRadius,
+                        noiseAmplitude: r.NoiseAmplitude,
+                        noiseFrequency: r.NoiseFrequency);
                     FlattenFrozenLakeHeights(map, map.Lakes[idx]);
                 }
             }
@@ -89,11 +91,10 @@ namespace WarSimulation.Combat.Map
             HeightMap h = map.Height;
             GroundStateGrid g = map.GroundStates;
             float cs = h.CellSize;
-            float r = lake.WaterTaggedRadius;
-            float rSq = r * r;
+            float bound = lake.OuterRadius;
             int cx = Mathf.FloorToInt(lake.Center.x / cs);
             int cz = Mathf.FloorToInt(lake.Center.y / cs);
-            int cellR = Mathf.CeilToInt(r / cs);
+            int cellR = Mathf.CeilToInt(bound / cs);
             float iceY = lake.WaterY;
 
             for (int dz = -cellR; dz <= cellR; dz++)
@@ -104,9 +105,9 @@ namespace WarSimulation.Combat.Map
                     int z = cz + dz;
                     if (!h.IsInBounds(x, z)) continue;
 
-                    float wx = (x + 0.5f) * cs - lake.Center.x;
-                    float wz = (z + 0.5f) * cs - lake.Center.y;
-                    if (wx * wx + wz * wz > rSq) continue;
+                    float wx = (x + 0.5f) * cs;
+                    float wz = (z + 0.5f) * cs;
+                    if (!lake.ContainsWaterTagged(new Vector2(wx, wz))) continue;
                     if (g.GetCell(x, z) != GroundState.Water) continue;
 
                     h.SetHeight(x, z, iceY);

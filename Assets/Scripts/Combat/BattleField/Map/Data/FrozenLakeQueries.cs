@@ -20,10 +20,7 @@ namespace WarSimulation.Combat.Map
                 LakeRegion lake = lakes[i];
                 if (!lake.IsFrozen) continue;
 
-                float dx = worldX - lake.Center.x;
-                float dz = worldZ - lake.Center.y;
-                float tr = lake.WaterTaggedRadius;
-                if (dx * dx + dz * dz <= tr * tr)
+                if (lake.ContainsWaterTagged(new Vector2(worldX, worldZ)))
                     return true;
             }
 

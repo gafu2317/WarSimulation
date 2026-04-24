@@ -10,6 +10,9 @@ namespace WarSimulation.Combat.Map
     ///   中心で DepthMeters だけ深く、半径で 0 に向かう 2 次プロファイル。
     ///   合成は Min なので、元地形が既にそれより低ければ触らない。
     ///
+    /// 輪郭は <see cref="_noiseAmplitude"/> により Perlin で半径が揺れ、
+    /// <see cref="GroundPatchStampShape"/> と同様に真円からずらせる（0 で従来どおりの円）。
+    ///
     /// 水面 Y の決め方：
     ///   「スタンプ適用前の中心高度」を起点に、DepthMeters * WaterSurfaceRatio だけ上を水面とする。
     ///   湖の水面は平らなので、全セルで同じ Y を使う。
@@ -29,9 +32,18 @@ namespace WarSimulation.Combat.Map
         [Tooltip("GroundStateGrid に Water タグを書き込む範囲を半径に対する比率で指定。岸は Water タグ化しない方が自然。")]
         [SerializeField, Range(0f, 1f)] private float _waterTagRatio = 0.9f;
 
+        [Tooltip("輪郭を Perlin ノイズで歪ませる強さ。0 = 真円（従来どおり）、0.3 = 半径が ±30% 揺れる。")]
+        [SerializeField, Range(0f, 0.6f)] private float _noiseAmplitude = 0f;
+
+        [Tooltip("ノイズの空間周波数（1/メートル）。大きいほど細かい凹凸。")]
+        [SerializeField, Min(0.001f)] private float _noiseFrequency = 0.16f;
+
         public float Radius => _radius;
+        public float OuterRadius => _radius * (1f + Mathf.Max(0f, _noiseAmplitude));
         public float DepthMeters => _depthMeters;
         public float WaterSurfaceRatio => _waterSurfaceRatio;
+        public float NoiseAmplitude => _noiseAmplitude;
+        public float NoiseFrequency => _noiseFrequency;
 
         public override void Apply(MapData map, StampPlacement placement)
         {
@@ -55,16 +67,19 @@ namespace WarSimulation.Combat.Map
                 _radius,
                 waterY,
                 isFrozen: false,
-                waterTaggedRadius: _radius * _waterTagRatio));
+                waterTaggedRadius: _radius * _waterTagRatio,
+                noiseAmplitude: _noiseAmplitude,
+                noiseFrequency: _noiseFrequency));
         }
 
         private void CarveHeightMap(HeightMap h, Vector2 worldCenter, float centerOriginalH, float cs)
         {
-            int cellRadius = Mathf.Max(1, Mathf.CeilToInt(_radius / cs));
+            float noiseExpand = 1f + _noiseAmplitude;
+            int cellRadius = Mathf.Max(1, Mathf.CeilToInt(_radius * noiseExpand / cs));
             int cxCell = Mathf.FloorToInt(worldCenter.x / cs);
             int cyCell = Mathf.FloorToInt(worldCenter.y / cs);
 
-            float radSq = _radius * _radius;
+            bool useNoise = _noiseAmplitude > 0f;
             for (int dy = -cellRadius; dy <= cellRadius; dy++)
             {
                 for (int dx = -cellRadius; dx <= cellRadius; dx++)
@@ -76,9 +91,14 @@ namespace WarSimulation.Combat.Map
                     float wx = (x + 0.5f) * cs - worldCenter.x;
                     float wy = (y + 0.5f) * cs - worldCenter.y;
                     float distSq = wx * wx + wy * wy;
-                    if (distSq > radSq) continue;
+                    float eff = useNoise
+                        ? LakeRegion.ComputeEffectiveRadius(
+                            worldCenter, _radius, _noiseAmplitude, _noiseFrequency, wx, wy)
+                        : _radius;
+                    float effSq = eff * eff;
+                    if (distSq > effSq) continue;
 
-                    float t = Mathf.Sqrt(distSq) / _radius;
+                    float t = Mathf.Sqrt(distSq) / eff;
                     // 中心で深さ DepthMeters、端で 0。 Min 合成なので既存が更に低いなら触らない。
                     float carved = centerOriginalH - _depthMeters * (1f - t * t);
                     float current = h.GetHeight(x, y);
@@ -90,12 +110,12 @@ namespace WarSimulation.Combat.Map
         private void TagWater(GroundStateGrid g, Vector2 worldCenter)
         {
             float gCell = g.CellSize;
-            float tagRadius = _radius * _waterTagRatio;
-            float tagRadSq = tagRadius * tagRadius;
-
+            float noiseExpand = 1f + _noiseAmplitude;
+            float boundR = _radius * noiseExpand * _waterTagRatio;
             int cxCell = Mathf.FloorToInt(worldCenter.x / gCell);
             int cyCell = Mathf.FloorToInt(worldCenter.y / gCell);
-            int gR = Mathf.Max(0, Mathf.CeilToInt(tagRadius / gCell));
+            int gR = Mathf.Max(0, Mathf.CeilToInt(boundR / gCell));
+            bool useNoise = _noiseAmplitude > 0f;
 
             for (int dy = -gR; dy <= gR; dy++)
             {
@@ -107,7 +127,13 @@ namespace WarSimulation.Combat.Map
 
                     float cxw = (x + 0.5f) * gCell - worldCenter.x;
                     float cyw = (y + 0.5f) * gCell - worldCenter.y;
-                    if (cxw * cxw + cyw * cyw > tagRadSq) continue;
+                    float distSq = cxw * cxw + cyw * cyw;
+                    float eff = useNoise
+                        ? LakeRegion.ComputeEffectiveRadius(
+                            worldCenter, _radius, _noiseAmplitude, _noiseFrequency, cxw, cyw)
+                        : _radius;
+                    float tagR = eff * _waterTagRatio;
+                    if (distSq > tagR * tagR) continue;
 
                     g.SetCell(x, y, GroundState.Water);
                 }

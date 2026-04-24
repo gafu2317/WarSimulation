@@ -72,15 +72,16 @@ namespace WarSimulation.Combat.Map
                     go.transform.SetParent(root.transform, worldPositionStays: false);
                     go.transform.localPosition = new Vector3(lake.Center.x, y, lake.Center.y);
                     go.transform.localScale = new Vector3(
-                        lake.Radius * 2f,
+                        lake.OuterRadius * 2f,
                         _iceSlabThickness * 0.5f,
-                        lake.Radius * 2f);
+                        lake.OuterRadius * 2f);
                     picked = iceMat;
                 }
                 else
                 {
-                    // 通常の水面は従来どおりフラットなディスクで描画（影響を与えない）。
-                    Mesh mesh = BuildDisc(lake.Center, lake.Radius, lake.WaterY, _segments);
+                    Mesh mesh = lake.NoiseAmplitude > 1e-6f
+                        ? BuildNoiseDisc(lake, lake.WaterY, _segments)
+                        : BuildDisc(lake.Center, lake.Radius, lake.WaterY, _segments);
                     go = new GameObject($"Lake_{i}",
                         typeof(MeshFilter), typeof(MeshRenderer));
                     go.transform.SetParent(root.transform, worldPositionStays: false);
@@ -99,6 +100,44 @@ namespace WarSimulation.Combat.Map
 
             if (Application.isPlaying) Destroy(existing.gameObject);
             else DestroyImmediate(existing.gameObject);
+        }
+
+        /// <summary>
+        /// ノイズ歪みの岸線に沿った単一ポリゴン（扇状トライアングル）で水面メッシュを作る。
+        /// </summary>
+        private static Mesh BuildNoiseDisc(LakeRegion lake, float waterY, int segments)
+        {
+            int segs = Mathf.Max(8, segments);
+            var vertices = new Vector3[segs + 1];
+            var uvs = new Vector2[segs + 1];
+            vertices[0] = new Vector3(lake.Center.x, waterY, lake.Center.y);
+            uvs[0] = new Vector2(0.5f, 0.5f);
+
+            float step = 2f * Mathf.PI / segs;
+            for (int i = 0; i < segs; i++)
+            {
+                float a = i * step;
+                Vector2 u = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                float br = lake.BoundaryRadiusAlong(u);
+                vertices[i + 1] = new Vector3(lake.Center.x + u.x * br, waterY, lake.Center.y + u.y * br);
+                uvs[i + 1] = new Vector2(0.5f + 0.5f * u.x, 0.5f + 0.5f * u.y);
+            }
+
+            var triangles = new int[segs * 3];
+            for (int i = 0; i < segs; i++)
+            {
+                triangles[i * 3] = 0;
+                triangles[i * 3 + 1] = i + 1;
+                triangles[i * 3 + 2] = ((i + 1) % segs) + 1;
+            }
+
+            var mesh = new Mesh { name = "LakeNoiseMesh" };
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         /// <summary>
