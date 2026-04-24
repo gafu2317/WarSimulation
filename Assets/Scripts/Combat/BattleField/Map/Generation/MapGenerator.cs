@@ -18,18 +18,16 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private int _seed;
 
         // パイプラインは 3 レイヤ（地形=高低差 / 地面=状態 / オブジェクト=点配置）で積み上げる。
-        //  1. BaseHeight : 全セルを基準高度で初期化（地形レイヤの初期化）
-        //  2. River      : 平地状態でマップ端〜端を蛇行パス化し掘削＋ Water タグ付け
-        //  3. Lake       : 湖のボウル型くぼみ＋ Water タグ付け（山の前に置くので山が湖を避ける）
-        //  4. Structure  : Water セル（川・湖）を避けながら山・丘・盆地を配置
-        //  5. GroundPatch: 沼・雪などの地面状態パッチ（Water は保護）
-        //  6. Forest     : 木のクラスター。ゾーンを登録し PlacedFeature.Tree を散布
-        //  7. Rock       : 岩をマップ全体に散布（Water セル＋森ゾーンを避ける）
-        //  8. Decoration : 魔石配置（Water セル除外）
-        //  9. Bridge     : 川の経路上に橋を複数配置
+        //   River      : 平地状態でマップ端〜端を蛇行パス化し掘削＋ Water タグ付け
+        //   Lake       : 湖のボウル型くぼみ＋ Water タグ付け（山の前に置くので山が湖を避ける）
+        //   Structure  : Water セル（川・湖）を避けながら山・丘・盆地を配置
+        //   GroundPatch: 沼・雪などの地面状態パッチ（Water は保護）
+        //   Forest     : 木のクラスター。ゾーンを登録し PlacedFeature.Tree を散布
+        //   Rock       : 岩をマップ全体に散布（Water セル＋森ゾーンを避ける）
+        //   Decoration : 魔石配置（Water セル除外）
+        //   Bridge     : 川の経路上に橋を複数配置
         private readonly List<IMapGenerationPhase> _phases = new()
         {
-            new BaseHeightPhase(),
             new RiverPhase(),
             new LakePhase(),
             new StructurePhase(),
