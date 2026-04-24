@@ -50,7 +50,10 @@ namespace WarSimulation.Combat.Map
         /// <see cref="HeightMap.CliffFaces"/>（スタンプの崖スカートと一致。勾配推定は使わない）。
         /// </summary>
         private const int CliffLayerIndex = 5;
-        private const int TotalLayerCount = 6;
+
+        /// <summary>凍結湖（グリッドは Water のまま）。雪レイヤより濃いシアンで区別する。</summary>
+        private const int FrozenLakeLayerIndex = 6;
+        private const int TotalLayerCount = 7;
 
         public Terrain Terrain => _terrain;
 
@@ -176,6 +179,13 @@ namespace WarSimulation.Combat.Map
                     Vector3 worldPos = new Vector3(worldX, 0f, worldZ);
                     GroundState s = g.SampleAt(worldPos);
 
+                    // 凍結湖は専用レイヤ（濃いめの氷色）。雪エリアと見分けやすくする。
+                    if (s == GroundState.Water && FrozenLakeQueries.IsFrozenLakeWaterAt(map, worldX, worldZ))
+                    {
+                        alphas[z, x, FrozenLakeLayerIndex] = 1f;
+                        continue;
+                    }
+
                     // Water / Swamp / Snow は地面状態を優先。
                     if (s == GroundState.Water || s == GroundState.Swamp || s == GroundState.Snow)
                     {
@@ -242,6 +252,7 @@ namespace WarSimulation.Combat.Map
             }
             layers[ForestFloorLayerIndex] = CreateSolidColorLayer("ForestFloor", new Color(0.14f, 0.42f, 0.17f));
             layers[CliffLayerIndex] = CreateSolidColorLayer("Cliff", new Color(0.30f, 0.18f, 0.10f));
+            layers[FrozenLakeLayerIndex] = CreateSolidColorLayer("FrozenLake", new Color(0.91f, 0.96f, 1f));
             return layers;
         }
 

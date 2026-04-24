@@ -50,7 +50,12 @@ namespace WarSimulation.Combat.Map
             CarveHeightMap(h, placement.Center, centerOriginalH, cs);
             TagWater(g, placement.Center);
 
-            map.AddLake(new LakeRegion(placement.Center, _radius, waterY));
+            map.AddLake(new LakeRegion(
+                placement.Center,
+                _radius,
+                waterY,
+                isFrozen: false,
+                waterTaggedRadius: _radius * _waterTagRatio));
         }
 
         private void CarveHeightMap(HeightMap h, Vector2 worldCenter, float centerOriginalH, float cs)

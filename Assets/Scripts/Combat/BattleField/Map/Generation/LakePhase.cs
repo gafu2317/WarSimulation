@@ -68,7 +68,48 @@ namespace WarSimulation.Combat.Map
                 {
                     int idx = map.Lakes.Count - 1;
                     LakeRegion r = map.Lakes[idx];
-                    map.Lakes[idx] = new LakeRegion(r.Center, r.Radius, r.WaterY, isFrozen: true);
+                    map.Lakes[idx] = new LakeRegion(
+                        r.Center,
+                        r.Radius,
+                        r.WaterY,
+                        isFrozen: true,
+                        waterTaggedRadius: r.WaterTaggedRadius);
+                    FlattenFrozenLakeHeights(map, map.Lakes[idx]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 凍結湖の Water セル高さを水面 Y に揃え、HeightMap プレビューと Terrain が「平らな氷面」になるようにする。
+        /// </summary>
+        private static void FlattenFrozenLakeHeights(MapData map, LakeRegion lake)
+        {
+            if (!lake.IsFrozen || map == null) return;
+
+            HeightMap h = map.Height;
+            GroundStateGrid g = map.GroundStates;
+            float cs = h.CellSize;
+            float r = lake.WaterTaggedRadius;
+            float rSq = r * r;
+            int cx = Mathf.FloorToInt(lake.Center.x / cs);
+            int cz = Mathf.FloorToInt(lake.Center.y / cs);
+            int cellR = Mathf.CeilToInt(r / cs);
+            float iceY = lake.WaterY;
+
+            for (int dz = -cellR; dz <= cellR; dz++)
+            {
+                for (int dx = -cellR; dx <= cellR; dx++)
+                {
+                    int x = cx + dx;
+                    int z = cz + dz;
+                    if (!h.IsInBounds(x, z)) continue;
+
+                    float wx = (x + 0.5f) * cs - lake.Center.x;
+                    float wz = (z + 0.5f) * cs - lake.Center.y;
+                    if (wx * wx + wz * wz > rSq) continue;
+                    if (g.GetCell(x, z) != GroundState.Water) continue;
+
+                    h.SetHeight(x, z, iceY);
                 }
             }
         }

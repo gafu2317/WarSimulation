@@ -25,12 +25,19 @@ namespace WarSimulation.Combat.Map
         /// </summary>
         public bool IsFrozen { get; }
 
-        public LakeRegion(Vector2 center, float radius, float waterY, bool isFrozen = false)
+        /// <summary>
+        /// <see cref="GroundState.Water"/> が付く円の半径（岸を除いた内側）。
+        /// 凍結湖の高さフラット化やプレビュー判定に使う。
+        /// </summary>
+        public float WaterTaggedRadius { get; }
+
+        public LakeRegion(Vector2 center, float radius, float waterY, bool isFrozen = false, float waterTaggedRadius = -1f)
         {
             Center = center;
             Radius = radius;
             WaterY = waterY;
             IsFrozen = isFrozen;
+            WaterTaggedRadius = waterTaggedRadius > 0f ? waterTaggedRadius : radius * 0.9f;
         }
     }
 }

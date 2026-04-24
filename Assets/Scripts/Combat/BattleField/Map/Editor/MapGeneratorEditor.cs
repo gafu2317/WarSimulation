@@ -71,7 +71,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             ClearTextures();
             _heightTex = BuildHeightTexture(data, out float min, out float max);
-            _terrainTex = BuildTerrainTexture(data.GroundStates);
+            _terrainTex = BuildTerrainTexture(data);
 
             OverlayForestRegions(_heightTex, data, data.Height.CellSize);
             OverlayForestRegions(_terrainTex, data, data.GroundStates.CellSize);
@@ -136,7 +136,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             ClearTextures();
             _heightTex = BuildHeightTexture(data, out float min, out float max);
-            _terrainTex = BuildTerrainTexture(data.GroundStates);
+            _terrainTex = BuildTerrainTexture(data);
             OverlayForestRegions(_heightTex, data, data.Height.CellSize);
             OverlayForestRegions(_terrainTex, data, data.GroundStates.CellSize);
             OverlayFeatures(_heightTex, data, data.Height.CellSize);
@@ -285,7 +285,22 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     Color32 color;
                     if (g.GetCell(gx, gy) == GroundState.Water)
                     {
-                        color = waterColor;
+                        // 凍結湖は高さランプ（フラットな氷面）＋淡い青みで水プレビューと区別する
+                        if (FrozenLakeQueries.IsFrozenLakeWaterAt(map, worldX, worldZ))
+                        {
+                            color = HeightColorRamp(h.GetHeight(x, z), min, max);
+                            Color32 iceTint = new Color32(238, 248, 255, 255);
+                            color = Color32.Lerp(color, iceTint, 0.88f);
+                            if (h.CliffFaces.Get(x, z))
+                            {
+                                Color32 cliffTint = new Color32(115, 62, 32, 255);
+                                color = Color32.Lerp(color, cliffTint, 0.72f);
+                            }
+                        }
+                        else
+                        {
+                            color = waterColor;
+                        }
                     }
                     else
                     {
@@ -319,8 +334,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
             return n;
         }
 
-        private static Texture2D BuildTerrainTexture(GroundStateGrid g)
+        private static Texture2D BuildTerrainTexture(MapData map)
         {
+            GroundStateGrid g = map.GroundStates;
+            float cs = g.CellSize;
+
             var tex = new Texture2D(g.Width, g.Height, TextureFormat.RGB24, false)
             {
                 filterMode = FilterMode.Point,
@@ -328,12 +346,19 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 hideFlags = HideFlags.HideAndDontSave,
             };
 
+            Color32 frozenLakeColor = new Color32(240, 250, 255, 255);
             var pixels = new Color32[g.Width * g.Height];
             for (int z = 0; z < g.Height; z++)
             {
                 for (int x = 0; x < g.Width; x++)
                 {
-                    pixels[z * g.Width + x] = GroundStateColor(g.GetCell(x, z));
+                    float wx = (x + 0.5f) * cs;
+                    float wz = (z + 0.5f) * cs;
+                    GroundState s = g.GetCell(x, z);
+                    if (s == GroundState.Water && FrozenLakeQueries.IsFrozenLakeWaterAt(map, wx, wz))
+                        pixels[z * g.Width + x] = frozenLakeColor;
+                    else
+                        pixels[z * g.Width + x] = GroundStateColor(s);
                 }
             }
             tex.SetPixels32(pixels);
