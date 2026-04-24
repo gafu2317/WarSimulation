@@ -12,11 +12,8 @@ namespace WarSimulation.Combat.Map
     public sealed class MapGenerationConfig : ScriptableObject
     {
         [Header("Grid")]
-        [Tooltip("マップ全体のワールド上の一辺の長さ（メートル）。正方マップを仮定。")]
-        [SerializeField, Min(1f)] private float _worldSize = 60f;
-
-        [Tooltip("HeightMap / GroundStateGrid の一辺のセル数。密度 = 滑らかさ。両グリッドで共通の解像度を使う。")]
-        [SerializeField, Min(2)] private int _heightMapResolution = 129;
+        [Tooltip("マップ全体の一辺の長さ（メートル）。セルは常に 1m 固定なので、この値がそのまま一辺セル数になる。")]
+        [SerializeField, Min(2f)] private float _worldSize = 60f;
 
         [Tooltip("ベースとなる初期高度。すべてのセルがこの値で初期化される。")]
         [SerializeField] private float _baseHeight = 0f;
@@ -64,6 +61,9 @@ namespace WarSimulation.Combat.Map
 
         [Tooltip("横断大河の蛇行周波数：1m 進むごとのノイズ位相。大きいほど細かくうねる（≒ 蛇行の周期）。")]
         [SerializeField, Min(0.001f)] private float _flatRiverMeanderFrequency = 0.08f;
+
+        [Tooltip("川の骨格を二次ベジェで曲げる強さ（メートル）。0 = 従来どおり始点〜終点の直線スパイン。大きいほど弦の法線方向に大きく弧を描く（ノイズはその接線に直交して別途乗る）。")]
+        [SerializeField, Min(0f)] private float _flatRiverSpineCurveBend = 0f;
 
         [Header("Bridge Phase")]
         [Tooltip("1 本の川に対して配置する橋の数。")]
@@ -155,14 +155,19 @@ namespace WarSimulation.Combat.Map
         [Tooltip("魔石を置ける BaseHeight からの最大上振れ（メートル）。これを超える高地は『山の上』とみなして棄却。")]
         [SerializeField, Min(0f)] private float _magicStoneMaxRelativeHeight = 0.8f;
 
-        public float WorldSize => _worldSize;
-        public int HeightMapResolution => _heightMapResolution;
+        /// <summary>
+        /// セルサイズ 1m 固定のため、マップ一辺セル数は「一辺メートル数」を四捨五入して使う。
+        /// </summary>
+        private int SquareResolution => Mathf.Max(2, Mathf.RoundToInt(_worldSize));
+
+        public float WorldSize => SquareResolution;
+        public int HeightMapResolution => SquareResolution;
 
         /// <summary>
         /// GroundStateGrid の解像度は HeightMap と同じに揃える（旧仕様の別解像度は廃止）。
         /// 互換性のため公開プロパティは残すが、実体は <see cref="HeightMapResolution"/> と同じ値を返す。
         /// </summary>
-        public int GroundStateGridResolution => _heightMapResolution;
+        public int GroundStateGridResolution => SquareResolution;
         public float BaseHeight => _baseHeight;
         public float MaxClimbableSlopeDeg => _maxClimbableSlopeDeg;
 
@@ -180,6 +185,7 @@ namespace WarSimulation.Combat.Map
         public int RiverMinPathLength => _riverMinPathLength;
         public float FlatRiverMeanderAmplitude => _flatRiverMeanderAmplitude;
         public float FlatRiverMeanderFrequency => _flatRiverMeanderFrequency;
+        public float FlatRiverSpineCurveBend => _flatRiverSpineCurveBend;
 
         public int BridgesPerRiver => _bridgesPerRiver;
         public float BridgeLength => _bridgeLength;
@@ -215,7 +221,7 @@ namespace WarSimulation.Combat.Map
         public float MagicStoneMaxSlopeDeg => _magicStoneMaxSlopeDeg;
         public float MagicStoneMaxRelativeHeight => _magicStoneMaxRelativeHeight;
 
-        public float HeightMapCellSize => _worldSize / _heightMapResolution;
+        public float HeightMapCellSize => 1f;
 
         /// <summary>
         /// GroundStateGrid のセルサイズ。解像度は HeightMap と同じに揃えるため、

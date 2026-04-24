@@ -36,10 +36,11 @@ MonoBehaviour:
   _structureMinCenterSeparation: 6
   _structureMinCenterDistanceFactor: 0.5
   _riverShape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
-  _crossMapRiverCount: 2
+  _crossMapRiverCount: 1
   _riverMinPathLength: 30
   _flatRiverMeanderAmplitude: 10
   _flatRiverMeanderFrequency: 0.08
+  _flatRiverSpineCurveBend: 30
   _bridgesPerRiver: 4
   _bridgeLength: 3
   _bridgeWidth: 1.2
@@ -50,6 +51,8 @@ MonoBehaviour:
   _lakeCount: 1
   _lakePlacementMargin: 6
   _lakeFreezeProbability: 0.5
+  _lakeRiverClearance: 2
+  _lakeMaxPlacementAttempts: 30
   _groundPatchStamps:
   - {fileID: 11400000, guid: 9c13885ef43584e05a0db22eb1592168, type: 2}
   - {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
@@ -69,3 +72,5 @@ MonoBehaviour:
   _mainStoneBackBias: 0.5
   _magicStoneMinDistance: 8
   _magicStonePlacementMargin: 4
+  _magicStoneMaxSlopeDeg: 15
+  _magicStoneMaxRelativeHeight: 0.8

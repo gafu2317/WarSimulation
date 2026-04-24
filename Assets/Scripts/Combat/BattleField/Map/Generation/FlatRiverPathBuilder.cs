@@ -4,11 +4,11 @@ using UnityEngine;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// 高度情報に依存せず、マップ端から別のマップ端を「蛇行する直線」で結ぶ川経路を作る。
+    /// 高度情報に依存せず、マップ端から別のマップ端を結ぶ川経路を作る。
     ///
     /// アルゴリズム：
-    ///   1. 始点 → 終点の直線をパラメータ t ∈ [0,1] で描く
-    ///   2. 各 t で進行方向に垂直なオフセットを Perlin ノイズで生成
+    ///   1. 骨格：始点 → 終点を直線、または二次ベジェ（弦の中点を法線方向にオフセットした制御点）で t ∈ [0,1] サンプル
+    ///   2. 各 t で進行方向に垂直なオフセットを Perlin ノイズで生成（ベジェ時は接線に直交）
     ///   3. 両端を固定したいので sin(πt) エンベロープを掛ける（端で 0、中央で最大）
     ///   4. 得られた連続座標を HeightMap のセル座標に丸めて重複を除く
     ///
@@ -23,6 +23,7 @@ namespace WarSimulation.Combat.Map
         /// <param name="amplitude">中央付近で許す最大の横ずれ（メートル）。</param>
         /// <param name="frequency">1m あたりに進むノイズの位相（大きいほど細かくうねる）。</param>
         /// <param name="noiseSeed">配置ごとに違うパターンを出すためのオフセット。</param>
+        /// <param name="spineCurveBendMeters">0 なら直線スパイン。正なら二次ベジェの弧の強さ（メートル）。</param>
         /// <param name="stepMeters">サンプリングの刻み幅（メートル）。小さくすると滑らかになる。</param>
         public List<Vector2Int> Build(
             HeightMap height,
@@ -31,6 +32,7 @@ namespace WarSimulation.Combat.Map
             float amplitude,
             float frequency,
             float noiseSeed,
+            float spineCurveBendMeters = 0f,
             float stepMeters = 0.5f)
         {
             var path = new List<Vector2Int>();
@@ -55,31 +57,62 @@ namespace WarSimulation.Combat.Map
                 return path;
             }
             Vector2 axisDir = axis / axisLen;
-            Vector2 perp = new Vector2(-axisDir.y, axisDir.x); // axis を 90° 左回転
+            Vector2 chordPerp = new Vector2(-axisDir.y, axisDir.x);
 
-            int steps = Mathf.Max(2, Mathf.CeilToInt(axisLen / Mathf.Max(0.01f, stepMeters)));
+            bool useBezier = spineCurveBendMeters > 1e-6f;
+            Vector2 control = default;
+            float sampleLen = axisLen;
+            if (useBezier)
+            {
+                // Perlin が 0.5 付近だと制御点が弦上に乗り二次ベジェが直線に退化する。
+                // 符号はシード由来で必ず ±、大きさは下限を付けてプレビューでも弧が残るようにする。
+                float mag01 = Mathf.PerlinNoise(noiseSeed * 0.31f, noiseSeed * 0.77f);
+                float mag = Mathf.Lerp(0.35f, 1f, mag01);
+                float bendSign = (Mathf.FloorToInt(noiseSeed * 173.918f + 11f) & 1) == 0 ? -1f : 1f;
+                float bendSigned = bendSign * mag;
+                Vector2 mid = (startW + endW) * 0.5f;
+                control = mid + chordPerp * (spineCurveBendMeters * bendSigned);
+                sampleLen = 0.5f * (
+                    Vector2.Distance(startW, control)
+                    + Vector2.Distance(control, endW)
+                    + axisLen);
+            }
+
+            int steps = Mathf.Max(2, Mathf.CeilToInt(sampleLen / Mathf.Max(0.01f, stepMeters)));
             Vector2Int last = new Vector2Int(int.MinValue, int.MinValue);
 
             for (int i = 0; i <= steps; i++)
             {
                 float t = (float)i / steps;
-                Vector2 baseP = Vector2.Lerp(startW, endW, t);
+                Vector2 baseP;
+                Vector2 lateralPerp;
+                if (useBezier)
+                {
+                    baseP = QuadraticBezier(startW, control, endW, t);
+                    Vector2 tan = QuadraticBezierTangent(startW, control, endW, t);
+                    if (tan.sqrMagnitude < 1e-8f)
+                        tan = axis;
+                    tan.Normalize();
+                    lateralPerp = new Vector2(-tan.y, tan.x);
+                }
+                else
+                {
+                    baseP = Vector2.Lerp(startW, endW, t);
+                    lateralPerp = chordPerp;
+                }
 
-                // Perlin ノイズで横ずれを取る。freq * axisLen * t を進行距離（m）に使う。
-                float phase = axisLen * t * frequency + noiseSeed;
-                float n = Mathf.PerlinNoise(phase, noiseSeed * 0.37f) - 0.5f; // [-0.5, 0.5]
-                float envelope = Mathf.Sin(Mathf.PI * t);                     // 両端で 0
-                float lateral = n * 2f * amplitude * envelope;                // [-amp, amp]
+                float phase = sampleLen * t * frequency + noiseSeed;
+                float n = Mathf.PerlinNoise(phase, noiseSeed * 0.37f) - 0.5f;
+                float envelope = Mathf.Sin(Mathf.PI * t);
+                float lateral = n * 2f * amplitude * envelope;
 
-                Vector2 p = baseP + perp * lateral;
+                Vector2 p = baseP + lateralPerp * lateral;
 
                 int cx = Mathf.Clamp(Mathf.FloorToInt(p.x / cs), 0, height.Width - 1);
                 int cy = Mathf.Clamp(Mathf.FloorToInt(p.y / cs), 0, height.Height - 1);
                 var cell = new Vector2Int(cx, cy);
                 if (cell == last) continue;
 
-                // 隣接セルが 1 歩で行けない飛びがある場合は直線補間で埋める
-                // （stepMeters を小さくしていれば通常不要だが、保険）
                 if (path.Count > 0)
                 {
                     FillGap(path, last, cell);
@@ -90,6 +123,17 @@ namespace WarSimulation.Combat.Map
             }
 
             return path;
+        }
+
+        private static Vector2 QuadraticBezier(Vector2 p0, Vector2 p1, Vector2 p2, float t)
+        {
+            float u = 1f - t;
+            return u * u * p0 + 2f * u * t * p1 + t * t * p2;
+        }
+
+        private static Vector2 QuadraticBezierTangent(Vector2 p0, Vector2 p1, Vector2 p2, float t)
+        {
+            return 2f * (1f - t) * (p1 - p0) + 2f * t * (p2 - p1);
         }
 
         /// <summary>

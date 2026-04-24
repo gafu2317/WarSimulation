@@ -3,16 +3,6 @@ using UnityEngine;
 
 namespace WarSimulation.Combat.Map
 {
-    /// <summary>
-    /// 川フェーズ：対向するマップ端 → マップ端を Perlin ノイズで蛇行させる大河を掘る。
-    /// 辺は「上⇔下」か「左⇔右」のどちらかをランダムに選び、必ずマップを横断させる。
-    /// 隣接辺（角同士）を選ぶと短い川やマップ端沿いの川になりがちなため、ここでは採用しない。
-    ///
-    /// パイプライン上 RiverPhase は StructurePhase より前に走り、HeightMap は
-    /// BaseHeight（通常 0）で一様。高度探索は行わず、ノイズ蛇行で経路を決める。
-    /// 山はこの後 StructurePhase が「川セルを避けて」置くことで、
-    /// 「川と山が被らない」制約を物理ではなく配置ルールで担保している。
-    /// </summary>
     public sealed class RiverPhase : IMapGenerationPhase
     {
         public void Execute(MapData map, IRandom rng, MapGenerationConfig config)
@@ -28,11 +18,6 @@ namespace WarSimulation.Combat.Map
             }
         }
 
-        /// <summary>
-        /// マップ端 → 別のマップ端を「高度非依存のノイズ蛇行」で引く横断大河。
-        /// 辺の組み合わせによっては短い経路しか引けないケースがあるため、
-        /// RiverMinPathLength を満たすまで最大 N 回リトライ。全試行失敗時は最長候補にフォールバック。
-        /// </summary>
         private static void GenerateFlatCrossMapRiver(
             MapData map, IRandom rng, MapGenerationConfig config, FlatRiverPathBuilder builder)
         {
@@ -42,21 +27,16 @@ namespace WarSimulation.Combat.Map
             List<Vector2Int> bestPath = null;
             for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
-                // 縦断（上⇔下）か横断（左⇔右）を毎回ランダムに選ぶ。常にマップを横切るので
-                // 角にちょこんと出る極端に短い川が生まれない。
-                bool horizontal = rng.NextInt(0, 2) == 0;
-                int startEdge = horizontal ? 2 : 0;
-                int endEdge = horizontal ? 3 : 1;
-
-                Vector2Int start = PickRandomEdgeCellOn(h, rng, startEdge);
-                Vector2Int end = PickRandomEdgeCellOn(h, rng, endEdge);
+                Vector2Int start = PickRandomPerimeterCell(h, rng);
+                Vector2Int end = PickEndEdgeCellFarFrom(h, rng, start);
 
                 float noiseSeed = rng.NextFloat() * 1000f;
                 List<Vector2Int> path = builder.Build(
                     h, start, end,
                     config.FlatRiverMeanderAmplitude,
                     config.FlatRiverMeanderFrequency,
-                    noiseSeed);
+                    noiseSeed,
+                    spineCurveBendMeters: config.FlatRiverSpineCurveBend);
 
                 if (path.Count >= config.RiverMinPathLength)
                 {
@@ -75,15 +55,93 @@ namespace WarSimulation.Combat.Map
                 config.RiverShape.DepthMeters));
         }
 
-        private static Vector2Int PickRandomEdgeCellOn(HeightMap h, IRandom rng, int edge)
+        /// <summary>
+        /// startからの距離がWidth*1.2以上の外周セルの中からランダムに1点選ぶ。
+        /// 条件を満たすセルがない場合は最遠セルにフォールバック。
+        /// </summary>
+        private static Vector2Int PickEndEdgeCellFarFrom(HeightMap h, IRandom rng, Vector2Int start)
         {
-            return edge switch
+            float minDistSq = h.Width * 1.2f;
+            minDistSq *= minDistSq;
+
+            int perimeter = 4 * (h.Width - 1);
+
+            var validRanges = new List<(int start, int length)>();
+            int? rangeStart = null;
+
+            Vector2Int farthestCell = start;
+            float farthestDistSq = -1f;
+
+            for (int i = 0; i <= perimeter; i++)
             {
-                0 => new Vector2Int(rng.NextInt(0, h.Width), 0),
-                1 => new Vector2Int(rng.NextInt(0, h.Width), h.Height - 1),
-                2 => new Vector2Int(0, rng.NextInt(0, h.Height)),
-                _ => new Vector2Int(h.Width - 1, rng.NextInt(0, h.Height)),
-            };
+                bool valid = false;
+                if (i < perimeter)
+                {
+                    Vector2Int cell = PerimeterCellFromIndex(h, i);
+                    float dSq = (cell - start).sqrMagnitude;
+
+                    if (dSq > farthestDistSq)
+                    {
+                        farthestDistSq = dSq;
+                        farthestCell = cell;
+                    }
+
+                    valid = dSq >= minDistSq;
+                }
+
+                if (valid && rangeStart == null)
+                    rangeStart = i;
+                else if (!valid && rangeStart != null)
+                {
+                    validRanges.Add((rangeStart.Value, i - rangeStart.Value));
+                    rangeStart = null;
+                }
+            }
+
+            if (validRanges.Count == 0)
+                return farthestCell;
+
+            int totalValid = 0;
+            foreach (var r in validRanges) totalValid += r.length;
+
+            int pick = rng.NextInt(0, totalValid);
+            foreach (var (s, length) in validRanges)
+            {
+                if (pick < length)
+                    return PerimeterCellFromIndex(h, s + pick);
+                pick -= length;
+            }
+
+            return farthestCell; // unreachable
+        }
+
+        /// <summary>
+        /// 0〜perimeter-1のインデックスを外周座標に変換する（時計回り、角の重複なし）。
+        /// 上辺 → 右辺 → 下辺 → 左辺 の順。
+        /// </summary>
+        private static Vector2Int PerimeterCellFromIndex(HeightMap h, int idx)
+        {
+            int n = h.Width - 1;
+
+            if (idx < n) return new Vector2Int(idx, 0);
+            idx -= n;
+
+            if (idx < n) return new Vector2Int(n, idx);
+            idx -= n;
+
+            if (idx < n) return new Vector2Int(n - idx, n);
+            idx -= n;
+
+            return new Vector2Int(0, n - idx);
+        }
+
+        /// <summary>
+        /// マップ外周からランダムに1セル返す。
+        /// </summary>
+        private static Vector2Int PickRandomPerimeterCell(HeightMap h, IRandom rng)
+        {
+            int perimeter = 4 * (h.Width - 1);
+            return PerimeterCellFromIndex(h, rng.NextInt(0, perimeter));
         }
     }
 }

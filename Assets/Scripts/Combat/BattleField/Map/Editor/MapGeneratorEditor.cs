@@ -201,6 +201,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
             return
                 $"Config[Structures]: Target={config.StructureStampCount}, StampListSize={stampList}, CliffStamps={cliffStamps}, GlobalCap={config.StructureMaxGlobalSearchIterations}, MinCenterSep={config.StructureMinCenterSeparation:F1}m, CenterDistFactor={config.StructureMinCenterDistanceFactor:F2}\n" +
+                $"Config[River]     : CrossCount={config.CrossMapRiverCount}, MinPathLen={config.RiverMinPathLength}, MeanderAmp={config.FlatRiverMeanderAmplitude:F1}m, MeanderFreq={config.FlatRiverMeanderFrequency:F3}, SpineCurveBend={config.FlatRiverSpineCurveBend:F1}m\n" +
                 $"Config[Forest]    : Count={config.ForestClusterCount}, StampListSize={forestList}\n" +
                 $"Config[GroundPatch]: Count={config.GroundPatchStampCount}, StampListSize={groundPatchList}\n" +
                 $"Config[Rock]      : Count={config.RockCount}\n" +
