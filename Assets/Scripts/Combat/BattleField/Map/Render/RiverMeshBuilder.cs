@@ -9,8 +9,9 @@ namespace WarSimulation.Combat.Map
     /// 角頂点の四角形を積み上げた水平面メッシュにする（リボンではない）。
     ///
     /// 含めるセル：セル中心から折れ線（経路）までの距離が
-    /// (幅/2)×<see cref="RiverPath.WaterTagRatio"/>×<see cref="MeshSurfaceWidthScale"/> 以下のもの。
-    /// 倍率は湖レンダラの見た目に合わせた固定値（インスペクタでは変えない）。
+    /// (幅/2)×<see cref="MeshSurfaceWidthScale"/> 以下のもの。
+    /// 基準はリボン時代と同じ「川の全幅の半分」。WaterTagRatio は地面の Water タグ用でメッシュ幅には使わない
+    /// （0.6 を掛けると基準が細く、倍率を掛けてもセル丸めで体感が追いつかないことがある）。
     /// 水面 Y は経路セルの平均川床高さ + DepthMeters×比率の一定値（湖の一定 surfaceY に相当）。
     /// </summary>
     public static class RiverMeshBuilder
@@ -35,8 +36,8 @@ namespace WarSimulation.Combat.Map
 
             float cs = height.CellSize;
             float halfWidth = river.WidthMeters * 0.5f;
-            float tagR = halfWidth * Mathf.Max(0.001f, river.WaterTagRatio) * MeshSurfaceWidthScale;
-            float expand = (halfWidth + cs) * MeshSurfaceWidthScale;
+            float tagR = halfWidth * Mathf.Max(0.1f, MeshSurfaceWidthScale);
+            float expand = (halfWidth + cs) * Mathf.Max(0.1f, MeshSurfaceWidthScale);
 
             float minWx = float.PositiveInfinity;
             float maxWx = float.NegativeInfinity;
