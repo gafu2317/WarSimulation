@@ -12,8 +12,11 @@ namespace WarSimulation.Combat.Map
     public sealed class MapGenerationConfig : ScriptableObject
     {
         [Header("Grid")]
-        [Tooltip("マップ全体の一辺の長さ（メートル）。セルは常に 1m 固定なので、この値がそのまま一辺セル数になる。")]
+        [Tooltip("マップ全体の一辺の長さ（メートル）。Cells Per Side が 2 以上のときはこの幅に対してセルを詰める。")]
         [SerializeField, Min(2f)] private float _worldSize = 60f;
+
+        [Tooltip("一辺あたりのセル数。0 = 従来（セル 1m・セル数 ≒ World Size の四捨五入、配置範囲もそのセル数メートル）。2 以上 = セルサイズ = World Size ÷ この値、配置範囲は World Size メートル。")]
+        [SerializeField, Min(0)] private int _cellsPerSide = 0;
 
         [Tooltip("ベースとなる初期高度。すべてのセルがこの値で初期化される。")]
         [SerializeField] private float _baseHeight = 0f;
@@ -169,18 +172,23 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// セルサイズ 1m 固定のため、マップ一辺セル数は「一辺メートル数」を四捨五入して使う。
+        /// 一辺セル数。<see cref="_cellsPerSide"/> が 0 のときは 1m セル互換（四捨五入）。2 以上ならその値。
         /// </summary>
-        private int SquareResolution => Mathf.Max(2, Mathf.RoundToInt(_worldSize));
+        private int ResolvedCellsPerSide =>
+            _cellsPerSide >= 2 ? _cellsPerSide : Mathf.Max(2, Mathf.RoundToInt(_worldSize));
 
-        public float WorldSize => SquareResolution;
-        public int HeightMapResolution => SquareResolution;
+        /// <summary>
+        /// 配置フェーズ用のマップ一辺（メートル）。従来モードではセル数＝メートル（1m セル）、サブメートルモードでは <see cref="_worldSize"/>。
+        /// </summary>
+        public float WorldSize => _cellsPerSide >= 2 ? _worldSize : ResolvedCellsPerSide;
+
+        public int HeightMapResolution => ResolvedCellsPerSide;
 
         /// <summary>
         /// GroundStateGrid の解像度は HeightMap と同じに揃える（旧仕様の別解像度は廃止）。
         /// 互換性のため公開プロパティは残すが、実体は <see cref="HeightMapResolution"/> と同じ値を返す。
         /// </summary>
-        public int GroundStateGridResolution => SquareResolution;
+        public int GroundStateGridResolution => ResolvedCellsPerSide;
         public float BaseHeight => _baseHeight;
         public float MaxClimbableSlopeDeg => _maxClimbableSlopeDeg;
 
@@ -279,7 +287,8 @@ namespace WarSimulation.Combat.Map
         public float MagicStoneMaxSlopeDeg => _magicStoneMaxSlopeDeg;
         public float MagicStoneMaxRelativeHeight => _magicStoneMaxRelativeHeight;
 
-        public float HeightMapCellSize => 1f;
+        public float HeightMapCellSize =>
+            _cellsPerSide >= 2 ? _worldSize / ResolvedCellsPerSide : 1f;
 
         /// <summary>
         /// GroundStateGrid のセルサイズ。解像度は HeightMap と同じに揃えるため、

@@ -4,9 +4,9 @@ using UnityEngine;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// <see cref="GroundState"/> を低解像度の 2D 配列で保持する純粋データクラス。
+    /// <see cref="GroundState"/> を 2D セル配列で保持する純粋データクラス。
     /// 見た目は連続 3D 地形でも、ゲームロジック（移動コスト・視界判定など）は
-    /// このグリッドへの問い合わせで行う。解像度は <see cref="HeightMap"/> より粗くて良い。
+    /// このグリッドへの問い合わせで行う。
     /// </summary>
     public class GroundStateGrid
     {

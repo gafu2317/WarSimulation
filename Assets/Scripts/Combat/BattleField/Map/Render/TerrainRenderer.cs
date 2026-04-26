@@ -129,15 +129,18 @@ namespace WarSimulation.Combat.Map
             float worldSize = h.WorldSize.x;
             td.size = new Vector3(worldSize, range, worldSize);
 
+            // Unity が heightmapResolution を許容値に変えると res ≠ h.Width になりうる。
+            // 近傍セル1点だけだと平板が伸びて段差が強く見えるので、ワールド位置で SampleAt（バイリニア）する。
             float[,] heights = new float[res, res];
-            float resToSrc = (float)(h.Width - 1) / (res - 1);
+            float denom = res > 1 ? res - 1 : 1f;
             for (int z = 0; z < res; z++)
             {
-                int hz = Mathf.Clamp(Mathf.RoundToInt(z * resToSrc), 0, h.Height - 1);
+                float worldZ = z / denom * worldSize;
                 for (int x = 0; x < res; x++)
                 {
-                    int hx = Mathf.Clamp(Mathf.RoundToInt(x * resToSrc), 0, h.Width - 1);
-                    heights[z, x] = (h.GetHeight(hx, hz) - min) / range;
+                    float worldX = x / denom * worldSize;
+                    float height = h.SampleAt(new Vector3(worldX, 0f, worldZ));
+                    heights[z, x] = (height - min) / range;
                 }
             }
             td.SetHeights(0, 0, heights);
