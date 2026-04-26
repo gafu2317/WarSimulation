@@ -13,15 +13,13 @@ MonoBehaviour:
   m_Name: MapGenerationConfig
   m_EditorClassIdentifier: Assembly-CSharp::WarSimulation.Combat.Map.MapGenerationConfig
   _worldSize: 60
-  _cellsPerSide: 300
+  _cellsPerSide: 600
   _baseHeight: 0
   _maxClimbableSlopeDeg: 30
   _structureStampEntries:
   - Count: 1
     Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
-  - Count: 2
-    Shape: {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
-  - Count: 2
+  - Count: 3
     Shape: {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
   _structurePlacementMargin: 5
   _structureRiverClearance: 0
