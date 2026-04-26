@@ -28,7 +28,7 @@ namespace WarSimulation.Combat.Map
         public int Seed { get; }
 
         /// <summary>
-        /// 直近の <see cref="StructurePhase"/> で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.StructureStampCount"/>）。
+        /// 直近の <see cref="StructurePhase"/> で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.StructureStampTargetTotal"/>）。
         /// </summary>
         public int StructureStampPlacedCount { get; set; }
 

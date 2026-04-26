@@ -4,7 +4,7 @@ namespace WarSimulation.Combat.Map
     /// <see cref="HeightStampShape"/> の「形状ファミリー」（実装が分岐する区分）はこの 3 つだけ。
     /// Inspector に並ぶ Hill_Small / Cliff_Mountain などは別々のアセット（プリセット）であり、
     /// 同じ <see cref="HeightShapeKind"/> に半径・高さ・Cliff などを変えた複数プリセットを置ける。
-    /// <see cref="MapGenerationConfig.StructureStamps"/> のリストはそのプリセット集合＋出現重みであり、
+    /// <see cref="MapGenerationConfig.StructureStampEntries"/> はプリセット＋個数の列であり、
     /// 「山の種類が 3 つしかない」こととは一致しない（混同しないこと）。
     /// Dome は正値でヒル、負値で盆地として使える。
     /// </summary>

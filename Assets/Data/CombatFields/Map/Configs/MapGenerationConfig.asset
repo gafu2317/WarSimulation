@@ -15,11 +15,13 @@ MonoBehaviour:
   _worldSize: 60
   _baseHeight: 0
   _maxClimbableSlopeDeg: 30
-  _structureStamps:
-  - {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
-  - {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
-  - {fileID: 11400000, guid: af3c73ffbfe51499087258e02a2aa979, type: 2}
-  _structureStampCount: 5
+  _structureStampEntries:
+  - Count: 1
+    Shape: {fileID: 11400000, guid: af3c73ffbfe51499087258e02a2aa979, type: 2}
+  - Count: 2
+    Shape: {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
+  - Count: 2
+    Shape: {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
   _structurePlacementMargin: 5
   _structureRiverClearance: 0
   _structureMaxPlacementAttempts: 30

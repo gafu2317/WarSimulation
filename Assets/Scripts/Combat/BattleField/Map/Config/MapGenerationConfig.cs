@@ -22,11 +22,8 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Range(5f, 85f)] private float _maxClimbableSlopeDeg = 30f;
 
         [Header("Structure Phase")]
-        [Tooltip("大構造として使う HeightStampShape アプリセットのリスト（名前の違うアセットを複数並べてよい）。配置時はこの中からランダムに 1 つ選ぶので、同じプリセットを複数要素にすると出やすくなる。形状ファミリー（Dome/Cone/Ridge）は HeightStampShape 側の Kind を参照。")]
-        [SerializeField] private List<HeightStampShape> _structureStamps = new();
-
-        [Tooltip("1 マップあたりに配置する大構造スタンプの個数。")]
-        [SerializeField, Min(0)] private int _structureStampCount = 5;
+        [Tooltip("大構造スタンプ。上から順に、各行の Shape を Count 回だけ配置する。Shape が null または Count が 0 の行は無視。")]
+        [SerializeField] private List<StructureStampEntry> _structureStampEntries = new();
 
         [Tooltip("大構造スタンプの配置マージン。マップ端からこの距離は中心を置かない。")]
         [SerializeField, Min(0f)] private float _structurePlacementMargin = 0f;
@@ -34,7 +31,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("山の円形フットプリントから水セル（川・湖）までに確保したい追加クリアランス（メートル）。大きいほど水辺から山が遠ざかる。")]
         [SerializeField, Min(0f)] private float _structureRiverClearance = 2f;
 
-        [Tooltip("ランダムに選んだ 1 個のスタンプについて、水に被らない中心を乱択する試行回数。この回数で見つからなければ別のスタンプを選び直す（目標個数に達するまで繰り返す）。")]
+        [Tooltip("1 個分の配置について、水に被らない中心を乱択する試行回数。この回数で見つからなければその 1 個はスキップして次に進む。")]
         [SerializeField, Min(1)] private int _structureMaxPlacementAttempts = 300;
 
         [Tooltip("大構造を目標個数に届かせるための外側ループの最大回数（スタンプ選択＋中心探索を 1 回と数える）。水が多くて置けない場合はこの上限で打ち切り、目標未満で終わる。")]
@@ -165,6 +162,12 @@ namespace WarSimulation.Combat.Map
         [Tooltip("魔石を置ける BaseHeight からの最大上振れ（メートル）。これを超える高地は『山の上』とみなして棄却。")]
         [SerializeField, Min(0f)] private float _magicStoneMaxRelativeHeight = 0.8f;
 
+        private void OnValidate()
+        {
+            if (_structureStampEntries == null)
+                _structureStampEntries = new List<StructureStampEntry>();
+        }
+
         /// <summary>
         /// セルサイズ 1m 固定のため、マップ一辺セル数は「一辺メートル数」を四捨五入して使う。
         /// </summary>
@@ -181,8 +184,49 @@ namespace WarSimulation.Combat.Map
         public float BaseHeight => _baseHeight;
         public float MaxClimbableSlopeDeg => _maxClimbableSlopeDeg;
 
-        public IReadOnlyList<HeightStampShape> StructureStamps => _structureStamps;
-        public int StructureStampCount => _structureStampCount;
+        public IReadOnlyList<StructureStampEntry> StructureStampEntries => _structureStampEntries;
+
+        /// <summary>
+        /// 目標とする大構造の合計個数（有効なエントリの Count の和）。
+        /// </summary>
+        public int StructureStampTargetTotal => SumStructureEntryTargets();
+
+        /// <summary>
+        /// <see cref="StructureStampTargetTotal"/> の別名（既存コード・エディタ用）。
+        /// </summary>
+        public int StructureStampCount => StructureStampTargetTotal;
+
+        /// <summary>
+        /// エディタやデバッグ用：有効なエントリの Shape を列挙（重複可）。
+        /// </summary>
+        public IReadOnlyList<HeightStampShape> StructureStamps => StructureStampsForInspection;
+
+        private IReadOnlyList<HeightStampShape> StructureStampsForInspection
+        {
+            get
+            {
+                var list = new List<HeightStampShape>();
+                for (int i = 0; i < _structureStampEntries.Count; i++)
+                {
+                    StructureStampEntry e = _structureStampEntries[i];
+                    if (e != null && e.Shape != null && e.Count > 0)
+                        list.Add(e.Shape);
+                }
+                return list;
+            }
+        }
+
+        private int SumStructureEntryTargets()
+        {
+            int sum = 0;
+            for (int i = 0; i < _structureStampEntries.Count; i++)
+            {
+                StructureStampEntry e = _structureStampEntries[i];
+                if (e != null && e.Shape != null && e.Count > 0)
+                    sum += e.Count;
+            }
+            return sum;
+        }
         public float StructurePlacementMargin => _structurePlacementMargin;
         public float StructureRiverClearance => _structureRiverClearance;
         public int StructureMaxPlacementAttempts => _structureMaxPlacementAttempts;
