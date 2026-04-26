@@ -23,6 +23,7 @@ namespace WarSimulation.Combat.Map
         //   Structure  : Water セル（川・湖）を避けながら山・丘・盆地を配置
         //   GroundPatch: 沼・雪などの地面状態パッチ（Water は保護）
         //   Forest     : 木のクラスター。ゾーンを登録し PlacedFeature.Tree を散布
+        //   TreeScatter: クラスター外に木をマップ全体へ散布（Water・森ゾーン・既存の木を避ける）
         //   Rock       : 岩をマップ全体に散布（Water セル＋森ゾーンを避ける）
         //   Decoration : 魔石配置（Water セル除外）
         //   Bridge     : 川の経路上に橋を複数配置
@@ -33,6 +34,7 @@ namespace WarSimulation.Combat.Map
             new StructurePhase(),
             new GroundPatchPhase(),
             new ForestPhase(),
+            new TreeScatterPhase(),
             new RockPhase(),
             new DecorationPhase(),
             new BridgePhase(),

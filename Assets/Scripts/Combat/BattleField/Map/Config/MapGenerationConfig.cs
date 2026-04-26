@@ -6,7 +6,7 @@ namespace WarSimulation.Combat.Map
     /// <summary>
     /// マップ 1 枚分のレシピ。各フェーズのパラメータと使う StampShape をまとめて保持する。
     /// パイプライン順：
-    ///   BaseHeight → River → Lake → Structure → GroundPatch → Forest → Rock → Decoration → Bridge
+    ///   BaseHeight → River → Lake → Structure → GroundPatch → Forest → TreeScatter → Rock → Decoration → Bridge
     /// </summary>
     [CreateAssetMenu(menuName = "WarSim/Map/Map Generation Config", fileName = "MapGenerationConfig")]
     public sealed class MapGenerationConfig : ScriptableObject
@@ -120,6 +120,16 @@ namespace WarSimulation.Combat.Map
         [Tooltip("森クラスターの配置マージン。マップ端からこの距離は中心を置かない。")]
         [SerializeField, Min(0f)] private float _forestPlacementMargin = 2f;
 
+        [Header("Tree Scatter Phase")]
+        [Tooltip("森クラスター以外の平地〜山中にばら撒く『単独の木』の本数。0 でこのフェーズをスキップ。岩フェーズと同様に水・森ゾーンは避ける。")]
+        [SerializeField, Min(0)] private int _scatterTreeCount = 0;
+
+        [Tooltip("散布する木同士の最小間隔（メートル）。クラスター内に既にある木との距離にも使う。")]
+        [SerializeField, Min(0f)] private float _scatterTreeMinDistance = 1.5f;
+
+        [Tooltip("散布する木の配置マージン。マップ端からこの距離より内側だけに置く。")]
+        [SerializeField, Min(0f)] private float _scatterTreePlacementMargin = 1f;
+
         [Header("Rock Phase")]
         [Tooltip("1 マップあたりに配置する岩の個数。")]
         [SerializeField, Min(0)] private int _rockCount = 30;
@@ -207,6 +217,10 @@ namespace WarSimulation.Combat.Map
         public IReadOnlyList<ForestClusterStampShape> ForestClusterStamps => _forestClusterStamps;
         public int ForestClusterCount => _forestClusterCount;
         public float ForestPlacementMargin => _forestPlacementMargin;
+
+        public int ScatterTreeCount => _scatterTreeCount;
+        public float ScatterTreeMinDistance => _scatterTreeMinDistance;
+        public float ScatterTreePlacementMargin => _scatterTreePlacementMargin;
 
         public int RockCount => _rockCount;
         public float RockMinDistance => _rockMinDistance;
