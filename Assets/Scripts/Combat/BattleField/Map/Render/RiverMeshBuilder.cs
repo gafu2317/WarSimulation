@@ -1,25 +1,29 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// 1 本の川経路から水面リボンメッシュを生成する純粋ロジック。
-    /// Unity の MonoBehaviour には依存しないため、単体テストやエディタ上でも呼べる。
+    /// 1 本の川から水面メッシュを生成する純粋ロジック。
+    /// <see cref="LakeMeshBuilder"/> の開放水面と同様、グリッドセルを走査し
+    /// 角頂点の四角形を積み上げた水平面メッシュにする（リボンではない）。
     ///
-    /// 水面 Y の決め方：
-    ///   掘削済み HeightMap をその位置でサンプリングし、そこに
-    ///   DepthMeters * waterYOffsetRatio を加える。
-    ///   これで水面は「掘削された川床」の少し上、かつ周囲地形（岸）より下に収まる。
+    /// 含めるセル：セル中心から折れ線（経路）までの距離が
+    /// (幅/2)×<see cref="RiverPath.WaterTagRatio"/>×<see cref="MeshSurfaceWidthScale"/> 以下のもの。
+    /// 倍率は湖レンダラの見た目に合わせた固定値（インスペクタでは変えない）。
+    /// 水面 Y は経路セルの平均川床高さ + DepthMeters×比率の一定値（湖の一定 surfaceY に相当）。
     /// </summary>
     public static class RiverMeshBuilder
     {
+        /// <summary>水面メッシュの幅を RiverShape 基準より広げる固定倍率。</summary>
+        private const float MeshSurfaceWidthScale = 2f;
+
+        private const float UvWorldScale = 0.08f;
+
         /// <summary>
-        /// 川経路からリボンメッシュを 1 枚生成する。無効な入力なら null。
+        /// 川の水面メッシュを 1 枚生成する。無効な入力なら null。
         /// </summary>
-        /// <param name="river">対象の川経路</param>
-        /// <param name="height">掘削済み HeightMap（Y を決めるためサンプリングする）</param>
-        /// <param name="waterYOffsetRatio">川床からの水面高さを DepthMeters に対する比率で指定（0.6 で 60% の高さ）</param>
-        /// <param name="smoothingIterations">中央線の移動平均スムージング回数（0 でスムージングなし）</param>
+        /// <param name="smoothingIterations">互換のため残すが無視する（旧リボン用）。</param>
         public static Mesh Build(
             RiverPath river,
             HeightMap height,
@@ -29,150 +33,137 @@ namespace WarSimulation.Combat.Map
         {
             if (river.Cells == null || river.Cells.Count < 2 || height == null) return null;
 
-            Vector3[] points = ConvertToWorldPoints(river, height, waterYOffsetRatio, surfaceYOffsetMeters);
-            for (int i = 0; i < smoothingIterations; i++)
-            {
-                points = SmoothMovingAverage(points);
-            }
-
-            return BuildRibbon(points, river.WidthMeters);
-        }
-
-        /// <summary>
-        /// セル経路をワールド座標に変換し、Y は HeightMap の値 + オフセットとする。
-        /// 両端がマップ端セル上にある場合は、実際のマップ境界まで外挿して水面メッシュが
-        /// 地図端まで届くようにする（セル中心のままだと 0.5 セル分＝数十cm 内側で途切れて見える）。
-        /// </summary>
-        private static Vector3[] ConvertToWorldPoints(
-            RiverPath river, HeightMap height, float waterYOffsetRatio, float surfaceYOffsetMeters)
-        {
-            var cells = river.Cells;
-            var result = new Vector3[cells.Count];
             float cs = height.CellSize;
-            float waterOffset = river.DepthMeters * Mathf.Clamp01(waterYOffsetRatio);
-            float worldW = height.Width * cs;
-            float worldH = height.Height * cs;
+            float halfWidth = river.WidthMeters * 0.5f;
+            float tagR = halfWidth * Mathf.Max(0.001f, river.WaterTagRatio) * MeshSurfaceWidthScale;
+            float expand = (halfWidth + cs) * MeshSurfaceWidthScale;
 
+            float minWx = float.PositiveInfinity;
+            float maxWx = float.NegativeInfinity;
+            float minWz = float.PositiveInfinity;
+            float maxWz = float.NegativeInfinity;
+
+            IReadOnlyList<Vector2Int> cells = river.Cells;
             for (int i = 0; i < cells.Count; i++)
             {
                 Vector2Int c = cells[i];
-                float worldX = (c.x + 0.5f) * cs;
-                float worldZ = (c.y + 0.5f) * cs;
-
-                // 先頭・末尾のみマップ辺まで外挿する
-                bool isEndpoint = i == 0 || i == cells.Count - 1;
-                if (isEndpoint)
-                {
-                    if (c.x == 0) worldX = 0f;
-                    else if (c.x == height.Width - 1) worldX = worldW;
-                    if (c.y == 0) worldZ = 0f;
-                    else if (c.y == height.Height - 1) worldZ = worldH;
-                }
-
-                float worldY = height.GetHeight(c.x, c.y) + waterOffset + surfaceYOffsetMeters;
-                result[i] = new Vector3(worldX, worldY, worldZ);
+                float wx = (c.x + 0.5f) * cs;
+                float wz = (c.y + 0.5f) * cs;
+                if (wx < minWx) minWx = wx;
+                if (wx > maxWx) maxWx = wx;
+                if (wz < minWz) minWz = wz;
+                if (wz > maxWz) maxWz = wz;
             }
-            return result;
-        }
 
-        /// <summary>3 点移動平均による軽量スムージング。両端は動かさない。</summary>
-        private static Vector3[] SmoothMovingAverage(Vector3[] points)
-        {
-            if (points.Length < 3) return points;
+            minWx -= expand;
+            maxWx += expand;
+            minWz -= expand;
+            maxWz += expand;
 
-            var result = new Vector3[points.Length];
-            result[0] = points[0];
-            result[points.Length - 1] = points[points.Length - 1];
-            for (int i = 1; i < points.Length - 1; i++)
+            int xMin = Mathf.Clamp(Mathf.FloorToInt(minWx / cs), 0, height.Width - 1);
+            int xMax = Mathf.Clamp(Mathf.CeilToInt(maxWx / cs) - 1, 0, height.Width - 1);
+            int zMin = Mathf.Clamp(Mathf.FloorToInt(minWz / cs), 0, height.Height - 1);
+            int zMax = Mathf.Clamp(Mathf.CeilToInt(maxWz / cs) - 1, 0, height.Height - 1);
+
+            float surfaceY = ComputeFlatWaterY(height, river, waterYOffsetRatio) + surfaceYOffsetMeters;
+
+            int cornerW = xMax - xMin + 2;
+            int cornerH = zMax - zMin + 2;
+            var cornerIndex = new int[cornerW * cornerH];
+            for (int i = 0; i < cornerIndex.Length; i++) cornerIndex[i] = -1;
+
+            var vertices = new List<Vector3>(256);
+            var uvs = new List<Vector2>(256);
+            var triangles = new List<int>(384);
+
+            int CornerLocal(int cx, int cz) => (cx - xMin) + (cz - zMin) * cornerW;
+
+            int GetOrCreateCorner(int cx, int cz)
             {
-                // XZ だけ平滑化し、Y は元の掘削済み高さ基準を維持する。
-                // Y まで平均すると局所的に水面が沈み、地形に埋まって「切れ目」が見えることがある。
-                Vector3 avg = (points[i - 1] + points[i] + points[i + 1]) / 3f;
-                avg.y = points[i].y;
-                result[i] = avg;
+                int li = CornerLocal(cx, cz);
+                if (cornerIndex[li] >= 0) return cornerIndex[li];
+
+                float wxCorner = cx * cs;
+                float wzCorner = cz * cs;
+                int id = vertices.Count;
+                cornerIndex[li] = id;
+                vertices.Add(new Vector3(wxCorner, surfaceY, wzCorner));
+                uvs.Add(new Vector2(wxCorner * UvWorldScale, wzCorner * UvWorldScale));
+                return id;
             }
-            return result;
-        }
 
-        /// <summary>
-        /// 中央線を 1 段階サブディビジョン（中点挿入）して点数を倍化する。
-        /// スムージング後のリボンを更に柔らかくしたい場合に使う。現状は未使用。
-        /// </summary>
-        private static Mesh BuildRibbon(Vector3[] points, float width)
-        {
-            int n = points.Length;
-            var vertices = new Vector3[n * 2];
-            var uvs = new Vector2[n * 2];
-            var triangles = new int[(n - 1) * 6];
-
-            // UV V 方向に川の全長を巻くため、累積距離を先に計算する。
-            float totalLength = 0f;
-            var cumLen = new float[n];
-            for (int i = 1; i < n; i++)
+            float tagRSq = tagR * tagR;
+            for (int z = zMin; z <= zMax; z++)
             {
-                totalLength += (points[i] - points[i - 1]).magnitude;
-                cumLen[i] = totalLength;
+                for (int x = xMin; x <= xMax; x++)
+                {
+                    float wx = (x + 0.5f) * cs;
+                    float wz = (z + 0.5f) * cs;
+                    if (MinDistSqPointPolyline(new Vector2(wx, wz), cells, cs) > tagRSq)
+                        continue;
+
+                    int i00 = GetOrCreateCorner(x, z);
+                    int i10 = GetOrCreateCorner(x + 1, z);
+                    int i11 = GetOrCreateCorner(x + 1, z + 1);
+                    int i01 = GetOrCreateCorner(x, z + 1);
+
+                    triangles.Add(i00);
+                    triangles.Add(i11);
+                    triangles.Add(i10);
+                    triangles.Add(i00);
+                    triangles.Add(i01);
+                    triangles.Add(i11);
+                }
             }
 
-            float halfWidth = width * 0.5f;
-            Vector3 prevSide = Vector3.zero;
-            for (int i = 0; i < n; i++)
-            {
-                Vector3 tangent;
-                if (i == 0) tangent = (points[1] - points[0]);
-                else if (i == n - 1) tangent = (points[n - 1] - points[n - 2]);
-                else tangent = (points[i + 1] - points[i - 1]);
-
-                // 水面は基本フラット（XZ 平面内で幅を取る）方向に広がる。
-                Vector3 flatTangent = new Vector3(tangent.x, 0f, tangent.z);
-                float flatMag = flatTangent.magnitude;
-                if (flatMag < 1e-5f)
-                {
-                    flatTangent = Vector3.forward;
-                }
-                else
-                {
-                    flatTangent /= flatMag;
-                }
-                Vector3 side = new Vector3(-flatTangent.z, 0f, flatTangent.x);
-                if (i > 0 && Vector3.Dot(side, prevSide) < 0f)
-                {
-                    // ねじれ防止：急カーブで side が反転したら前フレーム向きに合わせる
-                    side = -side;
-                }
-                prevSide = side;
-
-                vertices[i * 2] = points[i] + side * halfWidth;
-                vertices[i * 2 + 1] = points[i] - side * halfWidth;
-
-                float v = totalLength > 1e-3f ? cumLen[i] / totalLength : 0f;
-                uvs[i * 2] = new Vector2(0f, v);
-                uvs[i * 2 + 1] = new Vector2(1f, v);
-            }
-
-            for (int i = 0; i < n - 1; i++)
-            {
-                int baseV = i * 2;
-                int t = i * 6;
-                triangles[t] = baseV;
-                triangles[t + 1] = baseV + 2;
-                triangles[t + 2] = baseV + 1;
-                triangles[t + 3] = baseV + 1;
-                triangles[t + 4] = baseV + 2;
-                triangles[t + 5] = baseV + 3;
-            }
+            if (vertices.Count == 0) return null;
 
             var mesh = new Mesh { name = "RiverMesh" };
-            if (vertices.Length > 65535)
-            {
-                mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            }
-            mesh.vertices = vertices;
-            mesh.uv = uvs;
-            mesh.triangles = triangles;
+            if (vertices.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uvs);
+            mesh.triangles = triangles.ToArray();
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private static float ComputeFlatWaterY(HeightMap h, RiverPath river, float waterYOffsetRatio)
+        {
+            float sum = 0f;
+            IReadOnlyList<Vector2Int> cells = river.Cells;
+            int n = cells.Count;
+            for (int i = 0; i < n; i++)
+            {
+                Vector2Int c = cells[i];
+                sum += h.GetHeight(c.x, c.y);
+            }
+
+            float avgBed = sum / n;
+            return avgBed + river.DepthMeters * Mathf.Clamp01(waterYOffsetRatio);
+        }
+
+        private static float MinDistSqPointPolyline(Vector2 p, IReadOnlyList<Vector2Int> cells, float cs)
+        {
+            float best = float.PositiveInfinity;
+            for (int i = 0; i < cells.Count - 1; i++)
+            {
+                Vector2 a = new Vector2((cells[i].x + 0.5f) * cs, (cells[i].y + 0.5f) * cs);
+                Vector2 b = new Vector2((cells[i + 1].x + 0.5f) * cs, (cells[i + 1].y + 0.5f) * cs);
+                float d = DistSqPointSegment2D(p, a, b);
+                if (d < best) best = d;
+            }
+            return best;
+        }
+
+        private static float DistSqPointSegment2D(Vector2 p, Vector2 a, Vector2 b)
+        {
+            Vector2 ab = b - a;
+            float den = ab.sqrMagnitude;
+            if (den < 1e-12f) return (p - a).sqrMagnitude;
+            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / den);
+            Vector2 closest = a + t * ab;
+            return (p - closest).sqrMagnitude;
         }
     }
 }

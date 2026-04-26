@@ -21,11 +21,21 @@ namespace WarSimulation.Combat.Map
         /// <summary>川の掘削深さ（ワールドメートル）。水面 Y オフセットの参考値としても使える。</summary>
         public float DepthMeters { get; }
 
-        public RiverPath(IReadOnlyList<Vector2Int> cells, float widthMeters, float depthMeters)
+        /// <summary>
+        /// 川幅のうち水面メッシュを張る内側の割合（<see cref="RiverShape.WaterTagRatio"/> と同義）。
+        /// </summary>
+        public float WaterTagRatio { get; }
+
+        public RiverPath(
+            IReadOnlyList<Vector2Int> cells,
+            float widthMeters,
+            float depthMeters,
+            float waterTagRatio = 0.6f)
         {
             Cells = cells ?? throw new ArgumentNullException(nameof(cells));
             WidthMeters = widthMeters;
             DepthMeters = depthMeters;
+            WaterTagRatio = Mathf.Clamp01(waterTagRatio);
         }
     }
 }

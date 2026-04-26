@@ -52,7 +52,8 @@ namespace WarSimulation.Combat.Map
             map.AddRiver(new RiverPath(
                 bestPath,
                 config.RiverShape.WidthMeters,
-                config.RiverShape.DepthMeters));
+                config.RiverShape.DepthMeters,
+                config.RiverShape.WaterTagRatio));
         }
 
         /// <summary>
