@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace WarSimulation.Combat.Map
@@ -21,16 +22,16 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Min(0.1f)] private float _radius = 5f;
 
         [Tooltip("このスタンプで散布する木の本数。")]
-        [SerializeField, Min(0)] private int _treeCount = 18;
+        [SerializeField, Min(0)] private int _treeCount = 30;
 
         [Tooltip("木同士の最小間隔（メートル）。これ未満の距離に既存の木がある候補は棄却する。")]
-        [SerializeField, Min(0f)] private float _treeMinDistance = 1.2f;
+        [SerializeField, Min(0f)] private float _treeMinDistance = 1.0f;
 
         [Tooltip("木を置く最大高度（メートル）。HeightMap 値がこれを超えるセルは置かない。0 以下で無効。")]
         [SerializeField] private float _maxHeight = 0f;
 
-        [Tooltip("1 本の木配置で試行する最大回数（棄却サンプリングの上限）。")]
-        [SerializeField, Min(1)] private int _maxAttemptsPerTree = 12;
+        [Tooltip("グリッド配置のあと足りない本をランダムで埋めるとき、1 本あたりの試行上限。")]
+        [SerializeField, Min(1)] private int _maxAttemptsPerTree = 20;
 
         [Tooltip("輪郭を Perlin ノイズで歪ませる強さ。0 = 真円、0.35 で半径が ±35% 揺れて自然な不整形に。")]
         [SerializeField, Range(0f, 0.6f)] private float _noiseAmplitude = 0.35f;
@@ -65,7 +66,40 @@ namespace WarSimulation.Combat.Map
             float samplingRadius = region.OuterRadius;
 
             int recordedStart = map.Features.Count;
-            for (int i = 0; i < _treeCount; i++)
+
+            // グリッド候補で領域を覆い、シャッフル後に最小間隔を守りながら貪欲に選ぶ。
+            float step = _treeMinDistance > 0.01f ? _treeMinDistance : Mathf.Max(0.35f, samplingRadius * 0.12f);
+            float rSq = samplingRadius * samplingRadius;
+            int half = Mathf.CeilToInt(samplingRadius / step);
+            var candidates = new List<Vector2>((2 * half + 1) * (2 * half + 1));
+            for (int gi = -half; gi <= half; gi++)
+            {
+                for (int gj = -half; gj <= half; gj++)
+                {
+                    Vector2 pos = placement.Center + new Vector2(gi * step, gj * step);
+                    if ((pos - placement.Center).sqrMagnitude > rSq) continue;
+                    if (!IsValidTreeSite(map, region, pos, hasHeightLimit, _maxHeight)) continue;
+                    candidates.Add(pos);
+                }
+            }
+
+            ShuffleXY(candidates, ref rngState);
+            for (int c = 0; c < candidates.Count && map.Features.Count - recordedStart < _treeCount; c++)
+            {
+                Vector2 pos = candidates[c];
+                if (TooCloseToNewTrees(map, recordedStart, pos, minDistSq)) continue;
+
+                Vector3 world3 = new(pos.x, 0f, pos.y);
+                float y = map.Height.SampleAt(world3);
+                map.AddFeature(new PlacedFeature(
+                    FeatureType.Tree,
+                    new Vector3(pos.x, y, pos.y),
+                    Quaternion.identity));
+            }
+
+            // 目標本数に届かないときだけ従来のランダムで埋める
+            int deficit = _treeCount - (map.Features.Count - recordedStart);
+            for (int i = 0; i < deficit; i++)
             {
                 bool placed = false;
                 for (int attempt = 0; attempt < _maxAttemptsPerTree && !placed; attempt++)
@@ -73,30 +107,15 @@ namespace WarSimulation.Combat.Map
                     Vector2 offset = RandomInsideDisc(ref rngState, samplingRadius);
                     Vector2 pos = placement.Center + offset;
 
-                    // 森の不整形輪郭の内側のみ許可（真円ではなくノイズ歪みの内側）
                     if (!region.Contains(pos)) continue;
 
                     Vector3 world3 = new(pos.x, 0f, pos.y);
 
-                    // 川・湖の上には木を植えない
                     if (map.GroundStates.SampleAt(world3) == GroundState.Water) continue;
 
                     if (hasHeightLimit && map.Height.SampleAt(world3) > _maxHeight) continue;
 
-                    bool tooClose = false;
-                    for (int j = recordedStart; j < map.Features.Count; j++)
-                    {
-                        if (map.Features[j].Type != FeatureType.Tree) continue;
-                        Vector3 wp = map.Features[j].WorldPosition;
-                        float ddx = wp.x - pos.x;
-                        float ddz = wp.z - pos.y;
-                        if (ddx * ddx + ddz * ddz < minDistSq)
-                        {
-                            tooClose = true;
-                            break;
-                        }
-                    }
-                    if (tooClose) continue;
+                    if (TooCloseToNewTrees(map, recordedStart, pos, minDistSq)) continue;
 
                     float y = map.Height.SampleAt(world3);
                     map.AddFeature(new PlacedFeature(
@@ -105,6 +124,40 @@ namespace WarSimulation.Combat.Map
                         Quaternion.identity));
                     placed = true;
                 }
+            }
+        }
+
+        private static bool IsValidTreeSite(MapData map, ForestRegion region, Vector2 pos, bool hasHeightLimit, float maxHeight)
+        {
+            if (!region.Contains(pos)) return false;
+
+            Vector3 world3 = new(pos.x, 0f, pos.y);
+            if (map.GroundStates.SampleAt(world3) == GroundState.Water) return false;
+            if (hasHeightLimit && map.Height.SampleAt(world3) > maxHeight) return false;
+            return true;
+        }
+
+        private static bool TooCloseToNewTrees(MapData map, int recordedStart, Vector2 pos, float minDistSq)
+        {
+            for (int j = recordedStart; j < map.Features.Count; j++)
+            {
+                if (map.Features[j].Type != FeatureType.Tree) continue;
+                Vector3 wp = map.Features[j].WorldPosition;
+                float ddx = wp.x - pos.x;
+                float ddz = wp.z - pos.y;
+                if (ddx * ddx + ddz * ddz < minDistSq) return true;
+            }
+            return false;
+        }
+
+        private static void ShuffleXY(List<Vector2> list, ref uint state)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = (int)(NextFloat01(ref state) * (i + 1));
+                if (j < 0) j = 0;
+                else if (j > i) j = i;
+                (list[i], list[j]) = (list[j], list[i]);
             }
         }
 
