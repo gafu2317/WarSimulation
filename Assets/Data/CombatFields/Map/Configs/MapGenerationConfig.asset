@@ -13,22 +13,13 @@ MonoBehaviour:
   m_Name: MapGenerationConfig
   m_EditorClassIdentifier: Assembly-CSharp::WarSimulation.Combat.Map.MapGenerationConfig
   _worldSize: 60
-  _heightMapResolution: 129
   _baseHeight: 0
   _maxClimbableSlopeDeg: 30
   _structureStamps:
-  - {fileID: 11400000, guid: 498fe35fa88304510a4fb4f0652ff559, type: 2}
-  - {fileID: 11400000, guid: 498fe35fa88304510a4fb4f0652ff559, type: 2}
-  - {fileID: 11400000, guid: 498fe35fa88304510a4fb4f0652ff559, type: 2}
-  - {fileID: 11400000, guid: 498fe35fa88304510a4fb4f0652ff559, type: 2}
-  - {fileID: 11400000, guid: ddf9c7d877f2b45eab9630e214606a30, type: 2}
-  - {fileID: 11400000, guid: ddf9c7d877f2b45eab9630e214606a30, type: 2}
-  - {fileID: 11400000, guid: ddf9c7d877f2b45eab9630e214606a30, type: 2}
-  - {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
-  - {fileID: 11400000, guid: bb7794b4e6be5404386f2389a2a0c3d8, type: 2}
   - {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
-  - {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
-  _structureStampCount: 7
+  - {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
+  - {fileID: 11400000, guid: af3c73ffbfe51499087258e02a2aa979, type: 2}
+  _structureStampCount: 5
   _structurePlacementMargin: 5
   _structureRiverClearance: 0
   _structureMaxPlacementAttempts: 30
@@ -63,6 +54,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cb904a14063c9403d93088a468b25e81, type: 2}
   _forestClusterCount: 4
   _forestPlacementMargin: 3
+  _scatterTreeCount: 50
+  _scatterTreeMinDistance: 1.5
+  _scatterTreePlacementMargin: 1
   _rockCount: 12
   _rockMinDistance: 3.5
   _rockPlacementMargin: 1.5

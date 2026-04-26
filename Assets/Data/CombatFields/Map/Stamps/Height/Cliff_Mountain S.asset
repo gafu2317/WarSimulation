@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d471035aae9c44624871926c3f8e7b96, type: 3}
+  m_Name: Cliff_Mountain S
+  m_EditorClassIdentifier: Assembly-CSharp::WarSimulation.Combat.Map.HeightStampShape
+  _displayName: 
+  _kind: 0
+  _radius: 7
+  _peakDelta: 3
+  _ridgeLength: 0
+  _flatTopRatio: 0.35
+  _noiseAmplitude: 0.25
+  _noiseFrequency: 0.15
+  _cliffArcDeg: 90
+  _cliffDirectionDeg: 0
+  _cliffSkirtRatio: 0.1
+  _cliffBlendDeg: 8
+  _blend: 0
