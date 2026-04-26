@@ -24,11 +24,12 @@ namespace WarSimulation.Combat.Map
             RiverPath river,
             HeightMap height,
             float waterYOffsetRatio = 0.6f,
-            int smoothingIterations = 2)
+            int smoothingIterations = 2,
+            float surfaceYOffsetMeters = 0f)
         {
             if (river.Cells == null || river.Cells.Count < 2 || height == null) return null;
 
-            Vector3[] points = ConvertToWorldPoints(river, height, waterYOffsetRatio);
+            Vector3[] points = ConvertToWorldPoints(river, height, waterYOffsetRatio, surfaceYOffsetMeters);
             for (int i = 0; i < smoothingIterations; i++)
             {
                 points = SmoothMovingAverage(points);
@@ -43,7 +44,7 @@ namespace WarSimulation.Combat.Map
         /// 地図端まで届くようにする（セル中心のままだと 0.5 セル分＝数十cm 内側で途切れて見える）。
         /// </summary>
         private static Vector3[] ConvertToWorldPoints(
-            RiverPath river, HeightMap height, float waterYOffsetRatio)
+            RiverPath river, HeightMap height, float waterYOffsetRatio, float surfaceYOffsetMeters)
         {
             var cells = river.Cells;
             var result = new Vector3[cells.Count];
@@ -68,7 +69,7 @@ namespace WarSimulation.Combat.Map
                     else if (c.y == height.Height - 1) worldZ = worldH;
                 }
 
-                float worldY = height.GetHeight(c.x, c.y) + waterOffset;
+                float worldY = height.GetHeight(c.x, c.y) + waterOffset + surfaceYOffsetMeters;
                 result[i] = new Vector3(worldX, worldY, worldZ);
             }
             return result;
@@ -84,7 +85,11 @@ namespace WarSimulation.Combat.Map
             result[points.Length - 1] = points[points.Length - 1];
             for (int i = 1; i < points.Length - 1; i++)
             {
-                result[i] = (points[i - 1] + points[i] + points[i + 1]) / 3f;
+                // XZ だけ平滑化し、Y は元の掘削済み高さ基準を維持する。
+                // Y まで平均すると局所的に水面が沈み、地形に埋まって「切れ目」が見えることがある。
+                Vector3 avg = (points[i - 1] + points[i] + points[i + 1]) / 3f;
+                avg.y = points[i].y;
+                result[i] = avg;
             }
             return result;
         }
@@ -110,6 +115,7 @@ namespace WarSimulation.Combat.Map
             }
 
             float halfWidth = width * 0.5f;
+            Vector3 prevSide = Vector3.zero;
             for (int i = 0; i < n; i++)
             {
                 Vector3 tangent;
@@ -129,6 +135,12 @@ namespace WarSimulation.Combat.Map
                     flatTangent /= flatMag;
                 }
                 Vector3 side = new Vector3(-flatTangent.z, 0f, flatTangent.x);
+                if (i > 0 && Vector3.Dot(side, prevSide) < 0f)
+                {
+                    // ねじれ防止：急カーブで side が反転したら前フレーム向きに合わせる
+                    side = -side;
+                }
+                prevSide = side;
 
                 vertices[i * 2] = points[i] + side * halfWidth;
                 vertices[i * 2 + 1] = points[i] - side * halfWidth;

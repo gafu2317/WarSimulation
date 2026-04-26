@@ -10,6 +10,8 @@ namespace WarSimulation.Combat.Map
     public sealed class LakeRenderer : MonoBehaviour
     {
         private const string LakesRootName = "GeneratedLakes";
+        private const float SurfaceYOffsetMeters = -0.3f;
+        private const float SurfaceRadiusScale = 1.35f;
 
         [Tooltip("水面に使うマテリアル。未設定なら URP Lit / Standard の青色マテリアルを自動生成する。")]
         [SerializeField] private Material _waterMaterial;
@@ -20,11 +22,14 @@ namespace WarSimulation.Combat.Map
         [Tooltip("凍結湖の氷面を水面より何メートル上に出すか（氷の厚みに相当）。視認性を確保するため少し厚めの既定値。")]
         [SerializeField, Min(0f)] private float _iceSurfaceOffset = 0.15f;
 
-        [Tooltip("凍結湖の氷塊の厚み（メートル）。フラットなディスクでは視認性に欠けたため、立体のシリンダーで描画する。")]
+        [Tooltip("凍結湖の氷塊の厚み（メートル）。湖輪郭に沿ったメッシュを下方向に押し出して立体化する。")]
         [SerializeField, Min(0.01f)] private float _iceSlabThickness = 0.3f;
 
         [Tooltip("湖ディスクのセグメント数（多いほど円が滑らか）。")]
         [SerializeField, Min(8)] private int _segments = 32;
+
+        [Tooltip("非凍結湖の水面を地形から少し浮かせる量（メートル）。0 だと地形と重なり塗りつぶしに見えやすい。")]
+        [SerializeField, Min(0f)] private float _openWaterSurfaceOffset = 0.04f;
 
         public void Render(MapData map)
         {
@@ -53,44 +58,65 @@ namespace WarSimulation.Combat.Map
 
                 if (lake.IsFrozen)
                 {
-                    // 凍結湖は立体のシリンダーで厚みを持たせて描画する。
-                    // フラットなディスクだと他のメッシュや地形と同じ高さ付近で見分けが付かないという報告があったため、
-                    // 「一目で氷塊と分かる」ジオメトリを優先する。
-                    go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                    // 不要な物理当たりはこの段階では不要（他の岩なども Collider を付けていないため整合を取る）。
-                    var col = go.GetComponent<Collider>();
-                    if (col != null)
+                    float topY = lake.WaterY + _iceSurfaceOffset;
+                    Mesh top = LakeMeshBuilder.BuildFrozenTopSurface(lake, map.Height, topY, 1f);
+                    Mesh mesh = top != null
+                        ? LakeMeshBuilder.BuildExtrudedSlab(top, _iceSlabThickness)
+                        : null;
+                    if (mesh == null)
                     {
-                        if (Application.isPlaying) Destroy(col);
-                        else DestroyImmediate(col);
+                        mesh = lake.NoiseAmplitude > 1e-6f
+                            ? BuildNoiseDisc(lake, topY, _segments, 1f)
+                            : BuildDisc(lake.Center, lake.Radius, topY, _segments);
                     }
-                    go.name = $"Lake_{i}_Frozen";
 
-                    // Unity の Cylinder はデフォルト半径 0.5m・高さ 2m。
-                    // これを湖の半径・指定の氷厚にスケールする。
-                    float y = lake.WaterY + _iceSurfaceOffset + _iceSlabThickness * 0.5f;
+                    go = new GameObject($"Lake_{i}_Frozen",
+                        typeof(MeshFilter), typeof(MeshRenderer));
                     go.transform.SetParent(root.transform, worldPositionStays: false);
-                    go.transform.localPosition = new Vector3(lake.Center.x, y, lake.Center.y);
-                    go.transform.localScale = new Vector3(
-                        lake.OuterRadius * 2f,
-                        _iceSlabThickness * 0.5f,
-                        lake.OuterRadius * 2f);
+                    RecenterMeshToLocalPivot(mesh, lake.Center);
+                    go.GetComponent<MeshFilter>().sharedMesh = mesh;
                     picked = iceMat;
                 }
                 else
                 {
-                    Mesh mesh = lake.NoiseAmplitude > 1e-6f
-                        ? BuildNoiseDisc(lake, lake.WaterY, _segments)
-                        : BuildDisc(lake.Center, lake.Radius, lake.WaterY, _segments);
+                    // 川と同様、掘削後 HeightMap に沿った境界で水面を張る（ダメなら従来の円盤にフォールバック）。
+                    float surfaceY = lake.WaterY + _openWaterSurfaceOffset;
+                    Mesh mesh = LakeMeshBuilder.BuildOpenWaterSurface(lake, map.Height, surfaceY, 1f);
+                    if (mesh == null)
+                    {
+                        mesh = lake.NoiseAmplitude > 1e-6f
+                            ? BuildNoiseDisc(lake, surfaceY, _segments, 1f)
+                            : BuildDisc(lake.Center, lake.Radius, surfaceY, _segments);
+                    }
+
                     go = new GameObject($"Lake_{i}",
                         typeof(MeshFilter), typeof(MeshRenderer));
                     go.transform.SetParent(root.transform, worldPositionStays: false);
+                    RecenterMeshToLocalPivot(mesh, lake.Center);
                     go.GetComponent<MeshFilter>().sharedMesh = mesh;
                     picked = waterMat;
                 }
 
+                go.transform.localPosition = new Vector3(lake.Center.x, SurfaceYOffsetMeters, lake.Center.y);
+                go.transform.localScale = new Vector3(SurfaceRadiusScale, 1f, SurfaceRadiusScale);
                 go.GetComponent<MeshRenderer>().sharedMaterial = picked;
             }
+        }
+
+        private static void RecenterMeshToLocalPivot(Mesh mesh, Vector2 center)
+        {
+            if (mesh == null) return;
+
+            var vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 v = vertices[i];
+                v.x -= center.x;
+                v.z -= center.y;
+                vertices[i] = v;
+            }
+            mesh.vertices = vertices;
+            mesh.RecalculateBounds();
         }
 
         public void Clear()
@@ -105,9 +131,10 @@ namespace WarSimulation.Combat.Map
         /// <summary>
         /// ノイズ歪みの岸線に沿った単一ポリゴン（扇状トライアングル）で水面メッシュを作る。
         /// </summary>
-        private static Mesh BuildNoiseDisc(LakeRegion lake, float waterY, int segments)
+        private static Mesh BuildNoiseDisc(LakeRegion lake, float waterY, int segments, float radiusScale)
         {
             int segs = Mathf.Max(8, segments);
+            float scale = Mathf.Max(0.1f, radiusScale);
             var vertices = new Vector3[segs + 1];
             var uvs = new Vector2[segs + 1];
             vertices[0] = new Vector3(lake.Center.x, waterY, lake.Center.y);
@@ -118,7 +145,7 @@ namespace WarSimulation.Combat.Map
             {
                 float a = i * step;
                 Vector2 u = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
-                float br = lake.BoundaryRadiusAlong(u);
+                float br = lake.BoundaryRadiusAlong(u) * scale;
                 vertices[i + 1] = new Vector3(lake.Center.x + u.x * br, waterY, lake.Center.y + u.y * br);
                 uvs[i + 1] = new Vector2(0.5f + 0.5f * u.x, 0.5f + 0.5f * u.y);
             }

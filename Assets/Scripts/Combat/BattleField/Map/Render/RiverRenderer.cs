@@ -10,15 +10,14 @@ namespace WarSimulation.Combat.Map
     public sealed class RiverRenderer : MonoBehaviour
     {
         private const string RiversRootName = "GeneratedRivers";
+        private const float SurfaceYOffsetMeters = -0.1f;
+        private const int SmoothingIterations = 0;
 
         [Tooltip("水面に使うマテリアル。未設定の場合は URP Lit か Standard の青色マテリアルを自動生成する。")]
         [SerializeField] private Material _waterMaterial;
 
         [Tooltip("川床からの水面高さを DepthMeters に対する比率で指定（0.85 で 85% の高さ）。大きいほど水位が高くなり岸に近づく。")]
         [SerializeField, Range(0f, 1f)] private float _waterYOffsetRatio = 0.85f;
-
-        [Tooltip("川中央線に対する 3 点移動平均スムージングの回数。0 でスムージングなし。")]
-        [SerializeField, Min(0)] private int _smoothingIterations = 2;
 
         public void Render(MapData map)
         {
@@ -46,12 +45,13 @@ namespace WarSimulation.Combat.Map
             {
                 RiverPath river = map.Rivers[i];
                 Mesh mesh = RiverMeshBuilder.Build(
-                    river, map.Height, _waterYOffsetRatio, _smoothingIterations);
+                    river, map.Height, _waterYOffsetRatio, SmoothingIterations, 0f);
                 if (mesh == null) continue;
 
                 var go = new GameObject($"River_{i}",
                     typeof(MeshFilter), typeof(MeshRenderer));
                 go.transform.SetParent(root.transform, worldPositionStays: false);
+                go.transform.localPosition = new Vector3(0f, SurfaceYOffsetMeters, 0f);
                 go.GetComponent<MeshFilter>().sharedMesh = mesh;
                 go.GetComponent<MeshRenderer>().sharedMaterial = waterMat;
             }

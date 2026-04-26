@@ -285,16 +285,31 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     Color32 color;
                     if (g.GetCell(gx, gy) == GroundState.Water)
                     {
-                        // 凍結湖は高さランプ（フラットな氷面）＋淡い青みで水プレビューと区別する
-                        if (FrozenLakeQueries.IsFrozenLakeWaterAt(map, worldX, worldZ))
+                        if (FrozenLakeQueries.TryFindLakeWithTaggedWaterAt(map, worldX, worldZ, out LakeRegion lake))
                         {
-                            color = HeightColorRamp(h.GetHeight(x, z), min, max);
-                            Color32 iceTint = new Color32(238, 248, 255, 255);
-                            color = Color32.Lerp(color, iceTint, 0.88f);
-                            if (h.CliffFaces.Get(x, z))
+                            if (lake.IsFrozen)
                             {
-                                Color32 cliffTint = new Color32(115, 62, 32, 255);
-                                color = Color32.Lerp(color, cliffTint, 0.72f);
+                                // 凍結湖は高さランプ（フラットな氷面）＋淡い青みで水プレビューと区別する
+                                color = HeightColorRamp(h.GetHeight(x, z), min, max);
+                                Color32 iceTint = new Color32(238, 248, 255, 255);
+                                color = Color32.Lerp(color, iceTint, 0.88f);
+                                if (h.CliffFaces.Get(x, z))
+                                {
+                                    Color32 cliffTint = new Color32(115, 62, 32, 255);
+                                    color = Color32.Lerp(color, cliffTint, 0.72f);
+                                }
+                            }
+                            else
+                            {
+                                // 開放湖：単色ではなく底の深さが読めるように（川プレビューとの差も付く）
+                                color = HeightColorRamp(h.GetHeight(x, z), min, max);
+                                Color32 lakeTint = new Color32(200, 230, 255, 255);
+                                color = Color32.Lerp(color, lakeTint, 0.82f);
+                                if (h.CliffFaces.Get(x, z))
+                                {
+                                    Color32 cliffTint = new Color32(115, 62, 32, 255);
+                                    color = Color32.Lerp(color, cliffTint, 0.72f);
+                                }
                             }
                         }
                         else

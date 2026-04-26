@@ -76,41 +76,6 @@ namespace WarSimulation.Combat.Map
                         waterTaggedRadius: r.WaterTaggedRadius,
                         noiseAmplitude: r.NoiseAmplitude,
                         noiseFrequency: r.NoiseFrequency);
-                    FlattenFrozenLakeHeights(map, map.Lakes[idx]);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 凍結湖の Water セル高さを水面 Y に揃え、HeightMap プレビューと Terrain が「平らな氷面」になるようにする。
-        /// </summary>
-        private static void FlattenFrozenLakeHeights(MapData map, LakeRegion lake)
-        {
-            if (!lake.IsFrozen || map == null) return;
-
-            HeightMap h = map.Height;
-            GroundStateGrid g = map.GroundStates;
-            float cs = h.CellSize;
-            float bound = lake.OuterRadius;
-            int cx = Mathf.FloorToInt(lake.Center.x / cs);
-            int cz = Mathf.FloorToInt(lake.Center.y / cs);
-            int cellR = Mathf.CeilToInt(bound / cs);
-            float iceY = lake.WaterY;
-
-            for (int dz = -cellR; dz <= cellR; dz++)
-            {
-                for (int dx = -cellR; dx <= cellR; dx++)
-                {
-                    int x = cx + dx;
-                    int z = cz + dz;
-                    if (!h.IsInBounds(x, z)) continue;
-
-                    float wx = (x + 0.5f) * cs;
-                    float wz = (z + 0.5f) * cs;
-                    if (!lake.ContainsWaterTagged(new Vector2(wx, wz))) continue;
-                    if (g.GetCell(x, z) != GroundState.Water) continue;
-
-                    h.SetHeight(x, z, iceY);
                 }
             }
         }

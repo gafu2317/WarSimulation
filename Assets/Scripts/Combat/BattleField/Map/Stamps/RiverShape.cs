@@ -57,36 +57,58 @@ namespace WarSimulation.Combat.Map
             float tagRadius = radius * _waterTagRatio;
             float gCell = g.CellSize;
 
-            for (int i = 0; i < path.Count; i++)
+            // 点ごとの円掘削だと経路が細かく折れた場所で「線分の間」に未掘削が残ることがある。
+            // そこで各セグメントを一定ピッチでサンプリングし、連続的に掘削/Waterタグ付けする。
+            for (int i = 0; i < path.Count - 1; i++)
             {
-                Vector2Int p = path[i];
-                float pHeight = origHeights[i];
-                float worldX = (p.x + 0.5f) * cs;
-                float worldZ = (p.y + 0.5f) * cs;
+                Vector2Int p0 = path[i];
+                Vector2Int p1 = path[i + 1];
+                float h0 = origHeights[i];
+                float h1 = origHeights[i + 1];
 
-                CarveHeightMap(h, p, pHeight, cs, cellRadius, radius);
-                TagWater(g, worldX, worldZ, tagRadius, gCell);
+                float x0 = (p0.x + 0.5f) * cs;
+                float z0 = (p0.y + 0.5f) * cs;
+                float x1 = (p1.x + 0.5f) * cs;
+                float z1 = (p1.y + 0.5f) * cs;
+
+                float segLen = Vector2.Distance(new Vector2(x0, z0), new Vector2(x1, z1));
+                int steps = Mathf.Max(1, Mathf.CeilToInt(segLen / Mathf.Max(0.05f, cs * 0.5f)));
+                for (int s = 0; s <= steps; s++)
+                {
+                    float t = (float)s / steps;
+                    float wx = Mathf.Lerp(x0, x1, t);
+                    float wz = Mathf.Lerp(z0, z1, t);
+                    float wh = Mathf.Lerp(h0, h1, t);
+
+                    CarveHeightMapAtWorld(h, wx, wz, wh, cs, cellRadius, radius);
+                    TagWater(g, wx, wz, tagRadius, gCell);
+                }
             }
         }
 
-        private void CarveHeightMap(HeightMap h, Vector2Int p, float pHeight, float cs, int cellRadius, float radius)
+        private void CarveHeightMapAtWorld(
+            HeightMap h, float worldX, float worldZ, float baseHeight, float cs, int cellRadius, float radius)
         {
-            int x0 = Mathf.Max(0, p.x - cellRadius);
-            int x1 = Mathf.Min(h.Width - 1, p.x + cellRadius);
-            int y0 = Mathf.Max(0, p.y - cellRadius);
-            int y1 = Mathf.Min(h.Height - 1, p.y + cellRadius);
+            int cx = Mathf.FloorToInt(worldX / cs);
+            int cz = Mathf.FloorToInt(worldZ / cs);
+            int x0 = Mathf.Max(0, cx - cellRadius);
+            int x1 = Mathf.Min(h.Width - 1, cx + cellRadius);
+            int y0 = Mathf.Max(0, cz - cellRadius);
+            int y1 = Mathf.Min(h.Height - 1, cz + cellRadius);
 
             for (int y = y0; y <= y1; y++)
             {
                 for (int x = x0; x <= x1; x++)
                 {
-                    float dx = (x - p.x) * cs;
-                    float dy = (y - p.y) * cs;
+                    float sampleX = (x + 0.5f) * cs;
+                    float sampleZ = (y + 0.5f) * cs;
+                    float dx = sampleX - worldX;
+                    float dy = sampleZ - worldZ;
                     float dist = Mathf.Sqrt(dx * dx + dy * dy);
                     if (dist > radius) continue;
 
                     float t = dist / radius;
-                    float carved = pHeight - _depthMeters * (1f - t * t); // 放物線プロファイル
+                    float carved = baseHeight - _depthMeters * (1f - t * t); // 放物線プロファイル
                     float current = h.GetHeight(x, y);
                     if (carved < current) h.SetHeight(x, y, carved);
                 }
