@@ -22,6 +22,12 @@ namespace WarSimulation.Combat.Map
         private const float UvWorldScale = 0.08f;
 
         /// <summary>
+        /// 空間バケット 1 辺のセル数。セル×全セグメント距離の二重ループを避け、
+        /// 各セルはバケット内に登録された折れ線セグメントだけ試す。
+        /// </summary>
+        private const int SegmentBucketCells = 48;
+
+        /// <summary>
         /// 川の水面メッシュを 1 枚生成する。無効な入力なら null。
         /// </summary>
         /// <param name="smoothingIterations">互換のため残すが無視する（旧リボン用）。</param>
@@ -93,15 +99,69 @@ namespace WarSimulation.Combat.Map
                 return id;
             }
 
+            int bw = xMax - xMin + 1;
+            int bh = zMax - zMin + 1;
+            int nBx = Mathf.Max(1, (bw + SegmentBucketCells - 1) / SegmentBucketCells);
+            int nBz = Mathf.Max(1, (bh + SegmentBucketCells - 1) / SegmentBucketCells);
+            var segBuckets = new List<int>[nBx * nBz];
+            for (int i = 0; i < segBuckets.Length; i++)
+                segBuckets[i] = new List<int>(8);
+
+            for (int s = 0; s < cells.Count - 1; s++)
+            {
+                Vector2 a = new Vector2((cells[s].x + 0.5f) * cs, (cells[s].y + 0.5f) * cs);
+                Vector2 b = new Vector2((cells[s + 1].x + 0.5f) * cs, (cells[s + 1].y + 0.5f) * cs);
+                float minWX = Mathf.Min(a.x, b.x) - tagR;
+                float maxWX = Mathf.Max(a.x, b.x) + tagR;
+                float minWZ = Mathf.Min(a.y, b.y) - tagR;
+                float maxWZ = Mathf.Max(a.y, b.y) + tagR;
+
+                int x0 = Mathf.Clamp(Mathf.CeilToInt(minWX / cs - 0.5f - 1e-4f), xMin, xMax);
+                int x1 = Mathf.Clamp(Mathf.FloorToInt(maxWX / cs - 0.5f + 1e-4f), xMin, xMax);
+                int z0 = Mathf.Clamp(Mathf.CeilToInt(minWZ / cs - 0.5f - 1e-4f), zMin, zMax);
+                int z1 = Mathf.Clamp(Mathf.FloorToInt(maxWZ / cs - 0.5f + 1e-4f), zMin, zMax);
+                if (x0 > x1 || z0 > z1) continue;
+
+                int lx0 = x0 - xMin;
+                int lx1 = x1 - xMin;
+                int lz0 = z0 - zMin;
+                int lz1 = z1 - zMin;
+                int bx0 = lx0 / SegmentBucketCells;
+                int bx1 = lx1 / SegmentBucketCells;
+                int bz0 = lz0 / SegmentBucketCells;
+                int bz1 = lz1 / SegmentBucketCells;
+
+                for (int bz = bz0; bz <= bz1; bz++)
+                {
+                    int row = bz * nBx;
+                    for (int bx = bx0; bx <= bx1; bx++)
+                        segBuckets[row + bx].Add(s);
+                }
+            }
+
             float tagRSq = tagR * tagR;
             for (int z = zMin; z <= zMax; z++)
             {
+                int lz = z - zMin;
+                int bzRow = (lz / SegmentBucketCells) * nBx;
                 for (int x = xMin; x <= xMax; x++)
                 {
+                    int lx = x - xMin;
+                    List<int> segList = segBuckets[bzRow + (lx / SegmentBucketCells)];
+                    if (segList.Count == 0) continue;
+
                     float wx = (x + 0.5f) * cs;
                     float wz = (z + 0.5f) * cs;
-                    if (MinDistSqPointPolyline(new Vector2(wx, wz), cells, cs) > tagRSq)
-                        continue;
+                    Vector2 p = new Vector2(wx, wz);
+                    float best = float.PositiveInfinity;
+                    for (int k = 0; k < segList.Count; k++)
+                    {
+                        float d = DistSqPointToSegmentIndex(p, cells, cs, segList[k]);
+                        if (d < best) best = d;
+                        if (best <= tagRSq) break;
+                    }
+
+                    if (best > tagRSq) continue;
 
                     int i00 = GetOrCreateCorner(x, z);
                     int i10 = GetOrCreateCorner(x + 1, z);
@@ -144,17 +204,11 @@ namespace WarSimulation.Combat.Map
             return avgBed + river.DepthMeters * Mathf.Clamp01(waterYOffsetRatio);
         }
 
-        private static float MinDistSqPointPolyline(Vector2 p, IReadOnlyList<Vector2Int> cells, float cs)
+        private static float DistSqPointToSegmentIndex(Vector2 p, IReadOnlyList<Vector2Int> cells, float cs, int s)
         {
-            float best = float.PositiveInfinity;
-            for (int i = 0; i < cells.Count - 1; i++)
-            {
-                Vector2 a = new Vector2((cells[i].x + 0.5f) * cs, (cells[i].y + 0.5f) * cs);
-                Vector2 b = new Vector2((cells[i + 1].x + 0.5f) * cs, (cells[i + 1].y + 0.5f) * cs);
-                float d = DistSqPointSegment2D(p, a, b);
-                if (d < best) best = d;
-            }
-            return best;
+            Vector2 a = new Vector2((cells[s].x + 0.5f) * cs, (cells[s].y + 0.5f) * cs);
+            Vector2 b = new Vector2((cells[s + 1].x + 0.5f) * cs, (cells[s + 1].y + 0.5f) * cs);
+            return DistSqPointSegment2D(p, a, b);
         }
 
         private static float DistSqPointSegment2D(Vector2 p, Vector2 a, Vector2 b)
