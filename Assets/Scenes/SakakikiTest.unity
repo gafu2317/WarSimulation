@@ -727,6 +727,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1149071484728041945, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1243332513180594236, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -810,8 +814,57 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3384401619709022162, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2089515602}
+    - targetCorrespondingSourceObject: {fileID: 3384401619709022162, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2089515603}
   m_SourcePrefab: {fileID: 100100000, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
+--- !u!1 &2089515599 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3384401619709022162, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
+  m_PrefabInstance: {fileID: 2000115418}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2089515601 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5820416227964091556, guid: fc7d3f045ee8c4e24b213e8d54f5a22f, type: 3}
+  m_PrefabInstance: {fileID: 2000115418}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089515599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 114714a5b62fc42fabc820e3a4196e87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterAnimationController
+--- !u!114 &2089515602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089515599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0829a6aecb2ce4336a0bd0c139ef65da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RotateTester
+  _lookTarget: {fileID: 1722430128}
+--- !u!114 &2089515603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089515599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4658555789674049a5407423230919e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterAnimationTester
+  _controller: {fileID: 2089515601}
+  _speed: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -7,6 +7,7 @@ public class CharacterAnimationController : MonoBehaviour
     [SerializeField] private GameObject _frontRightObj;
     [SerializeField] private GameObject _backLeftObj;
     [SerializeField] private GameObject _backRightObj;
+    [SerializeField] private Animator[] _characterAnimators;
 
     [Header("Billboard Settings")]
     [SerializeField, Range(0f, 45f), Tooltip("各表示範囲の中央からのビルボード回転許容角度（度）")]
@@ -81,7 +82,7 @@ public class CharacterAnimationController : MonoBehaviour
             _targetAnimAngle = 0f;
         }
 
-        // 3. アニメーション中、または正面に戻りきっていない場合のみ計算を実行（待機中の無駄な計算を削減）
+        // 3. アニメーション中、または正面に戻りきっていない場合のみ計算を実行
         if (_isFlipping || Mathf.Abs(_currentAnimAngle) > 0.001f)
         {
             _currentAnimAngle = Mathf.MoveTowardsAngle(_currentAnimAngle, _targetAnimAngle, _flipSpeed * Time.deltaTime);
@@ -140,5 +141,16 @@ public class CharacterAnimationController : MonoBehaviour
         if (_frontLeftObj) _frontLeftObj.SetActive(dir == Direction.FrontRight);
         if (_backRightObj) _backRightObj.SetActive(dir == Direction.BackLeft);
         if (_backLeftObj) _backLeftObj.SetActive(dir == Direction.BackRight);
+    }
+
+    /// <summary>
+    /// 移動速度を受け取り歩行アニメーションの再生速度に反映する
+    /// </summary>
+    public void UpdateWalkAnimationSpeed(float speed)
+    {
+        foreach (Animator animator in _characterAnimators)
+        {
+            animator.SetFloat("Speed", speed * 0.5f);
+        }
     }
 }
