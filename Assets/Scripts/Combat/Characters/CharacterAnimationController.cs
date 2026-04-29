@@ -150,7 +150,7 @@ public class CharacterAnimationController : MonoBehaviour
     {
         foreach (Animator animator in _characterAnimators)
         {
-            animator.SetFloat("Speed", speed * 0.5f);
+            animator.SetFloat("Speed", speed);
         }
     }
 }
