@@ -40,7 +40,10 @@ namespace WarSimulation.Combat.Map
         [Tooltip("断崖側のスカート幅を、実効半径に対する比率で指定。0.1 = 外縁の 10% 区間で peakDelta を一気に落とす（ほぼ断崖）。緩側は従来どおり FlatTopRatio から外縁までで落とす。\nメモ: 緩側を 30° 以下に収めたいなら  skirt幅 >= peakDelta * 1.73  が目安。例) peakDelta=5m なら緩側 skirt 幅 8.7m 以上。")]
         [SerializeField, Range(0.01f, 1f)] private float _cliffSkirtRatio = 0.12f;
 
-        [Tooltip("断崖セクターと緩セクターの境界をぼかす角度幅（度）。大きいほど境界がなめらかにブレンド。")]
+        [Tooltip("断崖の切断線を中心からどれだけ外側へ寄せるか。0 = 中心を通る半円カット、0.65 = 外側寄りで山の大きさを保つ。")]
+        [SerializeField, Range(0f, 0.95f)] private float _cliffCutOffsetRatio = 0.65f;
+
+        [Tooltip("旧セクター方式で使っていた境界ぼかし角。現在の直線カット方式では未使用。")]
         [SerializeField, Range(0f, 45f)] private float _cliffBlendDeg = 8f;
 
         [SerializeField] private HeightBlendMode _blend = HeightBlendMode.Add;
@@ -55,6 +58,8 @@ namespace WarSimulation.Combat.Map
         public float CliffArcDeg => _cliffArcDeg;
         public float CliffDirectionDeg => _cliffDirectionDeg;
         public float CliffSkirtRatio => _cliffSkirtRatio;
+        public float CliffCutOffsetRatio => _cliffCutOffsetRatio;
+        public float CliffBlendDeg => _cliffBlendDeg;
         public HeightBlendMode Blend => _blend;
 
         public override void Apply(MapData map, StampPlacement placement)
@@ -108,7 +113,7 @@ namespace WarSimulation.Combat.Map
                     };
                     h.SetHeight(x, z, blended);
 
-                    // スタンプの「崖側スカート」（斜面）のみ茶色に一致。扇内の平らな部分は除外。
+                    // スタンプの「崖側スカート」（斜面）のみ茶色に一致。平らな部分は除外。
                     if (IsCliffSkirtPaintCell(lx, lz, noiseSaltX, noiseSaltY) &&
                         map.GroundStates.GetCell(x, z) != GroundState.Water)
                     {
@@ -128,27 +133,22 @@ namespace WarSimulation.Combat.Map
             if (_cliffArcDeg <= 0f) return false;
             if (_kind == HeightShapeKind.Ridge) return false;
 
-            float cliff = ComputeCliffFactor(lx, lz);
-            // 緩側（扇の外側寄り）は崖面に含めない
-            if (cliff >= 0.5f) return false;
-
             float effectiveRadius = ComputeEffectiveRadius(lx, lz, noiseSaltX, noiseSaltY);
             float r = Mathf.Sqrt(lx * lx + lz * lz);
             if (r >= effectiveRadius) return false;
 
-            float gentleInner = _flatTopRatio * effectiveRadius;
-            float cliffInner = effectiveRadius * (1f - Mathf.Max(0.001f, _cliffSkirtRatio));
-            if (cliffInner < gentleInner) cliffInner = gentleInner;
-            float inner = Mathf.Lerp(cliffInner, gentleInner, cliff);
+            GetCliffCutDistances(effectiveRadius, out float cutLine, out float cutInner);
+            float projection = ProjectOntoCliffDirection(lx, lz);
 
-            // r <= inner は平らな頂／台地。r > inner が斜面（崖の見た目が付く帯）。
-            return r > inner;
+            // cutInner より内側は平らな頂／台地。cutLine に向かう帯だけを崖面にする。
+            return projection > cutInner && projection < cutLine;
         }
 
         /// <summary>
         /// ローカル座標 (lx, lz) における高度デルタを評価する。影響外は 0。
         /// ノイズが有効なとき、実効半径を Perlin ノイズで揺らして輪郭を不整形にする。
-        /// Cliff セクターでは角度ごとにスカート幅を圧縮し、局所的に急斜面（断崖）を作る。
+        /// Cliff が有効な Dome/Cone では、中心から外側へ寄せた直線で円形を切り、
+        /// その切断線へ向かう帯を急斜面（断崖）にする。
         /// </summary>
         private float EvaluateLocal(float lx, float lz, float noiseSaltX, float noiseSaltY)
         {
@@ -159,8 +159,8 @@ namespace WarSimulation.Combat.Map
                 case HeightShapeKind.Cone:
                 {
                     float r = Mathf.Sqrt(lx * lx + lz * lz);
-                    float cliff = ComputeCliffFactor(lx, lz);
-                    return EvaluateWithFlatTop(r, effectiveRadius, linearFalloff: true, cliffFactor: cliff);
+                    float radial = EvaluateWithFlatTop(r, effectiveRadius, linearFalloff: true);
+                    return ApplyCliffCut(radial, lx, lz, effectiveRadius, linearFalloff: true);
                 }
 
                 case HeightShapeKind.Ridge:
@@ -171,43 +171,53 @@ namespace WarSimulation.Combat.Map
                     float alongExcess = Mathf.Max(0f, Mathf.Abs(lx) - halfLen);
                     float perp = Mathf.Abs(lz);
                     float r = Mathf.Sqrt(alongExcess * alongExcess + perp * perp);
-                    return EvaluateWithFlatTop(r, effectiveRadius, linearFalloff: false, cliffFactor: 1f);
+                    return EvaluateWithFlatTop(r, effectiveRadius, linearFalloff: false);
                 }
 
                 case HeightShapeKind.Dome:
                 default:
                 {
                     float r = Mathf.Sqrt(lx * lx + lz * lz);
-                    float cliff = ComputeCliffFactor(lx, lz);
-                    return EvaluateWithFlatTop(r, effectiveRadius, linearFalloff: false, cliffFactor: cliff);
+                    float radial = EvaluateWithFlatTop(r, effectiveRadius, linearFalloff: false);
+                    return ApplyCliffCut(radial, lx, lz, effectiveRadius, linearFalloff: false);
                 }
             }
         }
 
         /// <summary>
-        /// ローカル (lx, lz) がどれだけ「緩側」寄りかを [0, 1] で返す。
-        /// 0 = 完全に断崖セクター内 / 1 = 完全に緩セクター / 中間はブレンド。
-        /// CliffArcDeg == 0 のときは常に 1（従来どおり）。
+        /// Cliff が有効なとき、円を直線で切った側の高さ制限を適用する。
         /// </summary>
-        private float ComputeCliffFactor(float lx, float lz)
+        private float ApplyCliffCut(float radialDelta, float lx, float lz, float effectiveRadius, bool linearFalloff)
         {
-            if (_cliffArcDeg <= 0f) return 1f;
+            if (_cliffArcDeg <= 0f || radialDelta == 0f) return radialDelta;
 
-            // 原点付近は角度が安定しないのでブレンドを効かせる（0 除算防止も兼ねる）。
-            float distSq = lx * lx + lz * lz;
-            if (distSq < 1e-6f) return 1f;
+            GetCliffCutDistances(effectiveRadius, out float cutLine, out float cutInner);
+            float projection = ProjectOntoCliffDirection(lx, lz);
+            if (projection <= cutInner) return radialDelta;
+            if (projection >= cutLine) return 0f;
 
-            float angleDeg = Mathf.Atan2(lz, lx) * Mathf.Rad2Deg;
-            float diff = Mathf.Abs(Mathf.DeltaAngle(angleDeg, _cliffDirectionDeg));
-            float halfArc = _cliffArcDeg * 0.5f;
+            float skirt = (projection - cutInner) / Mathf.Max(0.0001f, cutLine - cutInner);
+            float t = 1f - skirt;
+            float cutDelta = linearFalloff ? _peakDelta * t : _peakDelta * t * t * (3f - 2f * t);
+            return _peakDelta >= 0f ? Mathf.Min(radialDelta, cutDelta) : Mathf.Max(radialDelta, cutDelta);
+        }
 
-            float inner = halfArc - _cliffBlendDeg;
-            float outer = halfArc + _cliffBlendDeg;
+        private void GetCliffCutDistances(float effectiveRadius, out float cutLine, out float cutInner)
+        {
+            float offset = Mathf.Clamp01(_cliffCutOffsetRatio) * effectiveRadius;
+            float skirtWidth = Mathf.Max(0.001f, _cliffSkirtRatio) * effectiveRadius;
+            float minInner = _flatTopRatio * effectiveRadius;
 
-            if (diff <= inner) return 0f; // 完全断崖
-            if (diff >= outer) return 1f; // 完全緩
-            float t = (diff - inner) / Mathf.Max(0.0001f, outer - inner);
-            return t * t * (3f - 2f * t); // smoothstep
+            cutLine = Mathf.Clamp(offset, minInner + 0.001f, effectiveRadius);
+            cutInner = Mathf.Max(minInner, cutLine - skirtWidth);
+        }
+
+        private float ProjectOntoCliffDirection(float lx, float lz)
+        {
+            float directionRad = _cliffDirectionDeg * Mathf.Deg2Rad;
+            float nx = Mathf.Cos(directionRad);
+            float nz = Mathf.Sin(directionRad);
+            return lx * nx + lz * nz;
         }
 
         /// <summary>
@@ -227,23 +237,13 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// 「中心からの距離 r」を入力に、FlatTopRatio と Cliff 係数を加味した高度デルタを返す。
-        /// cliffFactor = 1 のとき従来どおりの挙動。
-        /// cliffFactor = 0 のとき、スカートを外縁に押しつけて急斜面（断崖）にする。
+        /// 「中心からの距離 r」を入力に、FlatTopRatio を加味した高度デルタを返す。
         /// </summary>
-        /// <param name="cliffFactor">1 = 緩側、0 = 断崖側、中間は補間。</param>
-        private float EvaluateWithFlatTop(float r, float effectiveRadius, bool linearFalloff, float cliffFactor)
+        private float EvaluateWithFlatTop(float r, float effectiveRadius, bool linearFalloff)
         {
             if (r >= effectiveRadius) return 0f;
 
-            // 緩側の inner（天面の外縁）：従来どおり _flatTopRatio で決める
-            float gentleInner = _flatTopRatio * effectiveRadius;
-            // 断崖側の inner：外縁に寄せてスカートを圧縮。_cliffSkirtRatio が小さいほど崖が急。
-            float cliffInner = effectiveRadius * (1f - Mathf.Max(0.001f, _cliffSkirtRatio));
-            // 断崖側は緩側より外でないと逆転してしまうので下限を保つ
-            if (cliffInner < gentleInner) cliffInner = gentleInner;
-
-            float inner = Mathf.Lerp(cliffInner, gentleInner, cliffFactor);
+            float inner = _flatTopRatio * effectiveRadius;
 
             if (r <= inner) return _peakDelta;
 
