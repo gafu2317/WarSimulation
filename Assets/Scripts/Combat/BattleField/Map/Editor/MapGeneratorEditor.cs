@@ -99,40 +99,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return;
             }
 
-            var terrainRenderer = gen.GetComponent<TerrainRenderer>();
-            if (terrainRenderer == null)
-            {
-                terrainRenderer = Undo.AddComponent<TerrainRenderer>(gen.gameObject);
-            }
-            terrainRenderer.Render(data);
-
-            var riverRenderer = gen.GetComponent<RiverRenderer>();
-            if (riverRenderer == null)
-            {
-                riverRenderer = Undo.AddComponent<RiverRenderer>(gen.gameObject);
-            }
-            riverRenderer.Render(data);
-
-            var lakeRenderer = gen.GetComponent<LakeRenderer>();
-            if (lakeRenderer == null)
-            {
-                lakeRenderer = Undo.AddComponent<LakeRenderer>(gen.gameObject);
-            }
-            lakeRenderer.Render(data);
-
-            var bridgeRenderer = gen.GetComponent<BridgeRenderer>();
-            if (bridgeRenderer == null)
-            {
-                bridgeRenderer = Undo.AddComponent<BridgeRenderer>(gen.gameObject);
-            }
-            bridgeRenderer.Render(data, gen.Config);
-
-            var featureRenderer = gen.GetComponent<FeatureRenderer>();
-            if (featureRenderer == null)
-            {
-                featureRenderer = Undo.AddComponent<FeatureRenderer>(gen.gameObject);
-            }
-            featureRenderer.Render(data);
+            EnsureRenderComponents(gen);
+            gen.Render3D(data);
 
             ClearTextures();
             _heightTex = BuildHeightTexture(data, out float min, out float max);
@@ -152,6 +120,15 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 $"Rivers: {data.Rivers.Count}\n" +
                 $"Lakes: {data.Lakes.Count} (Frozen: {CountFrozenLakes(data)})\n" +
                 $"Bridges: {CountFeatures(data, FeatureType.Bridge)}";
+        }
+
+        private static void EnsureRenderComponents(MapGenerator gen)
+        {
+            if (gen.GetComponent<TerrainRenderer>() == null) Undo.AddComponent<TerrainRenderer>(gen.gameObject);
+            if (gen.GetComponent<RiverRenderer>() == null) Undo.AddComponent<RiverRenderer>(gen.gameObject);
+            if (gen.GetComponent<LakeRenderer>() == null) Undo.AddComponent<LakeRenderer>(gen.gameObject);
+            if (gen.GetComponent<BridgeRenderer>() == null) Undo.AddComponent<BridgeRenderer>(gen.gameObject);
+            if (gen.GetComponent<FeatureRenderer>() == null) Undo.AddComponent<FeatureRenderer>(gen.gameObject);
         }
 
         private void Clear3D()

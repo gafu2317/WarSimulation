@@ -16,6 +16,10 @@ namespace WarSimulation.Combat.Map
     /// </summary>
     public class MapData
     {
+        public const string UnsetBiomeId = "";
+
+        private readonly string[,] _biomeIds;
+
         public HeightMap Height { get; }
         public GroundStateGrid GroundStates { get; }
 
@@ -46,6 +50,7 @@ namespace WarSimulation.Combat.Map
             Height = height ?? throw new ArgumentNullException(nameof(height));
             GroundStates = groundStates ?? throw new ArgumentNullException(nameof(groundStates));
             Seed = seed;
+            _biomeIds = new string[groundStates.Width, groundStates.Height];
             Features = new List<PlacedFeature>();
             Rivers = new List<RiverPath>();
             Lakes = new List<LakeRegion>();
@@ -63,5 +68,21 @@ namespace WarSimulation.Combat.Map
         public void AddLake(LakeRegion lake) => Lakes.Add(lake);
 
         public void AddForestRegion(ForestRegion region) => ForestRegions.Add(region);
+
+        public string GetBiomeId(int x, int z)
+        {
+            if (!GroundStates.IsInBounds(x, z)) return UnsetBiomeId;
+            return _biomeIds[x, z] ?? UnsetBiomeId;
+        }
+
+        public void SetBiomeId(int x, int z, string biomeId)
+        {
+            if (!GroundStates.IsInBounds(x, z))
+                throw new ArgumentOutOfRangeException($"Biome cell ({x}, {z}) is outside the map.");
+
+            _biomeIds[x, z] = string.IsNullOrEmpty(biomeId) ? null : biomeId;
+        }
+
+        public void ClearBiomeId(int x, int z) => SetBiomeId(x, z, UnsetBiomeId);
     }
 }

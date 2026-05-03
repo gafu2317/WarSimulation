@@ -46,6 +46,8 @@ namespace WarSimulation.Combat.Map
             set => _config = value;
         }
 
+        public MapData LastGeneratedMap { get; private set; }
+
         /// <summary>
         /// Config に従ってマップを 1 枚生成して返す。
         /// </summary>
@@ -65,7 +67,56 @@ namespace WarSimulation.Combat.Map
             {
                 phase.Execute(map, rng, _config);
             }
+            LastGeneratedMap = map;
+            SetCombatMapSystemCurrentMap(map);
             return map;
+        }
+
+        public void Render3D(MapData map)
+        {
+            if (map == null)
+            {
+                Debug.LogWarning($"[{nameof(MapGenerator)}] Render3D called with null MapData.");
+                return;
+            }
+
+            TerrainRenderer terrainRenderer = GetOrAddComponent<TerrainRenderer>();
+            terrainRenderer.Render(map);
+
+            RiverRenderer riverRenderer = GetOrAddComponent<RiverRenderer>();
+            riverRenderer.Render(map);
+
+            LakeRenderer lakeRenderer = GetOrAddComponent<LakeRenderer>();
+            lakeRenderer.Render(map);
+
+            BridgeRenderer bridgeRenderer = GetOrAddComponent<BridgeRenderer>();
+            bridgeRenderer.Render(map, _config);
+
+            FeatureRenderer featureRenderer = GetOrAddComponent<FeatureRenderer>();
+            featureRenderer.Render(map);
+        }
+
+        private static void SetCombatMapSystemCurrentMap(MapData map)
+        {
+            CombatSceneContext context = CombatSceneContext.Instance;
+            if (context != null && context.MapSystem != null)
+            {
+                context.MapSystem.SetCurrentMap(map);
+                return;
+            }
+
+            CombatMapSystem mapSystem = FindAnyObjectByType<CombatMapSystem>();
+            if (mapSystem != null)
+            {
+                mapSystem.SetCurrentMap(map);
+            }
+        }
+
+        private T GetOrAddComponent<T>() where T : Component
+        {
+            T component = GetComponent<T>();
+            if (component != null) return component;
+            return gameObject.AddComponent<T>();
         }
 
         private static MapData CreateEmptyMap(MapGenerationConfig config, int seed)
