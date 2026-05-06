@@ -69,8 +69,8 @@ namespace WarSimulation.Combat.Map
         [Tooltip("1 本の川に対して配置する橋の数。")]
         [SerializeField, Min(0)] private int _bridgesPerRiver = 2;
 
-        [Tooltip("橋の長さ（メートル）。川幅より長くする必要がある。")]
-        [SerializeField, Min(0.1f)] private float _bridgeLength = 5f;
+        [Tooltip("川幅から自動計算した橋の長さに足す余白（メートル）。")]
+        [SerializeField, Min(0f)] private float _bridgeLengthExtraMargin = 1f;
 
         [Tooltip("橋の幅（メートル、歩行面の幅）。")]
         [SerializeField, Min(0.1f)] private float _bridgeWidth = 2f;
@@ -250,7 +250,7 @@ namespace WarSimulation.Combat.Map
         public float FlatRiverSpineCurveBend => _flatRiverSpineCurveBend;
 
         public int BridgesPerRiver => _bridgesPerRiver;
-        public float BridgeLength => _bridgeLength;
+        public float BridgeLengthExtraMargin => _bridgeLengthExtraMargin;
         public float BridgeWidth => _bridgeWidth;
         public float BridgeThickness => _bridgeThickness;
         public float BridgeHeightAboveWater => _bridgeHeightAboveWater;

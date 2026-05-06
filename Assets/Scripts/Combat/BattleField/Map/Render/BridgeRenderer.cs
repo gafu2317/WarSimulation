@@ -34,7 +34,10 @@ namespace WarSimulation.Combat.Map
             Material mat = _bridgeMaterial != null ? _bridgeMaterial : CreateDefaultBridgeMaterial();
             Mesh cubeMesh = GetSharedCubeMesh();
 
-            Vector3 scale = new Vector3(config.BridgeWidth, config.BridgeThickness, config.BridgeLength);
+            Vector3 fallbackScale = new Vector3(
+                config.BridgeWidth,
+                config.BridgeThickness,
+                config.BridgeWidth + config.BridgeLengthExtraMargin);
 
             int idx = 0;
             for (int i = 0; i < map.Features.Count; i++)
@@ -47,7 +50,7 @@ namespace WarSimulation.Combat.Map
                 go.transform.SetParent(root.transform, worldPositionStays: false);
                 go.transform.localPosition = f.WorldPosition;
                 go.transform.localRotation = f.Rotation;
-                go.transform.localScale = scale;
+                go.transform.localScale = IsValidScale(f.Scale) ? f.Scale : fallbackScale;
                 go.GetComponent<MeshFilter>().sharedMesh = cubeMesh;
                 go.GetComponent<MeshRenderer>().sharedMaterial = mat;
             }
@@ -61,6 +64,9 @@ namespace WarSimulation.Combat.Map
             if (Application.isPlaying) Destroy(existing.gameObject);
             else DestroyImmediate(existing.gameObject);
         }
+
+        private static bool IsValidScale(Vector3 scale) =>
+            scale.x > 0f && scale.y > 0f && scale.z > 0f;
 
         /// <summary>
         /// Unity の既定 Cube メッシュを取得する。エディタでもランタイムでも利用可。

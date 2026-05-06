@@ -11,12 +11,17 @@ namespace WarSimulation.Combat.Map
         public FeatureType Type { get; }
         public Vector3 WorldPosition { get; }
         public Quaternion Rotation { get; }
+        public Vector3 Scale { get; }
 
         public PlacedFeature(FeatureType type, Vector3 worldPosition, Quaternion rotation)
+            : this(type, worldPosition, rotation, Vector3.one) { }
+
+        public PlacedFeature(FeatureType type, Vector3 worldPosition, Quaternion rotation, Vector3 scale)
         {
             Type = type;
             WorldPosition = worldPosition;
             Rotation = rotation;
+            Scale = scale;
         }
 
         public PlacedFeature(FeatureType type, Vector3 worldPosition)

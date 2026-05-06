@@ -31,8 +31,12 @@ namespace WarSimulation.Combat.Map
 
             for (int r = 0; r < map.Rivers.Count; r++)
             {
-                var cells = map.Rivers[r].Cells;
+                RiverPath river = map.Rivers[r];
+                var cells = river.Cells;
                 if (cells.Count < 3) continue;
+
+                float bridgeLength = river.WidthMeters + config.BridgeLengthExtraMargin;
+                Vector3 bridgeScale = new Vector3(config.BridgeWidth, config.BridgeThickness, bridgeLength);
 
                 for (int b = 0; b < bridgesPerRiver; b++)
                 {
@@ -65,7 +69,8 @@ namespace WarSimulation.Combat.Map
                     map.AddFeature(new PlacedFeature(
                         FeatureType.Bridge,
                         worldPos,
-                        Quaternion.Euler(0f, yRot, 0f)));
+                        Quaternion.Euler(0f, yRot, 0f),
+                        bridgeScale));
                 }
             }
         }
