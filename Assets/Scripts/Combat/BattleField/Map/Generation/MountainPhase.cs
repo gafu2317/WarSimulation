@@ -9,6 +9,8 @@ namespace WarSimulation.Combat.Map
     /// </summary>
     public sealed class MountainPhase : IMapGenerationPhase
     {
+        private const float CliffDirectionJitterDeg = 20f;
+
         public void Execute(MapData map, IRandom rng, MapGenerationConfig config)
         {
             if (map == null || rng == null || config == null) return;
@@ -52,7 +54,8 @@ namespace WarSimulation.Combat.Map
                         for (int t = 0; t < perPlacementAttempts && attempts < maxGlobal && !slotPlaced; t++)
                         {
                             attempts++;
-                            StampPlacement placement = CreateRandomPlacement(rng, config.WorldSize, config.MountainPlacementMargin);
+                            StampPlacement placement = CreateRandomPlacement(
+                                rng, shape, config.WorldSize, config.MountainPlacementMargin);
                             float extent = HeightStampPlacementUtility.ComputeExtent(shape, placement.Scale);
 
                             if (placedCenters.Count > 0 &&
@@ -90,17 +93,17 @@ namespace WarSimulation.Combat.Map
 
             Vector2 normalized = candidates[rng.NextInt(0, candidates.Count)];
             Vector2 center = HeightStampPlacementUtility.NormalizedToWorld(normalized, config.WorldSize);
-            float scaleX = Mathf.Lerp(0.7f, 1.3f, rng.NextFloat());
-            float scaleY = Mathf.Lerp(0.7f, 1.3f, rng.NextFloat());
-            float rotation = rng.NextFloat() * Mathf.PI * 2f;
-            var placement = new StampPlacement(center, rotation, new Vector2(scaleX, scaleY));
+            Vector2 scale = CreateRandomScale(rng);
+            float rotation = CreateRotation(rng, shape, center, config.WorldSize);
+            var placement = new StampPlacement(center, rotation, scale);
             float extent = HeightStampPlacementUtility.ComputeExtent(shape, placement.Scale);
 
             ApplyMountain(map, MountainKind.Large, shape, placement, extent, placedCenters, placedExtents);
             return true;
         }
 
-        private static StampPlacement CreateRandomPlacement(IRandom rng, float worldSize, float margin)
+        private static StampPlacement CreateRandomPlacement(
+            IRandom rng, HeightStampShape shape, float worldSize, float margin)
         {
             float minCenter = margin;
             float maxCenter = worldSize - margin;
@@ -109,16 +112,34 @@ namespace WarSimulation.Combat.Map
                 minCenter = maxCenter = worldSize * 0.5f;
             }
 
-            float scaleX = Mathf.Lerp(0.7f, 1.3f, rng.NextFloat());
-            float scaleY = Mathf.Lerp(0.7f, 1.3f, rng.NextFloat());
-            float rotation = rng.NextFloat() * Mathf.PI * 2f;
+            Vector2 center = new Vector2(
+                Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()),
+                Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()));
+            Vector2 scale = CreateRandomScale(rng);
+            float rotation = CreateRotation(rng, shape, center, worldSize);
 
-            return new StampPlacement(
-                new Vector2(
-                    Mathf.Lerp(minCenter, maxCenter, rng.NextFloat()),
-                    Mathf.Lerp(minCenter, maxCenter, rng.NextFloat())),
-                rotation,
-                new Vector2(scaleX, scaleY));
+            return new StampPlacement(center, rotation, scale);
+        }
+
+        private static Vector2 CreateRandomScale(IRandom rng)
+        {
+            return new Vector2(
+                Mathf.Lerp(0.7f, 1.3f, rng.NextFloat()),
+                Mathf.Lerp(0.7f, 1.3f, rng.NextFloat()));
+        }
+
+        private static float CreateRotation(IRandom rng, HeightStampShape shape, Vector2 center, float worldSize)
+        {
+            if (shape == null || shape.CliffArcDeg <= 0f || shape.Kind == HeightShapeKind.Ridge)
+                return rng.NextFloat() * Mathf.PI * 2f;
+
+            Vector2 toMapCenter = new Vector2(worldSize * 0.5f, worldSize * 0.5f) - center;
+            if (toMapCenter.sqrMagnitude < 0.0001f)
+                return rng.NextFloat() * Mathf.PI * 2f;
+
+            float targetDirectionRad = Mathf.Atan2(toMapCenter.y, toMapCenter.x);
+            float jitterRad = Mathf.Lerp(-CliffDirectionJitterDeg, CliffDirectionJitterDeg, rng.NextFloat()) * Mathf.Deg2Rad;
+            return targetDirectionRad + jitterRad - shape.CliffDirectionDeg * Mathf.Deg2Rad;
         }
 
         private static void ApplyMountain(

@@ -23,19 +23,19 @@ MonoBehaviour:
   - {x: 0.9, y: 0.1}
   - {x: 0.9, y: 0.9}
   _smallMountainStampEntries:
-  - Count: 3
-    Shape: {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
+  - Count: 2
+    Shape: {fileID: 11400000, guid: af3c73ffbfe51499087258e02a2aa979, type: 2}
   _mountainPlacementMargin: 5
   _mountainMaxPlacementAttempts: 1000
   _mountainMaxGlobalSearchIterations: 50000
-  _mountainMinCenterSeparation: 6
-  _mountainMinCenterDistanceFactor: 0.5
+  _mountainMinCenterSeparation: 5
+  _mountainMinCenterDistanceFactor: 1
   _riverShape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
   _crossMapRiverCount: 1
   _riverMinPathLengthMeters: 35
-  _riverMaxPathSearchAttempts: 300
+  _riverMaxPathSearchAttempts: 100
   _riverExistingWaterClearance: 1
-  _riverCenterCandidateAreaRatio: 0.45
+  _riverCenterCandidateAreaRatio: 0.6
   _flatRiverMeanderAmplitude: 10
   _flatRiverMeanderFrequency: 0.08
   _flatRiverSpineCurveBend: 30
