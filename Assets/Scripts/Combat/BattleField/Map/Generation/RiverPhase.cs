@@ -7,7 +7,6 @@ namespace WarSimulation.Combat.Map
     {
         private const float RetryCenterOffsetFactor = 0.1f;
         private const int AngleSearchDivisions = 24;
-        private static readonly float[] MeanderScales = { 1f, 0.7f, 0.4f };
 
         public void Execute(MapData map, IRandom rng, MapGenerationConfig config)
         {
@@ -38,9 +37,6 @@ namespace WarSimulation.Combat.Map
                 centerCandidates,
                 maxAttempts,
                 config.WorldSize * RetryCenterOffsetFactor);
-            List<Vector2Int> bestPath = null;
-            float bestScore = float.NegativeInfinity;
-
             for (int attempt = 0; attempt < centerAttemptOrder.Count; attempt++)
             {
                 Vector2Int center = centerAttemptOrder[attempt];
@@ -75,20 +71,17 @@ namespace WarSimulation.Combat.Map
                     if (PathLengthMeters(path, height) < config.RiverMinPathLengthMeters) continue;
                     if (!IsPathPassable(map, path, config.RiverExistingWaterClearance)) continue;
 
-                    float score = ScorePath(path, height);
-                    if (score > bestScore)
-                    {
-                        bestScore = score;
-                        bestPath = path;
-                    }
+                    CarveRiver(map, config, path);
+                    return;
                 }
             }
+        }
 
-            if (bestPath == null) return;
-
-            config.RiverShape.Carve(map, bestPath);
+        private static void CarveRiver(MapData map, MapGenerationConfig config, List<Vector2Int> path)
+        {
+            config.RiverShape.Carve(map, path);
             map.AddRiver(new RiverPath(
-                bestPath,
+                path,
                 config.RiverShape.WidthMeters,
                 config.RiverShape.DepthMeters,
                 config.RiverShape.WaterTagRatio));
@@ -223,43 +216,39 @@ namespace WarSimulation.Combat.Map
             out List<Vector2Int> path)
         {
             path = null;
-            for (int i = 0; i < MeanderScales.Length; i++)
+            List<Vector2Int> candidate = builder.Build(
+                map.Height,
+                firstEdge,
+                secondEdge,
+                config.FlatRiverMeanderAmplitude,
+                config.FlatRiverMeanderFrequency,
+                noiseSeed,
+                config.FlatRiverSpineCurveBend);
+            if (!IsPathPassable(map, candidate, config.RiverExistingWaterClearance)) return false;
+            if (!PathPassesNearCenter(map.Height, candidate, center, config.RiverShape.WidthMeters * 0.5f)) return false;
+
+            path = candidate;
+            return true;
+        }
+
+        private static bool PathPassesNearCenter(
+            HeightMap height,
+            IReadOnlyList<Vector2Int> path,
+            Vector2Int center,
+            float toleranceMeters)
+        {
+            Vector2 centerWorld = HeightZeroCellUtility.CellCenter(height, center.x, center.y);
+            float tolerance = Mathf.Max(height.CellSize * 1.5f, toleranceMeters);
+            float toleranceSq = tolerance * tolerance;
+            for (int i = 0; i < path.Count; i++)
             {
-                float scale = MeanderScales[i];
-                List<Vector2Int> first = builder.Build(
-                    map.Height,
-                    firstEdge,
-                    center,
-                    config.FlatRiverMeanderAmplitude * scale,
-                    config.FlatRiverMeanderFrequency,
-                    noiseSeed,
-                    config.FlatRiverSpineCurveBend * scale);
-                if (!IsPathPassable(map, first, config.RiverExistingWaterClearance)) continue;
-
-                List<Vector2Int> second = builder.Build(
-                    map.Height,
-                    center,
-                    secondEdge,
-                    config.FlatRiverMeanderAmplitude * scale,
-                    config.FlatRiverMeanderFrequency,
-                    noiseSeed + 31.7f,
-                    config.FlatRiverSpineCurveBend * scale);
-                if (!IsPathPassable(map, second, config.RiverExistingWaterClearance)) continue;
-
-                path = CombinePaths(first, second);
-                return true;
+                Vector2Int cell = path[i];
+                Vector2 world = HeightZeroCellUtility.CellCenter(height, cell.x, cell.y);
+                if ((world - centerWorld).sqrMagnitude <= toleranceSq)
+                    return true;
             }
 
             return false;
-        }
-
-        private static List<Vector2Int> CombinePaths(List<Vector2Int> first, List<Vector2Int> second)
-        {
-            var combined = new List<Vector2Int>(first.Count + second.Count);
-            combined.AddRange(first);
-            for (int i = 1; i < second.Count; i++)
-                combined.Add(second[i]);
-            return combined;
         }
 
         private static bool IsPathPassable(MapData map, IReadOnlyList<Vector2Int> path, float existingWaterClearance)
@@ -287,18 +276,6 @@ namespace WarSimulation.Combat.Map
             }
 
             return lengthCells * h.CellSize;
-        }
-
-        private static float ScorePath(IReadOnlyList<Vector2Int> path, HeightMap h)
-        {
-            float length = PathLengthMeters(path, h);
-            float edgePenalty = 0f;
-            for (int i = 1; i < path.Count - 1; i++)
-            {
-                if (IsPerimeterCell(h, path[i]))
-                    edgePenalty += 5f;
-            }
-            return length - edgePenalty;
         }
 
         private static List<Vector2Int> BuildLine(Vector2Int from, Vector2Int to)
