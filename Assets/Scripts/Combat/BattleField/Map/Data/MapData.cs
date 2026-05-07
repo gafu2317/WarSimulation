@@ -28,21 +28,22 @@ namespace WarSimulation.Combat.Map
         public List<PlacedFeature> Features { get; }
         public List<RiverPath> Rivers { get; }
         public List<LakeRegion> Lakes { get; }
+        public List<MountainRegion> Mountains { get; }
         public List<ForestRegion> ForestRegions { get; }
         public int Seed { get; }
 
         /// <summary>
-        /// 直近の <see cref="StructurePhase"/> で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.StructureStampTargetTotal"/>）。
+        /// 直近の山生成で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.MountainStampTargetTotal"/>）。
         /// </summary>
         public int StructureStampPlacedCount { get; set; }
 
-        /// <summary>StructurePhase が試行した候補総数（採用・棄却を含む）。</summary>
+        /// <summary>山生成が試行した候補総数（採用・棄却を含む）。</summary>
         public int StructureTotalAttempts { get; set; }
 
-        /// <summary>候補中心が水チェック円で水セルを含み棄却された回数。</summary>
+        /// <summary>互換用。山先行生成では通常 0。</summary>
         public int StructureWaterRejects { get; set; }
 
-        /// <summary>候補中心が既存スタンプとの距離条件で棄却された回数。</summary>
+        /// <summary>候補中心が既存山との距離条件で棄却された回数。</summary>
         public int StructureDistanceRejects { get; set; }
 
         public MapData(HeightMap height, GroundStateGrid groundStates, int seed)
@@ -54,6 +55,7 @@ namespace WarSimulation.Combat.Map
             Features = new List<PlacedFeature>();
             Rivers = new List<RiverPath>();
             Lakes = new List<LakeRegion>();
+            Mountains = new List<MountainRegion>();
             ForestRegions = new List<ForestRegion>();
             StructureStampPlacedCount = 0;
             StructureTotalAttempts = 0;
@@ -66,6 +68,8 @@ namespace WarSimulation.Combat.Map
         public void AddRiver(RiverPath river) => Rivers.Add(river);
 
         public void AddLake(LakeRegion lake) => Lakes.Add(lake);
+
+        public void AddMountain(MountainRegion mountain) => Mountains.Add(mountain);
 
         public void AddForestRegion(ForestRegion region) => ForestRegions.Add(region);
 

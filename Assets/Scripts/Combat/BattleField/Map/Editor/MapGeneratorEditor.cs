@@ -70,7 +70,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
 
             ClearTextures();
-            _heightTex = BuildHeightTexture(data, out float min, out float max);
+            _heightTex = BuildHeightTexture(data, out _, out _);
             _terrainTex = BuildTerrainTexture(data);
 
             OverlayForestRegions(_heightTex, data, data.Height.CellSize);
@@ -78,15 +78,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             OverlayFeatures(_heightTex, data, data.Height.CellSize);
             OverlayFeatures(_terrainTex, data, data.GroundStates.CellSize);
 
-            _lastInfo =
-                $"Seed: {data.Seed}\n" +
-                $"Structures placed: {data.StructureStampPlacedCount} / {(gen.Config != null ? gen.Config.StructureStampTargetTotal : 0)} (attempts={data.StructureTotalAttempts}, waterReject={data.StructureWaterRejects}, distReject={data.StructureDistanceRejects})\n" +
-                $"HeightMap: {data.Height.Width}x{data.Height.Height}  (cell={data.Height.CellSize:F3} m)  CliffCells={CountCliffCells(data.Height)}\n" +
-                $"GroundStateGrid: {data.GroundStates.Width}x{data.GroundStates.Height}  (cell={data.GroundStates.CellSize:F3} m)\n" +
-                $"Height range: {min:F2} .. {max:F2}\n" +
-                ConfigSummary(gen.Config) + "\n" +
-                MagicStonesSummary(data) + "\n" +
-                $"Forests: {data.ForestRegions.Count}, Trees: {CountFeatures(data, FeatureType.Tree)}, Rocks: {CountFeatures(data, FeatureType.Rock)}";
+            _lastInfo = null;
         }
 
         private void GenerateAndRender3D()
@@ -103,23 +95,14 @@ namespace WarSimulation.Combat.Map.EditorOnly
             gen.Render3D(data);
 
             ClearTextures();
-            _heightTex = BuildHeightTexture(data, out float min, out float max);
+            _heightTex = BuildHeightTexture(data, out _, out _);
             _terrainTex = BuildTerrainTexture(data);
             OverlayForestRegions(_heightTex, data, data.Height.CellSize);
             OverlayForestRegions(_terrainTex, data, data.GroundStates.CellSize);
             OverlayFeatures(_heightTex, data, data.Height.CellSize);
             OverlayFeatures(_terrainTex, data, data.GroundStates.CellSize);
 
-            _lastInfo =
-                $"[3D Rendered] Seed: {data.Seed}\n" +
-                $"Structures placed: {data.StructureStampPlacedCount} / {(gen.Config != null ? gen.Config.StructureStampTargetTotal : 0)} (attempts={data.StructureTotalAttempts}, waterReject={data.StructureWaterRejects}, distReject={data.StructureDistanceRejects})\n" +
-                $"Height range: {min:F2} .. {max:F2}  CliffCells={CountCliffCells(data.Height)}\n" +
-                ConfigSummary(gen.Config) + "\n" +
-                MagicStonesSummary(data) + "\n" +
-                $"Forests: {data.ForestRegions.Count}, Trees: {CountFeatures(data, FeatureType.Tree)}, Rocks: {CountFeatures(data, FeatureType.Rock)}\n" +
-                $"Rivers: {data.Rivers.Count}\n" +
-                $"Lakes: {data.Lakes.Count} (Frozen: {CountFrozenLakes(data)})\n" +
-                $"Bridges: {CountFeatures(data, FeatureType.Bridge)}";
+            _lastInfo = null;
         }
 
         private static void EnsureRenderComponents(MapGenerator gen)
@@ -144,68 +127,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
             if (bridgeRenderer != null) bridgeRenderer.Clear();
             var featureRenderer = gen.GetComponent<FeatureRenderer>();
             if (featureRenderer != null) featureRenderer.Clear();
-        }
-
-        private static int CountFeatures(MapData map, FeatureType type)
-        {
-            int n = 0;
-            var features = map.Features;
-            for (int i = 0; i < features.Count; i++)
-            {
-                if (features[i].Type == type) n++;
-            }
-            return n;
-        }
-
-        /// <summary>
-        /// 現在 MapGenerator が参照している Config の主要値をダンプする。
-        /// Asset を編集しても Unity が再インポートしていない／Generator が別の Config を見ている、
-        /// といったケースをユーザーが一目で切り分けられるように出す。
-        /// </summary>
-        private static string ConfigSummary(MapGenerationConfig config)
-        {
-            if (config == null) return "Config: (null)";
-            int stampList = config.StructureStamps != null ? config.StructureStamps.Count : 0;
-            int forestList = config.ForestClusterStamps != null ? config.ForestClusterStamps.Count : 0;
-            int groundPatchList = config.GroundPatchStamps != null ? config.GroundPatchStamps.Count : 0;
-            int cliffStamps = 0;
-            if (config.StructureStamps != null)
-            {
-                foreach (var s in config.StructureStamps)
-                {
-                    if (s != null && s.CliffArcDeg > 0f) cliffStamps++;
-                }
-            }
-            return
-                $"Config[Structures]: Target={config.StructureStampTargetTotal}, StampRows={stampList}, CliffStamps={cliffStamps}, GlobalCap={config.StructureMaxGlobalSearchIterations}, MinCenterSep={config.StructureMinCenterSeparation:F1}m, CenterDistFactor={config.StructureMinCenterDistanceFactor:F2}\n" +
-                $"Config[River]     : CrossCount={config.CrossMapRiverCount}, MinPathLen={config.RiverMinPathLength}, MeanderAmp={config.FlatRiverMeanderAmplitude:F1}m, MeanderFreq={config.FlatRiverMeanderFrequency:F3}, SpineCurveBend={config.FlatRiverSpineCurveBend:F1}m\n" +
-                $"Config[Forest]    : Count={config.ForestClusterCount}, StampListSize={forestList}\n" +
-                $"Config[TreeScatter]: Count={config.ScatterTreeCount}, MinDist={config.ScatterTreeMinDistance:F1}m, Margin={config.ScatterTreePlacementMargin:F1}m\n" +
-                $"Config[GroundPatch]: Count={config.GroundPatchStampCount}, StampListSize={groundPatchList}\n" +
-                $"Config[Rock]      : Count={config.RockCount}\n" +
-                $"Config[Bridge]    : PerRiver={config.BridgesPerRiver}, Rivers={config.CrossMapRiverCount}\n" +
-                $"Config[Lake]      : Count={config.LakeCount}, FreezeProb={config.LakeFreezeProbability:F2}, RiverClear={config.LakeRiverClearance:F1}m\n" +
-                $"Config[MagicStone]: MaxSlope={config.MagicStoneMaxSlopeDeg:F1}deg, MaxRelH={config.MagicStoneMaxRelativeHeight:F2}m\n" +
-                $"Config[Climb]     : MaxSlopeDeg={config.MaxClimbableSlopeDeg:F1}";
-        }
-
-        private static int CountFrozenLakes(MapData map)
-        {
-            if (map == null) return 0;
-            int n = 0;
-            for (int i = 0; i < map.Lakes.Count; i++) if (map.Lakes[i].IsFrozen) n++;
-            return n;
-        }
-
-        private static string MagicStonesSummary(MapData map)
-        {
-            int ownMain = CountFeatures(map, FeatureType.OwnMainStone);
-            int ownSub = CountFeatures(map, FeatureType.OwnSubStone);
-            int enemyMain = CountFeatures(map, FeatureType.EnemyMainStone);
-            int enemySub = CountFeatures(map, FeatureType.EnemySubStone);
-            return
-                $"Magic Stones (Own)   main={ownMain}, sub={ownSub}\n" +
-                $"Magic Stones (Enemy) main={enemyMain}, sub={enemySub}";
         }
 
         private void ClearTextures()

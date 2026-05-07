@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
     /// マップ 1 枚分のレシピ。各フェーズのパラメータと使う StampShape をまとめて保持する。
     /// パイプライン順：
-    ///   BaseHeight → River → Lake → Structure → GroundPatch → Forest → TreeScatter → Rock → Decoration → Bridge
+    ///   BaseHeight → Mountain → River → Lake → GroundPatch → Forest → TreeScatter → Rock → Decoration → Bridge
     /// </summary>
     [CreateAssetMenu(menuName = "WarSim/Map/Map Generation Config", fileName = "MapGenerationConfig")]
     public sealed class MapGenerationConfig : ScriptableObject
@@ -24,27 +25,36 @@ namespace WarSimulation.Combat.Map
         [Tooltip("ユニットが登れる最大の地形勾配（度）。ここを超える斜面は『断崖＝登れない』として後段の移動判定で扱う想定。地形生成自体はこの値を直接は使わないが、山スタンプの Cliff 設定と整合する値を入れておく。")]
         [SerializeField, Range(5f, 85f)] private float _maxClimbableSlopeDeg = 30f;
 
-        [Header("Structure Phase")]
-        [Tooltip("大構造スタンプ。上から順に、各行の Shape を Count 回だけ配置する。Shape が null または Count が 0 の行は無視。")]
-        [SerializeField] private List<StructureStampEntry> _structureStampEntries = new();
+        [Header("Mountain Phase")]
+        [Tooltip("大山として 1 個だけ配置する高度スタンプ。未設定、または候補位置が空の場合は大山をスキップ。")]
+        [SerializeField] private HeightStampShape _largeMountainShape;
 
-        [Tooltip("大構造スタンプの配置マージン。マップ端からこの距離は中心を置かない。")]
-        [SerializeField, Min(0f)] private float _structurePlacementMargin = 0f;
+        [Tooltip("大山候補位置。正規化座標で (0,0)=マップ左下/手前、(1,1)=右上/奥。候補からランダムに 1 個選ぶ。")]
+        [SerializeField] private List<Vector2> _largeMountainCandidatePositionsNormalized = new();
 
-        [Tooltip("山の円形フットプリントから水セル（川・湖）までに確保したい追加クリアランス（メートル）。大きいほど水辺から山が遠ざかる。")]
-        [SerializeField, Min(0f)] private float _structureRiverClearance = 2f;
+        [Tooltip("小山スタンプ。上から順に、各行の Shape を Count 回だけ配置する。Shape が null または Count が 0 の行は無視。")]
+        [FormerlySerializedAs("_structureStampEntries")]
+        [SerializeField] private List<StructureStampEntry> _smallMountainStampEntries = new();
 
-        [Tooltip("1 個分の配置について、水に被らない中心を乱択する試行回数。この回数で見つからなければその 1 個はスキップして次に進む。")]
-        [SerializeField, Min(1)] private int _structureMaxPlacementAttempts = 300;
+        [Tooltip("小山の配置マージン。マップ端からこの距離は中心を置かない。大山は候補位置をそのまま使う。")]
+        [FormerlySerializedAs("_structurePlacementMargin")]
+        [SerializeField, Min(0f)] private float _mountainPlacementMargin = 0f;
 
-        [Tooltip("大構造を目標個数に届かせるための外側ループの最大回数（スタンプ選択＋中心探索を 1 回と数える）。水が多くて置けない場合はこの上限で打ち切り、目標未満で終わる。")]
-        [SerializeField, Min(1)] private int _structureMaxGlobalSearchIterations = 50000;
+        [Tooltip("1 個分の小山配置について、既存山と重ならない中心を乱択する試行回数。この回数で見つからなければその 1 個はスキップ。")]
+        [FormerlySerializedAs("_structureMaxPlacementAttempts")]
+        [SerializeField, Min(1)] private int _mountainMaxPlacementAttempts = 300;
 
-        [Tooltip("既存スタンプとの中心距離に加算する余白（m）。StructureMinCenterDistanceFactor と併用。0 でも係数 1 なら『印の実効半径の和』は離す。")]
-        [SerializeField, Min(0f)] private float _structureMinCenterSeparation = 0f;
+        [Tooltip("山を目標個数に届かせるための外側ループの最大回数。置けない場合はこの上限で打ち切り、目標未満で終わる。")]
+        [FormerlySerializedAs("_structureMaxGlobalSearchIterations")]
+        [SerializeField, Min(1)] private int _mountainMaxGlobalSearchIterations = 50000;
 
-        [Tooltip("既存スタンプとの距離に使う『実効半径の和』の係数。1=印同士が外接するくらい離す（従来の 1.3×ベース半径に相当）、0 に近いほど重なりを許す（係数 0 かつ余白 0 なら中心距離は不問）。")]
-        [SerializeField, Range(0f, 1f)] private float _structureMinCenterDistanceFactor = 1f;
+        [Tooltip("既存山との中心距離に加算する余白（m）。MountainMinCenterDistanceFactor と併用。0 でも係数 1 なら『印の実効半径の和』は離す。")]
+        [FormerlySerializedAs("_structureMinCenterSeparation")]
+        [SerializeField, Min(0f)] private float _mountainMinCenterSeparation = 0f;
+
+        [Tooltip("既存山との距離に使う『実効半径の和』の係数。1=印同士が外接するくらい離す、0 に近いほど重なりを許す。")]
+        [FormerlySerializedAs("_structureMinCenterDistanceFactor")]
+        [SerializeField, Range(0f, 1f)] private float _mountainMinCenterDistanceFactor = 1f;
 
         [Header("River Phase")]
         [Tooltip("川の断面形状を定義する SO。未設定の場合は川フェーズをスキップ。")]
@@ -53,16 +63,26 @@ namespace WarSimulation.Combat.Map
         [Tooltip("1 マップあたりに引く『マップ横断の大河』の本数（端から別の端まで Perlin ノイズで蛇行）。")]
         [SerializeField, Min(0)] private int _crossMapRiverCount = 2;
 
-        [Tooltip("このセル数未満の経路になった川は採用しない（短すぎる川を棄却）。")]
-        [SerializeField, Min(2)] private int _riverMinPathLength = 30;
+        [Tooltip("この長さ（メートル）未満の経路になった川は採用しない（短すぎる川を棄却）。")]
+        [FormerlySerializedAs("_riverMinPathLength")]
+        [SerializeField, Min(0.1f)] private float _riverMinPathLengthMeters = 30f;
 
-        [Tooltip("横断大河の蛇行幅（メートル）：始点-終点の直線に対して中央付近でずらす最大距離。大きいほどうねる。")]
+        [Tooltip("川 1 本につき試す入口/出口候補ペア数。見つからなければその川をスキップ。")]
+        [SerializeField, Min(1)] private int _riverMaxPathSearchAttempts = 48;
+
+        [Tooltip("既存 Water セルから入口/出口・経路をどれだけ離すか（メートル）。2 本目以降の川の重なり防止に使う。")]
+        [SerializeField, Min(0f)] private float _riverExistingWaterClearance = 1f;
+
+        [Tooltip("川が経由する中央候補エリアの広さ。WorldSize に対する比率。0.45 なら中央 45% の矩形から高さ0候補を探す。")]
+        [SerializeField, Range(0.1f, 1f)] private float _riverCenterCandidateAreaRatio = 0.45f;
+
+        [Tooltip("中央から端へ引ける高さ0直線の端点同士を結ぶ川の蛇行幅（メートル）。大きいほど川らしくうねるが、高さ0制約で失敗しやすい。")]
         [SerializeField, Min(0f)] private float _flatRiverMeanderAmplitude = 10f;
 
-        [Tooltip("横断大河の蛇行周波数：1m 進むごとのノイズ位相。大きいほど細かくうねる（≒ 蛇行の周期）。")]
+        [Tooltip("川の蛇行周波数。1m 進むごとのノイズ位相。大きいほど細かくうねる。")]
         [SerializeField, Min(0.001f)] private float _flatRiverMeanderFrequency = 0.08f;
 
-        [Tooltip("川の骨格を二次ベジェで曲げる強さ（メートル）。0 = 従来どおり始点〜終点の直線スパイン。大きいほど弦の法線方向に大きく弧を描く（ノイズはその接線に直交して別途乗る）。")]
+        [Tooltip("中央を通る二次ベジェを法線方向へ曲げる最大量（メートル）。大きいほど大きく弧を描く。")]
         [SerializeField, Min(0f)] private float _flatRiverSpineCurveBend = 0f;
 
         [Header("Bridge Phase")]
@@ -167,8 +187,10 @@ namespace WarSimulation.Combat.Map
 
         private void OnValidate()
         {
-            if (_structureStampEntries == null)
-                _structureStampEntries = new List<StructureStampEntry>();
+            if (_smallMountainStampEntries == null)
+                _smallMountainStampEntries = new List<StructureStampEntry>();
+            if (_largeMountainCandidatePositionsNormalized == null)
+                _largeMountainCandidatePositionsNormalized = new List<Vector2>();
         }
 
         /// <summary>
@@ -192,31 +214,41 @@ namespace WarSimulation.Combat.Map
         public float BaseHeight => _baseHeight;
         public float MaxClimbableSlopeDeg => _maxClimbableSlopeDeg;
 
-        public IReadOnlyList<StructureStampEntry> StructureStampEntries => _structureStampEntries;
+        public HeightStampShape LargeMountainShape => _largeMountainShape;
+        public IReadOnlyList<Vector2> LargeMountainCandidatePositionsNormalized => _largeMountainCandidatePositionsNormalized;
+        public IReadOnlyList<StructureStampEntry> SmallMountainStampEntries => _smallMountainStampEntries;
+
+        public IReadOnlyList<StructureStampEntry> StructureStampEntries => SmallMountainStampEntries;
 
         /// <summary>
-        /// 目標とする大構造の合計個数（有効なエントリの Count の和）。
+        /// 目標とする山の合計個数（大山候補が有効なら 1 + 小山 Count の和）。
         /// </summary>
-        public int StructureStampTargetTotal => SumStructureEntryTargets();
+        public int MountainStampTargetTotal => SumMountainTargets();
+
+        public int StructureStampTargetTotal => MountainStampTargetTotal;
 
         /// <summary>
         /// <see cref="StructureStampTargetTotal"/> の別名（既存コード・エディタ用）。
         /// </summary>
-        public int StructureStampCount => StructureStampTargetTotal;
+        public int StructureStampCount => MountainStampTargetTotal;
 
         /// <summary>
         /// エディタやデバッグ用：有効なエントリの Shape を列挙（重複可）。
         /// </summary>
-        public IReadOnlyList<HeightStampShape> StructureStamps => StructureStampsForInspection;
+        public IReadOnlyList<HeightStampShape> StructureStamps => MountainStampsForInspection;
 
-        private IReadOnlyList<HeightStampShape> StructureStampsForInspection
+        private IReadOnlyList<HeightStampShape> MountainStampsForInspection
         {
             get
             {
                 var list = new List<HeightStampShape>();
-                for (int i = 0; i < _structureStampEntries.Count; i++)
+                if (_largeMountainShape != null)
+                    list.Add(_largeMountainShape);
+                if (_smallMountainStampEntries == null)
+                    return list;
+                for (int i = 0; i < _smallMountainStampEntries.Count; i++)
                 {
-                    StructureStampEntry e = _structureStampEntries[i];
+                    StructureStampEntry e = _smallMountainStampEntries[i];
                     if (e != null && e.Shape != null && e.Count > 0)
                         list.Add(e.Shape);
                 }
@@ -224,27 +256,43 @@ namespace WarSimulation.Combat.Map
             }
         }
 
-        private int SumStructureEntryTargets()
+        private int SumMountainTargets()
         {
-            int sum = 0;
-            for (int i = 0; i < _structureStampEntries.Count; i++)
+            int sum = _largeMountainShape != null
+                && _largeMountainCandidatePositionsNormalized != null
+                && _largeMountainCandidatePositionsNormalized.Count > 0
+                    ? 1
+                    : 0;
+            if (_smallMountainStampEntries == null)
+                return sum;
+            for (int i = 0; i < _smallMountainStampEntries.Count; i++)
             {
-                StructureStampEntry e = _structureStampEntries[i];
+                StructureStampEntry e = _smallMountainStampEntries[i];
                 if (e != null && e.Shape != null && e.Count > 0)
                     sum += e.Count;
             }
             return sum;
         }
-        public float StructurePlacementMargin => _structurePlacementMargin;
-        public float StructureRiverClearance => _structureRiverClearance;
-        public int StructureMaxPlacementAttempts => _structureMaxPlacementAttempts;
-        public int StructureMaxGlobalSearchIterations => _structureMaxGlobalSearchIterations;
-        public float StructureMinCenterSeparation => _structureMinCenterSeparation;
-        public float StructureMinCenterDistanceFactor => _structureMinCenterDistanceFactor;
+        public float MountainPlacementMargin => _mountainPlacementMargin;
+        public int MountainMaxPlacementAttempts => _mountainMaxPlacementAttempts;
+        public int MountainMaxGlobalSearchIterations => _mountainMaxGlobalSearchIterations;
+        public float MountainMinCenterSeparation => _mountainMinCenterSeparation;
+        public float MountainMinCenterDistanceFactor => _mountainMinCenterDistanceFactor;
+
+        public float StructurePlacementMargin => MountainPlacementMargin;
+        public float StructureRiverClearance => 0f;
+        public int StructureMaxPlacementAttempts => MountainMaxPlacementAttempts;
+        public int StructureMaxGlobalSearchIterations => MountainMaxGlobalSearchIterations;
+        public float StructureMinCenterSeparation => MountainMinCenterSeparation;
+        public float StructureMinCenterDistanceFactor => MountainMinCenterDistanceFactor;
 
         public RiverShape RiverShape => _riverShape;
         public int CrossMapRiverCount => _crossMapRiverCount;
-        public int RiverMinPathLength => _riverMinPathLength;
+        public float RiverMinPathLengthMeters => _riverMinPathLengthMeters;
+        public int RiverMinPathLength => Mathf.CeilToInt(_riverMinPathLengthMeters);
+        public int RiverMaxPathSearchAttempts => _riverMaxPathSearchAttempts;
+        public float RiverExistingWaterClearance => _riverExistingWaterClearance;
+        public float RiverCenterCandidateAreaRatio => _riverCenterCandidateAreaRatio;
         public float FlatRiverMeanderAmplitude => _flatRiverMeanderAmplitude;
         public float FlatRiverMeanderFrequency => _flatRiverMeanderFrequency;
         public float FlatRiverSpineCurveBend => _flatRiverSpineCurveBend;

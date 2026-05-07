@@ -16,24 +16,30 @@ MonoBehaviour:
   _cellsPerSide: 600
   _baseHeight: 0
   _maxClimbableSlopeDeg: 30
-  _structureStampEntries:
-  - Count: 1
-    Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
+  _largeMountainShape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
+  _largeMountainCandidatePositionsNormalized:
+  - {x: 0.1, y: 0.1}
+  - {x: 0.1, y: 0.9}
+  - {x: 0.9, y: 0.1}
+  - {x: 0.9, y: 0.9}
+  _smallMountainStampEntries:
   - Count: 3
     Shape: {fileID: 11400000, guid: c11ff0a0beef100011111111000a5a5a, type: 2}
-  _structurePlacementMargin: 5
-  _structureRiverClearance: 0
-  _structureMaxPlacementAttempts: 1000
-  _structureMaxGlobalSearchIterations: 50000
-  _structureMinCenterSeparation: 6
-  _structureMinCenterDistanceFactor: 0.5
+  _mountainPlacementMargin: 5
+  _mountainMaxPlacementAttempts: 1000
+  _mountainMaxGlobalSearchIterations: 50000
+  _mountainMinCenterSeparation: 6
+  _mountainMinCenterDistanceFactor: 0.5
   _riverShape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
   _crossMapRiverCount: 1
-  _riverMinPathLength: 30
+  _riverMinPathLengthMeters: 35
+  _riverMaxPathSearchAttempts: 300
+  _riverExistingWaterClearance: 1
+  _riverCenterCandidateAreaRatio: 0.45
   _flatRiverMeanderAmplitude: 10
   _flatRiverMeanderFrequency: 0.08
   _flatRiverSpineCurveBend: 30
-  _bridgesPerRiver: 4
+  _bridgesPerRiver: 2
   _bridgeLengthExtraMargin: 1
   _bridgeWidth: 1.2
   _bridgeThickness: 0.15

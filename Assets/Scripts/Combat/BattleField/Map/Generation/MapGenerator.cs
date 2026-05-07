@@ -3,6 +3,18 @@ using UnityEngine;
 
 namespace WarSimulation.Combat.Map
 {
+    public readonly struct MapGenerationPhaseTiming
+    {
+        public string Name { get; }
+        public long ElapsedMilliseconds { get; }
+
+        public MapGenerationPhaseTiming(string name, long elapsedMilliseconds)
+        {
+            Name = name;
+            ElapsedMilliseconds = elapsedMilliseconds;
+        }
+    }
+
     /// <summary>
     /// マップ生成の司令塔。Config を受け取り、フェーズを順に実行して MapData を返す。
     /// MonoBehaviour として Scene に 1 つ置いて使う想定だが、コアロジックである
@@ -18,9 +30,9 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private int _seed;
 
         // パイプラインは 3 レイヤ（地形=高低差 / 地面=状態 / オブジェクト=点配置）で積み上げる。
-        //   River      : 平地状態でマップ端〜端を蛇行パス化し掘削＋ Water タグ付け
-        //   Lake       : 湖のボウル型くぼみ＋ Water タグ付け（山の前に置くので山が湖を避ける）
-        //   Structure  : Water セル（川・湖）を避けながら山・丘・盆地を配置
+        //   Mountain   : 大山 1 個＋小山 N 個を先に配置し、MapData.Mountains に記録
+        //   River      : 山生成後の高さ 0 セルだけを通ってマップ端〜端の川を探索
+        //   Lake       : 湖のボウル型くぼみ＋ Water タグ付け（既存の川 Water を避ける）
         //   GroundPatch: 沼・雪などの地面状態パッチ（Water は保護）
         //   Forest     : 木のクラスター。ゾーンを登録し PlacedFeature.Tree を散布
         //   TreeScatter: クラスター外に木をマップ全体へ散布（Water・森ゾーン・既存の木を避ける）
@@ -29,9 +41,9 @@ namespace WarSimulation.Combat.Map
         //   Bridge     : 川の経路上に橋を複数配置
         private readonly List<IMapGenerationPhase> _phases = new()
         {
+            new MountainPhase(),
             new RiverPhase(),
             new LakePhase(),
-            new StructurePhase(),
             new GroundPatchPhase(),
             new ForestPhase(),
             new TreeScatterPhase(),
@@ -47,6 +59,9 @@ namespace WarSimulation.Combat.Map
         }
 
         public MapData LastGeneratedMap { get; private set; }
+        public IReadOnlyList<MapGenerationPhaseTiming> LastPhaseTimings => _lastPhaseTimings;
+
+        private readonly List<MapGenerationPhaseTiming> _lastPhaseTimings = new();
 
         /// <summary>
         /// Config に従ってマップを 1 枚生成して返す。
@@ -63,9 +78,15 @@ namespace WarSimulation.Combat.Map
             IRandom rng = new SystemRandom(seed);
 
             MapData map = CreateEmptyMap(_config, seed);
+            _lastPhaseTimings.Clear();
             foreach (IMapGenerationPhase phase in _phases)
             {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
                 phase.Execute(map, rng, _config);
+                sw.Stop();
+                _lastPhaseTimings.Add(new MapGenerationPhaseTiming(
+                    phase.GetType().Name,
+                    sw.ElapsedMilliseconds));
             }
             LastGeneratedMap = map;
             SetCombatMapSystemCurrentMap(map);
