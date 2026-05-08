@@ -3,10 +3,7 @@ using WarSimulation.Combat.Map;
 
 public readonly struct TerrainInfo
 {
-    public Vector3 WorldPosition { get; }
-    public Vector3 MapLocalPosition { get; }
     public Vector3 SurfaceNormal { get; }
-    public Vector3 MapLocalSurfaceNormal { get; }
     public Vector2Int Cell { get; }
     public float Height { get; }
     public GroundState GroundState { get; }
@@ -19,10 +16,7 @@ public readonly struct TerrainInfo
     public string BiomeId { get; }
 
     public TerrainInfo(
-        Vector3 worldPosition,
-        Vector3 mapLocalPosition,
         Vector3 surfaceNormal,
-        Vector3 mapLocalSurfaceNormal,
         Vector2Int cell,
         float height,
         GroundState groundState,
@@ -33,10 +27,7 @@ public readonly struct TerrainInfo
         bool isInBounds,
         string biomeId)
     {
-        WorldPosition = worldPosition;
-        MapLocalPosition = mapLocalPosition;
         SurfaceNormal = surfaceNormal;
-        MapLocalSurfaceNormal = mapLocalSurfaceNormal;
         Cell = cell;
         Height = height;
         GroundState = groundState;
@@ -105,8 +96,6 @@ public class CombatMapSystem : MonoBehaviour
         bool isInBounds = IsInMapBounds(sampleLocal, groundStates);
 
         float height = map.Height.SampleAt(sampleLocal);
-        Vector3 mapLocalPosition = new Vector3(localInput.x, height, localInput.z);
-        Vector3 surfaceWorldPosition = origin.TransformPoint(mapLocalPosition);
         Vector3 mapLocalSurfaceNormal = map.Height.SampleNormal(sampleLocal);
         Vector3 surfaceNormal = origin.TransformDirection(mapLocalSurfaceNormal).normalized;
 
@@ -115,10 +104,7 @@ public class CombatMapSystem : MonoBehaviour
             FrozenLakeQueries.IsFrozenLakeWaterAt(map, sampleLocal.x, sampleLocal.z);
 
         info = new TerrainInfo(
-            surfaceWorldPosition,
-            mapLocalPosition,
             surfaceNormal,
-            mapLocalSurfaceNormal,
             cell,
             height,
             groundState,

@@ -21,9 +21,7 @@ public sealed class CombatMapSystemTests
             Assert.That(info.Cell, Is.EqualTo(new Vector2Int(1, 1)));
             Assert.That(info.GroundState, Is.EqualTo(GroundState.Swamp));
             Assert.That(info.Height, Is.EqualTo(3f).Within(0.001f));
-            Assert.That(info.WorldPosition.y, Is.EqualTo(3f).Within(0.001f));
             Assert.That(info.SurfaceNormal.magnitude, Is.EqualTo(1f).Within(0.001f));
-            Assert.That(info.MapLocalSurfaceNormal.magnitude, Is.EqualTo(1f).Within(0.001f));
             Assert.That(info.IsWater, Is.False);
             Assert.That(info.IsForest, Is.True);
             Assert.That(info.BiomeId, Is.EqualTo(MapData.UnsetBiomeId));
@@ -126,9 +124,9 @@ public sealed class CombatMapSystemTests
             bool found = system.TryGetTerrainInfo(new Vector3(1.5f, 0f, 1.5f), out TerrainInfo info);
 
             Assert.That(found, Is.True);
-            Assert.That(info.MapLocalSurfaceNormal.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(info.MapLocalSurfaceNormal.y, Is.EqualTo(1f).Within(0.001f));
-            Assert.That(info.MapLocalSurfaceNormal.z, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(info.SurfaceNormal.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(info.SurfaceNormal.y, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(info.SurfaceNormal.z, Is.EqualTo(0f).Within(0.001f));
             Assert.That(info.SlopeDeg, Is.EqualTo(0f).Within(0.001f));
         }
         finally
