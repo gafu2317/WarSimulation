@@ -22,6 +22,8 @@ public sealed class CombatMapSystemTests
             Assert.That(info.GroundState, Is.EqualTo(GroundState.Swamp));
             Assert.That(info.Height, Is.EqualTo(3f).Within(0.001f));
             Assert.That(info.WorldPosition.y, Is.EqualTo(3f).Within(0.001f));
+            Assert.That(info.SurfaceNormal.magnitude, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(info.MapLocalSurfaceNormal.magnitude, Is.EqualTo(1f).Within(0.001f));
             Assert.That(info.IsWater, Is.False);
             Assert.That(info.IsForest, Is.True);
             Assert.That(info.BiomeId, Is.EqualTo(MapData.UnsetBiomeId));
@@ -102,6 +104,32 @@ public sealed class CombatMapSystemTests
             Assert.That(info.IsWater, Is.True);
             Assert.That(info.IsCliffFace, Is.True);
             Assert.That(info.IsFrozenLake, Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+        }
+    }
+
+    [Test]
+    public void TryGetTerrainInfo_ReturnsUpwardNormalOnFlatMap()
+    {
+        GameObject go = new GameObject("CombatMapSystem");
+        try
+        {
+            CombatMapSystem system = go.AddComponent<CombatMapSystem>();
+            var height = new HeightMap(4, 4, 1f);
+            var ground = new GroundStateGrid(4, 4, 1f);
+            var map = new MapData(height, ground, 123);
+            system.SetCurrentMap(map);
+
+            bool found = system.TryGetTerrainInfo(new Vector3(1.5f, 0f, 1.5f), out TerrainInfo info);
+
+            Assert.That(found, Is.True);
+            Assert.That(info.MapLocalSurfaceNormal.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(info.MapLocalSurfaceNormal.y, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(info.MapLocalSurfaceNormal.z, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(info.SlopeDeg, Is.EqualTo(0f).Within(0.001f));
         }
         finally
         {

@@ -76,6 +76,8 @@ public sealed class CombatTerrainInfoClickDebugger : MonoBehaviour
         sb.AppendLine($"Hit World       : {FormatVector3(hit.point)}");
         sb.AppendLine($"Surface World   : {FormatVector3(info.WorldPosition)}");
         sb.AppendLine($"Map Local       : {FormatVector3(info.MapLocalPosition)}");
+        sb.AppendLine($"Surface Normal  : {FormatVector3(info.SurfaceNormal)}");
+        sb.AppendLine($"Map Local Normal: {FormatVector3(info.MapLocalSurfaceNormal)}");
         sb.AppendLine($"Cell            : ({info.Cell.x}, {info.Cell.y})");
         sb.AppendLine($"Height          : {info.Height:F3}");
         sb.AppendLine($"GroundState     : {info.GroundState}");

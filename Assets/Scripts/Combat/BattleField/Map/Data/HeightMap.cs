@@ -77,16 +77,31 @@ namespace WarSimulation.Combat.Map
         /// </summary>
         public float SampleSlopeDeg(Vector3 worldPos, float sampleSpacingMultiplier = 1f)
         {
+            SampleHeightGradient(worldPos, sampleSpacingMultiplier, out float dydx, out float dydz);
+            float gradientMagnitude = Mathf.Sqrt(dydx * dydx + dydz * dydz);
+            return Mathf.Atan(gradientMagnitude) * Mathf.Rad2Deg;
+        }
+
+        public Vector3 SampleNormal(Vector3 worldPos, float sampleSpacingMultiplier = 1f)
+        {
+            SampleHeightGradient(worldPos, sampleSpacingMultiplier, out float dydx, out float dydz);
+            return new Vector3(-dydx, 1f, -dydz).normalized;
+        }
+
+        private void SampleHeightGradient(
+            Vector3 worldPos,
+            float sampleSpacingMultiplier,
+            out float dydx,
+            out float dydz)
+        {
             float eps = CellSize * Mathf.Max(0.25f, sampleSpacingMultiplier);
             float hE = SampleAt(new Vector3(worldPos.x + eps, 0f, worldPos.z));
             float hW = SampleAt(new Vector3(worldPos.x - eps, 0f, worldPos.z));
             float hN = SampleAt(new Vector3(worldPos.x, 0f, worldPos.z + eps));
             float hS = SampleAt(new Vector3(worldPos.x, 0f, worldPos.z - eps));
 
-            float dydx = (hE - hW) / (2f * eps);
-            float dydz = (hN - hS) / (2f * eps);
-            float gradientMagnitude = Mathf.Sqrt(dydx * dydx + dydz * dydz);
-            return Mathf.Atan(gradientMagnitude) * Mathf.Rad2Deg;
+            dydx = (hE - hW) / (2f * eps);
+            dydz = (hN - hS) / (2f * eps);
         }
 
         /// <summary>グリッド (x,z) が崖面セルか。高さの値からは分からないので必ずこちらか <see cref="SampleCliffFace"/> を使う。</summary>
