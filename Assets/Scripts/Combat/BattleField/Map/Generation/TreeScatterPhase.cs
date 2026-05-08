@@ -5,7 +5,7 @@ namespace WarSimulation.Combat.Map
     /// <summary>
     /// 木の散布フェーズ：<see cref="MapGenerationConfig"/> の個数に応じてマップ全体に
     /// <see cref="FeatureType.Tree"/> をランダム配置する（<see cref="RockPhase"/> と同様の棄却サンプリング）。
-    /// 水セル・森クラスター領域（<see cref="MapData.ForestRegions"/>）・既存の木（クラスター内を含む）からの最小距離を避ける。
+    /// 水セル・川幅・崖面・森クラスター領域（<see cref="MapData.ForestRegions"/>）・既存の木（クラスター内を含む）からの最小距離を避ける。
     /// </summary>
     public sealed class TreeScatterPhase : IMapGenerationPhase
     {
@@ -32,14 +32,15 @@ namespace WarSimulation.Combat.Map
             {
                 float x = Mathf.Lerp(minCenter, maxCenter, rng.NextFloat());
                 float z = Mathf.Lerp(minCenter, maxCenter, rng.NextFloat());
-                Vector3 worldPos = new(x, 0f, z);
+                Vector2 xz = new(x, z);
 
-                if (map.GroundStates.SampleAt(worldPos) == GroundState.Water) continue;
+                if (!TreePlacementUtility.IsValidTreeSite(map, xz, hasHeightLimit: false, maxHeight: 0f)) continue;
 
-                if (IsInsideForest(map, new Vector2(x, z))) continue;
+                if (TreePlacementUtility.IsInsideAnyForest(map, xz)) continue;
 
                 if (minDistSq > 0f && IsTooCloseToAnyTree(map, x, z, minDistSq)) continue;
 
+                Vector3 worldPos = new(x, 0f, z);
                 float y = map.Height.SampleAt(worldPos);
                 map.AddFeature(new PlacedFeature(
                     FeatureType.Tree,
@@ -47,16 +48,6 @@ namespace WarSimulation.Combat.Map
                     Quaternion.identity));
                 placed++;
             }
-        }
-
-        private static bool IsInsideForest(MapData map, Vector2 pos)
-        {
-            var regions = map.ForestRegions;
-            for (int i = 0; i < regions.Count; i++)
-            {
-                if (regions[i].Contains(pos)) return true;
-            }
-            return false;
         }
 
         private static bool IsTooCloseToAnyTree(MapData map, float x, float z, float minDistSq)

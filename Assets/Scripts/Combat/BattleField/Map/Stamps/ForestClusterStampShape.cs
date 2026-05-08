@@ -78,7 +78,7 @@ namespace WarSimulation.Combat.Map
                 {
                     Vector2 pos = placement.Center + new Vector2(gi * step, gj * step);
                     if ((pos - placement.Center).sqrMagnitude > rSq) continue;
-                    if (!IsValidTreeSite(map, region, pos, hasHeightLimit, _maxHeight)) continue;
+                    if (!TreePlacementUtility.IsValidTreeSite(map, region, pos, hasHeightLimit, _maxHeight)) continue;
                     candidates.Add(pos);
                 }
             }
@@ -107,16 +107,11 @@ namespace WarSimulation.Combat.Map
                     Vector2 offset = RandomInsideDisc(ref rngState, samplingRadius);
                     Vector2 pos = placement.Center + offset;
 
-                    if (!region.Contains(pos)) continue;
-
-                    Vector3 world3 = new(pos.x, 0f, pos.y);
-
-                    if (map.GroundStates.SampleAt(world3) == GroundState.Water) continue;
-
-                    if (hasHeightLimit && map.Height.SampleAt(world3) > _maxHeight) continue;
+                    if (!TreePlacementUtility.IsValidTreeSite(map, region, pos, hasHeightLimit, _maxHeight)) continue;
 
                     if (TooCloseToNewTrees(map, recordedStart, pos, minDistSq)) continue;
 
+                    Vector3 world3 = new(pos.x, 0f, pos.y);
                     float y = map.Height.SampleAt(world3);
                     map.AddFeature(new PlacedFeature(
                         FeatureType.Tree,
@@ -125,16 +120,6 @@ namespace WarSimulation.Combat.Map
                     placed = true;
                 }
             }
-        }
-
-        private static bool IsValidTreeSite(MapData map, ForestRegion region, Vector2 pos, bool hasHeightLimit, float maxHeight)
-        {
-            if (!region.Contains(pos)) return false;
-
-            Vector3 world3 = new(pos.x, 0f, pos.y);
-            if (map.GroundStates.SampleAt(world3) == GroundState.Water) return false;
-            if (hasHeightLimit && map.Height.SampleAt(world3) > maxHeight) return false;
-            return true;
         }
 
         private static bool TooCloseToNewTrees(MapData map, int recordedStart, Vector2 pos, float minDistSq)
