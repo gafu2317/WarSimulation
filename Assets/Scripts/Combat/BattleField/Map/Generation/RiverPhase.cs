@@ -6,7 +6,8 @@ namespace WarSimulation.Combat.Map
     public sealed class RiverPhase : IMapGenerationPhase
     {
         private const float RetryCenterOffsetFactor = 0.1f;
-        private const int AngleSearchDivisions = 24;
+        private const int AngleSearchDivisions = 48;
+        private const int MeanderSearchAttemptsPerLine = 10;
 
         public void Execute(MapData map, IRandom rng, MapGenerationConfig config)
         {
@@ -56,23 +57,25 @@ namespace WarSimulation.Combat.Map
                     Vector2Int secondEdge = secondRay[secondRay.Count - 1];
                     if (firstEdge == secondEdge) continue;
 
-                    float noiseSeed = rng.NextFloat() * 1000f;
-                    if (!TryBuildMeanderedPath(
-                            map,
-                            config,
-                            builder,
-                            firstEdge,
-                            center,
-                            secondEdge,
-                            noiseSeed,
-                            out List<Vector2Int> path))
-                        continue;
+                    for (int meanderAttempt = 0; meanderAttempt < MeanderSearchAttemptsPerLine; meanderAttempt++)
+                    {
+                        float noiseSeed = rng.NextFloat() * 1000f;
+                        if (!TryBuildMeanderedPath(
+                                map,
+                                config,
+                                builder,
+                                firstEdge,
+                                secondEdge,
+                                noiseSeed,
+                                out List<Vector2Int> path))
+                            continue;
 
-                    if (PathLengthMeters(path, height) < config.RiverMinPathLengthMeters) continue;
-                    if (!IsPathPassable(map, path, config.RiverExistingWaterClearance)) continue;
+                        if (PathLengthMeters(path, height) < config.RiverMinPathLengthMeters) continue;
+                        if (!IsPathPassable(map, path, config.RiverExistingWaterClearance)) continue;
 
-                    CarveRiver(map, config, path);
-                    return;
+                        CarveRiver(map, config, path);
+                        return;
+                    }
                 }
             }
         }
@@ -210,7 +213,6 @@ namespace WarSimulation.Combat.Map
             MapGenerationConfig config,
             FlatRiverPathBuilder builder,
             Vector2Int firstEdge,
-            Vector2Int center,
             Vector2Int secondEdge,
             float noiseSeed,
             out List<Vector2Int> path)
@@ -225,30 +227,9 @@ namespace WarSimulation.Combat.Map
                 noiseSeed,
                 config.FlatRiverSpineCurveBend);
             if (!IsPathPassable(map, candidate, config.RiverExistingWaterClearance)) return false;
-            if (!PathPassesNearCenter(map.Height, candidate, center, config.RiverShape.WidthMeters * 0.5f)) return false;
 
             path = candidate;
             return true;
-        }
-
-        private static bool PathPassesNearCenter(
-            HeightMap height,
-            IReadOnlyList<Vector2Int> path,
-            Vector2Int center,
-            float toleranceMeters)
-        {
-            Vector2 centerWorld = HeightZeroCellUtility.CellCenter(height, center.x, center.y);
-            float tolerance = Mathf.Max(height.CellSize * 1.5f, toleranceMeters);
-            float toleranceSq = tolerance * tolerance;
-            for (int i = 0; i < path.Count; i++)
-            {
-                Vector2Int cell = path[i];
-                Vector2 world = HeightZeroCellUtility.CellCenter(height, cell.x, cell.y);
-                if ((world - centerWorld).sqrMagnitude <= toleranceSq)
-                    return true;
-            }
-
-            return false;
         }
 
         private static bool IsPathPassable(MapData map, IReadOnlyList<Vector2Int> path, float existingWaterClearance)
