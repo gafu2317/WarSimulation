@@ -124,8 +124,16 @@ namespace WarSimulation.Combat.Map
             var existing = transform.Find(LakesRootName);
             if (existing == null) return;
 
-            if (Application.isPlaying) Destroy(existing.gameObject);
-            else DestroyImmediate(existing.gameObject);
+            GameObject existingGameObject = existing.gameObject;
+            if (Application.isPlaying)
+            {
+                existingGameObject.SetActive(false);
+                Destroy(existingGameObject);
+            }
+            else
+            {
+                DestroyImmediate(existingGameObject);
+            }
         }
 
         /// <summary>

@@ -41,9 +41,43 @@ public readonly struct TerrainInfo
     }
 }
 
+public readonly struct TerrainTraversalInfo
+{
+    public TerrainInfo TerrainInfo { get; }
+    public bool CanStand { get; }
+    public float MoveSpeedMultiplier { get; }
+    public string BlockedReason { get; }
+
+    public GroundState GroundState => TerrainInfo.GroundState;
+    public bool IsFrozenLake => TerrainInfo.IsFrozenLake;
+    public bool IsInBounds => TerrainInfo.IsInBounds;
+    public bool IsCliffFace => TerrainInfo.IsCliffFace;
+    public float SlopeDeg => TerrainInfo.SlopeDeg;
+
+    public TerrainTraversalInfo(
+        TerrainInfo terrainInfo,
+        bool canStand,
+        float moveSpeedMultiplier,
+        string blockedReason)
+    {
+        TerrainInfo = terrainInfo;
+        CanStand = canStand;
+        MoveSpeedMultiplier = moveSpeedMultiplier;
+        BlockedReason = blockedReason;
+    }
+}
+
 public class CombatMapSystem : MonoBehaviour
 {
     [SerializeField] private MapGenerator _mapGenerator;
+
+    [Header("Traversal")]
+    [SerializeField, Range(0f, 89f)] private float _maxTraversableSlopeDeg = 45f;
+    [SerializeField, Min(0f)] private float _normalSpeedMultiplier = 1f;
+    [SerializeField, Min(0f)] private float _snowSpeedMultiplier = 0.75f;
+    [SerializeField, Min(0f)] private float _swampSpeedMultiplier = 0.6f;
+    [SerializeField, Min(0f)] private float _waterSpeedMultiplier = 0.25f;
+    [SerializeField, Min(0f)] private float _frozenLakeSpeedMultiplier = 0.9f;
 
     public MapData CurrentMap { get; private set; }
 
@@ -117,6 +151,22 @@ public class CombatMapSystem : MonoBehaviour
         return true;
     }
 
+    public bool CanStandAt(Vector3 worldPosition)
+    {
+        return TryGetTraversalInfo(worldPosition, out TerrainTraversalInfo info) && info.CanStand;
+    }
+
+    public bool TryGetTraversalInfo(Vector3 worldPosition, out TerrainTraversalInfo info)
+    {
+        info = default;
+        if (!TryGetTerrainInfo(worldPosition, out TerrainInfo terrainInfo)) return false;
+
+        bool canStand = GetCanStand(terrainInfo, out string blockedReason);
+        float speedMultiplier = canStand ? GetMoveSpeedMultiplier(terrainInfo) : 0f;
+        info = new TerrainTraversalInfo(terrainInfo, canStand, speedMultiplier, blockedReason);
+        return true;
+    }
+
     public bool SetGroundState(Vector2Int cell, GroundState state)
     {
         if (!IsValidCell(cell)) return false;
@@ -140,6 +190,31 @@ public class CombatMapSystem : MonoBehaviour
     {
         MapData map = CurrentMap;
         return map != null && map.GroundStates.IsInBounds(cell.x, cell.y);
+    }
+
+    private bool GetCanStand(TerrainInfo info, out string blockedReason)
+    {
+        if (!info.IsInBounds)
+        {
+            blockedReason = "OutOfBounds";
+            return false;
+        }
+
+        blockedReason = "";
+        return true;
+    }
+
+    private float GetMoveSpeedMultiplier(TerrainInfo info)
+    {
+        if (info.IsFrozenLake) return _frozenLakeSpeedMultiplier;
+
+        return info.GroundState switch
+        {
+            GroundState.Snow => _snowSpeedMultiplier,
+            GroundState.Swamp => _swampSpeedMultiplier,
+            GroundState.Water => _waterSpeedMultiplier,
+            _ => _normalSpeedMultiplier,
+        };
     }
 
     private static bool IsInMapBounds(Vector3 mapLocalPosition, GroundStateGrid grid)

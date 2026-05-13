@@ -115,6 +115,9 @@ namespace WarSimulation.Combat.Map
 
             FeatureRenderer featureRenderer = GetOrAddComponent<FeatureRenderer>();
             featureRenderer.Render(map);
+
+            global::CombatNavMeshBuilder navMeshBuilder = GetOrAddComponent<global::CombatNavMeshBuilder>();
+            navMeshBuilder.Build(map);
         }
 
         private static void SetCombatMapSystemCurrentMap(MapData map)

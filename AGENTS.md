@@ -1,5 +1,15 @@
 # WarSimulation Agent Notes
 
+docsにゲームの内容についてが書いてあるよ
+./docs
+
+## Verification Notes
+
+- Avoid launching Unity in batchmode for routine verification because it can hang during licensing initialization and force the running Unity Editor to close.
+- Prefer `dotnet build Assembly-CSharp.csproj` for quick compile checks after Unity has regenerated the csproj files.
+- If `dotnet build` fails only because new files are missing from the Unity-generated csproj, ask the user to let Unity regenerate project files instead of starting Unity batchmode automatically.
+- Run Unity EditMode/PlayMode tests from the already-open Editor unless the user explicitly asks for batchmode testing.
+
 ## Combat Map State
 
 - `MapData` represents the current combat map state, not only the initial generated state.

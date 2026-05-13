@@ -1,3 +1,4 @@
+using Unity.AI.Navigation;
 using UnityEngine;
 
 namespace WarSimulation.Combat.Map
@@ -148,8 +149,16 @@ namespace WarSimulation.Combat.Map
             var existing = transform.Find(RootName);
             if (existing == null) return;
 
-            if (Application.isPlaying) Destroy(existing.gameObject);
-            else DestroyImmediate(existing.gameObject);
+            GameObject existingGameObject = existing.gameObject;
+            if (Application.isPlaying)
+            {
+                existingGameObject.SetActive(false);
+                Destroy(existingGameObject);
+            }
+            else
+            {
+                DestroyImmediate(existingGameObject);
+            }
         }
 
         /// <summary>
@@ -188,6 +197,9 @@ namespace WarSimulation.Combat.Map
             foliage.transform.localScale = new Vector3(foliageDiameter, foliageDiameter, foliageDiameter);
             foliage.GetComponent<MeshFilter>().sharedMesh = sphere;
             foliage.GetComponent<MeshRenderer>().sharedMaterial = foliageMat;
+
+            var navModifier = foliage.AddComponent<NavMeshModifier>();
+            navModifier.ignoreFromBuild = true;
         }
 
         /// <summary>
