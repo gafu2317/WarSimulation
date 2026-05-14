@@ -72,7 +72,6 @@ public class CombatMapSystem : MonoBehaviour
     [SerializeField] private MapGenerator _mapGenerator;
 
     [Header("Traversal")]
-    [SerializeField, Range(0f, 89f)] private float _maxTraversableSlopeDeg = 45f;
     [SerializeField, Min(0f)] private float _normalSpeedMultiplier = 1f;
     [SerializeField, Min(0f)] private float _snowSpeedMultiplier = 0.75f;
     [SerializeField, Min(0f)] private float _swampSpeedMultiplier = 0.6f;

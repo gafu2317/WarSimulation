@@ -5,7 +5,7 @@ using WarSimulation.Combat.Map;
 public sealed class CombatTraversalTests
 {
     [Test]
-    public void CanStandAt_RejectsOutOfBoundsAndCliff()
+    public void CanStandAt_RejectsOutOfBoundsButAllowsMapTerrainDetails()
     {
         GameObject go = new GameObject("CombatMapSystem");
         try
@@ -16,7 +16,7 @@ public sealed class CombatTraversalTests
             system.SetCurrentMap(map);
 
             Assert.That(system.CanStandAt(new Vector3(-1f, 0f, 0f)), Is.False);
-            Assert.That(system.CanStandAt(new Vector3(1.25f, 0f, 1.25f)), Is.False);
+            Assert.That(system.CanStandAt(new Vector3(1.25f, 0f, 1.25f)), Is.True);
             Assert.That(system.CanStandAt(new Vector3(2.25f, 0f, 2.25f)), Is.True);
         }
         finally
@@ -26,7 +26,7 @@ public sealed class CombatTraversalTests
     }
 
     [Test]
-    public void CanStandAt_RejectsTooSteepSlope()
+    public void CanStandAt_AllowsSteepSlopeBecauseNavMeshOwnsWalkability()
     {
         GameObject go = new GameObject("CombatMapSystem");
         try
@@ -44,7 +44,7 @@ public sealed class CombatTraversalTests
 
             system.SetCurrentMap(new MapData(height, ground, seed: 1));
 
-            Assert.That(system.CanStandAt(new Vector3(1.5f, 0f, 1.5f)), Is.False);
+            Assert.That(system.CanStandAt(new Vector3(1.5f, 0f, 1.5f)), Is.True);
         }
         finally
         {
