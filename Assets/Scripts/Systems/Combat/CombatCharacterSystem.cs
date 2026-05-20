@@ -45,6 +45,14 @@ public class CombatCharacterSystem : MonoBehaviour
         return _initialPositions.TryGetValue(character, out homePosition);
     }
 
+    public bool TryGetMainStoneHomePosition(Character character, out Vector3 homePosition)
+    {
+        homePosition = default;
+        if (character == null) return false;
+
+        return TryGetMainStonePositionForTeam(character.Team, out homePosition);
+    }
+
     public bool TryGetEnemyHomePosition(Character character, out Vector3 enemyHomePosition)
     {
         enemyHomePosition = default;

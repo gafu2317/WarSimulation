@@ -57,6 +57,7 @@ public sealed class LakePhaseTests
     private static MapGenerationConfig CreateConfig(LakeStampShape lake)
     {
         var config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        SetPrivateField(config, "_worldSize", 16f);
         SetPrivateField(config, "_lakeStamps", new List<LakeStampShape> { lake });
         SetPrivateField(config, "_lakeCount", 1);
         SetPrivateField(config, "_lakePlacementMargin", 3f);

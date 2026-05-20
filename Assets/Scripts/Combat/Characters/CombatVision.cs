@@ -20,12 +20,15 @@ public sealed class CombatVision : MonoBehaviour
     private readonly Dictionary<Character, Vector3?> _lastSeenPositions = new();
     private readonly Dictionary<Character, float> _lastSeenTime = new();
     private readonly List<Character> _visibleEnemies = new();
+    private readonly List<Character> _rememberedEnemies = new();
     private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[32];
 
     private Character _owner;
     private CombatMapSystem _mapSystem;
 
     public IReadOnlyList<Character> VisibleEnemies => _visibleEnemies;
+    public IReadOnlyList<Character> RememberedEnemies => _rememberedEnemies;
+    public float SearchTimeoutSeconds => _searchTimeout;
 
     private void Awake()
     {
@@ -38,6 +41,7 @@ public sealed class CombatVision : MonoBehaviour
         _lastSeenPositions.Clear();
         _lastSeenTime.Clear();
         _visibleEnemies.Clear();
+        _rememberedEnemies.Clear();
 
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
         if (characterSystem == null || _owner == null) return;
@@ -69,6 +73,7 @@ public sealed class CombatVision : MonoBehaviour
         {
             if (enemy == null || enemy == _owner) continue;
 
+            // Line-of-sight loss (forest, obstacles) only affects visibility, not memory until timeout.
             bool visible = HasLineOfSight(enemy.transform);
             if (visible)
             {
@@ -87,6 +92,8 @@ public sealed class CombatVision : MonoBehaviour
                 _lastSeenPositions[enemy] = null;
             }
         }
+
+        RebuildRememberedEnemies(enemies);
     }
 
     public bool IsVisible(Character target)
@@ -104,6 +111,30 @@ public sealed class CombatVision : MonoBehaviour
         return true;
     }
 
+    public bool HasMemoryOf(Character target)
+    {
+        if (target == null) return false;
+        if (!_lastSeenPositions.TryGetValue(target, out Vector3? stored) || !stored.HasValue) return false;
+        if (!_lastSeenTime.TryGetValue(target, out float lastSeenAt)) return false;
+
+        return Time.time - lastSeenAt <= _searchTimeout;
+    }
+
+    public float GetMemoryAgeSeconds(Character target)
+    {
+        if (target == null || !_lastSeenTime.TryGetValue(target, out float lastSeenAt)) return float.PositiveInfinity;
+        if (!HasMemoryOf(target)) return float.PositiveInfinity;
+
+        return Time.time - lastSeenAt;
+    }
+
+    public float GetMemoryRemainingSeconds(Character target)
+    {
+        if (!HasMemoryOf(target)) return 0f;
+
+        return Mathf.Max(0f, _searchTimeout - GetMemoryAgeSeconds(target));
+    }
+
     public void ReceiveSharedObservation(Character enemy, Vector3 position, float reportedAt)
     {
         if (enemy == null) return;
@@ -111,6 +142,7 @@ public sealed class CombatVision : MonoBehaviour
 
         _lastSeenPositions[enemy] = position;
         _lastSeenTime[enemy] = reportedAt;
+        RebuildRememberedEnemiesFromTracked();
     }
 
     public bool HasLineOfSight(Transform target)
@@ -170,6 +202,31 @@ public sealed class CombatVision : MonoBehaviour
     {
         if (candidate == null || root == null) return false;
         return candidate == root || candidate.IsChildOf(root);
+    }
+
+    private void RebuildRememberedEnemies(IReadOnlyList<Character> enemies)
+    {
+        _rememberedEnemies.Clear();
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Character enemy = enemies[i];
+            if (enemy == null || enemy == _owner) continue;
+            if (!HasMemoryOf(enemy)) continue;
+
+            _rememberedEnemies.Add(enemy);
+        }
+    }
+
+    private void RebuildRememberedEnemiesFromTracked()
+    {
+        _rememberedEnemies.Clear();
+        foreach (KeyValuePair<Character, Vector3?> pair in _lastSeenPositions)
+        {
+            if (pair.Key == null || pair.Key == _owner) continue;
+            if (!HasMemoryOf(pair.Key)) continue;
+
+            _rememberedEnemies.Add(pair.Key);
+        }
     }
 
     private void SyncTrackedEnemies(IReadOnlyList<Character> enemies)

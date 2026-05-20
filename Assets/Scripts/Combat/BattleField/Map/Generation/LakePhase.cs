@@ -91,6 +91,7 @@ namespace WarSimulation.Combat.Map
             int zMin = Mathf.Max(0, Mathf.FloorToInt((center.y - radius) / cs));
             int zMax = Mathf.Min(height.Height - 1, Mathf.CeilToInt((center.y + radius) / cs));
             float radiusSq = radius * radius;
+            bool checkedAnyCell = false;
 
             for (int z = zMin; z <= zMax; z++)
             {
@@ -99,12 +100,14 @@ namespace WarSimulation.Combat.Map
                     float wx = (x + 0.5f) * cs - center.x;
                     float wz = (z + 0.5f) * cs - center.y;
                     if (wx * wx + wz * wz > radiusSq) continue;
+
+                    checkedAnyCell = true;
                     if (!HeightZeroCellUtility.IsHeightZero(height, x, z))
                         return false;
                 }
             }
 
-            return true;
+            return checkedAnyCell;
         }
     }
 }

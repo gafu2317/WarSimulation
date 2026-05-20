@@ -200,6 +200,18 @@ public sealed class CombatHealthAttackTests
         AssertWeapon(new Shield(), 1.8f, 6, 1.3f, CombatStat.STR);
     }
 
+    [Test]
+    public void BibleAndRosary_IncludeDefaultSupportSkills()
+    {
+        Bible bible = new Bible();
+        Rosary rosary = new Rosary();
+
+        Assert.That(bible.Skills.Count, Is.EqualTo(1));
+        Assert.That(bible.Skills[0], Is.TypeOf<BibleHealSkill>());
+        Assert.That(rosary.Skills.Count, Is.EqualTo(1));
+        Assert.That(rosary.Skills[0], Is.TypeOf<RosaryFaithBuffSkill>());
+    }
+
     private static void AssertWeapon(
         WeaponBase weapon,
         float range,

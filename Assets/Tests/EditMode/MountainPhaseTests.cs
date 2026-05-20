@@ -50,6 +50,7 @@ public sealed class MountainPhaseTests
     private static MapGenerationConfig CreateConfig(HeightStampShape large, HeightStampShape small)
     {
         var config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        SetPrivateField(config, "_worldSize", 20f);
         SetPrivateField(config, "_largeMountainShape", large);
         SetPrivateField(config, "_largeMountainCandidatePositionsNormalized", new List<Vector2>
         {

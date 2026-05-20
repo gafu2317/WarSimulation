@@ -26,6 +26,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     {
         None = 0,
         AttackEnemy = 1,
+        UseSkill = 2,
     }
 
     public readonly struct MoveOption
@@ -48,12 +49,14 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     {
         public ActionKind Kind { get; }
         public Character Target { get; }
+        public SkillBase Skill { get; }
         public float Score { get; }
 
-        public ActionOption(ActionKind kind, float score, Character target = null)
+        public ActionOption(ActionKind kind, float score, Character target = null, SkillBase skill = null)
         {
             Kind = kind;
             Target = target;
+            Skill = skill;
             Score = score;
         }
     }
@@ -79,6 +82,9 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     [SerializeField, Min(0.1f)] private float _patrolRadius = 8f;
     [SerializeField, Min(0.01f)] private float _patrolArrivalDistance = 1.25f;
     [SerializeField, Min(0.01f)] private float _lastKnownArrivalDistance = 1f;
+    [SerializeField, Min(0f)] private float _pursueLastKnownScore = 90f;
+    [SerializeField, Min(0f)] private float _moveIntentLockSeconds = 2f;
+    [SerializeField, Min(0f)] private float _moveIntentSwitchMargin = 15f;
     [SerializeField, Min(0f)] private float _highGroundThreshold = 5f;
     [SerializeField, Min(1)] private int _highGroundSearchSamples = 8;
     [SerializeField, Min(1f)] private float _highGroundSearchRadius = 15f;
@@ -93,6 +99,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     private CombatCharacterBody _body;
     private CombatCharacterSystem _characterSystem;
     private CombatMapSystem _mapSystem;
+    private CombatSkillCooldowns _skillCooldowns;
     private float _nextDecisionTime;
     private float _nextMoveCommandTime;
     private Decision _lastDecision = new Decision(
@@ -102,6 +109,9 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     private bool _hasPatrolDestination;
     private Vector3 _patrolDestination;
     private int _patrolPointIndex;
+    private bool _hasMoveIntentLock;
+    private MoveOption _lockedMove;
+    private float _moveIntentLockedUntil;
 
     public Character CurrentTarget { get; private set; }
 
@@ -134,12 +144,12 @@ public sealed class SimpleCombatBrain : MonoBehaviour
 
         List<Character> visibleTargets = GetVisibleTargets();
         Character nearestVisibleTarget = FindNearest(visibleTargets);
-        if (nearestVisibleTarget != null)
-        {
-            CurrentTarget = nearestVisibleTarget;
-        }
+        UpdateCurrentTarget(visibleTargets, nearestVisibleTarget);
 
-        MoveOption move = PickBestMoveOption(BuildMoveOptions(visibleTargets, nearestVisibleTarget));
+        bool isPursuingMemory = IsPursuingRememberedTarget();
+        List<MoveOption> moveOptions = BuildMoveOptions(visibleTargets, nearestVisibleTarget, isPursuingMemory);
+        MoveOption bestMove = PickBestMoveOption(moveOptions);
+        MoveOption move = ApplyMoveIntentStability(bestMove, moveOptions, visibleTargets);
         ActionOption action = PickBestActionOption(BuildActionOptions(visibleTargets));
         return new Decision(move, action);
     }
@@ -163,7 +173,10 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         return _lastDecision;
     }
 
-    private List<MoveOption> BuildMoveOptions(List<Character> visibleTargets, Character nearestVisibleTarget)
+    private List<MoveOption> BuildMoveOptions(
+        List<Character> visibleTargets,
+        Character nearestVisibleTarget,
+        bool isPursuingMemory)
     {
         WeaponBase weapon = GetCurrentWeapon();
         var options = new List<MoveOption>
@@ -173,14 +186,21 @@ public sealed class SimpleCombatBrain : MonoBehaviour
 
         AddRetreatOption(options);
         AddChaseOption(options, nearestVisibleTarget, weapon);
-        AddCombatHoldOption(options, visibleTargets);
-        AddLastKnownPositionOption(options, visibleTargets.Count == 0);
+        AddCombatHoldOption(options, visibleTargets, weapon);
+        AddLastKnownPositionOption(options, isPursuingMemory);
         AddDefendHomeBaseOption(options, visibleTargets);
-        AddFollowAllyOption(options, weapon);
+        if (!isPursuingMemory)
+        {
+            AddFollowAllyOption(options, weapon, visibleTargets);
+        }
+
         AddSeekHighGroundOption(options, weapon);
-        AddHideInForestOption(options, weapon, visibleTargets);
-        AddAssaultEnemyBaseOption(options, visibleTargets.Count == 0);
-        AddPatrolOption(options);
+        if (!isPursuingMemory)
+        {
+            AddHideInForestOption(options, weapon, visibleTargets);
+            AddAssaultEnemyBaseOption(options, visibleTargets.Count == 0);
+            AddPatrolOption(options);
+        }
 
         return options;
     }
@@ -192,13 +212,107 @@ public sealed class SimpleCombatBrain : MonoBehaviour
             new ActionOption(ActionKind.None, 0f),
         };
 
+        WeaponBase weapon = GetCurrentWeapon();
+        float bestSkillScore = GetBestSkillScore(visibleTargets);
         Character target = FindBestAttackTarget(visibleTargets);
         if (target != null)
         {
-            options.Add(new ActionOption(ActionKind.AttackEnemy, 100f, target));
+            float attackScore = ResolveAttackEnemyScore(weapon, bestSkillScore);
+            options.Add(new ActionOption(ActionKind.AttackEnemy, attackScore, target));
         }
 
+        AddUseSkillOptions(options, visibleTargets);
+
         return options;
+    }
+
+    private void AddUseSkillOptions(List<ActionOption> options, List<Character> visibleTargets)
+    {
+        WeaponBase weapon = GetCurrentWeapon();
+        IReadOnlyList<SkillBase> skills = weapon.Skills;
+        if (skills == null || skills.Count == 0) return;
+
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null) continue;
+            if (_skillCooldowns != null && !_skillCooldowns.IsReady(skill)) continue;
+
+            List<Character> candidates = GetSkillTargetCandidates(skill, visibleTargets);
+            if (candidates.Count == 0) continue;
+
+            Character bestTarget = null;
+            float bestScore = float.NegativeInfinity;
+            for (int j = 0; j < candidates.Count; j++)
+            {
+                Character target = candidates[j];
+                if (!IsValidSkillTarget(skill, target)) continue;
+
+                float score = skill.EvaluateScore(_owner, target);
+                if (score <= bestScore) continue;
+
+                bestTarget = target;
+                bestScore = score;
+            }
+
+            if (bestTarget == null || bestScore <= 0f) continue;
+
+            options.Add(new ActionOption(ActionKind.UseSkill, bestScore, bestTarget, skill));
+        }
+    }
+
+    private List<Character> GetSkillTargetCandidates(SkillBase skill, List<Character> visibleTargets)
+    {
+        var candidates = new List<Character>();
+        if (skill == null) return candidates;
+
+        switch (skill.TargetKind)
+        {
+            case SkillTargetKind.Ally:
+            case SkillTargetKind.AllyOrSelf:
+                AddAllySkillCandidates(candidates, includeSelf: skill.TargetKind == SkillTargetKind.AllyOrSelf);
+                break;
+            default:
+                candidates.AddRange(visibleTargets);
+                break;
+        }
+
+        return candidates;
+    }
+
+    private void AddAllySkillCandidates(List<Character> candidates, bool includeSelf)
+    {
+        if (ResolveCharacterSystem() == null) return;
+
+        IReadOnlyList<Character> allies = _characterSystem.GetAlliesOf(_owner);
+        for (int i = 0; i < allies.Count; i++)
+        {
+            Character ally = allies[i];
+            if (ally == null) continue;
+            if (!includeSelf && ally == _owner) continue;
+
+            candidates.Add(ally);
+        }
+
+        if (includeSelf && _owner != null && !candidates.Contains(_owner))
+        {
+            candidates.Add(_owner);
+        }
+    }
+
+    private bool IsValidSkillTarget(SkillBase skill, Character target)
+    {
+        if (target == null || target.Health == null || _owner == null) return false;
+
+        switch (skill.TargetKind)
+        {
+            case SkillTargetKind.Ally:
+            case SkillTargetKind.AllyOrSelf:
+                if (target == _owner) return target.Health.CanAct;
+                return target.Team == _owner.Team && target.Health.CanAct;
+            default:
+                return IsValidTarget(target);
+        }
     }
 
     private void AddRetreatOption(List<MoveOption> options)
@@ -221,10 +335,16 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         if (nearestVisibleTarget == null || _attack == null) return;
 
         float distance = Vector3.Distance(transform.position, nearestVisibleTarget.transform.position);
-        float chaseThreshold = _attack.CurrentWeapon.Range * 0.8f;
+        float range = _attack.CurrentWeapon.Range;
+        float chaseThreshold = range * GetChaseStopRatio(weapon);
         if (distance <= chaseThreshold) return;
 
         float score = 85f + weapon.ChaseEnemyBias;
+        if (weapon.HideInForestBias > 0f)
+        {
+            score -= weapon.HideInForestBias * 0.25f;
+        }
+
         options.Add(new MoveOption(
             MoveKind.ChaseEnemy,
             score,
@@ -232,7 +352,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
             nearestVisibleTarget.transform.position));
     }
 
-    private void AddCombatHoldOption(List<MoveOption> options, List<Character> visibleTargets)
+    private void AddCombatHoldOption(List<MoveOption> options, List<Character> visibleTargets, WeaponBase weapon)
     {
         if (_attack == null) return;
 
@@ -241,16 +361,17 @@ public sealed class SimpleCombatBrain : MonoBehaviour
             Character target = visibleTargets[i];
             if (!_attack.IsInRange(target)) continue;
 
-            options.Add(new MoveOption(MoveKind.Idle, 80f, target, transform.position));
+            float holdScore = ResolveCombatHoldScore(weapon);
+            options.Add(new MoveOption(MoveKind.Idle, holdScore, target, transform.position));
             return;
         }
     }
 
-    private void AddLastKnownPositionOption(List<MoveOption> options, bool hasNoVisibleTargets)
+    private void AddLastKnownPositionOption(List<MoveOption> options, bool isPursuingMemory)
     {
-        if (!hasNoVisibleTargets || CurrentTarget == null || _vision == null) return;
+        if (!isPursuingMemory || CurrentTarget == null || _vision == null) return;
 
-        if (!IsValidTarget(CurrentTarget))
+        if (!IsValidTarget(CurrentTarget) || !_vision.HasMemoryOf(CurrentTarget))
         {
             CurrentTarget = null;
             return;
@@ -262,15 +383,22 @@ public sealed class SimpleCombatBrain : MonoBehaviour
             return;
         }
 
+        float score = _pursueLastKnownScore;
+        float remaining = _vision.GetMemoryRemainingSeconds(CurrentTarget);
+        if (remaining <= 3f)
+        {
+            score += 5f;
+        }
+
         if (IsArrivedAt(lastKnownPosition, _lastKnownArrivalDistance))
         {
-            CurrentTarget = null;
+            BoostMoveOptionScore(options, MoveKind.Idle, score);
             return;
         }
 
         options.Add(new MoveOption(
             MoveKind.MoveToLastKnownEnemyPosition,
-            70f,
+            score,
             CurrentTarget,
             lastKnownPosition));
     }
@@ -278,7 +406,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     private void AddDefendHomeBaseOption(List<MoveOption> options, List<Character> visibleTargets)
     {
         if (ResolveCharacterSystem() == null ||
-            !_characterSystem.TryGetHomePosition(_owner, out Vector3 homePosition))
+            !_characterSystem.TryGetMainStoneHomePosition(_owner, out Vector3 homePosition))
         {
             return;
         }
@@ -298,7 +426,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         options.Add(new MoveOption(MoveKind.DefendHomeBase, score, destination: homePosition));
     }
 
-    private void AddFollowAllyOption(List<MoveOption> options, WeaponBase weapon)
+    private void AddFollowAllyOption(List<MoveOption> options, WeaponBase weapon, List<Character> visibleTargets)
     {
         if (ResolveCharacterSystem() == null) return;
 
@@ -310,6 +438,11 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         float distance = Vector3.Distance(transform.position, ally.transform.position);
         float score = Mathf.Lerp(45f, 75f, Mathf.Clamp01((distance - _followDistance) / _followDistance));
         score += weapon.FollowMeleeAllyBias;
+        if (weapon.FollowMeleeAllyBias > 0f && visibleTargets.Count > 0)
+        {
+            score += 20f;
+        }
+
         options.Add(new MoveOption(MoveKind.FollowAlly, score, ally, ally.transform.position));
     }
 
@@ -369,9 +502,15 @@ public sealed class SimpleCombatBrain : MonoBehaviour
             return;
         }
 
+        float hideScore = weapon.HideInForestBias;
+        if (visibleTargets.Count > 0)
+        {
+            hideScore += 25f;
+        }
+
         options.Add(new MoveOption(
             MoveKind.HideInForest,
-            weapon.HideInForestBias,
+            hideScore,
             destination: destination));
     }
 
@@ -408,6 +547,102 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         return best;
     }
 
+    private MoveOption ApplyMoveIntentStability(
+        MoveOption best,
+        List<MoveOption> options,
+        List<Character> visibleTargets)
+    {
+        if (ShouldSwitchMoveIntentImmediately(best, visibleTargets))
+        {
+            UpdateMoveIntentLock(best);
+            return best;
+        }
+
+        if (_hasMoveIntentLock &&
+            Time.time < _moveIntentLockedUntil &&
+            TryFindEquivalentMoveOption(_lockedMove, options, out MoveOption equivalent))
+        {
+            if (best.Score < _lockedMove.Score + _moveIntentSwitchMargin)
+            {
+                UpdateMoveIntentLock(equivalent);
+                return equivalent;
+            }
+        }
+
+        UpdateMoveIntentLock(best);
+        return best;
+    }
+
+    private bool ShouldSwitchMoveIntentImmediately(MoveOption best, List<Character> visibleTargets)
+    {
+        if (best.Kind == MoveKind.RetreatToHome) return true;
+        if (best.Kind == MoveKind.MoveToLastKnownEnemyPosition) return true;
+
+        if (best.Kind == MoveKind.Idle &&
+            best.Target != null &&
+            _attack != null &&
+            _attack.CanAttack(best.Target))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryFindEquivalentMoveOption(
+        MoveOption locked,
+        List<MoveOption> options,
+        out MoveOption equivalent)
+    {
+        for (int i = 0; i < options.Count; i++)
+        {
+            MoveOption option = options[i];
+            if (!AreMoveTargetsEquivalent(locked, option)) continue;
+
+            equivalent = option;
+            return true;
+        }
+
+        if (locked.Kind == MoveKind.MoveToLastKnownEnemyPosition &&
+            IsPursuingRememberedTarget())
+        {
+            for (int i = 0; i < options.Count; i++)
+            {
+                MoveOption option = options[i];
+                if (option.Kind != MoveKind.Idle) continue;
+                if (option.Target != CurrentTarget) continue;
+
+                equivalent = option;
+                return true;
+            }
+        }
+
+        equivalent = default;
+        return false;
+    }
+
+    private static bool AreMoveTargetsEquivalent(MoveOption a, MoveOption b)
+    {
+        if (a.Kind != b.Kind) return false;
+        return a.Target == b.Target;
+    }
+
+    private void UpdateMoveIntentLock(MoveOption move)
+    {
+        if (move.Kind == MoveKind.Idle)
+        {
+            if (!IsPursuingRememberedTarget() || move.Score < _pursueLastKnownScore * 0.5f)
+            {
+                _hasMoveIntentLock = false;
+                return;
+            }
+        }
+
+        _lockedMove = move;
+        _hasMoveIntentLock = true;
+        _moveIntentLockedUntil = Time.time + _moveIntentLockSeconds;
+    }
+
     private ActionOption PickBestActionOption(List<ActionOption> options)
     {
         ActionOption best = options[0];
@@ -435,9 +670,70 @@ public sealed class SimpleCombatBrain : MonoBehaviour
 
     private void ExecuteAction(ActionOption action)
     {
-        if (action.Kind != ActionKind.AttackEnemy) return;
+        if (action.Kind == ActionKind.AttackEnemy)
+        {
+            _attack?.TryAttack(action.Target);
+            return;
+        }
 
-        _attack?.TryAttack(action.Target);
+        if (action.Kind == ActionKind.UseSkill)
+        {
+            if (action.Skill == null) return;
+            if (_skillCooldowns != null && !_skillCooldowns.IsReady(action.Skill)) return;
+
+            action.Skill.Execute(_owner, action.Target);
+            _skillCooldowns?.StartCooldown(action.Skill);
+        }
+    }
+
+    private void UpdateCurrentTarget(List<Character> visibleTargets, Character nearestVisibleTarget)
+    {
+        if (nearestVisibleTarget != null)
+        {
+            CurrentTarget = nearestVisibleTarget;
+            return;
+        }
+
+        if (CurrentTarget != null &&
+            _vision != null &&
+            _vision.HasMemoryOf(CurrentTarget) &&
+            IsValidTarget(CurrentTarget))
+        {
+            return;
+        }
+
+        CurrentTarget = FindBestRememberedTarget();
+    }
+
+    private bool IsPursuingRememberedTarget()
+    {
+        if (CurrentTarget == null || _vision == null) return false;
+        if (_vision.IsVisible(CurrentTarget)) return false;
+
+        return _vision.HasMemoryOf(CurrentTarget) && IsValidTarget(CurrentTarget);
+    }
+
+    private Character FindBestRememberedTarget()
+    {
+        if (_vision == null) return null;
+
+        IReadOnlyList<Character> remembered = _vision.RememberedEnemies;
+        Character best = null;
+        float bestSqrDistance = float.PositiveInfinity;
+        for (int i = 0; i < remembered.Count; i++)
+        {
+            Character enemy = remembered[i];
+            if (!IsValidTarget(enemy)) continue;
+            if (!_vision.TryGetLastKnownPosition(enemy, out Vector3 lastKnownPosition)) continue;
+
+            float sqrDistance = (lastKnownPosition - transform.position).sqrMagnitude;
+            if (sqrDistance >= bestSqrDistance) continue;
+
+            best = enemy;
+            bestSqrDistance = sqrDistance;
+        }
+
+        return best;
     }
 
     private List<Character> GetVisibleTargets()
@@ -563,6 +859,109 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     {
         if (_attack != null) return _attack.CurrentWeapon;
         return _owner != null && _owner.EquippedWeapon != null ? _owner.EquippedWeapon : WeaponBase.Unarmed;
+    }
+
+    private const float DefaultAttackScore = 100f;
+    private const float SupportWeaponAttackScore = 82f;
+    private const float BaseCombatHoldScore = 80f;
+    private const float ReducedCombatHoldScore = 40f;
+
+    private static float GetChaseStopRatio(WeaponBase weapon)
+    {
+        if (weapon.HideInForestBias > 0f) return 0.98f;
+        if (weapon.Range >= 5f) return 0.95f;
+        return 0.8f;
+    }
+
+    private float ResolveCombatHoldScore(WeaponBase weapon)
+    {
+        if (weapon.HideInForestBias > 0f)
+        {
+            if (IsOwnerInForest())
+            {
+                return BaseCombatHoldScore + weapon.HideInForestBias * 0.15f;
+            }
+
+            return ReducedCombatHoldScore;
+        }
+
+        if (weapon.SeekHighGroundBias > 0f &&
+            TryGetOwnerTerrain(out TerrainInfo terrain) &&
+            terrain.Height >= _highGroundThreshold)
+        {
+            return BaseCombatHoldScore + weapon.SeekHighGroundBias * 0.2f;
+        }
+
+        return BaseCombatHoldScore;
+    }
+
+    private bool IsOwnerInForest()
+    {
+        return TryGetOwnerTerrain(out TerrainInfo terrain) && terrain.IsForest;
+    }
+
+    private bool TryGetOwnerTerrain(out TerrainInfo terrain)
+    {
+        terrain = default;
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        return mapSystem != null && mapSystem.TryGetTerrainInfo(transform.position, out terrain);
+    }
+
+    private float GetBestSkillScore(List<Character> visibleTargets)
+    {
+        WeaponBase weapon = GetCurrentWeapon();
+        IReadOnlyList<SkillBase> skills = weapon.Skills;
+        if (skills == null || skills.Count == 0) return 0f;
+
+        float bestScore = 0f;
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null) continue;
+            if (_skillCooldowns != null && !_skillCooldowns.IsReady(skill)) continue;
+
+            List<Character> candidates = GetSkillTargetCandidates(skill, visibleTargets);
+            for (int j = 0; j < candidates.Count; j++)
+            {
+                Character target = candidates[j];
+                if (!IsValidSkillTarget(skill, target)) continue;
+
+                float score = skill.EvaluateScore(_owner, target);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                }
+            }
+        }
+
+        return bestScore;
+    }
+
+    private static float ResolveAttackEnemyScore(WeaponBase weapon, float bestSkillScore)
+    {
+        if (bestSkillScore <= 0f) return DefaultAttackScore;
+        if (HasAllyOrSelfSupportSkill(weapon)) return SupportWeaponAttackScore;
+        if (bestSkillScore >= 85f) return bestSkillScore - 5f;
+        return DefaultAttackScore;
+    }
+
+    private static bool HasAllyOrSelfSupportSkill(WeaponBase weapon)
+    {
+        IReadOnlyList<SkillBase> skills = weapon.Skills;
+        if (skills == null) return false;
+
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null) continue;
+            if (skill.TargetKind == SkillTargetKind.Ally ||
+                skill.TargetKind == SkillTargetKind.AllyOrSelf)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void BoostMoveOptionScore(List<MoveOption> options, MoveKind kind, float bonus)
@@ -753,6 +1152,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         _health ??= GetComponent<CombatHealth>();
         _attack ??= GetComponent<CombatAttack>();
         _body ??= GetComponent<CombatCharacterBody>();
+        _skillCooldowns ??= _owner != null ? _owner.SkillCooldowns : GetComponent<CombatSkillCooldowns>();
         ResolveCharacterSystem();
         ResolveMapSystem();
     }

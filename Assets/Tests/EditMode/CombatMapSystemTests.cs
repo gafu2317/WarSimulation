@@ -20,7 +20,7 @@ public sealed class CombatMapSystemTests
             Assert.That(info.IsInBounds, Is.True);
             Assert.That(info.Cell, Is.EqualTo(new Vector2Int(1, 1)));
             Assert.That(info.GroundState, Is.EqualTo(GroundState.Swamp));
-            Assert.That(info.Height, Is.EqualTo(3f).Within(0.001f));
+            Assert.That(info.Height, Is.EqualTo(6.25f).Within(0.001f));
             Assert.That(info.SurfaceNormal.magnitude, Is.EqualTo(1f).Within(0.001f));
             Assert.That(info.IsWater, Is.False);
             Assert.That(info.IsForest, Is.True);

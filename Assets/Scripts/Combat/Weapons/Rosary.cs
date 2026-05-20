@@ -43,6 +43,6 @@ public class Rosary : WeaponBase
         _seekHighGroundBias = seekHighGroundBias;
         _followMeleeAllyBias = followMeleeAllyBias;
         _sharesObservationFromHighGround = sharesObservationFromHighGround;
-        _skills = skills ?? System.Array.Empty<SkillBase>();
+        _skills = skills ?? new SkillBase[] { new RosaryFaithBuffSkill() };
     }
 }

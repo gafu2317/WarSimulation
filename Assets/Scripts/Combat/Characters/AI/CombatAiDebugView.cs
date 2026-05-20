@@ -18,10 +18,13 @@ public sealed class CombatAiDebugView : MonoBehaviour
     [SerializeField] private Color _backgroundColor = new Color(0f, 0f, 0f, 0.65f);
     [SerializeField, Min(1f)] private float _healthBarWidth = 72f;
     [SerializeField, Min(1f)] private float _healthBarHeight = 7f;
+    [SerializeField, Min(1)] private int _weaponLabelFontSize = 30;
+    [SerializeField, Min(1f)] private float _weaponLabelHeight = 40f;
+    [SerializeField, Min(0f)] private float _weaponLabelGap = 2f;
     [SerializeField] private Color _maxHealthColor = new Color(0.35f, 0.35f, 0.35f, 1f);
     [SerializeField] private Color _currentHealthColor = new Color(0.65f, 1f, 0.2f, 1f);
 
-    private const int LineCount = 5;
+    private const int LineCount = 9;
     private const string DefaultFontAssetPath = "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular.ttf";
     private const float Padding = 6f;
     private const float EntryGap = 8f;
@@ -40,6 +43,7 @@ public sealed class CombatAiDebugView : MonoBehaviour
     private CombatVision _vision;
     private GUIStyle _labelStyle;
     private GUIStyle _titleStyle;
+    private GUIStyle _weaponLabelStyle;
     private Texture2D _backgroundTexture;
     private Texture2D _maxHealthTexture;
     private Texture2D _currentHealthTexture;
@@ -183,19 +187,33 @@ public sealed class CombatAiDebugView : MonoBehaviour
         SimpleCombatBrain.Decision decision,
         string targetName,
         LifeState lifeState,
-        int visibleEnemyCount)
+        int visibleEnemyCount,
+        WeaponKind weaponKind = WeaponKind.Unarmed,
+        int rememberedEnemyCount = 0,
+        string pursuitLabel = null)
     {
         if (string.IsNullOrEmpty(targetName))
         {
             targetName = "-";
         }
 
+        if (string.IsNullOrEmpty(pursuitLabel))
+        {
+            pursuitLabel = targetName;
+        }
+
+        string skillName = decision.Action.Skill != null ? decision.Action.Skill.Name : "-";
+
         return
+            $"武器: {FormatWeaponKind(weaponKind)}\n" +
             $"移動: {FormatMoveKind(decision.Move.Kind)} {decision.Move.Score:0.#}\n" +
             $"行動: {FormatActionKind(decision.Action.Kind)} {decision.Action.Score:0.#}\n" +
             $"対象: {targetName}\n" +
-            $"状態: {FormatLifeState(lifeState)}\n" +
-            $"視認: {visibleEnemyCount}";
+            $"追跡: {pursuitLabel}\n" +
+            $"スキル: {skillName}\n" +
+            $"視認: {visibleEnemyCount}\n" +
+            $"記憶: {rememberedEnemyCount}\n" +
+            $"状態: {FormatLifeState(lifeState)}";
     }
 
     public static string FormatMoveKind(SimpleCombatBrain.MoveKind kind) => kind switch
@@ -217,6 +235,7 @@ public sealed class CombatAiDebugView : MonoBehaviour
     {
         SimpleCombatBrain.ActionKind.None => "なし",
         SimpleCombatBrain.ActionKind.AttackEnemy => "攻撃",
+        SimpleCombatBrain.ActionKind.UseSkill => "スキル使用",
         _ => kind.ToString(),
     };
 
@@ -227,6 +246,18 @@ public sealed class CombatAiDebugView : MonoBehaviour
         _ => lifeState.ToString(),
     };
 
+    public static string FormatWeaponKind(WeaponKind kind) => kind switch
+    {
+        WeaponKind.Unarmed => "素手",
+        WeaponKind.Sword => "双剣",
+        WeaponKind.Shield => "盾",
+        WeaponKind.Wand => "杖",
+        WeaponKind.Grimoire => "魔導書",
+        WeaponKind.Bible => "聖書",
+        WeaponKind.Rosary => "ロザリオ",
+        _ => kind.ToString(),
+    };
+
     private string BuildCurrentDebugText()
     {
         SimpleCombatBrain.Decision decision = _brain.GetLastDecision();
@@ -234,8 +265,31 @@ public sealed class CombatAiDebugView : MonoBehaviour
         string targetName = target != null ? target.name : "-";
         LifeState state = _health != null ? _health.LifeState : LifeState.Active;
         int visibleCount = _vision != null ? _vision.VisibleEnemies.Count : 0;
+        int rememberedCount = _vision != null ? _vision.RememberedEnemies.Count : 0;
+        string pursuitLabel = FormatPursuitLabel(target);
 
-        return BuildDebugText(decision, targetName, state, visibleCount);
+        return BuildDebugText(
+            decision,
+            targetName,
+            state,
+            visibleCount,
+            ResolveWeaponKind(),
+            rememberedCount,
+            pursuitLabel);
+    }
+
+    private string FormatPursuitLabel(Character target)
+    {
+        if (target == null) return "-";
+        if (_vision != null &&
+            !_vision.IsVisible(target) &&
+            _vision.HasMemoryOf(target))
+        {
+            float remaining = _vision.GetMemoryRemainingSeconds(target);
+            return $"{target.name}(記憶{remaining:0.#}s)";
+        }
+
+        return target.name;
     }
 
     private Character ResolveDisplayTarget(SimpleCombatBrain.Decision decision)
@@ -275,15 +329,30 @@ public sealed class CombatAiDebugView : MonoBehaviour
         if (screenPoint.z <= 0f) return;
 
         float width = _healthBarWidth;
+        float totalHeight = _weaponLabelHeight + _weaponLabelGap + _healthBarHeight;
         float x = screenPoint.x - width * 0.5f;
-        float y = Screen.height - screenPoint.y;
+        float y = Screen.height - screenPoint.y - totalHeight + _healthBarHeight;
         x = Mathf.Clamp(x, 0f, Mathf.Max(0f, Screen.width - width));
-        y = Mathf.Clamp(y, 0f, Mathf.Max(0f, Screen.height - _healthBarHeight));
+        y = Mathf.Clamp(y, 0f, Mathf.Max(0f, Screen.height - totalHeight));
 
         float hpRatio = Mathf.Clamp01(_health.HP / (float)_health.MaxHP);
 
+        string weaponLabel = FormatWeaponKind(ResolveWeaponKind());
+        float labelY = y - _weaponLabelGap - _weaponLabelHeight;
+        GUI.Label(new Rect(x, labelY, width, _weaponLabelHeight), weaponLabel, _weaponLabelStyle);
+
         GUI.DrawTexture(new Rect(x, y, width, _healthBarHeight), _maxHealthTexture);
         GUI.DrawTexture(new Rect(x, y, width * hpRatio, _healthBarHeight), _currentHealthTexture);
+    }
+
+    private WeaponKind ResolveWeaponKind()
+    {
+        if (_character?.Attack != null)
+        {
+            return _character.Attack.CurrentWeapon.Kind;
+        }
+
+        return WeaponKind.Unarmed;
     }
 
     private Camera ResolveCamera()
@@ -330,6 +399,23 @@ public sealed class CombatAiDebugView : MonoBehaviour
             _titleStyle.normal.textColor = _titleColor;
         }
 
+        if (_weaponLabelStyle == null)
+        {
+            _weaponLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = _weaponLabelFontSize,
+                normal = { textColor = _textColor },
+                alignment = TextAnchor.UpperCenter,
+                wordWrap = false,
+                clipping = TextClipping.Clip,
+            };
+        }
+        else
+        {
+            _weaponLabelStyle.fontSize = _weaponLabelFontSize;
+            _weaponLabelStyle.normal.textColor = _textColor;
+        }
+
         ApplyFontToStyles();
 
         if (_backgroundTexture == null)
@@ -359,6 +445,7 @@ public sealed class CombatAiDebugView : MonoBehaviour
         _cachedFont = font;
         if (_labelStyle != null) _labelStyle.font = font;
         if (_titleStyle != null) _titleStyle.font = font;
+        if (_weaponLabelStyle != null) _weaponLabelStyle.font = font;
     }
 
     private Font ResolveFont()

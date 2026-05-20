@@ -7,9 +7,16 @@ public sealed class CombatAttack : MonoBehaviour
     private float _nextAttackTime;
 
     public bool IsCooldownReady => Time.time >= _nextAttackTime;
-    public WeaponBase CurrentWeapon => _owner != null && _owner.EquippedWeapon != null
-        ? _owner.EquippedWeapon
-        : WeaponBase.Unarmed;
+    public WeaponBase CurrentWeapon
+    {
+        get
+        {
+            _owner ??= GetComponent<Character>();
+            return _owner != null && _owner.EquippedWeapon != null
+                ? _owner.EquippedWeapon
+                : WeaponBase.Unarmed;
+        }
+    }
 
     private void Awake()
     {

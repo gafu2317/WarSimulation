@@ -6,9 +6,12 @@ using UnityEngine.AI;
 [RequireComponent(typeof(CombatVision))]
 [RequireComponent(typeof(CombatHealth))]
 [RequireComponent(typeof(CombatAttack))]
+[RequireComponent(typeof(CombatStatusEffects))]
+[RequireComponent(typeof(CombatSkillCooldowns))]
 public class Character : MonoBehaviour
 {
     [SerializeField] private CombatTeam _team = CombatTeam.Ally;
+    [SerializeField] private WeaponConfig _initialWeaponConfig;
 
     // キャラクターの基礎データ
     public CharacterData CharacterData { private set; get; }
@@ -16,6 +19,8 @@ public class Character : MonoBehaviour
     public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
     public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
     public CombatAttack Attack => _attack != null ? _attack : GetComponent<CombatAttack>();
+    public CombatStatusEffects StatusEffects => ResolveStatusEffects();
+    public CombatSkillCooldowns SkillCooldowns => ResolveSkillCooldowns();
 
     // パラメータ
     public int MaxHP => Health != null ? Health.MaxHP : 0;
@@ -27,10 +32,10 @@ public class Character : MonoBehaviour
     public int AGI { private set; get; }
 
     // バフ・デバフ率
-    public float STRBuff { private set; get; } = 1f;
-    public float INTBuff { private set; get; } = 1f;
-    public float FAIBuff { private set; get; } = 1f;
-    public float AGIBuff { private set; get; } = 1f;
+    public float STRBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.STR);
+    public float INTBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.INT);
+    public float FAIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.FAI);
+    public float AGIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.AGI);
 
     // 性格
     public PersonalityBase Personality { private set; get; }
@@ -43,6 +48,8 @@ public class Character : MonoBehaviour
     private CombatVision _vision;
     private CombatHealth _health;
     private CombatAttack _attack;
+    private CombatStatusEffects _statusEffects;
+    private CombatSkillCooldowns _skillCooldowns;
 
     private void Awake()
     {
@@ -70,6 +77,46 @@ public class Character : MonoBehaviour
         {
             _attack = gameObject.AddComponent<CombatAttack>();
         }
+
+        _statusEffects = GetComponent<CombatStatusEffects>();
+        if (_statusEffects == null)
+        {
+            _statusEffects = gameObject.AddComponent<CombatStatusEffects>();
+        }
+
+        _skillCooldowns = GetComponent<CombatSkillCooldowns>();
+        if (_skillCooldowns == null)
+        {
+            _skillCooldowns = gameObject.AddComponent<CombatSkillCooldowns>();
+        }
+
+        ApplyInitialWeaponFromConfig();
+    }
+
+    private CombatStatusEffects ResolveStatusEffects()
+    {
+        if (_statusEffects != null) return _statusEffects;
+
+        _statusEffects = GetComponent<CombatStatusEffects>();
+        if (_statusEffects == null)
+        {
+            _statusEffects = gameObject.AddComponent<CombatStatusEffects>();
+        }
+
+        return _statusEffects;
+    }
+
+    private CombatSkillCooldowns ResolveSkillCooldowns()
+    {
+        if (_skillCooldowns != null) return _skillCooldowns;
+
+        _skillCooldowns = GetComponent<CombatSkillCooldowns>();
+        if (_skillCooldowns == null)
+        {
+            _skillCooldowns = gameObject.AddComponent<CombatSkillCooldowns>();
+        }
+
+        return _skillCooldowns;
     }
 
     public void SetTeam(CombatTeam team)
@@ -95,6 +142,13 @@ public class Character : MonoBehaviour
         // AGIパラメータを基準速度に反映させたい場合は CombatCharacterBody.BaseSpeed を更新する。
     }
 
+    public void ApplyInitialWeaponFromConfig()
+    {
+        if (_initialWeaponConfig == null) return;
+
+        EquipWeapon(_initialWeaponConfig.CreateWeapon());
+    }
+
     // 武器装備
     public void EquipWeapon(WeaponBase weapon)
     {
@@ -110,6 +164,7 @@ public class Character : MonoBehaviour
     // バトル開始時の初期化処理
     public void InitializeOnBattleStart()
     {
+        ApplyInitialWeaponFromConfig();
         _vision ??= GetComponent<CombatVision>();
         _vision?.Initialize();
     }

@@ -39,6 +39,6 @@ public class Bible : WeaponBase
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;
         _followMeleeAllyBias = followMeleeAllyBias;
-        _skills = skills ?? System.Array.Empty<SkillBase>();
+        _skills = skills ?? new SkillBase[] { new BibleHealSkill() };
     }
 }
