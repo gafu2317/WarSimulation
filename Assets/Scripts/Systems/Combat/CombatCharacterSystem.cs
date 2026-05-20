@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using System.Collections.Generic;
 using WarSimulation.Combat.Map;
 
@@ -60,6 +61,22 @@ public class CombatCharacterSystem : MonoBehaviour
         if (character == null || _initialPositions.ContainsKey(character)) return;
 
         _initialPositions[character] = character.transform.position;
+    }
+
+    public void SnapAllCharactersToNavMesh(float searchRadius = 10f)
+    {
+        SnapListToNavMesh(AllyCharacters, searchRadius);
+        SnapListToNavMesh(EnemyCharacters, searchRadius);
+    }
+
+    private static void SnapListToNavMesh(List<Character> characters, float radius)
+    {
+        foreach (Character character in characters)
+        {
+            if (character == null) continue;
+            if (NavMesh.SamplePosition(character.transform.position, out NavMeshHit hit, radius, NavMesh.AllAreas))
+                character.transform.position = hit.position;
+        }
     }
 
     private void Awake()

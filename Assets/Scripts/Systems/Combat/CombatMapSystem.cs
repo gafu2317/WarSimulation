@@ -96,6 +96,8 @@ public class CombatMapSystem : MonoBehaviour
         if (!_generateMapOnStart || CurrentMap != null) return;
 
         GenerateAndSetCurrentMap(_renderGeneratedMapOnStart);
+
+        CombatSceneContext.Instance?.CharacterSystem?.SnapAllCharactersToNavMesh();
     }
 
     public void SetCurrentMap(MapData map)
