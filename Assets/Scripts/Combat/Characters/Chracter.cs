@@ -1,17 +1,25 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(CombatCharacterBody))]
+[RequireComponent(typeof(CombatVision))]
+[RequireComponent(typeof(CombatHealth))]
+[RequireComponent(typeof(CombatAttack))]
 public class Character : MonoBehaviour
 {
+    [SerializeField] private CombatTeam _team = CombatTeam.Ally;
+
     // キャラクターの基礎データ
     public CharacterData CharacterData { private set; get; }
+    public CombatTeam Team => _team;
+    public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
+    public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
+    public CombatAttack Attack => _attack != null ? _attack : GetComponent<CombatAttack>();
 
     // パラメータ
-    public int MaxHP { private set; get; }
-    public int HP { private set; get; }
+    public int MaxHP => Health != null ? Health.MaxHP : 0;
+    public int HP => Health != null ? Health.HP : 0;
     public int CP { private set; get; }
     public int STR { private set; get; }
     public int INT { private set; get; }
@@ -30,19 +38,11 @@ public class Character : MonoBehaviour
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
 
-    // 敵キャラの視認情報
-    private Dictionary<Character, Vector3?> _lastSeenPositions = new Dictionary<Character, Vector3?>();
-    private Dictionary<Character, float> _lastSeenTime = new Dictionary<Character, float>();
-
-    // 視界処理用定数
-    private readonly Vector3 HeadOffsetFromFoot = new Vector3(0, 1f, 0);
-    private const float VerticalFOV = 90f;
-    private const float HorizontalFOV = 120f;
-    private const float MaxSightDistance = 30f;
-    private const float SearchTimeout = 10f;
-
     private NavMeshAgent _agent;
     private CombatCharacterBody _body;
+    private CombatVision _vision;
+    private CombatHealth _health;
+    private CombatAttack _attack;
 
     private void Awake()
     {
@@ -52,6 +52,29 @@ public class Character : MonoBehaviour
         {
             _body = gameObject.AddComponent<CombatCharacterBody>();
         }
+
+        _vision = GetComponent<CombatVision>();
+        if (_vision == null)
+        {
+            _vision = gameObject.AddComponent<CombatVision>();
+        }
+
+        _health = GetComponent<CombatHealth>();
+        if (_health == null)
+        {
+            _health = gameObject.AddComponent<CombatHealth>();
+        }
+
+        _attack = GetComponent<CombatAttack>();
+        if (_attack == null)
+        {
+            _attack = gameObject.AddComponent<CombatAttack>();
+        }
+    }
+
+    public void SetTeam(CombatTeam team)
+    {
+        _team = team;
     }
 
     // ステータス設定
@@ -60,14 +83,14 @@ public class Character : MonoBehaviour
         // TODO: パラメータ計算の実装
         // 簡易的に基礎パラメータを設定
         CharacterData = characterData;
-        MaxHP = characterData.MaxHP;
-        HP = MaxHP;
         CP = characterData.CP;
         STR = characterData.STR;
         INT = characterData.INT;
         FAI = characterData.FAI;
         AGI = characterData.AGI;
         Personality = spirit.Personality;
+        _health ??= GetComponent<CombatHealth>();
+        _health?.Initialize(characterData.MaxHP);
 
         // AGIパラメータを基準速度に反映させたい場合は CombatCharacterBody.BaseSpeed を更新する。
     }
@@ -87,14 +110,8 @@ public class Character : MonoBehaviour
     // バトル開始時の初期化処理
     public void InitializeOnBattleStart()
     {
-        _lastSeenPositions.Clear();
-        _lastSeenTime.Clear();
-
-        foreach (Character character in CombatSceneContext.Instance.CharacterSystem.EnemyCharacters)
-        {
-            _lastSeenPositions.Add(character, null);
-            _lastSeenTime.Add(character, Time.time - SearchTimeout - 1f); // タイムアウトを即座に満たす
-        }
+        _vision ??= GetComponent<CombatVision>();
+        _vision?.Initialize();
     }
 
     // ==========================================
@@ -142,80 +159,7 @@ public class Character : MonoBehaviour
     // 敵キャラの位置についての記憶を更新する
     protected void UpdateMemoryOfEnemies()
     {
-        // 全ての敵キャラに対して見えているかを判定
-        // 見えている場合は記憶を更新
-        foreach (Character character in _lastSeenPositions.Keys)
-        {
-            if (HasLineOfSight(character.transform))
-            {
-                _lastSeenPositions[character] = character.transform.position;
-                _lastSeenTime[character] = Time.time;
-            }
-            // 存在可能性考慮のタイムアウト
-            else if (Time.time - _lastSeenTime[character] > SearchTimeout)
-            {
-                _lastSeenPositions[character] = null;
-            }
-        }
-    }
-    
-    // ターゲットが視野角（FOV）内にあり、かつ視界を遮る障害物がないか判定
-    private bool HasLineOfSight(Transform target)
-    {
-        if (target == null)
-        {
-            Debug.LogError("ターゲットがアサインされていません");
-            return false;
-        }
-
-        Vector3 headPos = transform.TransformPoint(HeadOffsetFromFoot);
-        Vector3 targetHeadPos = target.TransformPoint(HeadOffsetFromFoot); 
-        
-        Vector3 diff = targetHeadPos - headPos;
-        float distanceToTarget = diff.magnitude;
-        
-        // 完全に同位置（重なっている）場合は見えていると判定
-        if (distanceToTarget < Mathf.Epsilon) 
-        {
-            // Debug.Log("完全に同位置");
-            return true;
-        }
-
-        Vector3 dirToTarget = diff / distanceToTarget;
-
-        // 1. 視認可能距離の判定
-        if (distanceToTarget > MaxSightDistance)
-        {
-            return false;
-        }
-
-        // 2. 視野角の判定 (ローカル座標に変換)
-        Vector3 localDir = transform.InverseTransformDirection(dirToTarget);
-
-        // 水平視野角 (XZ平面)
-        float horizontalAngle = Mathf.Abs(Mathf.Atan2(localDir.x, localDir.z) * Mathf.Rad2Deg);
-        if (horizontalAngle > HorizontalFOV * 0.5f)
-        {
-            // Debug.Log("水平視野角超過");
-            return false;
-        }
-
-        // 垂直視野角 (YZ平面)
-        float verticalAngle = Mathf.Abs(Mathf.Atan2(localDir.y, localDir.z) * Mathf.Rad2Deg);
-        if (verticalAngle > VerticalFOV * 0.5f) 
-        {
-            // Debug.Log("垂直視野角超過");
-            return false;
-        }
-
-        // 3. 障害物の判定（レイキャスト）
-        // "Character" レイヤーのみを無視するレイヤーマスクを作成
-        // 自分自身と他キャラ、見る対象自体を判定から除外
-        int layerMask = ~LayerMask.GetMask("Character");
-        Debug.DrawRay(headPos, dirToTarget * distanceToTarget, Color.red, 1f);
-
-        // レイがヒット => 視線を遮るオブジェクトがある
-        // レイのヒット無し => 視線を遮るオブジェクトがない
-        return !Physics.Raycast(headPos, dirToTarget, distanceToTarget, layerMask);
+        _vision ??= GetComponent<CombatVision>();
+        _vision?.UpdateVision();
     }
 }

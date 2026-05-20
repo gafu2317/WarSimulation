@@ -70,6 +70,8 @@ public readonly struct TerrainTraversalInfo
 public class CombatMapSystem : MonoBehaviour
 {
     [SerializeField] private MapGenerator _mapGenerator;
+    [SerializeField] private bool _generateMapOnStart = true;
+    [SerializeField] private bool _renderGeneratedMapOnStart = true;
 
     [Header("Traversal")]
     [SerializeField, Min(0f)] private float _normalSpeedMultiplier = 1f;
@@ -89,12 +91,24 @@ public class CombatMapSystem : MonoBehaviour
 
     public Transform MapOrigin => _mapGenerator != null ? _mapGenerator.transform : transform;
 
+    private void Start()
+    {
+        if (!_generateMapOnStart || CurrentMap != null) return;
+
+        GenerateAndSetCurrentMap(_renderGeneratedMapOnStart);
+    }
+
     public void SetCurrentMap(MapData map)
     {
         CurrentMap = map;
     }
 
     public MapData GenerateAndSetCurrentMap()
+    {
+        return GenerateAndSetCurrentMap(render3D: false);
+    }
+
+    public MapData GenerateAndSetCurrentMap(bool render3D)
     {
         if (_mapGenerator == null)
         {
@@ -105,6 +119,11 @@ public class CombatMapSystem : MonoBehaviour
 
         MapData map = _mapGenerator.Generate();
         SetCurrentMap(map);
+        if (render3D && map != null)
+        {
+            _mapGenerator.Render3D(map);
+        }
+
         return map;
     }
 
