@@ -15,6 +15,7 @@ public sealed class CombatVision : MonoBehaviour
     [SerializeField] private LayerMask _obstructionLayers = ~0;
     [SerializeField] private bool _ignoreCharacterLayer = true;
     [SerializeField] private bool _drawDebugRays = false;
+    [SerializeField, Min(0f)] private float _highGroundBroadcastThreshold = 5f;
 
     private readonly Dictionary<Character, Vector3?> _lastSeenPositions = new();
     private readonly Dictionary<Character, float> _lastSeenTime = new();
@@ -22,6 +23,7 @@ public sealed class CombatVision : MonoBehaviour
     private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[32];
 
     private Character _owner;
+    private CombatMapSystem _mapSystem;
 
     public IReadOnlyList<Character> VisibleEnemies => _visibleEnemies;
 
@@ -61,6 +63,8 @@ public sealed class CombatVision : MonoBehaviour
         SyncTrackedEnemies(enemies);
         _visibleEnemies.Clear();
 
+        bool canBroadcastObservation = IsOnHighGroundAndSharesObservation();
+
         foreach (Character enemy in enemies)
         {
             if (enemy == null || enemy == _owner) continue;
@@ -71,6 +75,11 @@ public sealed class CombatVision : MonoBehaviour
                 _visibleEnemies.Add(enemy);
                 _lastSeenPositions[enemy] = enemy.transform.position;
                 _lastSeenTime[enemy] = Time.time;
+
+                if (canBroadcastObservation)
+                {
+                    BroadcastObservationToAllies(enemy, enemy.transform.position, Time.time);
+                }
             }
             else if (_lastSeenTime.TryGetValue(enemy, out float lastSeenAt) &&
                 Time.time - lastSeenAt > _searchTimeout)
@@ -93,6 +102,15 @@ public sealed class CombatVision : MonoBehaviour
 
         position = stored.Value;
         return true;
+    }
+
+    public void ReceiveSharedObservation(Character enemy, Vector3 position, float reportedAt)
+    {
+        if (enemy == null) return;
+        if (_lastSeenTime.TryGetValue(enemy, out float mine) && mine >= reportedAt) return;
+
+        _lastSeenPositions[enemy] = position;
+        _lastSeenTime[enemy] = reportedAt;
     }
 
     public bool HasLineOfSight(Transform target)
@@ -179,5 +197,50 @@ public sealed class CombatVision : MonoBehaviour
 
         _characterSystem = FindAnyObjectByType<CombatCharacterSystem>();
         return _characterSystem;
+    }
+
+    private CombatMapSystem ResolveMapSystem()
+    {
+        if (_mapSystem != null) return _mapSystem;
+
+        CombatSceneContext context = CombatSceneContext.Instance;
+        if (context != null && context.MapSystem != null)
+        {
+            _mapSystem = context.MapSystem;
+            return _mapSystem;
+        }
+
+        _mapSystem = FindAnyObjectByType<CombatMapSystem>();
+        return _mapSystem;
+    }
+
+    private bool IsOnHighGroundAndSharesObservation()
+    {
+        _owner ??= GetComponent<Character>();
+        WeaponBase weapon = _owner != null ? _owner.EquippedWeapon : null;
+        if (weapon == null || !weapon.SharesObservationFromHighGround) return false;
+
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null || !mapSystem.TryGetTerrainInfo(transform.position, out TerrainInfo terrain))
+        {
+            return false;
+        }
+
+        return terrain.Height >= _highGroundBroadcastThreshold;
+    }
+
+    private void BroadcastObservationToAllies(Character enemy, Vector3 position, float time)
+    {
+        CombatCharacterSystem characterSystem = ResolveCharacterSystem();
+        if (characterSystem == null || _owner == null) return;
+
+        IReadOnlyList<Character> allies = characterSystem.GetAlliesOf(_owner);
+        for (int i = 0; i < allies.Count; i++)
+        {
+            Character ally = allies[i];
+            if (ally == null || ally == _owner) continue;
+
+            ally.Vision?.ReceiveSharedObservation(enemy, position, time);
+        }
     }
 }

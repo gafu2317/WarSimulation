@@ -213,6 +213,84 @@ public sealed class SimpleCombatBrainTests
     }
 
     [Test]
+    public void Decide_ShieldPrioritizesFollowingMeleeAlly()
+    {
+        BrainFixture fixture = CreateFixture(enemyDistance: null);
+        GameObject swordAllyGo = new GameObject("SwordAlly");
+        GameObject wandAllyGo = new GameObject("WandAlly");
+        try
+        {
+            fixture.Owner.EquipWeapon(new Shield());
+
+            Character swordAlly = swordAllyGo.AddComponent<Character>();
+            swordAlly.SetTeam(CombatTeam.Ally);
+            swordAlly.EquipWeapon(new Sword());
+            swordAlly.Health.Initialize(30);
+            swordAllyGo.transform.position = new Vector3(0f, 0f, 12f);
+            fixture.System.AllyCharacters.Add(swordAlly);
+
+            Character wandAlly = wandAllyGo.AddComponent<Character>();
+            wandAlly.SetTeam(CombatTeam.Ally);
+            wandAlly.EquipWeapon(new Wand());
+            wandAlly.Health.Initialize(30);
+            wandAllyGo.transform.position = new Vector3(0f, 0f, 14f);
+            fixture.System.AllyCharacters.Add(wandAlly);
+
+            SimpleCombatBrain.Decision decision = fixture.Brain.Decide();
+
+            Assert.That(decision.Move.Kind, Is.EqualTo(SimpleCombatBrain.MoveKind.FollowAlly));
+            Assert.That(decision.Move.Target, Is.EqualTo(swordAlly));
+            Assert.That(decision.Move.Score, Is.GreaterThan(75f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(swordAllyGo);
+            Object.DestroyImmediate(wandAllyGo);
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Decide_GrimoireSeeksHighGroundWhenHigherPointExists()
+    {
+        BrainFixture fixture = CreateFixture(enemyDistance: null, withMap: true);
+        try
+        {
+            fixture.Owner.EquipWeapon(new Grimoire());
+            fixture.Map.Height.SetHeight(9, 9, 8f);
+
+            SimpleCombatBrain.Decision decision = fixture.Brain.Decide();
+
+            Assert.That(decision.Move.Kind, Is.EqualTo(SimpleCombatBrain.MoveKind.MoveToHighGround));
+            Assert.That(decision.Move.Score, Is.EqualTo(50f));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Decide_WandWithForestBiasMovesToForestWhenNotAlreadyInside()
+    {
+        BrainFixture fixture = CreateFixture(enemyDistance: null, withMap: true);
+        try
+        {
+            fixture.Owner.EquipWeapon(new Wand(hideInForestBias: 40f));
+            fixture.Map.AddForestRegion(new ForestRegion(new Vector2(8f, 8f), 3f, 0f, 0.1f));
+
+            SimpleCombatBrain.Decision decision = fixture.Brain.Decide();
+
+            Assert.That(decision.Move.Kind, Is.EqualTo(SimpleCombatBrain.MoveKind.HideInForest));
+            Assert.That(decision.Move.Score, Is.EqualTo(40f));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
     public void Tick_AttacksVisibleEnemyAndDoesNotAttackWhileOnCooldownOrRetreating()
     {
         BrainFixture fixture = CreateFixture(enemyDistance: 1.5f);
@@ -265,10 +343,10 @@ public sealed class SimpleCombatBrainTests
         {
             fixture.MapGo = new GameObject("CombatMapSystem");
             CombatMapSystem mapSystem = fixture.MapGo.AddComponent<CombatMapSystem>();
-            var map = new MapData(new HeightMap(10, 10, 1f), new GroundStateGrid(10, 10, 1f), seed: 1);
-            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, Vector3.zero));
-            map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(0f, 0f, 9f)));
-            mapSystem.SetCurrentMap(map);
+            fixture.Map = new MapData(new HeightMap(10, 10, 1f), new GroundStateGrid(10, 10, 1f), seed: 1);
+            fixture.Map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, Vector3.zero));
+            fixture.Map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(0f, 0f, 9f)));
+            mapSystem.SetCurrentMap(fixture.Map);
         }
 
         fixture.System.AssignTeamsFromLists();
@@ -287,6 +365,7 @@ public sealed class SimpleCombatBrainTests
         public Character Owner;
         public Character Enemy;
         public SimpleCombatBrain Brain;
+        public MapData Map;
 
         public void Destroy()
         {

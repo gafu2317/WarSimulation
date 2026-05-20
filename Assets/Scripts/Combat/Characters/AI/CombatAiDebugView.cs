@@ -208,6 +208,8 @@ public sealed class CombatAiDebugView : MonoBehaviour
         SimpleCombatBrain.MoveKind.ChaseEnemy => "敵追跡",
         SimpleCombatBrain.MoveKind.MoveToLastKnownEnemyPosition => "最終目撃地点へ",
         SimpleCombatBrain.MoveKind.RetreatToHome => "退却",
+        SimpleCombatBrain.MoveKind.MoveToHighGround => "高所へ",
+        SimpleCombatBrain.MoveKind.HideInForest => "森に潜む",
         _ => kind.ToString(),
     };
 

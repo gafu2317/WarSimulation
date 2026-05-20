@@ -18,6 +18,8 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         ChaseEnemy = 5,
         MoveToLastKnownEnemyPosition = 6,
         RetreatToHome = 7,
+        MoveToHighGround = 8,
+        HideInForest = 9,
     }
 
     public enum ActionKind
@@ -77,6 +79,11 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     [SerializeField, Min(0.1f)] private float _patrolRadius = 8f;
     [SerializeField, Min(0.01f)] private float _patrolArrivalDistance = 1.25f;
     [SerializeField, Min(0.01f)] private float _lastKnownArrivalDistance = 1f;
+    [SerializeField, Min(0f)] private float _highGroundThreshold = 5f;
+    [SerializeField, Min(1)] private int _highGroundSearchSamples = 8;
+    [SerializeField, Min(1f)] private float _highGroundSearchRadius = 15f;
+    [SerializeField, Min(1f)] private float _forestSearchRadius = 15f;
+    [SerializeField, Min(1)] private int _forestSearchSamples = 8;
     [SerializeField] private Transform[] _patrolPoints = new Transform[0];
 
     private Character _owner;
@@ -85,6 +92,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
     private CombatAttack _attack;
     private CombatCharacterBody _body;
     private CombatCharacterSystem _characterSystem;
+    private CombatMapSystem _mapSystem;
     private float _nextDecisionTime;
     private float _nextMoveCommandTime;
     private Decision _lastDecision = new Decision(
@@ -157,17 +165,20 @@ public sealed class SimpleCombatBrain : MonoBehaviour
 
     private List<MoveOption> BuildMoveOptions(List<Character> visibleTargets, Character nearestVisibleTarget)
     {
+        WeaponBase weapon = GetCurrentWeapon();
         var options = new List<MoveOption>
         {
             new MoveOption(MoveKind.Idle, 0f),
         };
 
         AddRetreatOption(options);
-        AddChaseOption(options, nearestVisibleTarget);
+        AddChaseOption(options, nearestVisibleTarget, weapon);
         AddCombatHoldOption(options, visibleTargets);
         AddLastKnownPositionOption(options, visibleTargets.Count == 0);
         AddDefendHomeBaseOption(options, visibleTargets);
-        AddFollowAllyOption(options);
+        AddFollowAllyOption(options, weapon);
+        AddSeekHighGroundOption(options, weapon);
+        AddHideInForestOption(options, weapon, visibleTargets);
         AddAssaultEnemyBaseOption(options, visibleTargets.Count == 0);
         AddPatrolOption(options);
 
@@ -205,7 +216,7 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         }
     }
 
-    private void AddChaseOption(List<MoveOption> options, Character nearestVisibleTarget)
+    private void AddChaseOption(List<MoveOption> options, Character nearestVisibleTarget, WeaponBase weapon)
     {
         if (nearestVisibleTarget == null || _attack == null) return;
 
@@ -213,9 +224,10 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         float chaseThreshold = _attack.CurrentWeapon.Range * 0.8f;
         if (distance <= chaseThreshold) return;
 
+        float score = 85f + weapon.ChaseEnemyBias;
         options.Add(new MoveOption(
             MoveKind.ChaseEnemy,
-            85f,
+            score,
             nearestVisibleTarget,
             nearestVisibleTarget.transform.position));
     }
@@ -286,16 +298,81 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         options.Add(new MoveOption(MoveKind.DefendHomeBase, score, destination: homePosition));
     }
 
-    private void AddFollowAllyOption(List<MoveOption> options)
+    private void AddFollowAllyOption(List<MoveOption> options, WeaponBase weapon)
     {
         if (ResolveCharacterSystem() == null) return;
 
-        Character ally = FindNearestAllyOutsideFollowDistance();
+        Character ally = weapon.FollowMeleeAllyBias > 0f
+            ? FindNearestMeleeAllyOutsideFollowDistance()
+            : FindNearestAllyOutsideFollowDistance();
         if (ally == null) return;
 
         float distance = Vector3.Distance(transform.position, ally.transform.position);
         float score = Mathf.Lerp(45f, 75f, Mathf.Clamp01((distance - _followDistance) / _followDistance));
+        score += weapon.FollowMeleeAllyBias;
         options.Add(new MoveOption(MoveKind.FollowAlly, score, ally, ally.transform.position));
+    }
+
+    private void AddSeekHighGroundOption(List<MoveOption> options, WeaponBase weapon)
+    {
+        if (weapon.SeekHighGroundBias <= 0f) return;
+
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null || !mapSystem.TryGetTerrainInfo(transform.position, out TerrainInfo currentTerrain))
+        {
+            return;
+        }
+
+        if (currentTerrain.Height >= _highGroundThreshold)
+        {
+            BoostMoveOptionScore(options, MoveKind.Idle, weapon.SeekHighGroundBias);
+            return;
+        }
+
+        if (!TryFindHighGroundDestination(out Vector3 destination))
+        {
+            return;
+        }
+
+        options.Add(new MoveOption(
+            MoveKind.MoveToHighGround,
+            weapon.SeekHighGroundBias,
+            destination: destination));
+    }
+
+    private void AddHideInForestOption(List<MoveOption> options, WeaponBase weapon, List<Character> visibleTargets)
+    {
+        if (weapon.HideInForestBias <= 0f) return;
+
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null || !mapSystem.TryGetTerrainInfo(transform.position, out TerrainInfo currentTerrain))
+        {
+            return;
+        }
+
+        if (currentTerrain.IsForest)
+        {
+            for (int i = 0; i < visibleTargets.Count; i++)
+            {
+                Character target = visibleTargets[i];
+                if (_attack == null || !_attack.IsInRange(target)) continue;
+
+                BoostMoveOptionScore(options, MoveKind.Idle, weapon.HideInForestBias);
+                return;
+            }
+
+            return;
+        }
+
+        if (!TryFindForestDestination(out Vector3 destination))
+        {
+            return;
+        }
+
+        options.Add(new MoveOption(
+            MoveKind.HideInForest,
+            weapon.HideInForestBias,
+            destination: destination));
     }
 
     private void AddAssaultEnemyBaseOption(List<MoveOption> options, bool hasNoVisibleTargets)
@@ -442,6 +519,141 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         return nearest;
     }
 
+    private Character FindNearestMeleeAllyOutsideFollowDistance()
+    {
+        if (_characterSystem == null) return null;
+
+        IReadOnlyList<Character> allies = _characterSystem.GetAlliesOf(_owner);
+        Character nearest = null;
+        float nearestSqrDistance = float.PositiveInfinity;
+        for (int i = 0; i < allies.Count; i++)
+        {
+            Character ally = allies[i];
+            if (ally == null || ally == _owner) continue;
+            if (ally.Health != null && !ally.Health.IsTargetable) continue;
+            if (!IsMeleeWeaponKind(GetWeaponKind(ally))) continue;
+
+            float distance = Vector3.Distance(transform.position, ally.transform.position);
+            if (distance <= _followDistance) continue;
+
+            float sqrDistance = distance * distance;
+            if (sqrDistance >= nearestSqrDistance) continue;
+
+            nearest = ally;
+            nearestSqrDistance = sqrDistance;
+        }
+
+        return nearest;
+    }
+
+    private static bool IsMeleeWeaponKind(WeaponKind kind)
+    {
+        return kind == WeaponKind.Sword || kind == WeaponKind.Shield;
+    }
+
+    private static WeaponKind GetWeaponKind(Character character)
+    {
+        if (character == null) return WeaponKind.Unarmed;
+
+        WeaponBase weapon = character.EquippedWeapon;
+        return weapon != null ? weapon.Kind : WeaponKind.Unarmed;
+    }
+
+    private WeaponBase GetCurrentWeapon()
+    {
+        if (_attack != null) return _attack.CurrentWeapon;
+        return _owner != null && _owner.EquippedWeapon != null ? _owner.EquippedWeapon : WeaponBase.Unarmed;
+    }
+
+    private static void BoostMoveOptionScore(List<MoveOption> options, MoveKind kind, float bonus)
+    {
+        for (int i = 0; i < options.Count; i++)
+        {
+            MoveOption option = options[i];
+            if (option.Kind != kind) continue;
+
+            options[i] = new MoveOption(option.Kind, option.Score + bonus, option.Target, option.Destination);
+            return;
+        }
+
+        if (kind == MoveKind.Idle)
+        {
+            options.Add(new MoveOption(MoveKind.Idle, bonus));
+        }
+    }
+
+    private bool TryFindHighGroundDestination(out Vector3 destination)
+    {
+        destination = default;
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null) return false;
+
+        Vector3 origin = transform.position;
+        float currentHeight = mapSystem.TryGetTerrainInfo(origin, out TerrainInfo currentTerrain)
+            ? currentTerrain.Height
+            : origin.y;
+        float bestHeight = float.NegativeInfinity;
+        bool found = false;
+
+        for (int i = 0; i < _highGroundSearchSamples; i++)
+        {
+            float angle = i * (360f / _highGroundSearchSamples) * Mathf.Deg2Rad;
+            Vector3 sample = origin + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * _highGroundSearchRadius;
+            if (!mapSystem.TryGetTerrainInfo(sample, out TerrainInfo info)) continue;
+            if (!info.IsInBounds) continue;
+            if (info.Height <= bestHeight) continue;
+
+            bestHeight = info.Height;
+            destination = new Vector3(sample.x, info.Height, sample.z);
+            found = true;
+        }
+
+        return found && bestHeight > currentHeight;
+    }
+
+    private bool TryFindForestDestination(out Vector3 destination)
+    {
+        destination = default;
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null) return false;
+
+        Vector3 origin = transform.position;
+        float nearestDistance = float.PositiveInfinity;
+        bool found = false;
+
+        for (int i = 0; i < _forestSearchSamples; i++)
+        {
+            float angle = i * (360f / _forestSearchSamples) * Mathf.Deg2Rad;
+            Vector3 sample = origin + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * _forestSearchRadius;
+            if (!mapSystem.TryGetTerrainInfo(sample, out TerrainInfo info)) continue;
+            if (!info.IsInBounds || !info.IsForest) continue;
+
+            float distance = Vector3.Distance(origin, sample);
+            if (distance >= nearestDistance) continue;
+
+            nearestDistance = distance;
+            destination = new Vector3(sample.x, info.Height, sample.z);
+            found = true;
+        }
+
+        return found;
+    }
+
+    private CombatMapSystem ResolveMapSystem()
+    {
+        if (_mapSystem != null) return _mapSystem;
+
+        CombatSceneContext context = CombatSceneContext.Instance;
+        if (context != null && context.MapSystem != null)
+        {
+            _mapSystem = context.MapSystem;
+            return _mapSystem;
+        }
+
+        _mapSystem = FindAnyObjectByType<CombatMapSystem>();
+        return _mapSystem;
+    }
+
     private bool IsValidTarget(Character target)
     {
         if (target == null || _attack == null) return false;
@@ -542,5 +754,6 @@ public sealed class SimpleCombatBrain : MonoBehaviour
         _attack ??= GetComponent<CombatAttack>();
         _body ??= GetComponent<CombatCharacterBody>();
         ResolveCharacterSystem();
+        ResolveMapSystem();
     }
 }

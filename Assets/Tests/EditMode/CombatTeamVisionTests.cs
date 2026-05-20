@@ -35,6 +35,48 @@ public sealed class CombatTeamVisionTests
     }
 
     [Test]
+    public void CombatVision_ReceiveSharedObservationUpdatesLastKnownPosition()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject allyGo = new GameObject("Ally");
+        GameObject observerGo = new GameObject("Observer");
+
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character ally = allyGo.AddComponent<Character>();
+            Character observer = observerGo.AddComponent<Character>();
+            ally.SetTeam(CombatTeam.Ally);
+            observer.SetTeam(CombatTeam.Ally);
+            system.AllyCharacters.Add(ally);
+            system.AllyCharacters.Add(observer);
+            system.AssignTeamsFromLists();
+
+            GameObject enemyGo = new GameObject("Enemy");
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            system.EnemyCharacters.Add(enemy);
+            system.AssignTeamsFromLists();
+
+            CombatVision allyVision = ally.Vision;
+            allyVision.Initialize();
+
+            Vector3 reportedPosition = new Vector3(3f, 0f, 4f);
+            allyVision.ReceiveSharedObservation(enemy, reportedPosition, Time.time);
+
+            Assert.That(allyVision.TryGetLastKnownPosition(enemy, out Vector3 lastKnownPosition), Is.True);
+            Assert.That(lastKnownPosition, Is.EqualTo(reportedPosition));
+            Assert.That(allyVision.IsVisible(enemy), Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(observerGo);
+        }
+    }
+
+    [Test]
     public void CombatVision_TracksVisibleEnemiesAndLastKnownPosition()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");

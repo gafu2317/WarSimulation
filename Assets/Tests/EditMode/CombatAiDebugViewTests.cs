@@ -41,4 +41,15 @@ public sealed class CombatAiDebugViewTests
         Assert.That(text, Does.Contain("行動: なし 0"));
         Assert.That(text, Does.Contain("対象: -"));
     }
+
+    [Test]
+    public void FormatMoveKind_IncludesNewWeaponMoveKindsInJapanese()
+    {
+        Assert.That(
+            CombatAiDebugView.FormatMoveKind(SimpleCombatBrain.MoveKind.MoveToHighGround),
+            Is.EqualTo("高所へ"));
+        Assert.That(
+            CombatAiDebugView.FormatMoveKind(SimpleCombatBrain.MoveKind.HideInForest),
+            Is.EqualTo("森に潜む"));
+    }
 }
