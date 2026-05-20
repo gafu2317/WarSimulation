@@ -2,6 +2,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+// 記憶を管理する専用クラス
+public class CharacterMemory
+{
+    public Character Target { get; private set; }
+    public Vector3? LastSeenPosition { get; set; }
+    public float LastSeenTime { get; set; }
+
+    public CharacterMemory(Character target, Vector3? position, float time)
+    {
+        Target = target;
+        LastSeenPosition = position;
+        LastSeenTime = time;
+    }
+}
+
 [RequireComponent(typeof(NavMeshAgent))]
 public class Character : MonoBehaviour
 {
@@ -29,9 +44,8 @@ public class Character : MonoBehaviour
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
 
-    // 敵キャラの視認情報
-    private Dictionary<Character, Vector3?> _lastSeenPositions = new Dictionary<Character, Vector3?>();
-    private Dictionary<Character, float> _lastSeenTime = new Dictionary<Character, float>();
+    // 敵味方のキャラの視認情報
+    private Dictionary<Character, CharacterMemory> _memories = new Dictionary<Character, CharacterMemory>();
 
     // 視界処理用定数
     private readonly Vector3 HeadOffsetFromFoot = new Vector3(0, 1f, 0);
@@ -82,9 +96,9 @@ public class Character : MonoBehaviour
         AGI = characterData.AGI;
         Personality = spirit.Personality;
 
-        // AGIパラメータを基準速度(_baseSpeed)に反映させたい場合はここで設定します
-        // 例: _baseSpeed = AGI * 0.5f; 
-        //     if(_agent != null) _agent.speed = _baseSpeed;
+        // AGIパラメータを基準速度(_baseSpeed)に反映させたい場合はここで設定
+        // _baseSpeed = AGI * 0.5f; 
+        // if(_agent != null) _agent.speed = _baseSpeed;
     }
 
     // 武器装備
@@ -102,13 +116,22 @@ public class Character : MonoBehaviour
     // バトル開始時の初期化処理
     public void InitializeOnBattleStart()
     {
-        _lastSeenPositions.Clear();
-        _lastSeenTime.Clear();
+        _memories.Clear();
+        float initialTime = Time.time - SearchTimeout - 1f; // タイムアウト状態から開始
 
-        foreach (Character character in CombatSceneContext.Instance.CharacterSystem.EnemyCharacters)
+        // 敵キャラクターの登録
+        foreach (Character enemy in CombatSceneContext.Instance.CharacterSystem.EnemyCharacters)
         {
-            _lastSeenPositions.Add(character, null);
-            _lastSeenTime.Add(character, Time.time - SearchTimeout - 1f); // タイムアウトを即座に満たす
+            _memories.Add(enemy, new CharacterMemory(enemy, null, initialTime));
+        }
+
+        // 味方キャラクターの登録（自分自身は除外する）
+        foreach (Character ally in CombatSceneContext.Instance.CharacterSystem.AllyCharacters)
+        {
+            if (ally != this)
+            {
+                _memories.Add(ally, new CharacterMemory(ally, null, initialTime));
+            }
         }
     }
 
@@ -182,22 +205,25 @@ public class Character : MonoBehaviour
     // 視界・記憶関連メソッド
     // ==========================================
 
-    // 敵キャラの位置についての記憶を更新する
+    // 敵味方のキャラの位置についての記憶を更新する
     protected void UpdateMemoryOfEnemies()
     {
-        // 全ての敵キャラに対して見えているかを判定
-        // 見えている場合は記憶を更新
-        foreach (Character character in _lastSeenPositions.Keys)
+        // 全てのキャラに対して見えているかを判定
+        foreach (var memoryPair in _memories)
         {
-            if (HasLineOfSight(character.transform))
+            Character targetChar = memoryPair.Key;
+            CharacterMemory memory = memoryPair.Value;
+
+            if (HasLineOfSight(targetChar.transform))
             {
-                _lastSeenPositions[character] = character.transform.position;
-                _lastSeenTime[character] = Time.time;
+                // 見えているなら最新情報で上書き
+                memory.LastSeenPosition = targetChar.transform.position;
+                memory.LastSeenTime = Time.time;
             }
-            // 存在可能性考慮のタイムアウト
-            else if (Time.time - _lastSeenTime[character] > SearchTimeout)
+            else if (Time.time - memory.LastSeenTime > SearchTimeout)
             {
-                _lastSeenPositions[character] = null;
+                // 見失ってから一定時間経過で位置情報をロスト
+                memory.LastSeenPosition = null;
             }
         }
     }
@@ -260,5 +286,69 @@ public class Character : MonoBehaviour
         // レイがヒット => 視線を遮るオブジェクトがある
         // レイのヒット無し => 視線を遮るオブジェクトがない
         return !Physics.Raycast(headPos, dirToTarget, distanceToTarget, layerMask);
+    }
+
+    // ==========================================
+    // 情報共有関連メソッド
+    // ==========================================
+    
+    // 味方から情報を受け取る
+    public void ReceiveSharedMemory(List<CharacterMemory> sharedMemories)
+    {
+        foreach (var sharedMemory in sharedMemories)
+        {
+            // 自分の記憶に存在する対象か確認
+            if (_memories.TryGetValue(sharedMemory.Target, out CharacterMemory myMemory))
+            {
+                // 共有された情報が、自分の持っている情報よりも新しい場合のみ上書きする
+                if (sharedMemory.LastSeenTime > myMemory.LastSeenTime)
+                {
+                    myMemory.LastSeenPosition = sharedMemory.LastSeenPosition;
+                    myMemory.LastSeenTime = sharedMemory.LastSeenTime;
+                }
+            }
+        }
+    }
+
+    // 指定した味方との間に障害物がないか判定する
+    private bool CanCommunicateWith(Character ally)
+    {
+        Vector3 myHeadPos = transform.TransformPoint(HeadOffsetFromFoot);
+        Vector3 allyHeadPos = ally.transform.TransformPoint(HeadOffsetFromFoot);
+        
+        Vector3 diff = allyHeadPos - myHeadPos;
+        float distance = diff.magnitude;
+        
+        // 完全に重なっているなど、距離がゼロの場合は通信可能とする
+        if (distance < Mathf.Epsilon) return true;
+        
+        Vector3 dirToAlly = diff / distance;
+        
+        // Characterレイヤーを無視（地形や壁などの障害物だけを判定）
+        int layerMask = ~LayerMask.GetMask("Character");
+        
+        // デバッグ用にRayを可視化（緑色で表示）
+        Debug.DrawRay(myHeadPos, dirToAlly * distance, Color.green, 1f);
+
+        // Raycastがヒット「しない」＝ 間に障害物がない ＝ 通信可能
+        return !Physics.Raycast(myHeadPos, dirToAlly, distance, layerMask);
+    }
+    
+    // 通信可能な味方（Rayが通る相手）にだけ記憶を共有する
+    private void BroadcastMemoriesToAllies()
+    {
+        List<CharacterMemory> memoriesToShare = new List<CharacterMemory>(_memories.Values);
+
+        foreach (Character ally in CombatSceneContext.Instance.CharacterSystem.AllyCharacters)
+        {
+            if (ally != this && ally.HP > 0)
+            {
+                // 直線上に障害物がないか（Rayが通るか）をチェック
+                if (CanCommunicateWith(ally))
+                {
+                    ally.ReceiveSharedMemory(memoriesToShare);
+                }
+            }
+        }
     }
 }
