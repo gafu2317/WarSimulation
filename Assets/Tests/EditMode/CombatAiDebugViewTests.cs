@@ -16,12 +16,12 @@ public sealed class CombatAiDebugViewTests
             lifeState: LifeState.Active,
             visibleEnemyCount: 2);
 
-        Assert.That(text, Does.Contain("Move: RetreatToHome 120"));
-        Assert.That(text, Does.Contain("Action: AttackEnemy 100"));
-        Assert.That(text, Does.Contain("Target: Enemy_01"));
+        Assert.That(text, Does.Contain("移動: 退却 120"));
+        Assert.That(text, Does.Contain("行動: 攻撃 100"));
+        Assert.That(text, Does.Contain("対象: Enemy_01"));
         Assert.That(text, Does.Not.Contain("HP:"));
-        Assert.That(text, Does.Contain("State: Active"));
-        Assert.That(text, Does.Contain("Visible: 2"));
+        Assert.That(text, Does.Contain("状態: 戦闘中"));
+        Assert.That(text, Does.Contain("視認: 2"));
     }
 
     [Test]
@@ -37,8 +37,8 @@ public sealed class CombatAiDebugViewTests
             lifeState: LifeState.Active,
             visibleEnemyCount: 0);
 
-        Assert.That(text, Does.Contain("Move: Idle 0"));
-        Assert.That(text, Does.Contain("Action: None 0"));
-        Assert.That(text, Does.Contain("Target: -"));
+        Assert.That(text, Does.Contain("移動: 待機 0"));
+        Assert.That(text, Does.Contain("行動: なし 0"));
+        Assert.That(text, Does.Contain("対象: -"));
     }
 }

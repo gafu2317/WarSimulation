@@ -12,6 +12,7 @@ public sealed class CombatAiDebugView : MonoBehaviour
     [SerializeField, Min(0f)] private float _panelMargin = 12f;
     [SerializeField, Min(1f)] private float _lineHeight = 24f;
     [SerializeField, Min(1)] private int _fontSize = 16;
+    [SerializeField] private Font _font;
     [SerializeField] private Color _textColor = Color.white;
     [SerializeField] private Color _titleColor = new Color(0.9f, 0.95f, 1f, 1f);
     [SerializeField] private Color _backgroundColor = new Color(0f, 0f, 0f, 0.65f);
@@ -21,11 +22,13 @@ public sealed class CombatAiDebugView : MonoBehaviour
     [SerializeField] private Color _currentHealthColor = new Color(0.65f, 1f, 0.2f, 1f);
 
     private const int LineCount = 5;
+    private const string DefaultFontAssetPath = "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular.ttf";
     private const float Padding = 6f;
     private const float EntryGap = 8f;
     private const float HeaderHeight = 22f;
 
     private static readonly List<CombatAiDebugView> s_views = new();
+    private static Font s_sharedFont;
     private static Vector2 s_allyScroll;
     private static Vector2 s_enemyScroll;
     private static int s_renderedFrame = -1;
@@ -43,6 +46,7 @@ public sealed class CombatAiDebugView : MonoBehaviour
     private Color _cachedBackgroundColor;
     private Color _cachedMaxHealthColor;
     private Color _cachedCurrentHealthColor;
+    private Font _cachedFont;
 
     private void Awake()
     {
@@ -113,8 +117,8 @@ public sealed class CombatAiDebugView : MonoBehaviour
         Rect enemyPanel = new Rect(_panelMargin, _panelMargin, width, height);
         Rect allyPanel = new Rect(Screen.width - width - _panelMargin, _panelMargin, width, height);
 
-        s_enemyScroll = DrawPanel(enemyPanel, "Enemy", CombatTeam.Enemy, s_enemyScroll);
-        s_allyScroll = DrawPanel(allyPanel, "Ally", CombatTeam.Ally, s_allyScroll);
+        s_enemyScroll = DrawPanel(enemyPanel, "敵", CombatTeam.Enemy, s_enemyScroll);
+        s_allyScroll = DrawPanel(allyPanel, "味方", CombatTeam.Ally, s_allyScroll);
     }
 
     private Vector2 DrawPanel(Rect panelRect, string title, CombatTeam team, Vector2 scroll)
@@ -187,12 +191,39 @@ public sealed class CombatAiDebugView : MonoBehaviour
         }
 
         return
-            $"Move: {decision.Move.Kind} {decision.Move.Score:0.#}\n" +
-            $"Action: {decision.Action.Kind} {decision.Action.Score:0.#}\n" +
-            $"Target: {targetName}\n" +
-            $"State: {lifeState}\n" +
-            $"Visible: {visibleEnemyCount}";
+            $"移動: {FormatMoveKind(decision.Move.Kind)} {decision.Move.Score:0.#}\n" +
+            $"行動: {FormatActionKind(decision.Action.Kind)} {decision.Action.Score:0.#}\n" +
+            $"対象: {targetName}\n" +
+            $"状態: {FormatLifeState(lifeState)}\n" +
+            $"視認: {visibleEnemyCount}";
     }
+
+    public static string FormatMoveKind(SimpleCombatBrain.MoveKind kind) => kind switch
+    {
+        SimpleCombatBrain.MoveKind.Idle => "待機",
+        SimpleCombatBrain.MoveKind.Patrol => "巡回",
+        SimpleCombatBrain.MoveKind.AssaultEnemyBase => "敵拠点突撃",
+        SimpleCombatBrain.MoveKind.DefendHomeBase => "拠点防衛",
+        SimpleCombatBrain.MoveKind.FollowAlly => "味方追従",
+        SimpleCombatBrain.MoveKind.ChaseEnemy => "敵追跡",
+        SimpleCombatBrain.MoveKind.MoveToLastKnownEnemyPosition => "最終目撃地点へ",
+        SimpleCombatBrain.MoveKind.RetreatToHome => "退却",
+        _ => kind.ToString(),
+    };
+
+    public static string FormatActionKind(SimpleCombatBrain.ActionKind kind) => kind switch
+    {
+        SimpleCombatBrain.ActionKind.None => "なし",
+        SimpleCombatBrain.ActionKind.AttackEnemy => "攻撃",
+        _ => kind.ToString(),
+    };
+
+    public static string FormatLifeState(LifeState lifeState) => lifeState switch
+    {
+        LifeState.Active => "戦闘中",
+        LifeState.Retreating => "退却中",
+        _ => lifeState.ToString(),
+    };
 
     private string BuildCurrentDebugText()
     {
@@ -297,6 +328,8 @@ public sealed class CombatAiDebugView : MonoBehaviour
             _titleStyle.normal.textColor = _titleColor;
         }
 
+        ApplyFontToStyles();
+
         if (_backgroundTexture == null)
         {
             _backgroundTexture = new Texture2D(1, 1)
@@ -314,6 +347,31 @@ public sealed class CombatAiDebugView : MonoBehaviour
 
         EnsureColorTexture(ref _maxHealthTexture, ref _cachedMaxHealthColor, _maxHealthColor);
         EnsureColorTexture(ref _currentHealthTexture, ref _cachedCurrentHealthColor, _currentHealthColor);
+    }
+
+    private void ApplyFontToStyles()
+    {
+        Font font = ResolveFont();
+        if (font == null || font == _cachedFont) return;
+
+        _cachedFont = font;
+        if (_labelStyle != null) _labelStyle.font = font;
+        if (_titleStyle != null) _titleStyle.font = font;
+    }
+
+    private Font ResolveFont()
+    {
+        if (_font != null) return _font;
+        if (s_sharedFont != null) return s_sharedFont;
+
+        s_sharedFont = Resources.Load<Font>("NotoSansJP-Regular");
+#if UNITY_EDITOR
+        if (s_sharedFont == null)
+        {
+            s_sharedFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(DefaultFontAssetPath);
+        }
+#endif
+        return s_sharedFont;
     }
 
     private static void EnsureColorTexture(ref Texture2D texture, ref Color cachedColor, Color color)
