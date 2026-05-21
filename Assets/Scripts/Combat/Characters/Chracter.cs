@@ -211,7 +211,7 @@ public class Character : MonoBehaviour
     // 視界・記憶関連メソッド
     // ==========================================
 
-    // 敵キャラの位置についての記憶を更新する
+    // 敵味方のキャラの位置についての記憶を更新する
     protected void UpdateMemoryOfEnemies()
     {
         _vision ??= GetComponent<CombatVision>();

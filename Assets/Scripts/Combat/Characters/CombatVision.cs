@@ -1,6 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// 記憶を管理する専用クラス
+public class CharacterMemory
+{
+    public Character Target { get; private set; }
+    public Vector3? LastSeenPosition { get; set; }
+    public float LastSeenTime { get; set; }
+
+    public CharacterMemory(Character target, Vector3? position, float time)
+    {
+        Target = target;
+        LastSeenPosition = position;
+        LastSeenTime = time;
+    }
+}
+
 [RequireComponent(typeof(Character))]
 public sealed class CombatVision : MonoBehaviour
 {
@@ -17,11 +32,12 @@ public sealed class CombatVision : MonoBehaviour
     [SerializeField] private bool _drawDebugRays = false;
     [SerializeField, Min(0f)] private float _highGroundBroadcastThreshold = 5f;
 
-    private readonly Dictionary<Character, Vector3?> _lastSeenPositions = new();
-    private readonly Dictionary<Character, float> _lastSeenTime = new();
+    private readonly Dictionary<Character, CharacterMemory> _memories = new();
     private readonly List<Character> _visibleEnemies = new();
     private readonly List<Character> _rememberedEnemies = new();
+    private readonly List<CharacterMemory> _memoriesToShare = new();
     private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[32];
+    private readonly RaycastHit[] _communicationHits = new RaycastHit[32];
 
     private Character _owner;
     private CombatMapSystem _mapSystem;
@@ -38,23 +54,17 @@ public sealed class CombatVision : MonoBehaviour
     public void Initialize()
     {
         _owner ??= GetComponent<Character>();
-        _lastSeenPositions.Clear();
-        _lastSeenTime.Clear();
+        _memories.Clear();
         _visibleEnemies.Clear();
         _rememberedEnemies.Clear();
+        _memoriesToShare.Clear();
 
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
         if (characterSystem == null || _owner == null) return;
 
-        IReadOnlyList<Character> enemies = characterSystem.GetEnemiesOf(_owner);
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Character enemy = enemies[i];
-            if (enemy == null || enemy == _owner) continue;
-
-            _lastSeenPositions[enemy] = null;
-            _lastSeenTime[enemy] = Time.time - _searchTimeout - 1f;
-        }
+        float initialTime = Time.time - _searchTimeout - 1f;
+        RegisterTrackedCharacters(characterSystem.GetEnemiesOf(_owner), initialTime);
+        RegisterTrackedCharacters(characterSystem.GetAlliesOf(_owner), initialTime);
     }
 
     public void UpdateVision()
@@ -64,36 +74,43 @@ public sealed class CombatVision : MonoBehaviour
         if (characterSystem == null || _owner == null) return;
 
         IReadOnlyList<Character> enemies = characterSystem.GetEnemiesOf(_owner);
-        SyncTrackedEnemies(enemies);
+        IReadOnlyList<Character> allies = characterSystem.GetAlliesOf(_owner);
+        SyncTrackedCharacters(enemies);
+        SyncTrackedCharacters(allies);
         _visibleEnemies.Clear();
 
         bool canBroadcastObservation = IsOnHighGroundAndSharesObservation();
 
-        foreach (Character enemy in enemies)
+        foreach (KeyValuePair<Character, CharacterMemory> memoryPair in _memories)
         {
-            if (enemy == null || enemy == _owner) continue;
+            Character target = memoryPair.Key;
+            CharacterMemory memory = memoryPair.Value;
+            if (target == null || target == _owner || memory == null) continue;
 
-            // Line-of-sight loss (forest, obstacles) only affects visibility, not memory until timeout.
-            bool visible = HasLineOfSight(enemy.transform);
+            bool visible = HasLineOfSight(target.transform);
             if (visible)
             {
-                _visibleEnemies.Add(enemy);
-                _lastSeenPositions[enemy] = enemy.transform.position;
-                _lastSeenTime[enemy] = Time.time;
+                memory.LastSeenPosition = target.transform.position;
+                memory.LastSeenTime = Time.time;
 
-                if (canBroadcastObservation)
+                if (IsTrackedInList(enemies, target))
                 {
-                    BroadcastObservationToAllies(enemy, enemy.transform.position, Time.time);
+                    _visibleEnemies.Add(target);
+
+                    if (canBroadcastObservation)
+                    {
+                        BroadcastObservationToAllies(target, target.transform.position, Time.time);
+                    }
                 }
             }
-            else if (_lastSeenTime.TryGetValue(enemy, out float lastSeenAt) &&
-                Time.time - lastSeenAt > _searchTimeout)
+            else if (Time.time - memory.LastSeenTime > _searchTimeout)
             {
-                _lastSeenPositions[enemy] = null;
+                memory.LastSeenPosition = null;
             }
         }
 
         RebuildRememberedEnemies(enemies);
+        BroadcastMemoriesToAllies();
     }
 
     public bool IsVisible(Character target)
@@ -105,27 +122,28 @@ public sealed class CombatVision : MonoBehaviour
     {
         position = default;
         if (target == null) return false;
-        if (!_lastSeenPositions.TryGetValue(target, out Vector3? stored) || !stored.HasValue) return false;
+        if (!_memories.TryGetValue(target, out CharacterMemory memory)) return false;
+        if (!memory.LastSeenPosition.HasValue) return false;
 
-        position = stored.Value;
+        position = memory.LastSeenPosition.Value;
         return true;
     }
 
     public bool HasMemoryOf(Character target)
     {
         if (target == null) return false;
-        if (!_lastSeenPositions.TryGetValue(target, out Vector3? stored) || !stored.HasValue) return false;
-        if (!_lastSeenTime.TryGetValue(target, out float lastSeenAt)) return false;
+        if (!_memories.TryGetValue(target, out CharacterMemory memory)) return false;
+        if (!memory.LastSeenPosition.HasValue) return false;
 
-        return Time.time - lastSeenAt <= _searchTimeout;
+        return Time.time - memory.LastSeenTime <= _searchTimeout;
     }
 
     public float GetMemoryAgeSeconds(Character target)
     {
-        if (target == null || !_lastSeenTime.TryGetValue(target, out float lastSeenAt)) return float.PositiveInfinity;
+        if (target == null || !_memories.TryGetValue(target, out CharacterMemory memory)) return float.PositiveInfinity;
         if (!HasMemoryOf(target)) return float.PositiveInfinity;
 
-        return Time.time - lastSeenAt;
+        return Time.time - memory.LastSeenTime;
     }
 
     public float GetMemoryRemainingSeconds(Character target)
@@ -138,10 +156,34 @@ public sealed class CombatVision : MonoBehaviour
     public void ReceiveSharedObservation(Character enemy, Vector3 position, float reportedAt)
     {
         if (enemy == null) return;
-        if (_lastSeenTime.TryGetValue(enemy, out float mine) && mine >= reportedAt) return;
+        if (enemy == _owner) return;
 
-        _lastSeenPositions[enemy] = position;
-        _lastSeenTime[enemy] = reportedAt;
+        CharacterMemory memory = EnsureTracked(enemy);
+        if (memory.LastSeenTime >= reportedAt) return;
+
+        memory.LastSeenPosition = position;
+        memory.LastSeenTime = reportedAt;
+        RebuildRememberedEnemiesFromTracked();
+    }
+
+    // 味方から情報を受け取る
+    public void ReceiveSharedMemory(List<CharacterMemory> sharedMemories)
+    {
+        if (sharedMemories == null) return;
+
+        for (int i = 0; i < sharedMemories.Count; i++)
+        {
+            CharacterMemory sharedMemory = sharedMemories[i];
+            if (sharedMemory == null || sharedMemory.Target == null) continue;
+            if (sharedMemory.Target == _owner) continue;
+
+            CharacterMemory myMemory = EnsureTracked(sharedMemory.Target);
+            if (sharedMemory.LastSeenTime <= myMemory.LastSeenTime) continue;
+
+            myMemory.LastSeenPosition = sharedMemory.LastSeenPosition;
+            myMemory.LastSeenTime = sharedMemory.LastSeenTime;
+        }
+
         RebuildRememberedEnemiesFromTracked();
     }
 
@@ -220,25 +262,69 @@ public sealed class CombatVision : MonoBehaviour
     private void RebuildRememberedEnemiesFromTracked()
     {
         _rememberedEnemies.Clear();
-        foreach (KeyValuePair<Character, Vector3?> pair in _lastSeenPositions)
+        CombatCharacterSystem characterSystem = ResolveCharacterSystem();
+        IReadOnlyList<Character> enemies = characterSystem != null && _owner != null
+            ? characterSystem.GetEnemiesOf(_owner)
+            : null;
+
+        foreach (KeyValuePair<Character, CharacterMemory> pair in _memories)
         {
             if (pair.Key == null || pair.Key == _owner) continue;
+            if (enemies != null && !IsTrackedInList(enemies, pair.Key)) continue;
             if (!HasMemoryOf(pair.Key)) continue;
 
             _rememberedEnemies.Add(pair.Key);
         }
     }
 
-    private void SyncTrackedEnemies(IReadOnlyList<Character> enemies)
+    private void SyncTrackedCharacters(IReadOnlyList<Character> characters)
     {
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Character enemy = enemies[i];
-            if (enemy == null || enemy == _owner || _lastSeenPositions.ContainsKey(enemy)) continue;
+        if (characters == null) return;
 
-            _lastSeenPositions[enemy] = null;
-            _lastSeenTime[enemy] = Time.time - _searchTimeout - 1f;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character == null || character == _owner || _memories.ContainsKey(character)) continue;
+
+            _memories[character] = new CharacterMemory(character, null, Time.time - _searchTimeout - 1f);
         }
+    }
+
+    private void RegisterTrackedCharacters(IReadOnlyList<Character> characters, float initialTime)
+    {
+        if (characters == null) return;
+
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character == null || character == _owner || _memories.ContainsKey(character)) continue;
+
+            _memories[character] = new CharacterMemory(character, null, initialTime);
+        }
+    }
+
+    private CharacterMemory EnsureTracked(Character target)
+    {
+        if (_memories.TryGetValue(target, out CharacterMemory memory))
+        {
+            return memory;
+        }
+
+        memory = new CharacterMemory(target, null, Time.time - _searchTimeout - 1f);
+        _memories[target] = memory;
+        return memory;
+    }
+
+    private static bool IsTrackedInList(IReadOnlyList<Character> characters, Character target)
+    {
+        if (characters == null || target == null) return false;
+
+        for (int i = 0; i < characters.Count; i++)
+        {
+            if (characters[i] == target) return true;
+        }
+
+        return false;
     }
 
     private CombatCharacterSystem ResolveCharacterSystem()
@@ -298,6 +384,74 @@ public sealed class CombatVision : MonoBehaviour
             if (ally == null || ally == _owner) continue;
 
             ally.Vision?.ReceiveSharedObservation(enemy, position, time);
+        }
+    }
+
+    // 指定した味方との間に障害物がないか判定する
+    private bool CanCommunicateWith(Character ally)
+    {
+        if (ally == null) return false;
+
+        Vector3 myHeadPos = transform.TransformPoint(_headOffsetFromFoot);
+        Vector3 allyHeadPos = ally.transform.TransformPoint(_headOffsetFromFoot);
+        Vector3 diff = allyHeadPos - myHeadPos;
+        float distance = diff.magnitude;
+
+        if (distance < Mathf.Epsilon) return true;
+
+        Vector3 dirToAlly = diff / distance;
+        int layerMask = _obstructionLayers;
+        if (_ignoreCharacterLayer)
+        {
+            layerMask &= ~LayerMask.GetMask("Character");
+        }
+
+        if (_drawDebugRays)
+        {
+            Debug.DrawRay(myHeadPos, dirToAlly * distance, Color.green, 1f);
+        }
+
+        int hitCount = Physics.RaycastNonAlloc(
+            myHeadPos,
+            dirToAlly,
+            _communicationHits,
+            distance,
+            layerMask,
+            QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Transform hitTransform = _communicationHits[i].transform;
+            if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, ally.transform))
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    // 通信可能な味方（Rayが通る相手）にだけ記憶を共有する
+    private void BroadcastMemoriesToAllies()
+    {
+        CombatCharacterSystem characterSystem = ResolveCharacterSystem();
+        if (characterSystem == null || _owner == null) return;
+
+        _memoriesToShare.Clear();
+        foreach (CharacterMemory memory in _memories.Values)
+        {
+            _memoriesToShare.Add(memory);
+        }
+
+        IReadOnlyList<Character> allies = characterSystem.GetAlliesOf(_owner);
+        for (int i = 0; i < allies.Count; i++)
+        {
+            Character ally = allies[i];
+            if (ally == null || ally == _owner || ally.HP <= 0) continue;
+            if (!CanCommunicateWith(ally)) continue;
+
+            ally.Vision?.ReceiveSharedMemory(_memoriesToShare);
         }
     }
 }
