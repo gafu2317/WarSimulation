@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="77" result="Failed(Child)" total="77" passed="74" failed="3" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.0377127">
+  <test-suite type="TestSuite" id="1102" name="WarSimulation1" fullname="WarSimulation1" runstate="Runnable" testcasecount="77" result="Failed" site="Child" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.037713" total="77" passed="74" failed="3" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1092" name="EditModeTests.dll" fullname="/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll" runstate="Runnable" testcasecount="77" result="Failed" site="Child" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.036005" total="77" passed="74" failed="3" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="30781" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestFixture" id="1001" name="BridgePhaseTests" fullname="BridgePhaseTests" classname="BridgePhaseTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000460" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1002" name="Execute_SetsBridgeScaleFromRiverWidth" fullname="BridgePhaseTests.Execute_SetsBridgeScaleFromRiverWidth" methodname="Execute_SetsBridgeScaleFromRiverWidth" classname="BridgePhaseTests" runstate="Runnable" seed="1607373807" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000126" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1003" name="ExistingPlacedFeatureConstructors_DefaultScaleToOne" fullname="BridgePhaseTests.ExistingPlacedFeatureConstructors_DefaultScaleToOne" methodname="ExistingPlacedFeatureConstructors_DefaultScaleToOne" classname="BridgePhaseTests" runstate="Runnable" seed="2146289319" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000024" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1004" name="CombatAiDebugViewTests" fullname="CombatAiDebugViewTests" classname="CombatAiDebugViewTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.001166" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1005" name="BuildDebugText_IncludesDecisionTargetStateAndVisibleCount" fullname="CombatAiDebugViewTests.BuildDebugText_IncludesDecisionTargetStateAndVisibleCount" methodname="BuildDebugText_IncludesDecisionTargetStateAndVisibleCount" classname="CombatAiDebugViewTests" runstate="Runnable" seed="555612741" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000049" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1006" name="BuildDebugText_UsesDashWhenTargetNameIsMissing" fullname="CombatAiDebugViewTests.BuildDebugText_UsesDashWhenTargetNameIsMissing" methodname="BuildDebugText_UsesDashWhenTargetNameIsMissing" classname="CombatAiDebugViewTests" runstate="Runnable" seed="1276051712" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000023" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1008" name="FormatActionKind_IncludesUseSkillInJapanese" fullname="CombatAiDebugViewTests.FormatActionKind_IncludesUseSkillInJapanese" methodname="FormatActionKind_IncludesUseSkillInJapanese" classname="CombatAiDebugViewTests" runstate="Runnable" seed="180198133" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000013" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1007" name="FormatMoveKind_IncludesNewWeaponMoveKindsInJapanese" fullname="CombatAiDebugViewTests.FormatMoveKind_IncludesNewWeaponMoveKindsInJapanese" methodname="FormatMoveKind_IncludesNewWeaponMoveKindsInJapanese" classname="CombatAiDebugViewTests" runstate="Runnable" seed="302184492" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000013" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1009" name="FormatWeaponKind_ReturnsJapaneseNamesFromGameDesign" fullname="CombatAiDebugViewTests.FormatWeaponKind_ReturnsJapaneseNamesFromGameDesign" methodname="FormatWeaponKind_ReturnsJapaneseNamesFromGameDesign" classname="CombatAiDebugViewTests" runstate="Runnable" seed="1125161647" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000017" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1010" name="CombatHealthAttackTests" fullname="CombatHealthAttackTests" classname="CombatHealthAttackTests" runstate="Runnable" testcasecount="8" result="Failed" site="Child" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002334" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-case id="1014" name="Attack_AppliesWeaponDamageAndCooldown" fullname="CombatHealthAttackTests.Attack_AppliesWeaponDamageAndCooldown" methodname="Attack_AppliesWeaponDamageAndCooldown" classname="CombatHealthAttackTests" runstate="Runnable" seed="965590140" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000253" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1015" name="Attack_RejectsSameTeamRangeAndRetreatingTargets" fullname="CombatHealthAttackTests.Attack_RejectsSameTeamRangeAndRetreatingTargets" methodname="Attack_RejectsSameTeamRangeAndRetreatingTargets" classname="CombatHealthAttackTests" runstate="Runnable" seed="585575894" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000210" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1018" name="BibleAndRosary_IncludeDefaultSupportSkills" fullname="CombatHealthAttackTests.BibleAndRosary_IncludeDefaultSupportSkills" methodname="BibleAndRosary_IncludeDefaultSupportSkills" classname="CombatHealthAttackTests" runstate="Runnable" seed="2146853869" result="Failed" label="Error" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000157" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[System.ArgumentException : Property Count was not found
+Parameter name: name]]></message>
+            <stack-trace><![CDATA[  at NUnit.Framework.Constraints.PropertyConstraint.ApplyTo (System.Object actual) [0x0004a] in <f577cd9686154d6ab10efd7e65e64366>:0 
+  at NUnit.Framework.Assert.That[TActual] (TActual actual, NUnit.Framework.Constraints.IResolveConstraint expression, System.String message, System.Object[] args) [0x0000b] in <f577cd9686154d6ab10efd7e65e64366>:0 
+  at NUnit.Framework.Assert.That[TActual] (TActual actual, NUnit.Framework.Constraints.IResolveConstraint expression) [0x00000] in <f577cd9686154d6ab10efd7e65e64366>:0 
+  at CombatHealthAttackTests.BibleAndRosary_IncludeDefaultSupportSkills () [0x00054] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatHealthAttackTests.cs:209 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <67e9686a86934ae8b0ef7cc81c6b4608>:0 ]]></stack-trace>
+          </failure>
+        </test-case>
+        <test-case id="1016" name="CharacterSystem_ResolvesHomePositionFromTeamMainStoneOrInitialPosition" fullname="CombatHealthAttackTests.CharacterSystem_ResolvesHomePositionFromTeamMainStoneOrInitialPosition" methodname="CharacterSystem_ResolvesHomePositionFromTeamMainStoneOrInitialPosition" classname="CombatHealthAttackTests" runstate="Runnable" seed="404958613" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000247" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1013" name="Health_DoesNotMarkRetreatDestinationWhenReturnMoveCannotStart" fullname="CombatHealthAttackTests.Health_DoesNotMarkRetreatDestinationWhenReturnMoveCannotStart" methodname="Health_DoesNotMarkRetreatDestinationWhenReturnMoveCannotStart" classname="CombatHealthAttackTests" runstate="Runnable" seed="1417973684" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000132" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1011" name="Health_EntersRetreatWhenHpReachesZero" fullname="CombatHealthAttackTests.Health_EntersRetreatWhenHpReachesZero" methodname="Health_EntersRetreatWhenHpReachesZero" classname="CombatHealthAttackTests" runstate="Runnable" seed="2090988049" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000104" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1012" name="Health_RestoreFullReturnsToActive" fullname="CombatHealthAttackTests.Health_RestoreFullReturnsToActive" methodname="Health_RestoreFullReturnsToActive" classname="CombatHealthAttackTests" runstate="Runnable" seed="846667807" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000094" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1017" name="Weapons_ExposeExpectedCombatValues" fullname="CombatHealthAttackTests.Weapons_ExposeExpectedCombatValues" methodname="Weapons_ExposeExpectedCombatValues" classname="CombatHealthAttackTests" runstate="Runnable" seed="1034327448" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000040" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1019" name="CombatMapSystemTests" fullname="CombatMapSystemTests" classname="CombatMapSystemTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002307" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1021" name="TryGetTerrainInfo_ReportsOutOfBoundsButSamplesClampedEdge" fullname="CombatMapSystemTests.TryGetTerrainInfo_ReportsOutOfBoundsButSamplesClampedEdge" methodname="TryGetTerrainInfo_ReportsOutOfBoundsButSamplesClampedEdge" classname="CombatMapSystemTests" runstate="Runnable" seed="150993069" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000084" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1020" name="TryGetTerrainInfo_ReturnsBaseTerrainInfoAtWorldPosition" fullname="CombatMapSystemTests.TryGetTerrainInfo_ReturnsBaseTerrainInfoAtWorldPosition" methodname="TryGetTerrainInfo_ReturnsBaseTerrainInfoAtWorldPosition" classname="CombatMapSystemTests" runstate="Runnable" seed="1987681890" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000047" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1023" name="TryGetTerrainInfo_ReturnsCliffAndFrozenLakeFlags" fullname="CombatMapSystemTests.TryGetTerrainInfo_ReturnsCliffAndFrozenLakeFlags" methodname="TryGetTerrainInfo_ReturnsCliffAndFrozenLakeFlags" classname="CombatMapSystemTests" runstate="Runnable" seed="1656353482" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000041" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1024" name="TryGetTerrainInfo_ReturnsUpwardNormalOnFlatMap" fullname="CombatMapSystemTests.TryGetTerrainInfo_ReturnsUpwardNormalOnFlatMap" methodname="TryGetTerrainInfo_ReturnsUpwardNormalOnFlatMap" classname="CombatMapSystemTests" runstate="Runnable" seed="1478092053" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000038" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1022" name="TryGetTerrainInfo_UsesCurrentMapGroundStateAndBiome" fullname="CombatMapSystemTests.TryGetTerrainInfo_UsesCurrentMapGroundStateAndBiome" methodname="TryGetTerrainInfo_UsesCurrentMapGroundStateAndBiome" classname="CombatMapSystemTests" runstate="Runnable" seed="725577751" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000038" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1025" name="CombatSkillCooldownsTests" fullname="CombatSkillCooldownsTests" classname="CombatSkillCooldownsTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002141" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1028" name="CombatSkillCooldowns_ClearAllMakesSkillReady" fullname="CombatSkillCooldownsTests.CombatSkillCooldowns_ClearAllMakesSkillReady" methodname="CombatSkillCooldowns_ClearAllMakesSkillReady" classname="CombatSkillCooldownsTests" runstate="Runnable" seed="113318632" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000146" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1026" name="CombatSkillCooldowns_StartCooldownMarksSkillNotReady" fullname="CombatSkillCooldownsTests.CombatSkillCooldowns_StartCooldownMarksSkillNotReady" methodname="CombatSkillCooldowns_StartCooldownMarksSkillNotReady" classname="CombatSkillCooldownsTests" runstate="Runnable" seed="342167737" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000107" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1027" name="CombatSkillCooldowns_ZeroCooldownSkillStaysReady" fullname="CombatSkillCooldownsTests.CombatSkillCooldowns_ZeroCooldownSkillStaysReady" methodname="CombatSkillCooldowns_ZeroCooldownSkillStaysReady" classname="CombatSkillCooldownsTests" runstate="Runnable" seed="1527148812" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000091" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1029" name="CombatStatusEffectsTests" fullname="CombatStatusEffectsTests" classname="CombatStatusEffectsTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002513" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1035" name="CombatAttack_DamageIsReducedWhenAttackerHasStrDebuff" fullname="CombatStatusEffectsTests.CombatAttack_DamageIsReducedWhenAttackerHasStrDebuff" methodname="CombatAttack_DamageIsReducedWhenAttackerHasStrDebuff" classname="CombatStatusEffectsTests" runstate="Runnable" seed="1499676631" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000166" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1032" name="CombatStatusEffects_AllowsDifferentKeysOnSameStat" fullname="CombatStatusEffectsTests.CombatStatusEffects_AllowsDifferentKeysOnSameStat" methodname="CombatStatusEffects_AllowsDifferentKeysOnSameStat" classname="CombatStatusEffectsTests" runstate="Runnable" seed="807461831" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000101" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1030" name="CombatStatusEffects_ApplyReducesMultiplier" fullname="CombatStatusEffectsTests.CombatStatusEffects_ApplyReducesMultiplier" methodname="CombatStatusEffects_ApplyReducesMultiplier" classname="CombatStatusEffectsTests" runstate="Runnable" seed="605462533" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000096" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1034" name="CombatStatusEffects_ExpiredEffectIsRemoved" fullname="CombatStatusEffectsTests.CombatStatusEffects_ExpiredEffectIsRemoved" methodname="CombatStatusEffects_ExpiredEffectIsRemoved" classname="CombatStatusEffectsTests" runstate="Runnable" seed="1467471283" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000102" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1033" name="CombatStatusEffects_HasActiveEffectAndRemainingSeconds" fullname="CombatStatusEffectsTests.CombatStatusEffects_HasActiveEffectAndRemainingSeconds" methodname="CombatStatusEffects_HasActiveEffectAndRemainingSeconds" classname="CombatStatusEffectsTests" runstate="Runnable" seed="1180817635" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000095" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1031" name="CombatStatusEffects_UpdatesSameKeyEffectInsteadOfStacking" fullname="CombatStatusEffectsTests.CombatStatusEffects_UpdatesSameKeyEffectInsteadOfStacking" methodname="CombatStatusEffects_UpdatesSameKeyEffectInsteadOfStacking" classname="CombatStatusEffectsTests" runstate="Runnable" seed="1746772682" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000092" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1036" name="CombatTeamVisionTests" fullname="CombatTeamVisionTests" classname="CombatTeamVisionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002698" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1037" name="CharacterSystem_AssignsTeamsFromLists" fullname="CombatTeamVisionTests.CharacterSystem_AssignsTeamsFromLists" methodname="CharacterSystem_AssignsTeamsFromLists" classname="CombatTeamVisionTests" runstate="Runnable" seed="63995184" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000270" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1038" name="CombatVision_ReceiveSharedObservationUpdatesLastKnownPosition" fullname="CombatTeamVisionTests.CombatVision_ReceiveSharedObservationUpdatesLastKnownPosition" methodname="CombatVision_ReceiveSharedObservationUpdatesLastKnownPosition" classname="CombatTeamVisionTests" runstate="Runnable" seed="89328472" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000305" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1039" name="CombatVision_TracksVisibleEnemiesAndLastKnownPosition" fullname="CombatTeamVisionTests.CombatVision_TracksVisibleEnemiesAndLastKnownPosition" methodname="CombatVision_TracksVisibleEnemiesAndLastKnownPosition" classname="CombatTeamVisionTests" runstate="Runnable" seed="1660480758" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000258" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1040" name="CombatTraversalTests" fullname="CombatTraversalTests" classname="CombatTraversalTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002954" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1042" name="CanStandAt_AllowsSteepSlopeBecauseNavMeshOwnsWalkability" fullname="CombatTraversalTests.CanStandAt_AllowsSteepSlopeBecauseNavMeshOwnsWalkability" methodname="CanStandAt_AllowsSteepSlopeBecauseNavMeshOwnsWalkability" classname="CombatTraversalTests" runstate="Runnable" seed="247476870" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000102" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1043" name="CanStandAt_AllowsWaterEvenWhenUnderlyingTerrainIsSteep" fullname="CombatTraversalTests.CanStandAt_AllowsWaterEvenWhenUnderlyingTerrainIsSteep" methodname="CanStandAt_AllowsWaterEvenWhenUnderlyingTerrainIsSteep" classname="CombatTraversalTests" runstate="Runnable" seed="1520536845" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000042" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1041" name="CanStandAt_RejectsOutOfBoundsButAllowsMapTerrainDetails" fullname="CombatTraversalTests.CanStandAt_RejectsOutOfBoundsButAllowsMapTerrainDetails" methodname="CanStandAt_RejectsOutOfBoundsButAllowsMapTerrainDetails" classname="CombatTraversalTests" runstate="Runnable" seed="2034908061" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000041" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1044" name="TryGetTraversalInfo_ReturnsGroundStateSpeedMultipliers" fullname="CombatTraversalTests.TryGetTraversalInfo_ReturnsGroundStateSpeedMultipliers" methodname="TryGetTraversalInfo_ReturnsGroundStateSpeedMultipliers" classname="CombatTraversalTests" runstate="Runnable" seed="785119677" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000052" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1045" name="TryGetTraversalInfo_UsesCurrentGroundState" fullname="CombatTraversalTests.TryGetTraversalInfo_UsesCurrentGroundState" methodname="TryGetTraversalInfo_UsesCurrentGroundState" classname="CombatTraversalTests" runstate="Runnable" seed="307498268" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000043" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1046" name="LakePhaseTests" fullname="LakePhaseTests" classname="LakePhaseTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002305" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1048" name="Execute_PlacesLakeOnHeightZeroFootprint" fullname="LakePhaseTests.Execute_PlacesLakeOnHeightZeroFootprint" methodname="Execute_PlacesLakeOnHeightZeroFootprint" classname="LakePhaseTests" runstate="Runnable" seed="822826175" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000121" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1047" name="Execute_SkipsLakeWhenFootprintIsNotHeightZero" fullname="LakePhaseTests.Execute_SkipsLakeWhenFootprintIsNotHeightZero" methodname="Execute_SkipsLakeWhenFootprintIsNotHeightZero" classname="LakePhaseTests" runstate="Runnable" seed="399648467" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000078" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1049" name="MountainPhaseTests" fullname="MountainPhaseTests" classname="MountainPhaseTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.001297" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1050" name="Execute_PlacesLargeMountainAndSmallMountainsWithMetadata" fullname="MountainPhaseTests.Execute_PlacesLargeMountainAndSmallMountainsWithMetadata" methodname="Execute_PlacesLargeMountainAndSmallMountainsWithMetadata" classname="MountainPhaseTests" runstate="Runnable" seed="1502332244" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000160" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1051" name="RiverPhaseTests" fullname="RiverPhaseTests" classname="RiverPhaseTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002838" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1052" name="Execute_CreatesRiverThroughHeightZeroCellsAndAvoidsMountainExtent" fullname="RiverPhaseTests.Execute_CreatesRiverThroughHeightZeroCellsAndAvoidsMountainExtent" methodname="Execute_CreatesRiverThroughHeightZeroCellsAndAvoidsMountainExtent" classname="RiverPhaseTests" runstate="Runnable" seed="1652463088" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000461" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1054" name="Execute_DoesNotFallBackToStraightPathWhenMeanderLeavesHeightZeroCells" fullname="RiverPhaseTests.Execute_DoesNotFallBackToStraightPathWhenMeanderLeavesHeightZeroCells" methodname="Execute_DoesNotFallBackToStraightPathWhenMeanderLeavesHeightZeroCells" classname="RiverPhaseTests" runstate="Runnable" seed="1839495633" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000254" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1055" name="Execute_SkipsRiverWhenNoHeightZeroEndpointExists" fullname="RiverPhaseTests.Execute_SkipsRiverWhenNoHeightZeroEndpointExists" methodname="Execute_SkipsRiverWhenNoHeightZeroEndpointExists" classname="RiverPhaseTests" runstate="Runnable" seed="1351980439" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.001026" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1053" name="Execute_TriesMultipleAnglesForSameCenterCandidate" fullname="RiverPhaseTests.Execute_TriesMultipleAnglesForSameCenterCandidate" methodname="Execute_TriesMultipleAnglesForSameCenterCandidate" classname="RiverPhaseTests" runstate="Runnable" seed="167557877" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000114" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1056" name="SimpleCombatBrainTests" fullname="SimpleCombatBrainTests" classname="SimpleCombatBrainTests" runstate="Runnable" testcasecount="23" result="Failed" site="Child" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.007855" total="23" passed="21" failed="2" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-case id="1063" name="Decide_AssaultsEnemyBaseWhenNoEnemyVisible" fullname="SimpleCombatBrainTests.Decide_AssaultsEnemyBaseWhenNoEnemyVisible" methodname="Decide_AssaultsEnemyBaseWhenNoEnemyVisible" classname="SimpleCombatBrainTests" runstate="Runnable" seed="882158235" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000345" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1058" name="Decide_AttacksVisibleEnemyInRange" fullname="SimpleCombatBrainTests.Decide_AttacksVisibleEnemyInRange" methodname="Decide_AttacksVisibleEnemyInRange" classname="SimpleCombatBrainTests" runstate="Runnable" seed="999403500" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000295" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1075" name="Decide_BibleSelectsWoundedAllyForHeal" fullname="SimpleCombatBrainTests.Decide_BibleSelectsWoundedAllyForHeal" methodname="Decide_BibleSelectsWoundedAllyForHeal" classname="SimpleCombatBrainTests" runstate="Runnable" seed="398150869" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000253" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1059" name="Decide_ChasesVisibleEnemyOutOfRangeWithoutAction" fullname="SimpleCombatBrainTests.Decide_ChasesVisibleEnemyOutOfRangeWithoutAction" methodname="Decide_ChasesVisibleEnemyOutOfRangeWithoutAction" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1357428595" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000252" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1072" name="Decide_DoesNotSelectSkillWhileSkillIsOnCooldown" fullname="SimpleCombatBrainTests.Decide_DoesNotSelectSkillWhileSkillIsOnCooldown" methodname="Decide_DoesNotSelectSkillWhileSkillIsOnCooldown" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1135683139" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000254" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1064" name="Decide_FollowsAllyWhenAllyIsFarAway" fullname="SimpleCombatBrainTests.Decide_FollowsAllyWhenAllyIsFarAway" methodname="Decide_FollowsAllyWhenAllyIsFarAway" classname="SimpleCombatBrainTests" runstate="Runnable" seed="2126992032" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000245" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1068" name="Decide_GrimoireSeeksHighGroundWhenHigherPointExists" fullname="SimpleCombatBrainTests.Decide_GrimoireSeeksHighGroundWhenHigherPointExists" methodname="Decide_GrimoireSeeksHighGroundWhenHigherPointExists" classname="SimpleCombatBrainTests" runstate="Runnable" seed="492295771" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000196" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1071" name="Decide_GrimoireSelectsStrDebuffSkillWhenEnemyInRangeAndAttackOnCooldown" fullname="SimpleCombatBrainTests.Decide_GrimoireSelectsStrDebuffSkillWhenEnemyInRangeAndAttackOnCooldown" methodname="Decide_GrimoireSelectsStrDebuffSkillWhenEnemyInRangeAndAttackOnCooldown" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1942423247" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000282" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1062" name="Decide_HoldsPositionWhenVisibleEnemyIsAlreadyInRangeAwayFromHome" fullname="SimpleCombatBrainTests.Decide_HoldsPositionWhenVisibleEnemyIsAlreadyInRangeAwayFromHome" methodname="Decide_HoldsPositionWhenVisibleEnemyIsAlreadyInRangeAwayFromHome" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1838382558" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000250" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1066" name="Decide_MovesToLastKnownPositionAfterTargetLeavesSight" fullname="SimpleCombatBrainTests.Decide_MovesToLastKnownPositionAfterTargetLeavesSight" methodname="Decide_MovesToLastKnownPositionAfterTargetLeavesSight" classname="SimpleCombatBrainTests" runstate="Runnable" seed="575817564" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000256" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1061" name="Decide_PrioritizesHomeDefenseWhenVisibleEnemyIsNearHome" fullname="SimpleCombatBrainTests.Decide_PrioritizesHomeDefenseWhenVisibleEnemyIsNearHome" methodname="Decide_PrioritizesHomeDefenseWhenVisibleEnemyIsNearHome" classname="SimpleCombatBrainTests" runstate="Runnable" seed="901695235" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000245" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1057" name="Decide_ReturnsIdleMoveAndNoActionWhenOwnerCannotAct" fullname="SimpleCombatBrainTests.Decide_ReturnsIdleMoveAndNoActionWhenOwnerCannotAct" methodname="Decide_ReturnsIdleMoveAndNoActionWhenOwnerCannotAct" classname="SimpleCombatBrainTests" runstate="Runnable" seed="452493480" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000217" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1077" name="Decide_RosarySelectsAllyForFaithBuff" fullname="SimpleCombatBrainTests.Decide_RosarySelectsAllyForFaithBuff" methodname="Decide_RosarySelectsAllyForFaithBuff" classname="SimpleCombatBrainTests" runstate="Runnable" seed="2007158834" result="Failed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000374" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[  Expected: <Ally (Character)>
+  But was:  <Owner (Character)>
+]]></message>
+            <stack-trace><![CDATA[at SimpleCombatBrainTests.Decide_RosarySelectsAllyForFaithBuff () [0x000e4] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/SimpleCombatBrainTests.cs:507
+]]></stack-trace>
+          </failure>
+        </test-case>
+        <test-case id="1067" name="Decide_ShieldPrioritizesFollowingMeleeAlly" fullname="SimpleCombatBrainTests.Decide_ShieldPrioritizesFollowingMeleeAlly" methodname="Decide_ShieldPrioritizesFollowingMeleeAlly" classname="SimpleCombatBrainTests" runstate="Runnable" seed="167138497" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000317" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1065" name="Decide_UsesPatrolWhenNoOtherObjectiveExists" fullname="SimpleCombatBrainTests.Decide_UsesPatrolWhenNoOtherObjectiveExists" methodname="Decide_UsesPatrolWhenNoOtherObjectiveExists" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1060591381" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000150" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1060" name="Decide_UsesRetreatMoveAtLowHpAndCriticalHp" fullname="SimpleCombatBrainTests.Decide_UsesRetreatMoveAtLowHpAndCriticalHp" methodname="Decide_UsesRetreatMoveAtLowHpAndCriticalHp" classname="SimpleCombatBrainTests" runstate="Runnable" seed="999216754" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000251" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1070" name="Decide_UsesSkillWhenSkillScoreExceedsAttackScore" fullname="SimpleCombatBrainTests.Decide_UsesSkillWhenSkillScoreExceedsAttackScore" methodname="Decide_UsesSkillWhenSkillScoreExceedsAttackScore" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1825267774" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000249" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1069" name="Decide_WandWithForestBiasMovesToForestWhenNotAlreadyInside" fullname="SimpleCombatBrainTests.Decide_WandWithForestBiasMovesToForestWhenNotAlreadyInside" methodname="Decide_WandWithForestBiasMovesToForestWhenNotAlreadyInside" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1905299924" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000210" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1079" name="Tick_AttacksVisibleEnemyAndDoesNotAttackWhileOnCooldownOrRetreating" fullname="SimpleCombatBrainTests.Tick_AttacksVisibleEnemyAndDoesNotAttackWhileOnCooldownOrRetreating" methodname="Tick_AttacksVisibleEnemyAndDoesNotAttackWhileOnCooldownOrRetreating" classname="SimpleCombatBrainTests" runstate="Runnable" seed="106454758" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000288" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1076" name="Tick_BibleHealsWoundedAllyAndStartsCooldown" fullname="SimpleCombatBrainTests.Tick_BibleHealsWoundedAllyAndStartsCooldown" methodname="Tick_BibleHealsWoundedAllyAndStartsCooldown" classname="SimpleCombatBrainTests" runstate="Runnable" seed="158947672" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000249" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1078" name="Tick_RosaryAppliesFaithBuffWithoutStackingOnRefresh" fullname="SimpleCombatBrainTests.Tick_RosaryAppliesFaithBuffWithoutStackingOnRefresh" methodname="Tick_RosaryAppliesFaithBuffWithoutStackingOnRefresh" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1236338460" result="Failed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000321" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[  Expected: 1.20000005f +/- 0.00100000005f
+  But was:  1.0f
+]]></message>
+            <stack-trace><![CDATA[at SimpleCombatBrainTests.Tick_RosaryAppliesFaithBuffWithoutStackingOnRefresh () [0x000c2] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/SimpleCombatBrainTests.cs:536
+]]></stack-trace>
+          </failure>
+        </test-case>
+        <test-case id="1074" name="Tick_StartsCooldownAfterUsingGrimoireStrDebuffSkill" fullname="SimpleCombatBrainTests.Tick_StartsCooldownAfterUsingGrimoireStrDebuffSkill" methodname="Tick_StartsCooldownAfterUsingGrimoireStrDebuffSkill" classname="SimpleCombatBrainTests" runstate="Runnable" seed="2011616638" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000295" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1073" name="Tick_StartsCooldownAfterUsingSkill" fullname="SimpleCombatBrainTests.Tick_StartsCooldownAfterUsingSkill" methodname="Tick_StartsCooldownAfterUsingSkill" classname="SimpleCombatBrainTests" runstate="Runnable" seed="1542520933" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000229" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1080" name="TreePlacementPhaseTests" fullname="TreePlacementPhaseTests" classname="TreePlacementPhaseTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.002412" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1084" name="ForestCluster_SkipsRiverCorridorForGridAndFallbackCandidates" fullname="TreePlacementPhaseTests.ForestCluster_SkipsRiverCorridorForGridAndFallbackCandidates" methodname="ForestCluster_SkipsRiverCorridorForGridAndFallbackCandidates" classname="TreePlacementPhaseTests" runstate="Runnable" seed="1428458008" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000077" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1083" name="TreeScatter_AllowsNormalNonCliffCell" fullname="TreePlacementPhaseTests.TreeScatter_AllowsNormalNonCliffCell" methodname="TreeScatter_AllowsNormalNonCliffCell" classname="TreePlacementPhaseTests" runstate="Runnable" seed="729345171" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000069" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1082" name="TreeScatter_SkipsCliffFaceCell" fullname="TreePlacementPhaseTests.TreeScatter_SkipsCliffFaceCell" methodname="TreeScatter_SkipsCliffFaceCell" classname="TreePlacementPhaseTests" runstate="Runnable" seed="306929061" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000056" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1081" name="TreeScatter_SkipsRiverCorridorOutsideWaterTag" fullname="TreePlacementPhaseTests.TreeScatter_SkipsRiverCorridorOutsideWaterTag" methodname="TreeScatter_SkipsRiverCorridorOutsideWaterTag" classname="TreePlacementPhaseTests" runstate="Runnable" seed="2106145466" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000070" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1085" name="WeaponConfigTests" fullname="WeaponConfigTests" classname="WeaponConfigTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.001536" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1089" name="Character_AppliesInitialWeaponConfig_OnApply" fullname="WeaponConfigTests.Character_AppliesInitialWeaponConfig_OnApply" methodname="Character_AppliesInitialWeaponConfig_OnApply" classname="WeaponConfigTests" runstate="Runnable" seed="568679157" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000145" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1091" name="Character_InitializeOnBattleStart_ReappliesWeaponFromConfig" fullname="WeaponConfigTests.Character_InitializeOnBattleStart_ReappliesWeaponFromConfig" methodname="Character_InitializeOnBattleStart_ReappliesWeaponFromConfig" classname="WeaponConfigTests" runstate="Runnable" seed="27953743" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000118" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1090" name="Character_WithoutInitialWeaponConfig_StaysUnarmed" fullname="WeaponConfigTests.Character_WithoutInitialWeaponConfig_StaysUnarmed" methodname="Character_WithoutInitialWeaponConfig_StaysUnarmed" classname="WeaponConfigTests" runstate="Runnable" seed="581430369" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000105" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1087" name="CreateWeapon_AllKinds_ProduceExpectedWeaponTypes" fullname="WeaponConfigTests.CreateWeapon_AllKinds_ProduceExpectedWeaponTypes" methodname="CreateWeapon_AllKinds_ProduceExpectedWeaponTypes" classname="WeaponConfigTests" runstate="Runnable" seed="41169390" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000084" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1088" name="CreateWeapon_CustomValues_AreApplied" fullname="WeaponConfigTests.CreateWeapon_CustomValues_AreApplied" methodname="CreateWeapon_CustomValues_AreApplied" classname="WeaponConfigTests" runstate="Runnable" seed="602362915" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000035" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1086" name="CreateWeapon_SwordConfig_MatchesDefaultSwordValues" fullname="WeaponConfigTests.CreateWeapon_SwordConfig_MatchesDefaultSwordValues" methodname="CreateWeapon_SwordConfig_MatchesDefaultSwordValues" classname="WeaponConfigTests" runstate="Runnable" seed="1623929526" result="Passed" start-time="2026-05-20 12:03:51Z" end-time="2026-05-20 12:03:51Z" duration="0.000029" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/fukutomi/Library/Application Support/DefaultCompany/WarSimulation1/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

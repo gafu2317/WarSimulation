@@ -1,31 +1,30 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-// 記憶を管理する専用クラス
-public class CharacterMemory
-{
-    public Character Target { get; private set; }
-    public Vector3? LastSeenPosition { get; set; }
-    public float LastSeenTime { get; set; }
-
-    public CharacterMemory(Character target, Vector3? position, float time)
-    {
-        Target = target;
-        LastSeenPosition = position;
-        LastSeenTime = time;
-    }
-}
-
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(CombatCharacterBody))]
+[RequireComponent(typeof(CombatVision))]
+[RequireComponent(typeof(CombatHealth))]
+[RequireComponent(typeof(CombatAttack))]
+[RequireComponent(typeof(CombatStatusEffects))]
+[RequireComponent(typeof(CombatSkillCooldowns))]
 public class Character : MonoBehaviour
 {
+    [SerializeField] private CombatTeam _team = CombatTeam.Ally;
+    [SerializeField] private WeaponConfig _initialWeaponConfig;
+
     // キャラクターの基礎データ
     public CharacterData CharacterData { private set; get; }
+    public CombatTeam Team => _team;
+    public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
+    public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
+    public CombatAttack Attack => _attack != null ? _attack : GetComponent<CombatAttack>();
+    public CombatStatusEffects StatusEffects => ResolveStatusEffects();
+    public CombatSkillCooldowns SkillCooldowns => ResolveSkillCooldowns();
 
     // パラメータ
-    public int MaxHP { private set; get; }
-    public int HP { private set; get; }
+    public int MaxHP => Health != null ? Health.MaxHP : 0;
+    public int HP => Health != null ? Health.HP : 0;
     public int CP { private set; get; }
     public int STR { private set; get; }
     public int INT { private set; get; }
@@ -33,10 +32,10 @@ public class Character : MonoBehaviour
     public int AGI { private set; get; }
 
     // バフ・デバフ率
-    public float STRBuff { private set; get; } = 1f;
-    public float INTBuff { private set; get; } = 1f;
-    public float FAIBuff { private set; get; } = 1f;
-    public float AGIBuff { private set; get; } = 1f;
+    public float STRBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.STR);
+    public float INTBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.INT);
+    public float FAIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.FAI);
+    public float AGIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.AGI);
 
     // 性格
     public PersonalityBase Personality { private set; get; }
@@ -44,41 +43,85 @@ public class Character : MonoBehaviour
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
 
-    // 敵味方のキャラの視認情報
-    private Dictionary<Character, CharacterMemory> _memories = new Dictionary<Character, CharacterMemory>();
-
-    // 視界処理用定数
-    private readonly Vector3 HeadOffsetFromFoot = new Vector3(0, 1f, 0);
-    private const float VerticalFOV = 90f;
-    private const float HorizontalFOV = 120f;
-    private const float MaxSightDistance = 30f;
-    private const float SearchTimeout = 10f;
-
-    // --- 移動・環境影響 用の変数 ---
     private NavMeshAgent _agent;
-    private float _baseSpeed; // 風の影響がないときの基準速度
-    
-    [Header("移動設定")]
-    [Tooltip("風の影響をどれくらい受けるかの係数")]
-    [SerializeField] private float _windEffectMultiplier = 0.5f;
-    [Tooltip("向かい風で遅くなる際の最低速度倍率")]
-    [SerializeField] private float _minSpeedRatio = 0.2f;
+    private CombatCharacterBody _body;
+    private CombatVision _vision;
+    private CombatHealth _health;
+    private CombatAttack _attack;
+    private CombatStatusEffects _statusEffects;
+    private CombatSkillCooldowns _skillCooldowns;
 
     private void Awake()
     {
-        // NavMeshAgentの取得と初期設定
         _agent = GetComponent<NavMeshAgent>();
-        if (_agent != null)
+        _body = GetComponent<CombatCharacterBody>();
+        if (_body == null)
         {
-            // インスペクターで設定されたSpeedを基準速度として記憶
-            _baseSpeed = _agent.speed;
+            _body = gameObject.AddComponent<CombatCharacterBody>();
         }
+
+        _vision = GetComponent<CombatVision>();
+        if (_vision == null)
+        {
+            _vision = gameObject.AddComponent<CombatVision>();
+        }
+
+        _health = GetComponent<CombatHealth>();
+        if (_health == null)
+        {
+            _health = gameObject.AddComponent<CombatHealth>();
+        }
+
+        _attack = GetComponent<CombatAttack>();
+        if (_attack == null)
+        {
+            _attack = gameObject.AddComponent<CombatAttack>();
+        }
+
+        _statusEffects = GetComponent<CombatStatusEffects>();
+        if (_statusEffects == null)
+        {
+            _statusEffects = gameObject.AddComponent<CombatStatusEffects>();
+        }
+
+        _skillCooldowns = GetComponent<CombatSkillCooldowns>();
+        if (_skillCooldowns == null)
+        {
+            _skillCooldowns = gameObject.AddComponent<CombatSkillCooldowns>();
+        }
+
+        ApplyInitialWeaponFromConfig();
     }
 
-    private void Update()
+    private CombatStatusEffects ResolveStatusEffects()
     {
-        // 毎フレーム風の影響を計算して速度を更新
-        UpdateWindEffect();
+        if (_statusEffects != null) return _statusEffects;
+
+        _statusEffects = GetComponent<CombatStatusEffects>();
+        if (_statusEffects == null)
+        {
+            _statusEffects = gameObject.AddComponent<CombatStatusEffects>();
+        }
+
+        return _statusEffects;
+    }
+
+    private CombatSkillCooldowns ResolveSkillCooldowns()
+    {
+        if (_skillCooldowns != null) return _skillCooldowns;
+
+        _skillCooldowns = GetComponent<CombatSkillCooldowns>();
+        if (_skillCooldowns == null)
+        {
+            _skillCooldowns = gameObject.AddComponent<CombatSkillCooldowns>();
+        }
+
+        return _skillCooldowns;
+    }
+
+    public void SetTeam(CombatTeam team)
+    {
+        _team = team;
     }
 
     // ステータス設定
@@ -87,18 +130,23 @@ public class Character : MonoBehaviour
         // TODO: パラメータ計算の実装
         // 簡易的に基礎パラメータを設定
         CharacterData = characterData;
-        MaxHP = characterData.MaxHP;
-        HP = MaxHP;
         CP = characterData.CP;
         STR = characterData.STR;
         INT = characterData.INT;
         FAI = characterData.FAI;
         AGI = characterData.AGI;
         Personality = spirit.Personality;
+        _health ??= GetComponent<CombatHealth>();
+        _health?.Initialize(characterData.MaxHP);
 
-        // AGIパラメータを基準速度(_baseSpeed)に反映させたい場合はここで設定
-        // _baseSpeed = AGI * 0.5f; 
-        // if(_agent != null) _agent.speed = _baseSpeed;
+        // AGIパラメータを基準速度に反映させたい場合は CombatCharacterBody.BaseSpeed を更新する。
+    }
+
+    public void ApplyInitialWeaponFromConfig()
+    {
+        if (_initialWeaponConfig == null) return;
+
+        EquipWeapon(_initialWeaponConfig.CreateWeapon());
     }
 
     // 武器装備
@@ -116,23 +164,9 @@ public class Character : MonoBehaviour
     // バトル開始時の初期化処理
     public void InitializeOnBattleStart()
     {
-        _memories.Clear();
-        float initialTime = Time.time - SearchTimeout - 1f; // タイムアウト状態から開始
-
-        // 敵キャラクターの登録
-        foreach (Character enemy in CombatSceneContext.Instance.CharacterSystem.EnemyCharacters)
-        {
-            _memories.Add(enemy, new CharacterMemory(enemy, null, initialTime));
-        }
-
-        // 味方キャラクターの登録（自分自身は除外する）
-        foreach (Character ally in CombatSceneContext.Instance.CharacterSystem.AllyCharacters)
-        {
-            if (ally != this)
-            {
-                _memories.Add(ally, new CharacterMemory(ally, null, initialTime));
-            }
-        }
+        ApplyInitialWeaponFromConfig();
+        _vision ??= GetComponent<CombatVision>();
+        _vision?.Initialize();
     }
 
     // ==========================================
@@ -144,6 +178,12 @@ public class Character : MonoBehaviour
     /// </summary>
     public void MoveToTarget(Vector3 destination)
     {
+        if (_body != null)
+        {
+            _body.TrySetDestination(destination);
+            return;
+        }
+
         if (_agent == null || !_agent.isOnNavMesh) return;
         
         _agent.isStopped = false;
@@ -155,50 +195,16 @@ public class Character : MonoBehaviour
     /// </summary>
     public void StopMoving()
     {
+        if (_body != null)
+        {
+            _body.Stop();
+            return;
+        }
+
         if (_agent == null || !_agent.isOnNavMesh) return;
         
         _agent.isStopped = true;
         _agent.ResetPath();
-    }
-
-    /// <summary>
-    /// マップ情報の風ベクトルを取得し、進行方向との内積から移動速度を調整します
-    /// </summary>
-    private void UpdateWindEffect()
-    {
-        // エージェントが存在しない、または移動指示が出ていない場合は処理しない
-        if (_agent == null || !_agent.hasPath) return;
-
-        // CombatSceneContextからマップシステムへのアクセス
-        if (CombatSceneContext.Instance != null && CombatSceneContext.Instance.MapSystem != null)
-        {
-            Vector3 windVector = CombatSceneContext.Instance.MapSystem.WindVector;
-            float windMagnitude = windVector.magnitude;
-
-            // 風が吹いていない（または極めて弱い）場合は基準速度に戻す
-            if (windMagnitude < Mathf.Epsilon)
-            {
-                _agent.speed = _baseSpeed;
-                return;
-            }
-
-            // エージェントが向かおうとしている方向と風向きの内積を計算
-            Vector3 moveDir = _agent.desiredVelocity.normalized;
-            Vector3 windDir = windVector.normalized;
-            
-            // 内積: 追い風ならプラス(最大1)、向かい風ならマイナス(最小-1)、横風なら0
-            float dotProduct = Vector3.Dot(moveDir, windDir);
-
-            // 速度の倍率を計算 (1.0 を基準に増減)
-            // 例: 内積が 1.0(完全な追い風)、風力 2.0、係数 0.5 の場合 => 1f + (1.0 * 2.0 * 0.5) = 2.0倍の速度
-            float speedRatio = 1f + (dotProduct * windMagnitude * _windEffectMultiplier);
-
-            // 向かい風で極端に遅くなったり、マイナスになって逆走するのを防ぐ
-            speedRatio = Mathf.Max(_minSpeedRatio, speedRatio);
-
-            // 最終的な速度を適用
-            _agent.speed = _baseSpeed * speedRatio;
-        }
     }
 
     // ==========================================
@@ -208,147 +214,7 @@ public class Character : MonoBehaviour
     // 敵味方のキャラの位置についての記憶を更新する
     protected void UpdateMemoryOfEnemies()
     {
-        // 全てのキャラに対して見えているかを判定
-        foreach (var memoryPair in _memories)
-        {
-            Character targetChar = memoryPair.Key;
-            CharacterMemory memory = memoryPair.Value;
-
-            if (HasLineOfSight(targetChar.transform))
-            {
-                // 見えているなら最新情報で上書き
-                memory.LastSeenPosition = targetChar.transform.position;
-                memory.LastSeenTime = Time.time;
-            }
-            else if (Time.time - memory.LastSeenTime > SearchTimeout)
-            {
-                // 見失ってから一定時間経過で位置情報をロスト
-                memory.LastSeenPosition = null;
-            }
-        }
-    }
-    
-    // ターゲットが視野角（FOV）内にあり、かつ視界を遮る障害物がないか判定
-    private bool HasLineOfSight(Transform target)
-    {
-        if (target == null)
-        {
-            Debug.LogError("ターゲットがアサインされていません");
-            return false;
-        }
-
-        Vector3 headPos = transform.TransformPoint(HeadOffsetFromFoot);
-        Vector3 targetHeadPos = target.TransformPoint(HeadOffsetFromFoot); 
-        
-        Vector3 diff = targetHeadPos - headPos;
-        float distanceToTarget = diff.magnitude;
-        
-        // 完全に同位置（重なっている）場合は見えていると判定
-        if (distanceToTarget < Mathf.Epsilon) 
-        {
-            // Debug.Log("完全に同位置");
-            return true;
-        }
-
-        Vector3 dirToTarget = diff / distanceToTarget;
-
-        // 1. 視認可能距離の判定
-        if (distanceToTarget > MaxSightDistance)
-        {
-            return false;
-        }
-
-        // 2. 視野角の判定 (ローカル座標に変換)
-        Vector3 localDir = transform.InverseTransformDirection(dirToTarget);
-
-        // 水平視野角 (XZ平面)
-        float horizontalAngle = Mathf.Abs(Mathf.Atan2(localDir.x, localDir.z) * Mathf.Rad2Deg);
-        if (horizontalAngle > HorizontalFOV * 0.5f)
-        {
-            // Debug.Log("水平視野角超過");
-            return false;
-        }
-
-        // 垂直視野角 (YZ平面)
-        float verticalAngle = Mathf.Abs(Mathf.Atan2(localDir.y, localDir.z) * Mathf.Rad2Deg);
-        if (verticalAngle > VerticalFOV * 0.5f) 
-        {
-            // Debug.Log("垂直視野角超過");
-            return false;
-        }
-
-        // 3. 障害物の判定（レイキャスト）
-        // "Character" レイヤーのみを無視するレイヤーマスクを作成
-        // 自分自身と他キャラ、見る対象自体を判定から除外
-        int layerMask = ~LayerMask.GetMask("Character");
-        Debug.DrawRay(headPos, dirToTarget * distanceToTarget, Color.red, 1f);
-
-        // レイがヒット => 視線を遮るオブジェクトがある
-        // レイのヒット無し => 視線を遮るオブジェクトがない
-        return !Physics.Raycast(headPos, dirToTarget, distanceToTarget, layerMask);
-    }
-
-    // ==========================================
-    // 情報共有関連メソッド
-    // ==========================================
-    
-    // 味方から情報を受け取る
-    public void ReceiveSharedMemory(List<CharacterMemory> sharedMemories)
-    {
-        foreach (var sharedMemory in sharedMemories)
-        {
-            // 自分の記憶に存在する対象か確認
-            if (_memories.TryGetValue(sharedMemory.Target, out CharacterMemory myMemory))
-            {
-                // 共有された情報が、自分の持っている情報よりも新しい場合のみ上書きする
-                if (sharedMemory.LastSeenTime > myMemory.LastSeenTime)
-                {
-                    myMemory.LastSeenPosition = sharedMemory.LastSeenPosition;
-                    myMemory.LastSeenTime = sharedMemory.LastSeenTime;
-                }
-            }
-        }
-    }
-
-    // 指定した味方との間に障害物がないか判定する
-    private bool CanCommunicateWith(Character ally)
-    {
-        Vector3 myHeadPos = transform.TransformPoint(HeadOffsetFromFoot);
-        Vector3 allyHeadPos = ally.transform.TransformPoint(HeadOffsetFromFoot);
-        
-        Vector3 diff = allyHeadPos - myHeadPos;
-        float distance = diff.magnitude;
-        
-        // 完全に重なっているなど、距離がゼロの場合は通信可能とする
-        if (distance < Mathf.Epsilon) return true;
-        
-        Vector3 dirToAlly = diff / distance;
-        
-        // Characterレイヤーを無視（地形や壁などの障害物だけを判定）
-        int layerMask = ~LayerMask.GetMask("Character");
-        
-        // デバッグ用にRayを可視化（緑色で表示）
-        Debug.DrawRay(myHeadPos, dirToAlly * distance, Color.green, 1f);
-
-        // Raycastがヒット「しない」＝ 間に障害物がない ＝ 通信可能
-        return !Physics.Raycast(myHeadPos, dirToAlly, distance, layerMask);
-    }
-    
-    // 通信可能な味方（Rayが通る相手）にだけ記憶を共有する
-    private void BroadcastMemoriesToAllies()
-    {
-        List<CharacterMemory> memoriesToShare = new List<CharacterMemory>(_memories.Values);
-
-        foreach (Character ally in CombatSceneContext.Instance.CharacterSystem.AllyCharacters)
-        {
-            if (ally != this && ally.HP > 0)
-            {
-                // 直線上に障害物がないか（Rayが通るか）をチェック
-                if (CanCommunicateWith(ally))
-                {
-                    ally.ReceiveSharedMemory(memoriesToShare);
-                }
-            }
-        }
+        _vision ??= GetComponent<CombatVision>();
+        _vision?.UpdateVision();
     }
 }
