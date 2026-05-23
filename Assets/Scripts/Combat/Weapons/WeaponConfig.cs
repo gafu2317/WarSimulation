@@ -17,7 +17,6 @@ public sealed class WeaponConfig : ScriptableObject
     [SerializeField] private float _hideInForestBias;
     [SerializeField] private float _seekHighGroundBias;
     [SerializeField] private float _followMeleeAllyBias;
-    [SerializeField] private bool _sharesObservationFromHighGround;
 
     public WeaponKind Kind => _kind;
     public float Range => _range;
@@ -27,7 +26,6 @@ public sealed class WeaponConfig : ScriptableObject
     public float HideInForestBias => _hideInForestBias;
     public float SeekHighGroundBias => _seekHighGroundBias;
     public float FollowMeleeAllyBias => _followMeleeAllyBias;
-    public bool SharesObservationFromHighGround => _sharesObservationFromHighGround;
 
     public WeaponBase CreateWeapon()
     {
@@ -64,8 +62,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias,
-                _sharesObservationFromHighGround),
+                _followMeleeAllyBias),
             WeaponKind.Bible => new Bible(
                 _range,
                 _cooldownSeconds,
@@ -81,8 +78,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias,
-                _sharesObservationFromHighGround),
+                _followMeleeAllyBias),
             WeaponKind.Unarmed => WeaponBase.Unarmed,
             _ => WeaponBase.Unarmed,
         };
@@ -113,7 +109,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 0f;
                 _seekHighGroundBias = 0f;
                 _followMeleeAllyBias = 0f;
-                _sharesObservationFromHighGround = false;
                 break;
             case WeaponKind.Shield:
                 _range = 1.8f;
@@ -123,7 +118,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 0f;
                 _seekHighGroundBias = 0f;
                 _followMeleeAllyBias = 40f;
-                _sharesObservationFromHighGround = false;
                 break;
             case WeaponKind.Wand:
                 _range = 8f;
@@ -133,7 +127,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 70f;
                 _seekHighGroundBias = 0f;
                 _followMeleeAllyBias = 0f;
-                _sharesObservationFromHighGround = false;
                 break;
             case WeaponKind.Grimoire:
                 _range = 7f;
@@ -143,7 +136,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 70f;
                 _seekHighGroundBias = 50f;
                 _followMeleeAllyBias = 0f;
-                _sharesObservationFromHighGround = true;
                 break;
             case WeaponKind.Bible:
                 _range = 6f;
@@ -153,7 +145,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 65f;
                 _seekHighGroundBias = 30f;
                 _followMeleeAllyBias = 0f;
-                _sharesObservationFromHighGround = false;
                 break;
             case WeaponKind.Rosary:
                 _range = 5f;
@@ -163,7 +154,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 60f;
                 _seekHighGroundBias = 50f;
                 _followMeleeAllyBias = 0f;
-                _sharesObservationFromHighGround = true;
                 break;
             default:
                 _range = 1.5f;
@@ -173,7 +163,6 @@ public sealed class WeaponConfig : ScriptableObject
                 _hideInForestBias = 0f;
                 _seekHighGroundBias = 0f;
                 _followMeleeAllyBias = 0f;
-                _sharesObservationFromHighGround = false;
                 break;
         }
     }

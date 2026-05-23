@@ -9,7 +9,6 @@ public class Rosary : WeaponBase
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
     private readonly float _followMeleeAllyBias;
-    private readonly bool _sharesObservationFromHighGround;
     private readonly IReadOnlyList<SkillBase> _skills;
 
     public override WeaponKind Kind => WeaponKind.Rosary;
@@ -21,7 +20,6 @@ public class Rosary : WeaponBase
     public override float HideInForestBias => _hideInForestBias;
     public override float SeekHighGroundBias => _seekHighGroundBias;
     public override float FollowMeleeAllyBias => _followMeleeAllyBias;
-    public override bool SharesObservationFromHighGround => _sharesObservationFromHighGround;
     public override IReadOnlyList<SkillBase> Skills => _skills;
 
     public Rosary(
@@ -32,7 +30,6 @@ public class Rosary : WeaponBase
         float hideInForestBias = 0f,
         float seekHighGroundBias = 50f,
         float followMeleeAllyBias = 0f,
-        bool sharesObservationFromHighGround = true,
         IReadOnlyList<SkillBase> skills = null)
     {
         _range = range;
@@ -42,7 +39,6 @@ public class Rosary : WeaponBase
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;
         _followMeleeAllyBias = followMeleeAllyBias;
-        _sharesObservationFromHighGround = sharesObservationFromHighGround;
         _skills = skills ?? new SkillBase[] { new RosaryFaithBuffSkill() };
     }
 }

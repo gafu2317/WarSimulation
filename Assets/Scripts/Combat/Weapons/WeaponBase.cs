@@ -21,6 +21,5 @@ public class WeaponBase
     public virtual float HideInForestBias => 0f;
     public virtual float SeekHighGroundBias => 0f;
     public virtual float FollowMeleeAllyBias => 0f;
-    public virtual bool SharesObservationFromHighGround => false;
     public virtual IReadOnlyList<SkillBase> Skills => Array.Empty<SkillBase>();
 }

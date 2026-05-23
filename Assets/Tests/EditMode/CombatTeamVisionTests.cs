@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -36,11 +37,12 @@ public sealed class CombatTeamVisionTests
     }
 
     [Test]
-    public void CombatVision_ReceiveSharedObservationUpdatesLastKnownPosition()
+    public void CombatVision_ReceiveSharedMemoryUpdatesLastKnownPosition()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");
         GameObject allyGo = new GameObject("Ally");
         GameObject observerGo = new GameObject("Observer");
+        GameObject enemyGo = new GameObject("Enemy");
 
         try
         {
@@ -53,7 +55,6 @@ public sealed class CombatTeamVisionTests
             system.AllyCharacters.Add(observer);
             system.AssignTeamsFromLists();
 
-            GameObject enemyGo = new GameObject("Enemy");
             Character enemy = enemyGo.AddComponent<Character>();
             enemy.SetTeam(CombatTeam.Enemy);
             system.EnemyCharacters.Add(enemy);
@@ -63,19 +64,27 @@ public sealed class CombatTeamVisionTests
             allyVision.Initialize();
 
             Vector3 reportedPosition = new Vector3(3f, 0f, 4f);
-            allyVision.ReceiveSharedObservation(enemy, reportedPosition, Time.time);
+            allyVision.ReceiveSharedMemory(
+                observer,
+                new List<CharacterMemory>
+                {
+                    new CharacterMemory(enemy, reportedPosition, Time.time),
+                });
 
             Assert.That(allyVision.TryGetLastKnownPosition(enemy, out Vector3 lastKnownPosition), Is.True);
             Assert.That(lastKnownPosition, Is.EqualTo(reportedPosition));
             Assert.That(allyVision.IsVisible(enemy), Is.False);
             Assert.That(allyVision.HasMemoryOf(enemy), Is.True);
             Assert.That(allyVision.RememberedEnemies, Does.Contain(enemy));
+            IReadOnlyList<CombatVisionDebugMemorySnapshot> snapshots = allyVision.GetDebugMemorySnapshots();
+            Assert.That(ContainsSharedMemorySnapshot(snapshots, enemy, observer), Is.True);
         }
         finally
         {
             Object.DestroyImmediate(systemGo);
             Object.DestroyImmediate(allyGo);
             Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(enemyGo);
         }
     }
 
@@ -219,7 +228,7 @@ public sealed class CombatTeamVisionTests
         }
     }
 
-    private static bool ContainsEnemy(System.Collections.Generic.IReadOnlyList<Character> enemies, Character enemy)
+    private static bool ContainsEnemy(IReadOnlyList<Character> enemies, Character enemy)
     {
         for (int i = 0; i < enemies.Count; i++)
         {
@@ -229,15 +238,35 @@ public sealed class CombatTeamVisionTests
         return false;
     }
 
+    private static bool ContainsSharedMemorySnapshot(
+        IReadOnlyList<CombatVisionDebugMemorySnapshot> snapshots,
+        Character target,
+        Character sharedFrom)
+    {
+        for (int i = 0; i < snapshots.Count; i++)
+        {
+            CombatVisionDebugMemorySnapshot snapshot = snapshots[i];
+            if (snapshot.Target == target &&
+                snapshot.Source == CombatVisionMemorySource.Shared &&
+                snapshot.SharedFrom == sharedFrom)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static void SetVisionLastSeenTime(CombatVision vision, Character enemy, float lastSeenAt)
     {
         FieldInfo dictionaryField = typeof(CombatVision).GetField(
-            "_lastSeenTime",
+            "_memories",
             BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.That(dictionaryField, Is.Not.Null);
 
-        var dictionary = dictionaryField.GetValue(vision) as System.Collections.Generic.Dictionary<Character, float>;
+        var dictionary = dictionaryField.GetValue(vision) as Dictionary<Character, CharacterMemory>;
         Assert.That(dictionary, Is.Not.Null);
-        dictionary[enemy] = lastSeenAt;
+        Assert.That(dictionary.TryGetValue(enemy, out CharacterMemory memory), Is.True);
+        memory.LastSeenTime = lastSeenAt;
     }
 }
