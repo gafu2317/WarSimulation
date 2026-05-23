@@ -38,7 +38,7 @@ public class Character : MonoBehaviour
     public float AGIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.AGI);
 
     // 性格
-    public PersonalityBase Personality { private set; get; }
+    public PersonalityBase Personality => ResolvePersonality();
 
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
@@ -50,6 +50,7 @@ public class Character : MonoBehaviour
     private CombatAttack _attack;
     private CombatStatusEffects _statusEffects;
     private CombatSkillCooldowns _skillCooldowns;
+    private PersonalityBase _personality;
 
     private void Awake()
     {
@@ -90,6 +91,8 @@ public class Character : MonoBehaviour
             _skillCooldowns = gameObject.AddComponent<CombatSkillCooldowns>();
         }
 
+        ResolvePersonality();
+
         ApplyInitialWeaponFromConfig();
     }
 
@@ -119,6 +122,19 @@ public class Character : MonoBehaviour
         return _skillCooldowns;
     }
 
+    private PersonalityBase ResolvePersonality()
+    {
+        if (_personality != null) return _personality;
+
+        _personality = GetComponent<PersonalityBase>();
+        if (_personality == null)
+        {
+            _personality = gameObject.AddComponent<PlainPersonality>();
+        }
+
+        return _personality;
+    }
+
     public void SetTeam(CombatTeam team)
     {
         _team = team;
@@ -135,7 +151,9 @@ public class Character : MonoBehaviour
         INT = characterData.INT;
         FAI = characterData.FAI;
         AGI = characterData.AGI;
-        Personality = spirit.Personality;
+        _personality = spirit != null && spirit.Personality != null
+            ? ResolvePersonality(spirit.Personality.GetType())
+            : ResolvePersonality();
         _health ??= GetComponent<CombatHealth>();
         _health?.Initialize(characterData.MaxHP);
 
@@ -216,5 +234,27 @@ public class Character : MonoBehaviour
     {
         _vision ??= GetComponent<CombatVision>();
         _vision?.UpdateVision();
+    }
+
+    private PersonalityBase ResolvePersonality(System.Type personalityType)
+    {
+        if (personalityType == null || !typeof(PersonalityBase).IsAssignableFrom(personalityType))
+        {
+            return ResolvePersonality();
+        }
+
+        if (_personality != null && _personality.GetType() == personalityType)
+        {
+            return _personality;
+        }
+
+        PersonalityBase personality = GetComponent(personalityType) as PersonalityBase;
+        if (personality == null)
+        {
+            personality = gameObject.AddComponent(personalityType) as PersonalityBase;
+        }
+
+        _personality = personality != null ? personality : ResolvePersonality();
+        return _personality;
     }
 }

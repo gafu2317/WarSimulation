@@ -18,7 +18,10 @@ MonoBehaviour:
   _maxClimbableSlopeDeg: 30
   _largeMountainShape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
   _largeMountainCandidatePositionsNormalized:
-  - {x: 0.5, y: 0.5}
+  - {x: 0.1, y: 0.9}
+  - {x: 0.9, y: 0.1}
+  - {x: 0.1, y: 0.1}
+  - {x: 0.9, y: 0.9}
   _smallMountainStampEntries:
   - Count: 2
     Shape: {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
@@ -65,7 +68,7 @@ MonoBehaviour:
   _rockMinDistance: 3.5
   _rockPlacementMargin: 1.5
   _mainStonesPerSide: 1
-  _subStonesPerSide: 2
+  _subStonesPerSide: 0
   _magicStoneZoneRatio: 0.3333333
   _mainStoneBackBias: 0.5
   _magicStoneMinDistance: 8
