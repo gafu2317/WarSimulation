@@ -134,6 +134,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private static void EnsureRenderComponents(MapGenerator gen)
         {
             if (gen.GetComponent<TerrainRenderer>() == null) Undo.AddComponent<TerrainRenderer>(gen.gameObject);
+            if (gen.GetComponent<TerrainSkirtRenderer>() == null) Undo.AddComponent<TerrainSkirtRenderer>(gen.gameObject);
             if (gen.GetComponent<RiverRenderer>() == null) Undo.AddComponent<RiverRenderer>(gen.gameObject);
             if (gen.GetComponent<LakeRenderer>() == null) Undo.AddComponent<LakeRenderer>(gen.gameObject);
             if (gen.GetComponent<BridgeRenderer>() == null) Undo.AddComponent<BridgeRenderer>(gen.gameObject);
@@ -146,6 +147,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
             var gen = (MapGenerator)target;
             var terrainRenderer = gen.GetComponent<TerrainRenderer>();
             if (terrainRenderer != null) terrainRenderer.Clear();
+            var terrainSkirtRenderer = gen.GetComponent<TerrainSkirtRenderer>();
+            if (terrainSkirtRenderer != null) terrainSkirtRenderer.Clear();
             var riverRenderer = gen.GetComponent<RiverRenderer>();
             if (riverRenderer != null) riverRenderer.Clear();
             var lakeRenderer = gen.GetComponent<LakeRenderer>();

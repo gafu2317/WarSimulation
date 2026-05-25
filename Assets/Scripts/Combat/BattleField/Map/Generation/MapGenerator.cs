@@ -105,6 +105,9 @@ namespace WarSimulation.Combat.Map
             TerrainRenderer terrainRenderer = GetOrAddComponent<TerrainRenderer>();
             terrainRenderer.Render(map);
 
+            TerrainSkirtRenderer terrainSkirtRenderer = GetOrAddComponent<TerrainSkirtRenderer>();
+            terrainSkirtRenderer.Render(map);
+
             RiverRenderer riverRenderer = GetOrAddComponent<RiverRenderer>();
             riverRenderer.Render(map);
 
