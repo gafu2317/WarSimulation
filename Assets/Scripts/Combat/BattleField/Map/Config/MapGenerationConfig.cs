@@ -163,6 +163,9 @@ namespace WarSimulation.Combat.Map
         [Tooltip("岩の配置マージン。マップ端からこの距離は中心を置かない。")]
         [SerializeField, Min(0f)] private float _rockPlacementMargin = 1f;
 
+        [Tooltip("マップ高度レンジ（HeightMap min〜max）の上位を岩配置から除外する比率。0.3 = 上位 30% は置かない。")]
+        [SerializeField, Range(0f, 1f)] private float _rockTopHeightExclusionRatio = 0.3f;
+
         [Header("Decoration Phase / Magic Stones")]
         [Tooltip("1 陣営あたりのメイン魔石の個数。拠点として扱う想定。")]
         [SerializeField, Min(0)] private int _mainStonesPerSide = 1;
@@ -329,6 +332,7 @@ namespace WarSimulation.Combat.Map
         public int RockCount => _rockCount;
         public float RockMinDistance => _rockMinDistance;
         public float RockPlacementMargin => _rockPlacementMargin;
+        public float RockTopHeightExclusionRatio => _rockTopHeightExclusionRatio;
 
         public int MainStonesPerSide => _mainStonesPerSide;
         public int SubStonesPerSide => _subStonesPerSide;

@@ -10,6 +10,7 @@ namespace WarSimulation.Combat.Map
     ///   - 川・湖の掘削・見た目の範囲（Water タグが岸に付かない設定でも岸に岩が乗らないようにする）
     ///   - 森クラスター領域（<see cref="MapData.ForestRegions"/>）
     ///   - 橋フットプリント近傍（<see cref="MapData.BridgeFeatureExclusionMargin"/>）
+    ///   - マップ高度レンジ上位（既定 30%）
     ///   - 既存の岩からの最小距離
     /// </summary>
     public sealed class RockPhase : IMapGenerationPhase
@@ -34,6 +35,10 @@ namespace WarSimulation.Combat.Map
             int placed = 0;
             int startIndex = map.Features.Count;
 
+            float ratio = Mathf.Clamp01(config.RockTopHeightExclusionRatio);
+            GetMapHeightRange(map.Height, out float minH, out float maxH);
+            float allowedMaxHeight = minH + (1f - ratio) * (maxH - minH);
+
             for (int attempt = 0; attempt < maxAttempts && placed < target; attempt++)
             {
                 float x = Mathf.Lerp(minCenter, maxCenter, rng.NextFloat());
@@ -53,6 +58,8 @@ namespace WarSimulation.Combat.Map
                 if (minDistSq > 0f && IsTooCloseToExistingRock(map, startIndex, x, z, minDistSq)) continue;
 
                 float y = map.Height.SampleAt(worldPos);
+                if (maxH > minH && y > allowedMaxHeight) continue;
+
                 map.AddFeature(new PlacedFeature(
                     FeatureType.Rock,
                     new Vector3(x, y, z),
@@ -93,6 +100,27 @@ namespace WarSimulation.Combat.Map
                 if (ddx * ddx + ddz * ddz < minDistSq) return true;
             }
             return false;
+        }
+
+        private static void GetMapHeightRange(HeightMap heightMap, out float min, out float max)
+        {
+            min = float.PositiveInfinity;
+            max = float.NegativeInfinity;
+            for (int z = 0; z < heightMap.Height; z++)
+            {
+                for (int x = 0; x < heightMap.Width; x++)
+                {
+                    float v = heightMap.GetHeight(x, z);
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+
+            if (float.IsInfinity(min) || float.IsInfinity(max))
+            {
+                min = 0f;
+                max = 0f;
+            }
         }
     }
 }
