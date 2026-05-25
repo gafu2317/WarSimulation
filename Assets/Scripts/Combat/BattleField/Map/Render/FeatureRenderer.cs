@@ -227,7 +227,7 @@ namespace WarSimulation.Combat.Map
         /// </summary>
         private void SpawnRock(Transform parent, PlacedFeature f, Material mat, Mesh cube, int idx)
         {
-            var rock = new GameObject($"Rock_{idx}", typeof(MeshFilter), typeof(MeshRenderer));
+            var rock = new GameObject($"Rock_{idx}", typeof(MeshFilter), typeof(MeshRenderer), typeof(BoxCollider));
             rock.transform.SetParent(parent, worldPositionStays: false);
 
             // 位置ベースで決定的に揺らぎを作る（再生成しても同じ岩が同じ見た目になる）
@@ -247,6 +247,7 @@ namespace WarSimulation.Combat.Map
             rock.transform.localScale = new Vector3(_rockSize * sx, _rockSize * sy, _rockSize * sz);
             rock.GetComponent<MeshFilter>().sharedMesh = cube;
             rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            rock.GetComponent<BoxCollider>().isTrigger = false;
             IgnoreFromNavMeshBuild(rock);
         }
 
@@ -261,7 +262,7 @@ namespace WarSimulation.Combat.Map
             float baseSize = isMain ? _mainStoneBaseSize : _subStoneBaseSize;
             float height = isMain ? _mainStoneHeight : _subStoneHeight;
 
-            var stone = new GameObject($"{label}Stone_{idx}", typeof(MeshFilter), typeof(MeshRenderer));
+            var stone = new GameObject($"{label}Stone_{idx}", typeof(MeshFilter), typeof(MeshRenderer), typeof(BoxCollider));
             stone.transform.SetParent(parent, worldPositionStays: false);
 
             // 地面 (f.WorldPosition.y) の少し上から、高さの半分だけ Y を持ち上げる
@@ -277,6 +278,7 @@ namespace WarSimulation.Combat.Map
 
             stone.GetComponent<MeshFilter>().sharedMesh = cube;
             stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            stone.GetComponent<BoxCollider>().isTrigger = false;
             IgnoreFromNavMeshBuild(stone);
         }
 
