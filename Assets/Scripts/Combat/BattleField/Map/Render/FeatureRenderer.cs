@@ -29,6 +29,12 @@ namespace WarSimulation.Combat.Map
         [Tooltip("葉冠（球）の半径（メートル）。幹の上に乗せる。")]
         [SerializeField, Min(0.1f)] private float _foliageRadius = 0.65f;
 
+        [Tooltip("木全体の高さ倍率の下限。位置から決定的に揺らす。")]
+        [SerializeField, Range(0.3f, 1.5f)] private float _treeHeightScaleMin = 0.75f;
+
+        [Tooltip("木全体の高さ倍率の上限。幹半径・葉冠半径も同率で連動する。")]
+        [SerializeField, Range(0.3f, 1.5f)] private float _treeHeightScaleMax = 1.25f;
+
         [SerializeField] private Material _trunkMaterial;
         [SerializeField] private Material _foliageMaterial;
 
@@ -176,28 +182,42 @@ namespace WarSimulation.Combat.Map
             tree.transform.localPosition = f.WorldPosition;
             tree.transform.localRotation = f.Rotation;
 
+            // 位置ベースで決定的に高さを揺らす（再生成しても同じ木が同じ見た目になる）
+            uint seed = unchecked((uint)Mathf.FloorToInt(f.WorldPosition.x * 41.3f + f.WorldPosition.z * 97.1f + 11.7f));
+            if (seed == 0u) seed = 1u;
+            float hMin = Mathf.Min(_treeHeightScaleMin, _treeHeightScaleMax);
+            float hMax = Mathf.Max(_treeHeightScaleMin, _treeHeightScaleMax);
+            float scale = Mathf.Lerp(hMin, hMax, NextFloat01(ref seed));
+            float treeHeight = _treeHeight * scale;
+            float trunkRadius = _trunkRadius * scale;
+            float foliageRadius = _foliageRadius * scale;
+
             // 木全体の高さを「幹 60% + 葉冠 40% だけ中心を押し上げる」で分ける。
-            float trunkHeight = _treeHeight * 0.6f;
-            float foliageCenterY = trunkHeight + _foliageRadius * 0.6f;
+            float trunkHeight = treeHeight * 0.6f;
+            float foliageCenterY = trunkHeight + foliageRadius * 0.6f;
 
             // Unity のデフォルト Cylinder は Y 軸に沿って高さ 2m、半径 0.5m。
             // localScale.y = targetHeight / 2 で高さを、localScale.x/z = targetDiameter で太さを作る。
-            var trunk = new GameObject("Trunk", typeof(MeshFilter), typeof(MeshRenderer));
+            var trunk = new GameObject("Trunk", typeof(MeshFilter), typeof(MeshRenderer), typeof(CapsuleCollider));
             trunk.transform.SetParent(tree.transform, worldPositionStays: false);
             trunk.transform.localPosition = new Vector3(0f, trunkHeight * 0.5f, 0f);
-            trunk.transform.localScale = new Vector3(_trunkRadius * 2f, trunkHeight * 0.5f, _trunkRadius * 2f);
+            trunk.transform.localScale = new Vector3(trunkRadius * 2f, trunkHeight * 0.5f, trunkRadius * 2f);
             trunk.GetComponent<MeshFilter>().sharedMesh = cylinder;
             trunk.GetComponent<MeshRenderer>().sharedMaterial = trunkMat;
+            var trunkCollider = trunk.GetComponent<CapsuleCollider>();
+            trunkCollider.direction = 1; // Y axis
+            trunkCollider.isTrigger = false;
             IgnoreFromNavMeshBuild(trunk);
 
             // Unity のデフォルト Sphere は直径 1m。localScale = diameter で好きなサイズに。
-            var foliage = new GameObject("Foliage", typeof(MeshFilter), typeof(MeshRenderer));
+            var foliage = new GameObject("Foliage", typeof(MeshFilter), typeof(MeshRenderer), typeof(SphereCollider));
             foliage.transform.SetParent(tree.transform, worldPositionStays: false);
             foliage.transform.localPosition = new Vector3(0f, foliageCenterY, 0f);
-            float foliageDiameter = _foliageRadius * 2f;
+            float foliageDiameter = foliageRadius * 2f;
             foliage.transform.localScale = new Vector3(foliageDiameter, foliageDiameter, foliageDiameter);
             foliage.GetComponent<MeshFilter>().sharedMesh = sphere;
             foliage.GetComponent<MeshRenderer>().sharedMaterial = foliageMat;
+            foliage.GetComponent<SphereCollider>().isTrigger = false;
             IgnoreFromNavMeshBuild(foliage);
         }
 
