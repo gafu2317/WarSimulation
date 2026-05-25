@@ -43,7 +43,7 @@ namespace WarSimulation.Combat.Map
 
                 var xz = new Vector2(x, z);
                 if (IsInsideLakeCarve(map, xz)) continue;
-                if (IsInsideRiverCorridor(map, xz)) continue;
+                if (RiverCorridorUtility.Contains(map, xz)) continue;
 
                 if (IsInsideForest(map, xz)) continue;
 
@@ -66,47 +66,6 @@ namespace WarSimulation.Combat.Map
                 if (lakes[i].ContainsCarve(xz)) return true;
             }
             return false;
-        }
-
-        /// <summary>
-        /// 川は <see cref="RiverShape"/> で幅いっぱい掘るが Water タグは内側だけのことがある。
-        /// <see cref="RiverPath"/> のセル中心を結んだ折れ線からの距離でフル幅を判定する。
-        /// </summary>
-        private static bool IsInsideRiverCorridor(MapData map, Vector2 xz)
-        {
-            var rivers = map.Rivers;
-            if (rivers.Count == 0) return false;
-            float cs = map.Height.CellSize;
-
-            for (int r = 0; r < rivers.Count; r++)
-            {
-                RiverPath river = rivers[r];
-                IReadOnlyList<Vector2Int> cells = river.Cells;
-                if (cells == null || cells.Count < 2) continue;
-
-                float halfW = river.WidthMeters * 0.5f;
-                float rSq = halfW * halfW;
-
-                for (int i = 0; i < cells.Count - 1; i++)
-                {
-                    Vector2Int c0 = cells[i];
-                    Vector2Int c1 = cells[i + 1];
-                    Vector2 a = new((c0.x + 0.5f) * cs, (c0.y + 0.5f) * cs);
-                    Vector2 b = new((c1.x + 0.5f) * cs, (c1.y + 0.5f) * cs);
-                    if (DistanceSqPointToSegment(xz, a, b) <= rSq) return true;
-                }
-            }
-            return false;
-        }
-
-        private static float DistanceSqPointToSegment(Vector2 p, Vector2 a, Vector2 b)
-        {
-            Vector2 ab = b - a;
-            float abSqr = ab.sqrMagnitude;
-            if (abSqr < 1e-8f) return (p - a).sqrMagnitude;
-            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / abSqr);
-            Vector2 closest = a + ab * t;
-            return (p - closest).sqrMagnitude;
         }
 
         private static bool IsInsideForest(MapData map, Vector2 pos)

@@ -188,6 +188,7 @@ namespace WarSimulation.Combat.Map
             trunk.transform.localScale = new Vector3(_trunkRadius * 2f, trunkHeight * 0.5f, _trunkRadius * 2f);
             trunk.GetComponent<MeshFilter>().sharedMesh = cylinder;
             trunk.GetComponent<MeshRenderer>().sharedMaterial = trunkMat;
+            IgnoreFromNavMeshBuild(trunk);
 
             // Unity のデフォルト Sphere は直径 1m。localScale = diameter で好きなサイズに。
             var foliage = new GameObject("Foliage", typeof(MeshFilter), typeof(MeshRenderer));
@@ -197,9 +198,7 @@ namespace WarSimulation.Combat.Map
             foliage.transform.localScale = new Vector3(foliageDiameter, foliageDiameter, foliageDiameter);
             foliage.GetComponent<MeshFilter>().sharedMesh = sphere;
             foliage.GetComponent<MeshRenderer>().sharedMaterial = foliageMat;
-
-            var navModifier = foliage.AddComponent<NavMeshModifier>();
-            navModifier.ignoreFromBuild = true;
+            IgnoreFromNavMeshBuild(foliage);
         }
 
         /// <summary>
@@ -228,6 +227,7 @@ namespace WarSimulation.Combat.Map
             rock.transform.localScale = new Vector3(_rockSize * sx, _rockSize * sy, _rockSize * sz);
             rock.GetComponent<MeshFilter>().sharedMesh = cube;
             rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            IgnoreFromNavMeshBuild(rock);
         }
 
         /// <summary>
@@ -257,6 +257,13 @@ namespace WarSimulation.Combat.Map
 
             stone.GetComponent<MeshFilter>().sharedMesh = cube;
             stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            IgnoreFromNavMeshBuild(stone);
+        }
+
+        private static void IgnoreFromNavMeshBuild(GameObject go)
+        {
+            var navModifier = go.AddComponent<NavMeshModifier>();
+            navModifier.ignoreFromBuild = true;
         }
 
         private static Mesh _cachedCylinder;

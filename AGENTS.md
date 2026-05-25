@@ -7,6 +7,8 @@ docsにゲームの内容についてが書いてあるよ
 
 - Avoid launching Unity in batchmode for routine verification because it can hang during licensing initialization and force the running Unity Editor to close.
 - Prefer `dotnet build Assembly-CSharp.csproj` for quick compile checks after Unity has regenerated the csproj files.
+- Do not run `dotnet build Assembly-CSharp.csproj` by default when the generated csproj is stale or missing the touched source files; it is not useful in that state and can hang during restore/build in this environment.
+- For existing C# file edits, prefer static checks such as `git diff --check` and ask the user to confirm compilation in the already-open Unity Editor unless the csproj is known to be freshly regenerated and includes the touched files.
 - Before running `dotnet build`, if new C# files were added during the task, check whether those files are already listed in the Unity-generated `Assembly-CSharp.csproj`.
 - If new files are missing from `Assembly-CSharp.csproj`, add them to the generated csproj only as a local verification aid before building, and mention that Unity regeneration will overwrite this file.
 - Do not intentionally run `dotnet build` once just to discover missing new-file csproj entries; avoid that known failure path.

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,9 +13,15 @@ namespace WarSimulation.Combat.Map.EditorOnly
     public sealed class MapGeneratorEditor : Editor
     {
         private const int PreviewDisplaySize = 256;
+        private const float GroundStateOverlayBlend = 0.75f;
+        private const float WaterBodyFillBlend = 0.75f;
 
-        private Texture2D _heightTex;
-        private Texture2D _terrainTex;
+        private static readonly Color32 WaterFill = new Color32(51, 128, 242, 255);
+        private static readonly Color32 IceFill = new Color32(140, 217, 255, 255);
+
+        private Texture2D _previewTex;
+        private Texture2D _navMeshPreviewTex;
+        private IReadOnlyList<NavMeshPreviewLegendEntry> _navMeshLegend;
         private string _lastInfo;
 
         public override void OnInspectorGUI()
@@ -53,8 +60,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 EditorGUILayout.HelpBox(_lastInfo, MessageType.Info);
             }
 
-            DrawPreview("Height Map", _heightTex);
-            DrawPreview("Terrain Grid", _terrainTex);
+            DrawPreview("Map Preview", _previewTex);
+            DrawNavMeshPreview();
         }
 
         private void OnDisable() => ClearTextures();
@@ -69,15 +76,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return;
             }
 
-            ClearTextures();
-            _heightTex = BuildHeightTexture(data, out _, out _);
-            _terrainTex = BuildTerrainTexture(data);
-
-            OverlayForestRegions(_heightTex, data, data.Height.CellSize);
-            OverlayForestRegions(_terrainTex, data, data.GroundStates.CellSize);
-            OverlayFeatures(_heightTex, data, data.Height.CellSize);
-            OverlayFeatures(_terrainTex, data, data.GroundStates.CellSize);
-
+            BuildMapPreviewFromMap(data);
+            ClearNavMeshPreview();
             _lastInfo = null;
         }
 
@@ -94,15 +94,41 @@ namespace WarSimulation.Combat.Map.EditorOnly
             EnsureRenderComponents(gen);
             gen.Render3D(data);
 
-            ClearTextures();
-            _heightTex = BuildHeightTexture(data, out _, out _);
-            _terrainTex = BuildTerrainTexture(data);
-            OverlayForestRegions(_heightTex, data, data.Height.CellSize);
-            OverlayForestRegions(_terrainTex, data, data.GroundStates.CellSize);
-            OverlayFeatures(_heightTex, data, data.Height.CellSize);
-            OverlayFeatures(_terrainTex, data, data.GroundStates.CellSize);
-
             _lastInfo = null;
+            BuildMapPreviewFromMap(data);
+            BuildNavMeshPreviewFromMap(data, gen);
+        }
+
+        private void BuildMapPreviewFromMap(MapData data)
+        {
+            ClearMapPreview();
+            _previewTex = BuildMapPreviewTexture(data);
+            float cellSize = data.Height.CellSize;
+            OverlayForestRegions(_previewTex, data, cellSize);
+            OverlayLakeRegions(_previewTex, data, cellSize);
+            OverlayRiverCorridors(_previewTex, data, cellSize);
+            OverlayFeatures(_previewTex, data, cellSize);
+        }
+
+        private void BuildNavMeshPreviewFromMap(MapData data, MapGenerator gen)
+        {
+            ClearNavMeshPreview();
+
+            if (gen.GetComponent<CombatNavMeshBuilder>() == null)
+            {
+                _lastInfo = "NavMesh のベイクに失敗したため、NavMesh Preview は生成されませんでした。";
+                return;
+            }
+
+            NavMeshPreviewBuildResult result = NavMeshPreviewTextureBuilder.Build(data);
+            if (!result.Success || result.Texture == null)
+            {
+                _lastInfo = "NavMesh Preview の生成に失敗しました。NavMesh が空か、サンプリングできませんでした。";
+                return;
+            }
+
+            _navMeshPreviewTex = result.Texture;
+            _navMeshLegend = result.Legend;
         }
 
         private static void EnsureRenderComponents(MapGenerator gen)
@@ -112,6 +138,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             if (gen.GetComponent<LakeRenderer>() == null) Undo.AddComponent<LakeRenderer>(gen.gameObject);
             if (gen.GetComponent<BridgeRenderer>() == null) Undo.AddComponent<BridgeRenderer>(gen.gameObject);
             if (gen.GetComponent<FeatureRenderer>() == null) Undo.AddComponent<FeatureRenderer>(gen.gameObject);
+            if (gen.GetComponent<CombatNavMeshBuilder>() == null) Undo.AddComponent<CombatNavMeshBuilder>(gen.gameObject);
         }
 
         private void Clear3D()
@@ -131,8 +158,50 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private void ClearTextures()
         {
-            if (_heightTex != null) { DestroyImmediate(_heightTex); _heightTex = null; }
-            if (_terrainTex != null) { DestroyImmediate(_terrainTex); _terrainTex = null; }
+            ClearMapPreview();
+            ClearNavMeshPreview();
+        }
+
+        private void ClearMapPreview()
+        {
+            if (_previewTex != null) { DestroyImmediate(_previewTex); _previewTex = null; }
+        }
+
+        private void ClearNavMeshPreview()
+        {
+            if (_navMeshPreviewTex != null) { DestroyImmediate(_navMeshPreviewTex); _navMeshPreviewTex = null; }
+            _navMeshLegend = null;
+        }
+
+        private void DrawNavMeshPreview()
+        {
+            if (_navMeshPreviewTex == null) return;
+
+            DrawPreview("NavMesh Preview", _navMeshPreviewTex);
+            DrawNavMeshLegend();
+        }
+
+        private void DrawNavMeshLegend()
+        {
+            if (_navMeshLegend == null || _navMeshLegend.Count == 0) return;
+
+            EditorGUILayout.LabelField("NavMesh Areas", EditorStyles.boldLabel);
+            const float swatchSize = 12f;
+
+            for (int i = 0; i < _navMeshLegend.Count; i++)
+            {
+                NavMeshPreviewLegendEntry entry = _navMeshLegend[i];
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    Rect swatchRect = GUILayoutUtility.GetRect(swatchSize, swatchSize, GUILayout.Width(swatchSize));
+                    EditorGUI.DrawRect(swatchRect, entry.Color);
+
+                    string costText = entry.AreaIndex < 0
+                        ? entry.AreaName
+                        : $"{entry.AreaName} (cost {entry.Cost:0.##})";
+                    EditorGUILayout.LabelField(costText);
+                }
+            }
         }
 
         private static void DrawPreview(string label, Texture2D tex)
@@ -144,13 +213,18 @@ namespace WarSimulation.Combat.Map.EditorOnly
             EditorGUI.DrawPreviewTexture(r, tex);
         }
 
-        private static Texture2D BuildHeightTexture(MapData map, out float min, out float max)
+        /// <summary>
+        /// HeightMap の高度ランプをベースに、GroundState（水・雪・沼）と崖を合成したプレビュー。
+        /// HeightMap と GroundStateGrid は同一解像度を前提とする。
+        /// </summary>
+        private static Texture2D BuildMapPreviewTexture(MapData map)
         {
             HeightMap h = map.Height;
             GroundStateGrid g = map.GroundStates;
+            float cellSize = h.CellSize;
 
-            min = float.PositiveInfinity;
-            max = float.NegativeInfinity;
+            float min = float.PositiveInfinity;
+            float max = float.NegativeInfinity;
             for (int z = 0; z < h.Height; z++)
             {
                 for (int x = 0; x < h.Width; x++)
@@ -160,6 +234,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     if (v > max) max = v;
                 }
             }
+
             var tex = new Texture2D(h.Width, h.Height, TextureFormat.RGB24, false)
             {
                 filterMode = FilterMode.Point,
@@ -168,113 +243,27 @@ namespace WarSimulation.Combat.Map.EditorOnly
             };
 
             var pixels = new Color32[h.Width * h.Height];
-            float hmCell = h.CellSize;
-            float gCell = g.CellSize;
-            Color32 waterColor = new Color(0.20f, 0.50f, 0.95f);
+            Color32 cliffTint = new Color32(115, 62, 32, 255);
 
             for (int z = 0; z < h.Height; z++)
             {
                 for (int x = 0; x < h.Width; x++)
                 {
-                    float worldX = (x + 0.5f) * hmCell;
-                    float worldZ = (z + 0.5f) * hmCell;
-                    int gx = Mathf.Clamp(Mathf.FloorToInt(worldX / gCell), 0, g.Width - 1);
-                    int gy = Mathf.Clamp(Mathf.FloorToInt(worldZ / gCell), 0, g.Height - 1);
+                    GroundState state = g.GetCell(x, z);
 
-                    Color32 color;
-                    if (g.GetCell(gx, gy) == GroundState.Water)
+                    Color32 color = HeightColorRamp(h.GetHeight(x, z), min, max);
+                    if (h.CliffFaces.Get(x, z))
+                        color = Color32.Lerp(color, cliffTint, 0.72f);
+
+                    if (state == GroundState.Snow || state == GroundState.Swamp)
                     {
-                        if (FrozenLakeQueries.TryFindLakeWithTaggedWaterAt(map, worldX, worldZ, out LakeRegion lake))
-                        {
-                            if (lake.IsFrozen)
-                            {
-                                // 凍結湖は高さランプ（フラットな氷面）＋淡い青みで水プレビューと区別する
-                                color = HeightColorRamp(h.GetHeight(x, z), min, max);
-                                Color32 iceTint = new Color32(238, 248, 255, 255);
-                                color = Color32.Lerp(color, iceTint, 0.88f);
-                                if (h.CliffFaces.Get(x, z))
-                                {
-                                    Color32 cliffTint = new Color32(115, 62, 32, 255);
-                                    color = Color32.Lerp(color, cliffTint, 0.72f);
-                                }
-                            }
-                            else
-                            {
-                                // 開放湖：単色ではなく底の深さが読めるように（川プレビューとの差も付く）
-                                color = HeightColorRamp(h.GetHeight(x, z), min, max);
-                                Color32 lakeTint = new Color32(200, 230, 255, 255);
-                                color = Color32.Lerp(color, lakeTint, 0.82f);
-                                if (h.CliffFaces.Get(x, z))
-                                {
-                                    Color32 cliffTint = new Color32(115, 62, 32, 255);
-                                    color = Color32.Lerp(color, cliffTint, 0.72f);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            color = waterColor;
-                        }
-                    }
-                    else
-                    {
-                        color = HeightColorRamp(h.GetHeight(x, z), min, max);
-                        // HeightMap.CliffFaces（スタンプの崖スカート）を高さプレビューで識別可能に
-                        if (h.CliffFaces.Get(x, z))
-                        {
-                            Color32 cliffTint = new Color32(115, 62, 32, 255);
-                            color = Color32.Lerp(color, cliffTint, 0.72f);
-                        }
+                        color = Color32.Lerp(color, GroundStateColor(state), GroundStateOverlayBlend);
                     }
 
                     pixels[z * h.Width + x] = color;
                 }
             }
-            tex.SetPixels32(pixels);
-            tex.Apply(false);
-            return tex;
-        }
 
-        private static int CountCliffCells(HeightMap h)
-        {
-            int n = 0;
-            for (int z = 0; z < h.Height; z++)
-            {
-                for (int x = 0; x < h.Width; x++)
-                {
-                    if (h.CliffFaces.Get(x, z)) n++;
-                }
-            }
-            return n;
-        }
-
-        private static Texture2D BuildTerrainTexture(MapData map)
-        {
-            GroundStateGrid g = map.GroundStates;
-            float cs = g.CellSize;
-
-            var tex = new Texture2D(g.Width, g.Height, TextureFormat.RGB24, false)
-            {
-                filterMode = FilterMode.Point,
-                wrapMode = TextureWrapMode.Clamp,
-                hideFlags = HideFlags.HideAndDontSave,
-            };
-
-            Color32 frozenLakeColor = new Color32(240, 250, 255, 255);
-            var pixels = new Color32[g.Width * g.Height];
-            for (int z = 0; z < g.Height; z++)
-            {
-                for (int x = 0; x < g.Width; x++)
-                {
-                    float wx = (x + 0.5f) * cs;
-                    float wz = (z + 0.5f) * cs;
-                    GroundState s = g.GetCell(x, z);
-                    if (s == GroundState.Water && FrozenLakeQueries.IsFrozenLakeWaterAt(map, wx, wz))
-                        pixels[z * g.Width + x] = frozenLakeColor;
-                    else
-                        pixels[z * g.Width + x] = GroundStateColor(s);
-                }
-            }
             tex.SetPixels32(pixels);
             tex.Apply(false);
             return tex;
@@ -282,25 +271,25 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         /// <summary>
         /// 高度を「紫（低）→ 緑（海抜 0）→ 黄 → 赤（高）」のカラーランプに落とし込む。
-        /// 将来実装する川の「青」と区別できるよう、低地を紫に割り当てている。
+        /// 川・湖・凍結湖は <see cref="OverlayLakeRegions"/> / <see cref="OverlayRiverCorridors"/> で別途重ねる。
         /// 緑を常に h = 0 にピン留めすることで、どのマップでも「0 = 基準地面」として読める。
         /// </summary>
-        private static Color32 HeightColorRamp(float h, float min, float max)
+        private static Color32 HeightColorRamp(float height, float min, float max)
         {
             var cLow = new Color(0.50f, 0.20f, 0.70f); // purple
             var cMid = new Color(0.40f, 0.75f, 0.35f); // green
             var cHi1 = new Color(0.95f, 0.90f, 0.30f); // yellow
             var cHi2 = new Color(0.85f, 0.20f, 0.20f); // red
 
-            if (h < 0f)
+            if (height < 0f)
             {
                 float depth = -Mathf.Min(0f, min);
-                float t = depth > 1e-5f ? Mathf.Clamp01(1f + h / depth) : 1f;
+                float t = depth > 1e-5f ? Mathf.Clamp01(1f + height / depth) : 1f;
                 return Color.Lerp(cLow, cMid, t);
             }
 
             float peak = Mathf.Max(0f, max);
-            float u = peak > 1e-5f ? Mathf.Clamp01(h / peak) : 0f;
+            float u = peak > 1e-5f ? Mathf.Clamp01(height / peak) : 0f;
             return u < 0.5f
                 ? Color.Lerp(cMid, cHi1, u / 0.5f)
                 : Color.Lerp(cHi1, cHi2, (u - 0.5f) / 0.5f);
@@ -316,7 +305,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
             var regions = map.ForestRegions;
             if (regions == null || regions.Count == 0) return;
 
-            // 地面色との視認差が出るよう、少しくすんだ濃緑にブレンド
             Color forestTint = new Color(0.10f, 0.45f, 0.18f);
             float blend = 0.55f;
 
@@ -325,7 +313,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 ForestRegion region = regions[i];
                 Vector2 center = region.Center;
 
-                // ノイズで膨らんだ最大外径をバウンディングに使う
                 float outer = region.OuterRadius;
                 int cx = Mathf.FloorToInt(center.x / cellSize);
                 int cy = Mathf.FloorToInt(center.y / cellSize);
@@ -342,7 +329,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     for (int px = xMin; px <= xMax; px++)
                     {
                         float wx = (px + 0.5f) * cellSize;
-                        // Contains 側でノイズ歪みを計算してくれる
                         if (!region.Contains(new Vector2(wx, wy))) continue;
 
                         Color cur = tex.GetPixel(px, py);
@@ -351,13 +337,133 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     }
                 }
             }
-            // Apply は OverlayFeatures 側で最後に呼ばれるのでここでは省略
+        }
+
+        /// <summary>
+        /// <see cref="LakeRegion.ContainsCarve"/> に基づく掘削範囲を実寸で重ねる。
+        /// 通常の湖は青、凍結湖は氷色（LakeRenderer のデフォルト色に合わせる）。
+        /// </summary>
+        private static void OverlayLakeRegions(Texture2D tex, MapData map, float cellSize)
+        {
+            if (tex == null || map == null) return;
+
+            var lakes = map.Lakes;
+            if (lakes == null || lakes.Count == 0) return;
+
+            // 通常湖を先に、凍結湖を後から描いて重なり時に氷色が優先されるようにする。
+            OverlayLakeRegionsPass(tex, lakes, cellSize, frozen: false);
+            OverlayLakeRegionsPass(tex, lakes, cellSize, frozen: true);
+        }
+
+        private static void OverlayLakeRegionsPass(
+            Texture2D tex,
+            List<LakeRegion> lakes,
+            float cellSize,
+            bool frozen)
+        {
+            Color32 fill = frozen ? IceFill : WaterFill;
+
+            for (int i = 0; i < lakes.Count; i++)
+            {
+                LakeRegion lake = lakes[i];
+                if (lake.IsFrozen != frozen) continue;
+
+                Vector2 center = lake.Center;
+                float outer = lake.OuterRadius;
+                int cx = Mathf.FloorToInt(center.x / cellSize);
+                int cy = Mathf.FloorToInt(center.y / cellSize);
+                int r = Mathf.CeilToInt(outer / cellSize);
+
+                int yMin = Mathf.Max(0, cy - r);
+                int yMax = Mathf.Min(tex.height - 1, cy + r);
+                int xMin = Mathf.Max(0, cx - r);
+                int xMax = Mathf.Min(tex.width - 1, cx + r);
+
+                for (int py = yMin; py <= yMax; py++)
+                {
+                    float wy = (py + 0.5f) * cellSize;
+                    for (int px = xMin; px <= xMax; px++)
+                    {
+                        float wx = (px + 0.5f) * cellSize;
+                        if (!lake.ContainsCarve(new Vector2(wx, wy))) continue;
+
+                        Color32 cur = tex.GetPixel(px, py);
+                        SetPixelSafe(tex, px, py, Color32.Lerp(cur, fill, WaterBodyFillBlend));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// <see cref="RiverPath.WidthMeters"/> に基づく掘削 corridor を実寸で重ねる。
+        /// セグメント重なりで塗りが積み上がらないよう、マスクを union してから 1 回だけ着色する。
+        /// </summary>
+        private static void OverlayRiverCorridors(Texture2D tex, MapData map, float cellSize)
+        {
+            if (tex == null || map == null) return;
+
+            var rivers = map.Rivers;
+            if (rivers == null || rivers.Count == 0) return;
+
+            int w = tex.width;
+            int h = tex.height;
+            var inside = new bool[w * h];
+
+            for (int r = 0; r < rivers.Count; r++)
+            {
+                RiverPath river = rivers[r];
+                IReadOnlyList<Vector2Int> cells = river.Cells;
+                if (cells == null || cells.Count < 2) continue;
+
+                float halfW = river.WidthMeters * 0.5f;
+                float rSq = halfW * halfW;
+
+                for (int i = 0; i < cells.Count - 1; i++)
+                {
+                    Vector2Int c0 = cells[i];
+                    Vector2Int c1 = cells[i + 1];
+                    Vector2 a = new((c0.x + 0.5f) * cellSize, (c0.y + 0.5f) * cellSize);
+                    Vector2 b = new((c1.x + 0.5f) * cellSize, (c1.y + 0.5f) * cellSize);
+
+                    float minX = Mathf.Min(a.x, b.x) - halfW;
+                    float maxX = Mathf.Max(a.x, b.x) + halfW;
+                    float minY = Mathf.Min(a.y, b.y) - halfW;
+                    float maxY = Mathf.Max(a.y, b.y) + halfW;
+
+                    int pxMin = Mathf.Max(0, Mathf.FloorToInt(minX / cellSize));
+                    int pxMax = Mathf.Min(w - 1, Mathf.CeilToInt(maxX / cellSize));
+                    int pyMin = Mathf.Max(0, Mathf.FloorToInt(minY / cellSize));
+                    int pyMax = Mathf.Min(h - 1, Mathf.CeilToInt(maxY / cellSize));
+
+                    for (int py = pyMin; py <= pyMax; py++)
+                    {
+                        float wy = (py + 0.5f) * cellSize;
+                        for (int px = pxMin; px <= pxMax; px++)
+                        {
+                            float wx = (px + 0.5f) * cellSize;
+                            if (RiverCorridorUtility.DistanceSqPointToSegment(new Vector2(wx, wy), a, b) > rSq)
+                                continue;
+
+                            inside[py * w + px] = true;
+                        }
+                    }
+                }
+            }
+
+            for (int py = 0; py < h; py++)
+            {
+                for (int px = 0; px < w; px++)
+                {
+                    if (!inside[py * w + px]) continue;
+
+                    Color32 cur = tex.GetPixel(px, py);
+                    SetPixelSafe(tex, px, py, Color32.Lerp(cur, WaterFill, WaterBodyFillBlend));
+                }
+            }
         }
 
         /// <summary>
         /// 生成された PlacedFeature を、テクスチャの上に小さなマーカーとして重ねる。
-        /// Height Map / Terrain Grid はピクセル解像度が違うため、セルサイズを渡して
-        /// 各プレビューに合わせたスケールで打つ。
         /// </summary>
         private static void OverlayFeatures(Texture2D tex, MapData map, float cellSize)
         {
@@ -366,12 +472,12 @@ namespace WarSimulation.Combat.Map.EditorOnly
             var features = map.Features;
             if (features == null || features.Count == 0) return;
 
-            Color32 outline = new Color(0f, 0f, 0f);             // black halo
-            Color32 ownCore = new Color(0.30f, 0.80f, 1.00f);    // cyan（自陣営）
-            Color32 enemyCore = new Color(1.00f, 0.30f, 0.30f);  // red（敵陣営）
-            Color32 bridgeCore = new Color(0.95f, 0.70f, 0.25f); // amber
-            Color32 treeCore = new Color(0.10f, 0.55f, 0.15f);   // dark green
-            Color32 rockCore = new Color(0.55f, 0.55f, 0.55f);   // gray
+            Color32 outline = new Color(0f, 0f, 0f);
+            Color32 ownCore = new Color(0.30f, 0.80f, 1.00f);
+            Color32 enemyCore = new Color(1.00f, 0.30f, 0.30f);
+            Color32 bridgeCore = new Color(0.95f, 0.70f, 0.25f);
+            Color32 treeCore = new Color(0.10f, 0.55f, 0.15f);
+            Color32 rockCore = new Color(0.55f, 0.55f, 0.55f);
 
             for (int i = 0; i < features.Count; i++)
             {
@@ -382,19 +488,19 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 switch (f.Type)
                 {
                     case FeatureType.OwnMainStone:
-                        DrawMarker(tex, px, py, ownCore, outline, isMain: true);
+                        DrawMarker(tex, px, py, ownCore, outline, outlineReach: 7, coreReach: 4);
                         break;
                     case FeatureType.OwnSubStone:
-                        DrawMarker(tex, px, py, ownCore, outline, isMain: false);
+                        DrawMarker(tex, px, py, ownCore, outline, outlineReach: 5, coreReach: 3);
                         break;
                     case FeatureType.EnemyMainStone:
-                        DrawMarker(tex, px, py, enemyCore, outline, isMain: true);
+                        DrawMarker(tex, px, py, enemyCore, outline, outlineReach: 7, coreReach: 4);
                         break;
                     case FeatureType.EnemySubStone:
-                        DrawMarker(tex, px, py, enemyCore, outline, isMain: false);
+                        DrawMarker(tex, px, py, enemyCore, outline, outlineReach: 5, coreReach: 3);
                         break;
                     case FeatureType.Bridge:
-                        DrawMarker(tex, px, py, bridgeCore, outline, isMain: false);
+                        DrawBridgeFootprint(tex, f, cellSize, bridgeCore, outline);
                         break;
                     case FeatureType.Tree:
                         DrawDot(tex, px, py, treeCore);
@@ -408,20 +514,89 @@ namespace WarSimulation.Combat.Map.EditorOnly
             tex.Apply(false);
         }
 
-        /// <summary>単色の 1 ピクセル点を打つ（木・岩のような「小物」用）。</summary>
+        /// <summary>
+        /// 橋の PlacedFeature（位置・回転・Scale）に合わせた実寸フットプリントを上から描画する。
+        /// local +X = 幅、local +Z = 川渡り方向の長さ（BridgePhase / BridgeRenderer と同規約）。
+        /// </summary>
+        private static void DrawBridgeFootprint(
+            Texture2D tex,
+            PlacedFeature feature,
+            float cellSize,
+            Color32 fill,
+            Color32 outline)
+        {
+            float halfWidth = Mathf.Max(0f, feature.Scale.x) * 0.5f;
+            float halfLength = Mathf.Max(0f, feature.Scale.z) * 0.5f;
+            if (halfWidth <= 0f || halfLength <= 0f) return;
+
+            Quaternion invRot = Quaternion.Inverse(feature.Rotation);
+            Vector3 center = feature.WorldPosition;
+            float maxExtent = Mathf.Sqrt(halfWidth * halfWidth + halfLength * halfLength);
+
+            int pxMin = Mathf.Max(0, Mathf.FloorToInt((center.x - maxExtent) / cellSize));
+            int pxMax = Mathf.Min(tex.width - 1, Mathf.CeilToInt((center.x + maxExtent) / cellSize));
+            int pyMin = Mathf.Max(0, Mathf.FloorToInt((center.z - maxExtent) / cellSize));
+            int pyMax = Mathf.Min(tex.height - 1, Mathf.CeilToInt((center.z + maxExtent) / cellSize));
+
+            const float fillBlend = 0.75f;
+
+            for (int py = pyMin; py <= pyMax; py++)
+            {
+                for (int px = pxMin; px <= pxMax; px++)
+                {
+                    if (!IsInsideBridgeFootprint(invRot, center, halfWidth, halfLength, px, py, cellSize))
+                        continue;
+
+                    bool isEdge =
+                        !IsInsideBridgeFootprint(invRot, center, halfWidth, halfLength, px - 1, py, cellSize) ||
+                        !IsInsideBridgeFootprint(invRot, center, halfWidth, halfLength, px + 1, py, cellSize) ||
+                        !IsInsideBridgeFootprint(invRot, center, halfWidth, halfLength, px, py - 1, cellSize) ||
+                        !IsInsideBridgeFootprint(invRot, center, halfWidth, halfLength, px, py + 1, cellSize);
+
+                    if (isEdge)
+                    {
+                        SetPixelSafe(tex, px, py, outline);
+                    }
+                    else
+                    {
+                        Color32 cur = tex.GetPixel(px, py);
+                        SetPixelSafe(tex, px, py, Color32.Lerp(cur, fill, fillBlend));
+                    }
+                }
+            }
+        }
+
+        private static bool IsInsideBridgeFootprint(
+            Quaternion invRot,
+            Vector3 center,
+            float halfWidth,
+            float halfLength,
+            int px,
+            int py,
+            float cellSize)
+        {
+            if (px < 0 || py < 0) return false;
+
+            float wx = (px + 0.5f) * cellSize;
+            float wz = (py + 0.5f) * cellSize;
+            Vector3 local = invRot * (new Vector3(wx, 0f, wz) - center);
+            return Mathf.Abs(local.x) <= halfWidth && Mathf.Abs(local.z) <= halfLength;
+        }
+
         private static void DrawDot(Texture2D tex, int cx, int cy, Color32 color)
         {
             SetPixelSafe(tex, cx, cy, color);
         }
 
-        /// <summary>十字 + 中心点のマーカーを描画する（黒の輪郭 + 明るいコア）。</summary>
-        /// <param name="isMain">true なら大きめマーカー（メイン魔石用）。false は従来サイズ。</param>
-        private static void DrawMarker(Texture2D tex, int cx, int cy, Color32 core, Color32 outline, bool isMain)
+        private static void DrawMarker(
+            Texture2D tex,
+            int cx,
+            int cy,
+            Color32 core,
+            Color32 outline,
+            int outlineReach,
+            int coreReach)
         {
-            int outlineReach = isMain ? 3 : 2;
-            int coreReach = isMain ? 2 : 1;
-
-            // 菱形の外側輪郭
             for (int dy = -outlineReach; dy <= outlineReach; dy++)
             {
                 for (int dx = -outlineReach; dx <= outlineReach; dx++)
@@ -430,7 +605,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     SetPixelSafe(tex, cx + dx, cy + dy, outline);
                 }
             }
-            // 中心のコア（メインは 3x3、サブは 1x1 の十字）
+
             for (int dy = -coreReach; dy <= coreReach; dy++)
             {
                 for (int dx = -coreReach; dx <= coreReach; dx++)
@@ -452,7 +627,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
             GroundState.Normal => new Color(0.60f, 0.80f, 0.40f),
             GroundState.Swamp => new Color(0.30f, 0.35f, 0.20f),
             GroundState.Snow => new Color(0.95f, 0.95f, 0.95f),
-            GroundState.Water => new Color(0.20f, 0.50f, 0.95f),
             _ => new Color(1f, 0f, 1f),
         };
     }

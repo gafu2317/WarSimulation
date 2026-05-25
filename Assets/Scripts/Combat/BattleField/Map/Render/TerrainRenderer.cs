@@ -29,7 +29,7 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>
         /// スプラットマップで使うレイヤー順。index はそのまま alphamap のチャンネルになる。
-        /// Water レイヤもあるが、実戦時は水面メッシュで覆う想定。
+        /// Water レイヤは互換用に残すが、通常の Water タグセルには割り当てない（水面メッシュで覆う）。
         /// </summary>
         private static readonly GroundState[] s_layerOrder =
         {
@@ -50,10 +50,7 @@ namespace WarSimulation.Combat.Map
         /// <see cref="HeightMap.CliffFaces"/>（スタンプの崖スカートと一致。勾配推定は使わない）。
         /// </summary>
         private const int CliffLayerIndex = 5;
-
-        /// <summary>凍結湖（グリッドは Water のまま）。雪レイヤより濃いシアンで区別する。</summary>
-        private const int FrozenLakeLayerIndex = 6;
-        private const int TotalLayerCount = 7;
+        private const int TotalLayerCount = 6;
 
         public Terrain Terrain => _terrain;
 
@@ -182,15 +179,14 @@ namespace WarSimulation.Combat.Map
                     Vector3 worldPos = new Vector3(worldX, 0f, worldZ);
                     GroundState s = g.SampleAt(worldPos);
 
-                    // 凍結湖は専用レイヤ（濃いめの氷色）。雪エリアと見分けやすくする。
-                    if (s == GroundState.Water && FrozenLakeQueries.IsFrozenLakeWaterAt(map, worldX, worldZ))
+                    // Water タグ（川・湖・凍結湖）は水面/氷メッシュで覆うため Terrain では Normal 相当で塗る。
+                    if (s == GroundState.Water)
                     {
-                        alphas[z, x, FrozenLakeLayerIndex] = 1f;
-                        continue;
+                        s = GroundState.Normal;
                     }
 
-                    // Water / Swamp / Snow は地面状態を優先。
-                    if (s == GroundState.Water || s == GroundState.Swamp || s == GroundState.Snow)
+                    // Swamp / Snow は地面状態を優先。
+                    if (s == GroundState.Swamp || s == GroundState.Snow)
                     {
                         alphas[z, x, IndexOfLayer(s)] = 1f;
                         continue;
@@ -255,7 +251,6 @@ namespace WarSimulation.Combat.Map
             }
             layers[ForestFloorLayerIndex] = CreateSolidColorLayer("ForestFloor", new Color(0.14f, 0.42f, 0.17f));
             layers[CliffLayerIndex] = CreateSolidColorLayer("Cliff", new Color(0.30f, 0.18f, 0.10f));
-            layers[FrozenLakeLayerIndex] = CreateSolidColorLayer("FrozenLake", new Color(0.91f, 0.96f, 1f));
             return layers;
         }
 
@@ -304,13 +299,14 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>
         /// エディタプレビューと同じカラーパレットを採用して 2D / 3D の見た目をそろえる。
+        /// Water タグは Terrain では Normal と同じ色（青・氷色は使わない）。
         /// </summary>
         private static Color GetColorForState(GroundState state) => state switch
         {
             GroundState.Normal => new Color(0.60f, 0.80f, 0.40f),
             GroundState.Swamp => new Color(0.30f, 0.35f, 0.20f),
             GroundState.Snow => new Color(0.95f, 0.95f, 0.95f),
-            GroundState.Water => new Color(0.20f, 0.50f, 0.95f),
+            GroundState.Water => new Color(0.60f, 0.80f, 0.40f),
             _ => new Color(1f, 0f, 1f),
         };
 

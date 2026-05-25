@@ -1,4 +1,6 @@
+using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace WarSimulation.Combat.Map
 {
@@ -8,6 +10,9 @@ namespace WarSimulation.Combat.Map
     ///
     /// スケール規約：local +X = 幅（川沿い）、+Y = 厚み、+Z = 長さ（川を跨ぐ方向）。
     /// BridgePhase の回転もこの規約で算出されている。
+    ///
+    /// NavMesh：見た目 Cube は <see cref="NavMeshModifier.ignoreFromBuild"/>、
+    /// 上面 Quad のみ Walkable としてベイクする。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BridgeRenderer : MonoBehaviour
@@ -33,6 +38,8 @@ namespace WarSimulation.Combat.Map
 
             Material mat = _bridgeMaterial != null ? _bridgeMaterial : CreateDefaultBridgeMaterial();
             Mesh cubeMesh = GetSharedCubeMesh();
+            Mesh deckMesh = GetSharedDeckQuadMesh();
+            int walkableArea = ResolveWalkableAreaIndex();
 
             Vector3 fallbackScale = new Vector3(
                 config.BridgeWidth,
@@ -45,14 +52,28 @@ namespace WarSimulation.Combat.Map
                 PlacedFeature f = map.Features[i];
                 if (f.Type != FeatureType.Bridge) continue;
 
-                var go = new GameObject($"Bridge_{idx++}",
-                    typeof(MeshFilter), typeof(MeshRenderer));
-                go.transform.SetParent(root.transform, worldPositionStays: false);
-                go.transform.localPosition = f.WorldPosition;
-                go.transform.localRotation = f.Rotation;
-                go.transform.localScale = IsValidScale(f.Scale) ? f.Scale : fallbackScale;
-                go.GetComponent<MeshFilter>().sharedMesh = cubeMesh;
-                go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+                Vector3 scale = IsValidScale(f.Scale) ? f.Scale : fallbackScale;
+
+                var bridgeRoot = new GameObject($"Bridge_{idx++}");
+                bridgeRoot.transform.SetParent(root.transform, worldPositionStays: false);
+                bridgeRoot.transform.localPosition = f.WorldPosition;
+                bridgeRoot.transform.localRotation = f.Rotation;
+                bridgeRoot.transform.localScale = scale;
+
+                var visual = new GameObject("Visual", typeof(MeshFilter), typeof(MeshRenderer));
+                visual.transform.SetParent(bridgeRoot.transform, worldPositionStays: false);
+                visual.GetComponent<MeshFilter>().sharedMesh = cubeMesh;
+                visual.GetComponent<MeshRenderer>().sharedMaterial = mat;
+                var visualNav = visual.AddComponent<NavMeshModifier>();
+                visualNav.ignoreFromBuild = true;
+
+                var walkSurface = new GameObject("WalkSurface", typeof(MeshFilter), typeof(MeshRenderer));
+                walkSurface.transform.SetParent(bridgeRoot.transform, worldPositionStays: false);
+                walkSurface.GetComponent<MeshFilter>().sharedMesh = deckMesh;
+                walkSurface.GetComponent<MeshRenderer>().sharedMaterial = mat;
+                var walkNav = walkSurface.AddComponent<NavMeshModifier>();
+                walkNav.overrideArea = true;
+                walkNav.area = walkableArea;
             }
         }
 
@@ -76,6 +97,12 @@ namespace WarSimulation.Combat.Map
         private static bool IsValidScale(Vector3 scale) =>
             scale.x > 0f && scale.y > 0f && scale.z > 0f;
 
+        private static int ResolveWalkableAreaIndex()
+        {
+            int walkable = NavMesh.GetAreaFromName("Walkable");
+            return walkable >= 0 ? walkable : 0;
+        }
+
         /// <summary>
         /// Unity の既定 Cube メッシュを取得する。エディタでもランタイムでも利用可。
         /// 毎回 PrimitiveMesh を新規生成しないよう、GameObject を一度作って Mesh だけ借りて破棄する。
@@ -90,6 +117,30 @@ namespace WarSimulation.Combat.Map
             if (Application.isPlaying) Destroy(temp);
             else DestroyImmediate(temp);
             return _cachedCubeMesh;
+        }
+
+        /// <summary>
+        /// 単位 Cube（±0.5）の上面。親 Transform の scale で幅×長さの歩行面になる。
+        /// </summary>
+        private static Mesh _cachedDeckQuadMesh;
+        private static Mesh GetSharedDeckQuadMesh()
+        {
+            if (_cachedDeckQuadMesh != null) return _cachedDeckQuadMesh;
+
+            const float y = 0.5f;
+            var mesh = new Mesh { name = "BridgeDeckQuad" };
+            mesh.SetVertices(new[]
+            {
+                new Vector3(-0.5f, y, -0.5f),
+                new Vector3(0.5f, y, -0.5f),
+                new Vector3(0.5f, y, 0.5f),
+                new Vector3(-0.5f, y, 0.5f),
+            });
+            mesh.SetTriangles(new[] { 0, 2, 1, 0, 3, 2 }, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            _cachedDeckQuadMesh = mesh;
+            return _cachedDeckQuadMesh;
         }
 
         private static Material CreateDefaultBridgeMaterial()

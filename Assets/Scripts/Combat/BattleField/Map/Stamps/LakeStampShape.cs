@@ -29,9 +29,6 @@ namespace WarSimulation.Combat.Map
         [Tooltip("水面の高さを DepthMeters に対する比率で指定（0.85 で 85% の高さ＝岸近くまで水が来る）。")]
         [SerializeField, Range(0f, 1f)] private float _waterSurfaceRatio = 0.85f;
 
-        [Tooltip("GroundStateGrid に Water タグを書き込む範囲を半径に対する比率で指定。岸は Water タグ化しない方が自然。")]
-        [SerializeField, Range(0f, 1f)] private float _waterTagRatio = 0.9f;
-
         [Tooltip("輪郭を Perlin ノイズで歪ませる強さ。0 = 真円（従来どおり）、0.3 = 半径が ±30% 揺れる。")]
         [SerializeField, Range(0f, 0.6f)] private float _noiseAmplitude = 0f;
 
@@ -67,7 +64,7 @@ namespace WarSimulation.Combat.Map
                 _radius,
                 waterY,
                 isFrozen: false,
-                waterTaggedRadius: _radius * _waterTagRatio,
+                waterTaggedRadius: _radius,
                 noiseAmplitude: _noiseAmplitude,
                 noiseFrequency: _noiseFrequency));
         }
@@ -111,7 +108,7 @@ namespace WarSimulation.Combat.Map
         {
             float gCell = g.CellSize;
             float noiseExpand = 1f + _noiseAmplitude;
-            float boundR = _radius * noiseExpand * _waterTagRatio;
+            float boundR = _radius * noiseExpand;
             int cxCell = Mathf.FloorToInt(worldCenter.x / gCell);
             int cyCell = Mathf.FloorToInt(worldCenter.y / gCell);
             int gR = Mathf.Max(0, Mathf.CeilToInt(boundR / gCell));
@@ -132,8 +129,7 @@ namespace WarSimulation.Combat.Map
                         ? LakeRegion.ComputeEffectiveRadius(
                             worldCenter, _radius, _noiseAmplitude, _noiseFrequency, cxw, cyw)
                         : _radius;
-                    float tagR = eff * _waterTagRatio;
-                    if (distSq > tagR * tagR) continue;
+                    if (distSq > eff * eff) continue;
 
                     g.SetCell(x, y, GroundState.Water);
                 }

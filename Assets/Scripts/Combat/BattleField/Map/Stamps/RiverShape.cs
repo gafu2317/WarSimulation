@@ -22,8 +22,8 @@ namespace WarSimulation.Combat.Map
         [Tooltip("川床の最大深さ。中央でこの値だけ周囲地形より低くなる。")]
         [SerializeField, Min(0.01f)] private float _depthMeters = 2f;
 
-        [Tooltip("川幅のうち、GroundStateGrid に Water タグを付ける中心部の割合（0〜1）。岸辺は含めない想定で 0.6 前後。")]
-        [SerializeField, Range(0f, 1f)] private float _waterTagRatio = 0.6f;
+        [Tooltip("互換用。Water タグは掘削範囲（全幅）と同じ。")]
+        [SerializeField, Range(0f, 1f)] private float _waterTagRatio = 1f;
 
         public float WidthMeters => _widthMeters;
         public float DepthMeters => _depthMeters;
@@ -54,7 +54,6 @@ namespace WarSimulation.Combat.Map
             float cs = h.CellSize;
             int cellRadius = Mathf.Max(1, Mathf.CeilToInt(radius / cs));
 
-            float tagRadius = radius * _waterTagRatio;
             float gCell = g.CellSize;
 
             // 点ごとの円掘削だと経路が細かく折れた場所で「線分の間」に未掘削が残ることがある。
@@ -81,7 +80,7 @@ namespace WarSimulation.Combat.Map
                     float wh = Mathf.Lerp(h0, h1, t);
 
                     CarveHeightMapAtWorld(h, wx, wz, wh, cs, cellRadius, radius);
-                    TagWater(g, wx, wz, tagRadius, gCell);
+                    TagWater(g, wx, wz, radius, gCell);
                 }
             }
         }

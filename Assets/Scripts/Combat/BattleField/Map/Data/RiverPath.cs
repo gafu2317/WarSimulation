@@ -22,7 +22,7 @@ namespace WarSimulation.Combat.Map
         public float DepthMeters { get; }
 
         /// <summary>
-        /// 川幅のうち水面メッシュを張る内側の割合（<see cref="RiverShape.WaterTagRatio"/> と同義）。
+        /// 互換用。Water タグは掘削全幅と同じ（<see cref="RiverShape"/> 参照）。
         /// </summary>
         public float WaterTagRatio { get; }
 

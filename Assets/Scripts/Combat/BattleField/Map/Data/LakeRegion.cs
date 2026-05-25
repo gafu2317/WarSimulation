@@ -97,12 +97,7 @@ namespace WarSimulation.Combat.Map
             return d.sqrMagnitude <= eff * eff;
         }
 
-        public bool ContainsWaterTagged(Vector2 worldPos)
-        {
-            Vector2 d = worldPos - Center;
-            float eff = EffectiveRadius(d.x, d.y) * WaterTagRatio;
-            return d.sqrMagnitude <= eff * eff;
-        }
+        public bool ContainsWaterTagged(Vector2 worldPos) => ContainsCarve(worldPos);
 
         /// <summary>水面メッシュの輪郭用。単位方向 u 上の岸までの距離（固定点反復）。</summary>
         public float BoundaryRadiusAlong(Vector2 u)
