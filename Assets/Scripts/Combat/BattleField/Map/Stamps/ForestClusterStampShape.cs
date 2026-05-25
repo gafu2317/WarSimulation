@@ -8,6 +8,7 @@ namespace WarSimulation.Combat.Map
     ///   - 実行時に <see cref="MapData.ForestRegions"/> に不整形の領域を登録する
     ///     （RockPhase など後続フェーズがここを避けるのに使う）
     ///   - ゾーン内に <see cref="FeatureType.Tree"/> を <see cref="TreeCount"/> 本散布する
+    ///     （<see cref="TreePlacementUtility.IsInsidePlayableBounds"/> で terrain 外は棄却）
     ///
     /// 輪郭は真円ではなく Perlin ノイズで歪ませる（<see cref="ForestRegion"/> 側で保持）。
     /// GroundPatchStampShape（沼・雪）と同じ方式で、バイオーム間で見た目の整合を取る。
