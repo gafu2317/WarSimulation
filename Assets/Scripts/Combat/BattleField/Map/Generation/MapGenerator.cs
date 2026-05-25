@@ -34,22 +34,22 @@ namespace WarSimulation.Combat.Map
         //   River      : 山生成後の高さ 0 セルだけを通ってマップ端〜端の川を探索
         //   Lake       : 湖のボウル型くぼみ＋ Water タグ付け（既存の川 Water を避ける）
         //   GroundPatch: 沼・雪などの地面状態パッチ（Water は保護）
+        //   Bridge     : 川の経路上に橋を複数配置（後続フェーズが近傍除外に参照）
         //   Forest     : 木のクラスター。ゾーンを登録し PlacedFeature.Tree を散布
-        //   TreeScatter: クラスター外に木をマップ全体へ散布（Water・森ゾーン・既存の木を避ける）
-        //   Rock       : 岩をマップ全体に散布（Water セル＋森ゾーンを避ける）
-        //   Decoration : 魔石配置（Water セル除外）
-        //   Bridge     : 川の経路上に橋を複数配置
+        //   TreeScatter: クラスター外に木をマップ全体へ散布（Water・森ゾーン・橋近傍・既存の木を避ける）
+        //   Rock       : 岩をマップ全体に散布（Water セル＋森ゾーン＋橋近傍を避ける）
+        //   Decoration : 魔石配置（Water セル＋森ゾーン＋橋近傍除外）
         private readonly List<IMapGenerationPhase> _phases = new()
         {
             new MountainPhase(),
             new RiverPhase(),
             new LakePhase(),
             new GroundPatchPhase(),
+            new BridgePhase(),
             new ForestPhase(),
             new TreeScatterPhase(),
             new RockPhase(),
             new DecorationPhase(),
-            new BridgePhase(),
         };
 
         public MapGenerationConfig Config
@@ -78,6 +78,7 @@ namespace WarSimulation.Combat.Map
             IRandom rng = new SystemRandom(seed);
 
             MapData map = CreateEmptyMap(_config, seed);
+            map.BridgeFeatureExclusionMargin = _config.BridgeFeatureExclusionMargin;
             _lastPhaseTimings.Clear();
             foreach (IMapGenerationPhase phase in _phases)
             {

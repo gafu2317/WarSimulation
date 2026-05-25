@@ -9,6 +9,7 @@ namespace WarSimulation.Combat.Map
     ///   - 水セル（川・湖の中心部タグ）
     ///   - 川・湖の掘削・見た目の範囲（Water タグが岸に付かない設定でも岸に岩が乗らないようにする）
     ///   - 森クラスター領域（<see cref="MapData.ForestRegions"/>）
+    ///   - 橋フットプリント近傍（<see cref="MapData.BridgeFeatureExclusionMargin"/>）
     ///   - 既存の岩からの最小距離
     /// </summary>
     public sealed class RockPhase : IMapGenerationPhase
@@ -46,6 +47,8 @@ namespace WarSimulation.Combat.Map
                 if (RiverCorridorUtility.Contains(map, xz)) continue;
 
                 if (IsInsideForest(map, xz)) continue;
+
+                if (BridgePlacementUtility.IsNearAnyBridge(map, xz, config.BridgeFeatureExclusionMargin)) continue;
 
                 if (minDistSq > 0f && IsTooCloseToExistingRock(map, startIndex, x, z, minDistSq)) continue;
 

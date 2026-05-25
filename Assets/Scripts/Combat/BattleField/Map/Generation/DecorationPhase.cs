@@ -9,6 +9,8 @@ namespace WarSimulation.Combat.Map
     /// - メイン魔石は陣営ゾーン内でさらに奥（マップ端側）に寄せる
     /// - 全魔石は MagicStoneMinDistance 以上離す（棄却サンプリング）
     /// - River / Lake セルには配置しない
+    /// - 森クラスター領域（ForestRegions）には配置しない
+    /// - 橋フットプリント近傍（BridgeFeatureExclusionMargin）には配置しない
     /// </summary>
     public sealed class DecorationPhase : IMapGenerationPhase
     {
@@ -96,6 +98,13 @@ namespace WarSimulation.Combat.Map
                 if (map.Height.SampleSlopeDeg(worldPos) > maxSlopeDeg) continue;
 
                 var candidate = new Vector2(x, z);
+
+                // 森クラスター内は不可
+                if (TreePlacementUtility.IsInsideAnyForest(map, candidate)) continue;
+
+                // 橋近傍は不可
+                if (BridgePlacementUtility.IsNearAnyBridge(map, candidate, config.BridgeFeatureExclusionMargin)) continue;
+
                 bool tooClose = false;
                 for (int i = 0; i < placed.Count; i++)
                 {

@@ -7,7 +7,7 @@ namespace WarSimulation.Combat.Map
     /// <summary>
     /// マップ 1 枚分のレシピ。各フェーズのパラメータと使う StampShape をまとめて保持する。
     /// パイプライン順：
-    ///   BaseHeight → Mountain → River → Lake → GroundPatch → Forest → TreeScatter → Rock → Decoration → Bridge
+    ///   BaseHeight → Mountain → River → Lake → GroundPatch → Bridge → Forest → TreeScatter → Rock → Decoration
     /// </summary>
     [CreateAssetMenu(menuName = "WarSim/Map/Map Generation Config", fileName = "MapGenerationConfig")]
     public sealed class MapGenerationConfig : ScriptableObject
@@ -100,6 +100,9 @@ namespace WarSimulation.Combat.Map
 
         [Tooltip("橋の Y オフセット（川の水面からの高さ）。")]
         [SerializeField, Min(0f)] private float _bridgeHeightAboveWater = 0.3f;
+
+        [Tooltip("橋フットプリント外側の除外余白（メートル）。木・岩・魔石をこの距離内に置かない。")]
+        [SerializeField, Min(0f)] private float _bridgeFeatureExclusionMargin = 2f;
 
         [Header("Lake Phase")]
         [Tooltip("湖を配置するスタンプのリスト。")]
@@ -302,6 +305,7 @@ namespace WarSimulation.Combat.Map
         public float BridgeWidth => _bridgeWidth;
         public float BridgeThickness => _bridgeThickness;
         public float BridgeHeightAboveWater => _bridgeHeightAboveWater;
+        public float BridgeFeatureExclusionMargin => _bridgeFeatureExclusionMargin;
 
         public IReadOnlyList<LakeStampShape> LakeStamps => _lakeStamps;
         public int LakeCount => _lakeCount;

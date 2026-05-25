@@ -33,6 +33,11 @@ namespace WarSimulation.Combat.Map
         public int Seed { get; }
 
         /// <summary>
+        /// 木・岩・魔石を橋から除外する余白（メートル）。生成開始時に Config からコピーされる。
+        /// </summary>
+        public float BridgeFeatureExclusionMargin { get; set; } = 2f;
+
+        /// <summary>
         /// 直近の山生成で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.MountainStampTargetTotal"/>）。
         /// </summary>
         public int StructureStampPlacedCount { get; set; }
