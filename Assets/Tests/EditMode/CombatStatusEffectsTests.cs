@@ -32,8 +32,8 @@ public sealed class CombatStatusEffectsTests
         {
             CombatStatusEffects statusEffects = characterGo.AddComponent<Character>().StatusEffects;
 
-            statusEffects.Apply(CombatStatusEffects.StatKind.STR, 0.7f, 5f, GrimoireStrDebuffSkill.EffectKey);
-            statusEffects.Apply(CombatStatusEffects.StatKind.STR, 0.7f, 5f, GrimoireStrDebuffSkill.EffectKey);
+            statusEffects.Apply(CombatStatusEffects.StatKind.STR, 0.7f, 5f, StatDebuffSkill.GetEffectKey(CombatStatusEffects.StatKind.STR));
+            statusEffects.Apply(CombatStatusEffects.StatKind.STR, 0.7f, 5f, StatDebuffSkill.GetEffectKey(CombatStatusEffects.StatKind.STR));
 
             Assert.That(statusEffects.GetMultiplier(CombatStatusEffects.StatKind.STR), Is.EqualTo(0.7f).Within(0.001f));
         }
@@ -74,10 +74,10 @@ public sealed class CombatStatusEffectsTests
                 CombatStatusEffects.StatKind.FAI,
                 1.2f,
                 6f,
-                RosaryFaithBuffSkill.EffectKey);
+                StatBuffSkill.GetEffectKey(CombatStatusEffects.StatKind.FAI));
 
-            Assert.That(statusEffects.HasActiveEffect(RosaryFaithBuffSkill.EffectKey), Is.True);
-            Assert.That(statusEffects.GetRemainingSeconds(RosaryFaithBuffSkill.EffectKey), Is.GreaterThan(0f));
+            Assert.That(statusEffects.HasActiveEffect(StatBuffSkill.GetEffectKey(CombatStatusEffects.StatKind.FAI)), Is.True);
+            Assert.That(statusEffects.GetRemainingSeconds(StatBuffSkill.GetEffectKey(CombatStatusEffects.StatKind.FAI)), Is.GreaterThan(0f));
         }
         finally
         {

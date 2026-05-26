@@ -1,35 +1,43 @@
-public sealed class ShieldGuardSkill : SkillBase
+public sealed class StatBuffSkill : SkillBase
 {
-    public const string EffectKey = "ShieldGuard";
-
+    private readonly CombatStatusEffects.StatKind _stat;
     private readonly float _buffMultiplier;
     private readonly float _durationSeconds;
     private readonly float _cooldownSeconds;
+    private readonly string _name;
 
-    public ShieldGuardSkill(
+    public StatBuffSkill(
+        CombatStatusEffects.StatKind stat,
         float buffMultiplier = 1.25f,
         float durationSeconds = 5f,
-        float cooldownSeconds = 5f)
+        float cooldownSeconds = 5f,
+        string name = null)
     {
+        _stat = stat;
         _buffMultiplier = buffMultiplier;
         _durationSeconds = durationSeconds;
         _cooldownSeconds = cooldownSeconds;
+        _name = name ?? $"{stat}バフ";
     }
 
-    public override string Name => "守護";
+    public CombatStatusEffects.StatKind Stat => _stat;
+
+    public override string Name => _name;
 
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
+
+    public static string GetEffectKey(CombatStatusEffects.StatKind stat) => $"StatBuff_{stat}";
 
     public override void Execute(Character self, Character target)
     {
         if (target == null) return;
 
         target.StatusEffects?.Apply(
-            CombatStatusEffects.StatKind.STR,
+            _stat,
             _buffMultiplier,
             _durationSeconds,
-            EffectKey);
+            GetEffectKey(_stat));
     }
 }

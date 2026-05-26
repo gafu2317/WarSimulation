@@ -157,10 +157,24 @@ public sealed class CombatHealthAttackTests
             bibleCharacter.EquipWeapon(new Bible());
             rosaryCharacter.EquipWeapon(new Rosary());
 
-            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(1));
-            Assert.That(((IdentifiedSkill)bibleCharacter.AvailableCombatSkills[0]).SkillId, Is.EqualTo(SkillId.Bible_Heal));
-            Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(1));
-            Assert.That(((IdentifiedSkill)rosaryCharacter.AvailableCombatSkills[0]).SkillId, Is.EqualTo(SkillId.Rosary_FaithBuff));
+            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(5));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Smite));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_StrBuff));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_IntBuff));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_FaiBuff));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_AgiBuff));
+            Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(3));
+            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_Strike));
+            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_DistantHeal));
+            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_CloseHeal));
         }
         finally
         {

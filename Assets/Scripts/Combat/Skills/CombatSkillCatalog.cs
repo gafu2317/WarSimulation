@@ -45,11 +45,22 @@ public sealed class CombatSkillCatalog : ScriptableObject
         catalog._definitions = new[]
         {
             CreateDefinition(SkillId.Sword_Slash, WeaponKind.Sword, "斬撃"),
-            CreateDefinition(SkillId.Shield_Guard, WeaponKind.Shield, "守護"),
+            CreateDefinition(SkillId.Shield_Slash, WeaponKind.Shield, "盾撃"),
             CreateDefinition(SkillId.Wand_Bolt, WeaponKind.Wand, "魔弾"),
+            CreateDefinition(SkillId.Wand_ArcaneBlast, WeaponKind.Wand, "極大魔弾"),
+            CreateDefinition(SkillId.Grimoire_Bolt, WeaponKind.Grimoire, "呪弾"),
             CreateDefinition(SkillId.Grimoire_StrDebuff, WeaponKind.Grimoire, "STRデバフ"),
-            CreateDefinition(SkillId.Bible_Heal, WeaponKind.Bible, "回復"),
-            CreateDefinition(SkillId.Rosary_FaithBuff, WeaponKind.Rosary, "信仰バフ"),
+            CreateDefinition(SkillId.Bible_Smite, WeaponKind.Bible, "制裁"),
+            CreateDefinition(SkillId.Bible_StrBuff, WeaponKind.Bible, "守護"),
+            CreateDefinition(SkillId.Bible_FaiBuff, WeaponKind.Bible, "信仰バフ"),
+            CreateDefinition(SkillId.Bible_IntBuff, WeaponKind.Bible, "INTバフ"),
+            CreateDefinition(SkillId.Bible_AgiBuff, WeaponKind.Bible, "AGIバフ"),
+            CreateDefinition(SkillId.Rosary_Strike, WeaponKind.Rosary, "聖撃"),
+            CreateDefinition(SkillId.Rosary_DistantHeal, WeaponKind.Rosary, "遠隔癒し"),
+            CreateDefinition(SkillId.Rosary_CloseHeal, WeaponKind.Rosary, "大回復"),
+            CreateDefinition(SkillId.StatDebuff_INT, WeaponKind.Grimoire, "INTデバフ"),
+            CreateDefinition(SkillId.StatDebuff_FAI, WeaponKind.Grimoire, "FAIデバフ"),
+            CreateDefinition(SkillId.StatDebuff_AGI, WeaponKind.Grimoire, "AGIデバフ"),
         };
         return catalog;
     }

@@ -104,18 +104,50 @@ Assets/Data/Combat/Skills/
 2. `CombatSceneContext.SkillCatalog`
 3. `CombatSkillCatalog.CreateDefaultRuntimeCatalog()`（フォールバック）
 
-## 実装済みスキル（確認用・6種）
+## 実装済みスキル
 
-| SkillId | 武器種 | クラス | 概要 |
-|---------|--------|--------|------|
-| `Sword_Slash` | 双剣 | `SwordSlashSkill` | 近距離ダメージ（STR） |
-| `Shield_Guard` | 盾 | `ShieldGuardSkill` | 味方/自分 STR バフ |
-| `Wand_Bolt` | 杖 | `WandBoltSkill` | 遠距離ダメージ（INT） |
-| `Grimoire_StrDebuff` | 魔導書 | `GrimoireStrDebuffSkill` | 敵 STR デバフ |
-| `Bible_Heal` | 聖書 | `BibleHealSkill` | 味方回復 |
-| `Rosary_FaithBuff` | ロザリオ | `RosaryFaithBuffSkill` | 味方 FAI バフ |
+### 通常攻撃（武器ごと1ファイル）
 
-`docs/game.md` には武器ごと約5技が定義されているが、現時点では上記6件のみ。
+| SkillId | 武器種 | クラス | 係数 | 射程 | CD | 概要 |
+|---------|--------|--------|------|------|-----|------|
+| `Sword_Slash` | 双剣 | `SwordSlashSkill` | STR | 2m | 1.0s | 斬撃 |
+| `Shield_Slash` | 盾 | `ShieldSlashSkill` | STR | 2m | 1.1s | 盾撃（双剣よりやや弱め） |
+| `Wand_Bolt` | 杖 | `WandBoltSkill` | INT | 8m | 1.4s | 魔弾 |
+| `Wand_ArcaneBlast` | 杖 | `WandArcaneBlastSkill` | INT | 15m | 8.0s | 極大魔弾（長CD・高威力） |
+| `Grimoire_Bolt` | 魔導書 | `GrimoireBoltSkill` | INT | 6m | 1.3s | 呪弾 |
+| `Bible_Smite` | 聖書 | `BibleSmiteSkill` | FAI | 5m | 1.5s | 制裁 |
+| `Rosary_Strike` | ロザリオ | `RosaryStrikeSkill` | FAI | 4m | 1.3s | 聖撃 |
+
+### 回復
+
+| SkillId | 武器種 | クラス | 対象 | 射程 | CD | 効果 |
+|---------|--------|--------|------|------|-----|------|
+| `Rosary_DistantHeal` | ロザリオ | `RosaryDistantHealSkill` | 味方/自分 | 9m | 3.5s | `3 + FAI×0.3` 微回復 |
+| `Rosary_CloseHeal` | ロザリオ | `RosaryCloseHealSkill` | 味方/自分 | 2.5m | 7.0s | `15 + FAI×0.8` 大回復 |
+
+味方対象スキルは `PersonalityBase.IsValidSkillTarget` でも `MaxRange` を参照する（自分自身は距離不問）。
+
+### ステータスバフ（`StatBuffSkill`・聖書専用）
+
+| SkillId | 対象ステ | 武器種（カタログ） | 表示名 |
+|---------|----------|-------------------|--------|
+| `Bible_StrBuff` | STR | 聖書 | 守護 |
+| `Bible_IntBuff` | INT | 聖書 | INTバフ |
+| `Bible_FaiBuff` | FAI | 聖書 | 信仰バフ |
+| `Bible_AgiBuff` | AGI | 聖書 | AGIバフ |
+
+### ステータスデバフ（`StatDebuffSkill`）
+
+| SkillId | 対象ステ | 武器種（カタログ） | 表示名 |
+|---------|----------|-------------------|--------|
+| `Grimoire_StrDebuff` | STR | 魔導書 | STRデバフ |
+| `StatDebuff_INT` | INT | 魔導書 | INTデバフ |
+| `StatDebuff_FAI` | FAI | 魔導書 | FAIデバフ |
+| `StatDebuff_AGI` | AGI | 魔導書 | AGIデバフ |
+
+バフ・デバフは `StatBuffSkill` / `StatDebuffSkill` に集約。EffectKey は `StatBuff_{Stat}` / `StatDebuff_{Stat}`。
+
+`docs/game.md` には武器ごと約5技が定義されているが、現時点では上記17件（通常攻撃7 + 回復2 + バフ4 + デバフ4）。
 
 ## 非推奨・削除済みパターン
 

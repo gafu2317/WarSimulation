@@ -85,7 +85,10 @@ public abstract class PersonalityBase : MonoBehaviour
             skill.TargetKind == SkillTargetKind.AllyOrSelf)
         {
             if (target == owner) return target.Health.CanAct;
-            return target.Team == owner.Team && target.Health.CanAct;
+            if (target.Team != owner.Team || !target.Health.CanAct) return false;
+
+            float distance = Vector3.Distance(owner.transform.position, target.transform.position);
+            return distance <= skill.MaxRange;
         }
 
         if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
