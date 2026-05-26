@@ -87,14 +87,14 @@ public abstract class PersonalityBase : MonoBehaviour
             if (target == owner) return target.Health.CanAct;
             if (target.Team != owner.Team || !target.Health.CanAct) return false;
 
-            float distance = Vector3.Distance(owner.transform.position, target.transform.position);
-            return distance <= skill.MaxRange;
+            float allyDistance = Vector3.Distance(owner.transform.position, target.transform.position);
+            return allyDistance <= skill.MaxRange;
         }
 
         if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
 
-        float distance = Vector3.Distance(owner.transform.position, target.transform.position);
-        return distance <= skill.MaxRange;
+        float enemyDistance = Vector3.Distance(owner.transform.position, target.transform.position);
+        return enemyDistance <= skill.MaxRange;
     }
 
     protected bool CanExecuteSkill(SkillBase skill, Character target)
