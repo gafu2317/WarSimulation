@@ -10,7 +10,7 @@ namespace WarSimulation.Combat.Map
     {
         public static bool IsNearAnyBridge(MapData map, Vector2 worldXZ, float marginMeters)
         {
-            if (map == null || marginMeters <= 0f) return false;
+            if (map == null || marginMeters < 0f) return false;
 
             var features = map.Features;
             for (int i = 0; i < features.Count; i++)

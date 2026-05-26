@@ -130,6 +130,40 @@ public sealed class CombatTraversalTests
         }
     }
 
+    [Test]
+    public void TryGetTraversalInfo_UsesNormalSpeedOnAndNearBridge()
+    {
+        GameObject go = new GameObject("CombatMapSystem");
+        try
+        {
+            CombatMapSystem system = go.AddComponent<CombatMapSystem>();
+            MapData map = new MapData(new HeightMap(8, 8, 1f), new GroundStateGrid(8, 8, 1f), seed: 1);
+            map.BridgeFeatureExclusionMargin = 1f;
+            for (int z = 0; z < 8; z++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    map.GroundStates.SetCell(x, z, GroundState.Water);
+                }
+            }
+
+            map.AddFeature(new PlacedFeature(
+                FeatureType.Bridge,
+                new Vector3(2.5f, 0f, 2.5f),
+                Quaternion.identity,
+                new Vector3(1f, 0.2f, 1f)));
+            system.SetCurrentMap(map);
+
+            AssertSpeed(system, new Vector3(2.5f, 0f, 2.5f), 1f);
+            AssertSpeed(system, new Vector3(3.75f, 0f, 2.5f), 1f);
+            AssertSpeed(system, new Vector3(5.5f, 0f, 2.5f), 0.25f);
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+        }
+    }
+
     private static void AssertSpeed(CombatMapSystem system, Vector3 position, float expected)
     {
         Assert.That(system.TryGetTraversalInfo(position, out TerrainTraversalInfo info), Is.True);

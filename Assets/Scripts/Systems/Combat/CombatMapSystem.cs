@@ -182,7 +182,9 @@ public class CombatMapSystem : MonoBehaviour
         if (!TryGetTerrainInfo(worldPosition, out TerrainInfo terrainInfo)) return false;
 
         bool canStand = GetCanStand(terrainInfo, out string blockedReason);
-        float speedMultiplier = canStand ? GetMoveSpeedMultiplier(terrainInfo) : 0f;
+        float speedMultiplier = canStand
+            ? GetMoveSpeedMultiplier(terrainInfo, GetMapLocalPosition(worldPosition))
+            : 0f;
         info = new TerrainTraversalInfo(terrainInfo, canStand, speedMultiplier, blockedReason);
         return true;
     }
@@ -224,8 +226,18 @@ public class CombatMapSystem : MonoBehaviour
         return true;
     }
 
-    private float GetMoveSpeedMultiplier(TerrainInfo info)
+    private float GetMoveSpeedMultiplier(TerrainInfo info, Vector3 mapLocalPosition)
     {
+        MapData map = CurrentMap;
+        if (map != null &&
+            BridgePlacementUtility.IsNearAnyBridge(
+                map,
+                new Vector2(mapLocalPosition.x, mapLocalPosition.z),
+                map.BridgeFeatureExclusionMargin))
+        {
+            return _normalSpeedMultiplier;
+        }
+
         if (info.IsFrozenLake) return _frozenLakeSpeedMultiplier;
 
         return info.GroundState switch
@@ -235,6 +247,13 @@ public class CombatMapSystem : MonoBehaviour
             GroundState.Water => _waterSpeedMultiplier,
             _ => _normalSpeedMultiplier,
         };
+    }
+
+    private Vector3 GetMapLocalPosition(Vector3 worldPosition)
+    {
+        Transform origin = MapOrigin;
+        Vector3 localInput = origin.InverseTransformPoint(worldPosition);
+        return new Vector3(localInput.x, 0f, localInput.z);
     }
 
     private static bool IsInMapBounds(Vector3 mapLocalPosition, GroundStateGrid grid)
