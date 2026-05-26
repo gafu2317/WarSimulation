@@ -149,6 +149,26 @@ public sealed class WeaponConfigTests
         }
     }
 
+    [Test]
+    public void CreateWeapon_GrantedSkillIds_ArePassedToWeapon()
+    {
+        WeaponConfig config = CreateConfig(WeaponKind.Wand);
+        try
+        {
+            SetField(config, "_grantedSkillIds", new[] { SkillId.Wand_Bolt });
+
+            Wand weapon = config.CreateWeapon() as Wand;
+
+            Assert.That(weapon, Is.Not.Null);
+            Assert.That(weapon.GrantedSkillIds.Count, Is.EqualTo(1));
+            Assert.That(weapon.GrantedSkillIds[0], Is.EqualTo(SkillId.Wand_Bolt));
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
     private static void AssertKind(WeaponKind kind, System.Type expectedType)
     {
         WeaponConfig config = CreateConfig(kind);

@@ -142,15 +142,32 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
-    public void BibleAndRosary_IncludeDefaultSupportSkills()
+    public void Character_BuildsSupportSkillsFromCatalogWhenEquippedWithBibleOrRosary()
     {
-        Bible bible = new Bible();
-        Rosary rosary = new Rosary();
+        GameObject bibleGo = new GameObject("BibleCharacter");
+        GameObject rosaryGo = new GameObject("RosaryCharacter");
+        CombatSkillCatalog catalog = CombatSkillCatalog.CreateDefaultRuntimeCatalog();
+        try
+        {
+            Character bibleCharacter = bibleGo.AddComponent<Character>();
+            Character rosaryCharacter = rosaryGo.AddComponent<Character>();
+            CombatEditModeTestUtil.WireSkillCatalog(bibleCharacter, catalog);
+            CombatEditModeTestUtil.WireSkillCatalog(rosaryCharacter, catalog);
 
-        Assert.That(bible.Skills.Count, Is.EqualTo(1));
-        Assert.That(bible.Skills[0], Is.TypeOf<BibleHealSkill>());
-        Assert.That(rosary.Skills.Count, Is.EqualTo(1));
-        Assert.That(rosary.Skills[0], Is.TypeOf<RosaryFaithBuffSkill>());
+            bibleCharacter.EquipWeapon(new Bible());
+            rosaryCharacter.EquipWeapon(new Rosary());
+
+            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(1));
+            Assert.That(((IdentifiedSkill)bibleCharacter.AvailableCombatSkills[0]).SkillId, Is.EqualTo(SkillId.Bible_Heal));
+            Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(1));
+            Assert.That(((IdentifiedSkill)rosaryCharacter.AvailableCombatSkills[0]).SkillId, Is.EqualTo(SkillId.Rosary_FaithBuff));
+        }
+        finally
+        {
+            Object.DestroyImmediate(bibleGo);
+            Object.DestroyImmediate(rosaryGo);
+            Object.DestroyImmediate(catalog);
+        }
     }
 
     private static void AssertWeapon(

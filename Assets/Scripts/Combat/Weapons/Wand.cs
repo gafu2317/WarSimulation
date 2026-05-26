@@ -9,7 +9,7 @@ public class Wand : WeaponBase
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
     private readonly float _followMeleeAllyBias;
-    private readonly IReadOnlyList<SkillBase> _skills;
+    private readonly IReadOnlyList<SkillId> _grantedSkillIds;
 
     public override WeaponKind Kind => WeaponKind.Wand;
     public override float Range => _range;
@@ -20,7 +20,7 @@ public class Wand : WeaponBase
     public override float HideInForestBias => _hideInForestBias;
     public override float SeekHighGroundBias => _seekHighGroundBias;
     public override float FollowMeleeAllyBias => _followMeleeAllyBias;
-    public override IReadOnlyList<SkillBase> Skills => _skills;
+    public override IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public Wand(
         float range = 8f,
@@ -30,7 +30,7 @@ public class Wand : WeaponBase
         float hideInForestBias = 0f,
         float seekHighGroundBias = 0f,
         float followMeleeAllyBias = 0f,
-        IReadOnlyList<SkillBase> skills = null)
+        IReadOnlyList<SkillId> grantedSkillIds = null)
     {
         _range = range;
         _cooldown = cooldown;
@@ -39,6 +39,6 @@ public class Wand : WeaponBase
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;
         _followMeleeAllyBias = followMeleeAllyBias;
-        _skills = skills ?? System.Array.Empty<SkillBase>();
+        _grantedSkillIds = grantedSkillIds ?? System.Array.Empty<SkillId>();
     }
 }

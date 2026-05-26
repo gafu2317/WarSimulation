@@ -25,15 +25,7 @@ public sealed class GrimoireStrDebuffSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
-    public override float EvaluateScore(Character self, Character target)
-    {
-        if (self == null || target == null) return 0f;
-
-        float distance = Vector3.Distance(self.transform.position, target.transform.position);
-        if (distance > _maxRange) return 0f;
-
-        return 90f;
-    }
+    public override float MaxRange => _maxRange;
 
     public override void Execute(Character self, Character target)
     {

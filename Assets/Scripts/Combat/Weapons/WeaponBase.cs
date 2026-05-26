@@ -21,5 +21,8 @@ public class WeaponBase
     public virtual float HideInForestBias => 0f;
     public virtual float SeekHighGroundBias => 0f;
     public virtual float FollowMeleeAllyBias => 0f;
+    public virtual IReadOnlyList<SkillId> GrantedSkillIds => Array.Empty<SkillId>();
+
+    [Obsolete("Use Character.AvailableCombatSkills instead.")]
     public virtual IReadOnlyList<SkillBase> Skills => Array.Empty<SkillBase>();
 }

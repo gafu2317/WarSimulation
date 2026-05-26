@@ -9,7 +9,7 @@ public class Grimoire : WeaponBase
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
     private readonly float _followMeleeAllyBias;
-    private readonly IReadOnlyList<SkillBase> _skills;
+    private readonly IReadOnlyList<SkillId> _grantedSkillIds;
 
     public override WeaponKind Kind => WeaponKind.Grimoire;
     public override float Range => _range;
@@ -20,7 +20,7 @@ public class Grimoire : WeaponBase
     public override float HideInForestBias => _hideInForestBias;
     public override float SeekHighGroundBias => _seekHighGroundBias;
     public override float FollowMeleeAllyBias => _followMeleeAllyBias;
-    public override IReadOnlyList<SkillBase> Skills => _skills;
+    public override IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public Grimoire(
         float range = 7f,
@@ -30,7 +30,7 @@ public class Grimoire : WeaponBase
         float hideInForestBias = 0f,
         float seekHighGroundBias = 50f,
         float followMeleeAllyBias = 0f,
-        IReadOnlyList<SkillBase> skills = null)
+        IReadOnlyList<SkillId> grantedSkillIds = null)
     {
         _range = range;
         _cooldown = cooldown;
@@ -39,6 +39,6 @@ public class Grimoire : WeaponBase
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;
         _followMeleeAllyBias = followMeleeAllyBias;
-        _skills = skills ?? new SkillBase[] { new GrimoireStrDebuffSkill() };
+        _grantedSkillIds = grantedSkillIds ?? System.Array.Empty<SkillId>();
     }
 }

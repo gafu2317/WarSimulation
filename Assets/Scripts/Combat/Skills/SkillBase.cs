@@ -8,7 +8,7 @@ public abstract class SkillBase
 
     public virtual SkillTargetKind TargetKind => SkillTargetKind.Enemy;
 
-    public abstract float EvaluateScore(Character self, Character target);
+    public virtual float MaxRange => float.PositiveInfinity;
 
     public abstract void Execute(Character self, Character target);
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(
@@ -18,6 +19,9 @@ public sealed class WeaponConfig : ScriptableObject
     [SerializeField] private float _seekHighGroundBias;
     [SerializeField] private float _followMeleeAllyBias;
 
+    [Header("Granted Skills")]
+    [SerializeField] private SkillId[] _grantedSkillIds = System.Array.Empty<SkillId>();
+
     public WeaponKind Kind => _kind;
     public float Range => _range;
     public float CooldownSeconds => _cooldownSeconds;
@@ -26,9 +30,11 @@ public sealed class WeaponConfig : ScriptableObject
     public float HideInForestBias => _hideInForestBias;
     public float SeekHighGroundBias => _seekHighGroundBias;
     public float FollowMeleeAllyBias => _followMeleeAllyBias;
+    public IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public WeaponBase CreateWeapon()
     {
+        IReadOnlyList<SkillId> grantedSkillIds = _grantedSkillIds;
         return _kind switch
         {
             WeaponKind.Sword => new Sword(
@@ -38,7 +44,8 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias),
+                _followMeleeAllyBias,
+                grantedSkillIds),
             WeaponKind.Shield => new Shield(
                 _range,
                 _cooldownSeconds,
@@ -46,7 +53,8 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias),
+                _followMeleeAllyBias,
+                grantedSkillIds),
             WeaponKind.Wand => new Wand(
                 _range,
                 _cooldownSeconds,
@@ -54,7 +62,8 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias),
+                _followMeleeAllyBias,
+                grantedSkillIds),
             WeaponKind.Grimoire => new Grimoire(
                 _range,
                 _cooldownSeconds,
@@ -62,7 +71,8 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias),
+                _followMeleeAllyBias,
+                grantedSkillIds),
             WeaponKind.Bible => new Bible(
                 _range,
                 _cooldownSeconds,
@@ -70,7 +80,8 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias),
+                _followMeleeAllyBias,
+                grantedSkillIds),
             WeaponKind.Rosary => new Rosary(
                 _range,
                 _cooldownSeconds,
@@ -78,7 +89,8 @@ public sealed class WeaponConfig : ScriptableObject
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
-                _followMeleeAllyBias),
+                _followMeleeAllyBias,
+                grantedSkillIds),
             WeaponKind.Unarmed => WeaponBase.Unarmed,
             _ => WeaponBase.Unarmed,
         };

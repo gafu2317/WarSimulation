@@ -24,16 +24,6 @@ public sealed class BibleHealSkill : SkillBase
 
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
 
-    public override float EvaluateScore(Character self, Character target)
-    {
-        if (self == null || target == null || target.Health == null) return 0f;
-        if (!target.Health.CanAct) return 0f;
-        if (target.Health.HP >= target.Health.MaxHP) return 0f;
-
-        float missingRatio = 1f - (target.Health.HP / (float)target.Health.MaxHP);
-        return 70f + missingRatio * 30f;
-    }
-
     public override void Execute(Character self, Character target)
     {
         if (self == null || target == null || target.Health == null) return;

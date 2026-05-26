@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using WarSimulation.Combat.Map;
@@ -41,35 +40,11 @@ public sealed class PlainPersonalityTests
     }
 
     [Test]
-    public void DecidePlan_SelectsHighestScoringReadySkill()
+    public void DecidePlan_LeavesSkillNullEvenWhenEnemyIsVisible()
     {
         PlainFixture fixture = CreateFixture(withEnemyStone: true);
         try
         {
-            var lowSkill = new TestEnemySkill("Low", 25f);
-            var highSkill = new TestEnemySkill("High", 90f);
-            fixture.Owner.EquipWeapon(new Sword(range: 10f, skills: new SkillBase[] { lowSkill, highSkill }));
-            CreateEnemy(fixture, new Vector3(0f, 0f, 4f));
-            fixture.Owner.Vision.Initialize();
-
-            CombatAiPlan plan = fixture.Personality.DecidePlan();
-
-            Assert.That(plan.Skill, Is.EqualTo(highSkill));
-            Assert.That(plan.SkillTarget, Is.EqualTo(fixture.Enemy));
-        }
-        finally
-        {
-            fixture.Destroy();
-        }
-    }
-
-    [Test]
-    public void DecidePlan_LeavesSkillEmptyWhenNoSkillScoresAboveZero()
-    {
-        PlainFixture fixture = CreateFixture(withEnemyStone: true);
-        try
-        {
-            fixture.Owner.EquipWeapon(new Sword(range: 10f, skills: new SkillBase[] { new TestEnemySkill("Zero", 0f) }));
             CreateEnemy(fixture, new Vector3(0f, 0f, 4f));
             fixture.Owner.Vision.Initialize();
 
@@ -125,6 +100,9 @@ public sealed class PlainPersonalityTests
         fixture.Owner.SetTeam(CombatTeam.Ally);
         fixture.Owner.Health.Initialize(30);
         fixture.Owner.EquipWeapon(new Sword());
+        CombatEditModeTestUtil.WireSkillCatalog(
+            fixture.Owner,
+            CombatSkillCatalog.CreateDefaultRuntimeCatalog());
         fixture.System.AllyCharacters.Add(fixture.Owner);
 
         if (useTrackingPersonality)
@@ -190,29 +168,6 @@ public sealed class PlainPersonalityTests
             MoveCommandCount++;
             LastMoveDestination = destination;
             return true;
-        }
-    }
-
-    private sealed class TestEnemySkill : SkillBase
-    {
-        private readonly string _name;
-        private readonly float _score;
-
-        public TestEnemySkill(string name, float score)
-        {
-            _name = name;
-            _score = score;
-        }
-
-        public override string Name => _name;
-
-        public override float EvaluateScore(Character self, Character target)
-        {
-            return _score;
-        }
-
-        public override void Execute(Character self, Character target)
-        {
         }
     }
 }

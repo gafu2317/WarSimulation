@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -11,6 +13,9 @@ public class Character : MonoBehaviour
 {
     [SerializeField] private CombatTeam _team = CombatTeam.Ally;
     [SerializeField] private WeaponConfig _initialWeaponConfig;
+    [SerializeField] private CombatSkillCatalog _skillCatalogOverride;
+    [SerializeField] private List<SkillId> _learnedSkillIds = new();
+    [SerializeField] private bool _unlockAllCatalogSkillsForKindWhenLearnedEmpty = true;
 
     // キャラクターの基礎データ
     public CharacterData CharacterData { private set; get; }
@@ -40,7 +45,11 @@ public class Character : MonoBehaviour
 
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
+    public WeaponConfig EquippedWeaponConfig { get; private set; }
+    public IReadOnlyList<SkillBase> AvailableCombatSkills => _availableCombatSkills;
+    public IReadOnlyList<SkillId> LearnedSkillIds => _learnedSkillIds;
 
+    private readonly List<SkillBase> _availableCombatSkills = new();
     private NavMeshAgent _agent;
     private CombatCharacterBody _body;
     private CombatVision _vision;
@@ -175,25 +184,97 @@ public class Character : MonoBehaviour
     {
         if (_initialWeaponConfig == null) return;
 
-        EquipWeapon(_initialWeaponConfig.CreateWeapon());
+        EquipWeapon(_initialWeaponConfig.CreateWeapon(), _initialWeaponConfig);
     }
 
     // 武器装備
-    public void EquipWeapon(WeaponBase weapon)
+    public void EquipWeapon(WeaponBase weapon, WeaponConfig sourceConfig = null)
     {
         EquippedWeapon = weapon;
+        EquippedWeaponConfig = sourceConfig;
+        RebuildCombatSkills();
     }
 
     // 武器解除
     public void UnEquipWeapon()
     {
         EquippedWeapon = null;
+        EquippedWeaponConfig = null;
+        RebuildCombatSkills();
+    }
+
+    public void SetLearnedSkillIds(IEnumerable<SkillId> skillIds)
+    {
+        _learnedSkillIds.Clear();
+        if (skillIds == null)
+        {
+            RebuildCombatSkills();
+            return;
+        }
+
+        foreach (SkillId skillId in skillIds)
+        {
+            if (skillId == SkillId.None) continue;
+            _learnedSkillIds.Add(skillId);
+        }
+
+        RebuildCombatSkills();
+    }
+
+    public void RebuildCombatSkills()
+    {
+        _availableCombatSkills.Clear();
+
+        WeaponBase weapon = EquippedWeapon;
+        if (weapon == null || weapon.Kind == WeaponKind.Unarmed)
+        {
+            return;
+        }
+
+        CombatSkillCatalog catalog = ResolveSkillCatalog();
+        if (catalog == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<SkillBase> builtSkills = CombatSkillLoadoutBuilder.Build(
+            catalog,
+            weapon.Kind,
+            _learnedSkillIds,
+            weapon.GrantedSkillIds,
+            _unlockAllCatalogSkillsForKindWhenLearnedEmpty);
+
+        for (int i = 0; i < builtSkills.Count; i++)
+        {
+            SkillBase skill = builtSkills[i];
+            if (skill != null)
+            {
+                _availableCombatSkills.Add(skill);
+            }
+        }
+    }
+
+    private CombatSkillCatalog ResolveSkillCatalog()
+    {
+        if (_skillCatalogOverride != null)
+        {
+            return _skillCatalogOverride;
+        }
+
+        CombatSceneContext context = CombatSceneContext.Instance;
+        if (context != null && context.SkillCatalog != null)
+        {
+            return context.SkillCatalog;
+        }
+
+        return CombatSkillCatalog.CreateDefaultRuntimeCatalog();
     }
 
     // バトル開始時の初期化処理
     public void InitializeOnBattleStart()
     {
         ApplyInitialWeaponFromConfig();
+        RebuildCombatSkills();
         _vision ??= GetComponent<CombatVision>();
         _vision?.Initialize();
     }

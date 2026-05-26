@@ -7,12 +7,14 @@ public abstract class PersonalityBase : MonoBehaviour
 {
     [SerializeField, Min(0.02f)] private float _decisionInterval = 0.2f;
     [SerializeField, Min(0.02f)] private float _moveCommandInterval = 0.5f;
+    [SerializeField, Min(0.02f)] private float _skillCommandInterval = 0.5f;
 
     private Character _owner;
     private CombatCharacterBody _body;
     private CombatAiContextCollector _contextCollector;
     private float _nextDecisionTime;
     private float _nextMoveCommandTime;
+    private float _nextSkillCommandTime;
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
     public bool HasPlannedOnce { get; private set; }
@@ -40,6 +42,7 @@ public abstract class PersonalityBase : MonoBehaviour
         LastPlan = DecidePlan();
         HasPlannedOnce = true;
         ExecuteMove(LastPlan.MoveTarget);
+        ExecuteSkill(LastPlan);
     }
 
     public abstract CombatAiPlan DecidePlan();
@@ -63,6 +66,42 @@ public abstract class PersonalityBase : MonoBehaviour
     {
         Character owner = Owner;
         return owner != null && owner.EquippedWeapon != null ? owner.EquippedWeapon : WeaponBase.Unarmed;
+    }
+
+    protected IReadOnlyList<SkillBase> GetAvailableCombatSkills()
+    {
+        Character owner = Owner;
+        if (owner == null) return System.Array.Empty<SkillBase>();
+
+        return owner.AvailableCombatSkills;
+    }
+
+    protected bool IsValidSkillTarget(SkillBase skill, Character target)
+    {
+        Character owner = Owner;
+        if (skill == null || target == null || target.Health == null || owner == null) return false;
+
+        if (skill.TargetKind == SkillTargetKind.Ally ||
+            skill.TargetKind == SkillTargetKind.AllyOrSelf)
+        {
+            if (target == owner) return target.Health.CanAct;
+            return target.Team == owner.Team && target.Health.CanAct;
+        }
+
+        if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
+
+        float distance = Vector3.Distance(owner.transform.position, target.transform.position);
+        return distance <= skill.MaxRange;
+    }
+
+    protected bool CanExecuteSkill(SkillBase skill, Character target)
+    {
+        Character owner = Owner;
+        if (owner == null || owner.Health == null || !owner.Health.CanAct) return false;
+        if (skill == null || target == null) return false;
+        if (owner.SkillCooldowns != null && !owner.SkillCooldowns.IsReady(skill)) return false;
+
+        return IsValidSkillTarget(skill, target);
     }
 
     protected CombatAiContext CollectContext()
@@ -96,6 +135,18 @@ public abstract class PersonalityBase : MonoBehaviour
 
         _nextMoveCommandTime = Time.time + _moveCommandInterval;
         TryMoveTo(target.Destination);
+    }
+
+    private void ExecuteSkill(CombatAiPlan plan)
+    {
+        if (plan.Skill == null || plan.SkillTarget == null) return;
+        if (Time.time < _nextSkillCommandTime) return;
+        if (!CanExecuteSkill(plan.Skill, plan.SkillTarget)) return;
+
+        Character owner = Owner;
+        plan.Skill.Execute(owner, plan.SkillTarget);
+        owner.SkillCooldowns?.StartCooldown(plan.Skill);
+        _nextSkillCommandTime = Time.time + _skillCommandInterval;
     }
 
     private void ResolveComponents()

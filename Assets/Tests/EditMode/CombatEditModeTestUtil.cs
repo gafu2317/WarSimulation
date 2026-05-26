@@ -57,4 +57,44 @@ internal static class CombatEditModeTestUtil
 
         return personality;
     }
+
+    public static CombatSkillCatalog CreateTestSkillCatalog(params SkillDefinition[] definitions)
+    {
+        var catalog = ScriptableObject.CreateInstance<CombatSkillCatalog>();
+        CombatEditModeTestUtil.SetPrivateField(catalog, "_definitions", definitions ?? System.Array.Empty<SkillDefinition>());
+        return catalog;
+    }
+
+    public static SkillDefinition CreateTestSkillDefinition(
+        SkillId skillId,
+        WeaponKind requiredWeaponKind,
+        string displayName = null)
+    {
+        var definition = ScriptableObject.CreateInstance<SkillDefinition>();
+        definition.ConfigureForTests(skillId, requiredWeaponKind, displayName);
+        return definition;
+    }
+
+    public static void WireSkillCatalog(Character character, CombatSkillCatalog catalog)
+    {
+        SetPrivateField(character, "_skillCatalogOverride", catalog);
+        character.RebuildCombatSkills();
+    }
+
+    public static void SetAvailableCombatSkills(Character character, params SkillBase[] skills)
+    {
+        var list = new System.Collections.Generic.List<SkillBase>();
+        if (skills != null)
+        {
+            for (int i = 0; i < skills.Length; i++)
+            {
+                if (skills[i] != null)
+                {
+                    list.Add(skills[i]);
+                }
+            }
+        }
+
+        SetPrivateField(character, "_availableCombatSkills", list);
+    }
 }

@@ -83,8 +83,6 @@ public sealed class CombatSkillCooldownsTests
 
         public override float CooldownSeconds => _cooldownSeconds;
 
-        public override float EvaluateScore(Character self, Character target) => 100f;
-
         public override void Execute(Character self, Character target)
         {
         }
