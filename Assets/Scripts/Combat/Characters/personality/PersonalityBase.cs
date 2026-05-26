@@ -10,10 +10,12 @@ public abstract class PersonalityBase : MonoBehaviour
 
     private Character _owner;
     private CombatCharacterBody _body;
+    private CombatAiContextCollector _contextCollector;
     private float _nextDecisionTime;
     private float _nextMoveCommandTime;
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
+    public bool HasPlannedOnce { get; private set; }
 
     protected Character Owner => _owner != null ? _owner : _owner = GetComponent<Character>();
 
@@ -35,6 +37,7 @@ public abstract class PersonalityBase : MonoBehaviour
         ResolveComponents();
 
         LastPlan = DecidePlan();
+        HasPlannedOnce = true;
         ExecuteMove(LastPlan.MoveTarget);
     }
 
@@ -61,6 +64,30 @@ public abstract class PersonalityBase : MonoBehaviour
         return owner != null && owner.EquippedWeapon != null ? owner.EquippedWeapon : WeaponBase.Unarmed;
     }
 
+    protected CombatAiContext CollectContext()
+    {
+        ResolveComponents();
+        return _contextCollector != null
+            ? _contextCollector.Collect(Owner)
+            : new CombatAiContext(
+                Owner,
+                System.Array.Empty<Character>(),
+                System.Array.Empty<Character>(),
+                System.Array.Empty<Character>(),
+                System.Array.Empty<CombatCharacterIntel>(),
+                System.Array.Empty<CombatCharacterIntel>(),
+                default,
+                Vector3.zero,
+                false,
+                default,
+                false,
+                default,
+                System.Array.Empty<Vector3>(),
+                System.Array.Empty<Vector3>(),
+                System.Array.Empty<Vector3>(),
+                System.Array.Empty<Vector3>());
+    }
+
     private void ExecuteMove(CombatMoveTarget target)
     {
         if (!target.HasDestination) return;
@@ -74,5 +101,10 @@ public abstract class PersonalityBase : MonoBehaviour
     {
         _owner ??= GetComponent<Character>();
         _body ??= GetComponent<CombatCharacterBody>();
+        _contextCollector ??= GetComponent<CombatAiContextCollector>();
+        if (_contextCollector == null)
+        {
+            _contextCollector = gameObject.AddComponent<CombatAiContextCollector>();
+        }
     }
 }

@@ -209,8 +209,15 @@ public sealed class CombatTeamVisionTests
             system.AssignTeamsFromLists();
 
             CombatVision vision = ally.Vision;
+            CombatEditModeTestUtil.WireVision(vision, system);
             vision.Initialize();
             vision.UpdateVision();
+            Assert.That(vision.HasMemoryOf(enemy), Is.True);
+
+            enemyGo.transform.position = new Vector3(0f, 0f, -5f);
+            Physics.SyncTransforms();
+            vision.UpdateVision();
+            Assert.That(vision.IsVisible(enemy), Is.False);
             Assert.That(vision.HasMemoryOf(enemy), Is.True);
 
             SetVisionLastSeenTime(vision, enemy, Time.time - 15f);

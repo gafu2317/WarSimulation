@@ -135,6 +135,23 @@ public class CombatMapSystem : MonoBehaviour
         return info;
     }
 
+    /// <summary>
+    /// マップ原点ローカル XZ（<see cref="MapData"/> / <see cref="HeightMap"/> 座標系）を地表のワールド座標へ変換する。
+    /// </summary>
+    public Vector3 MapLocalToSurfaceWorldPosition(Vector3 mapLocalPosition)
+    {
+        MapData map = CurrentMap;
+        float height = 0f;
+        if (map != null)
+        {
+            height = map.Height.SampleAt(new Vector3(mapLocalPosition.x, 0f, mapLocalPosition.z));
+        }
+
+        mapLocalPosition.y = height;
+        Transform origin = MapOrigin;
+        return origin != null ? origin.TransformPoint(mapLocalPosition) : mapLocalPosition;
+    }
+
     public bool TryGetTerrainInfo(Vector3 worldPosition, out TerrainInfo info)
     {
         info = default;

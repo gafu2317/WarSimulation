@@ -135,6 +135,32 @@ public sealed class CombatMapSystemTests
         }
     }
 
+    [Test]
+    public void MapLocalToSurfaceWorldPosition_UsesHeightMapAtMapLocalXZ()
+    {
+        GameObject go = new GameObject("CombatMapSystem");
+        try
+        {
+            CombatMapSystem system = go.AddComponent<CombatMapSystem>();
+            var height = new HeightMap(12, 12, 1f);
+            var ground = new GroundStateGrid(12, 12, 1f);
+            height.SetHeight(6, 5, 4f);
+            height.SetHeight(9, 9, 2f);
+            system.SetCurrentMap(new MapData(height, ground, seed: 1));
+
+            Assert.That(
+                system.MapLocalToSurfaceWorldPosition(new Vector3(6f, 0f, 5f)),
+                Is.EqualTo(new Vector3(6f, 4f, 5f)));
+            Assert.That(
+                system.MapLocalToSurfaceWorldPosition(new Vector3(9f, 0f, 9f)),
+                Is.EqualTo(new Vector3(9f, 2f, 9f)));
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+        }
+    }
+
     private static MapData CreateTestMap()
     {
         var height = new HeightMap(4, 4, 1f);

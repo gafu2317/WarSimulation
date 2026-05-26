@@ -163,6 +163,7 @@ public sealed class CombatHealthAttackTests
             mapSystem.SetCurrentMap(map);
 
             CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            CombatEditModeTestUtil.WireMapSystem(system, mapSystem);
             Character ally = allyGo.AddComponent<Character>();
             Character enemy = enemyGo.AddComponent<Character>();
             allyGo.transform.position = new Vector3(8f, 0f, 8f);

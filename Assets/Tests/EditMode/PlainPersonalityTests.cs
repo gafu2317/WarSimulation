@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using WarSimulation.Combat.Map;
@@ -120,7 +119,7 @@ public sealed class PlainPersonalityTests
         }
 
         fixture.MapSystem.SetCurrentMap(fixture.Map);
-        SetPrivateField(fixture.System, "_mapSystem", fixture.MapSystem);
+        CombatEditModeTestUtil.WireMapSystem(fixture.System, fixture.MapSystem);
 
         fixture.Owner = fixture.OwnerGo.AddComponent<Character>();
         fixture.Owner.SetTeam(CombatTeam.Ally);
@@ -128,15 +127,18 @@ public sealed class PlainPersonalityTests
         fixture.Owner.EquipWeapon(new Sword());
         fixture.System.AllyCharacters.Add(fixture.Owner);
 
-        fixture.Personality = fixture.OwnerGo.GetComponent<PlainPersonality>();
         if (useTrackingPersonality)
         {
-            Object.DestroyImmediate(fixture.Personality);
             fixture.TrackingPersonality = fixture.OwnerGo.AddComponent<TrackingPlainPersonality>();
             fixture.Personality = fixture.TrackingPersonality;
         }
+        else
+        {
+            fixture.Personality = CombatEditModeTestUtil.EnsurePlainPersonality(fixture.OwnerGo);
+        }
 
-        BindPersonalityReferences(fixture.Personality, fixture.System, fixture.MapSystem);
+        CombatEditModeTestUtil.WirePersonality(fixture.Personality, fixture.System, fixture.MapSystem);
+        CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
         fixture.System.AssignTeamsFromLists();
         fixture.Owner.Vision.Initialize();
 
@@ -152,21 +154,7 @@ public sealed class PlainPersonalityTests
         fixture.EnemyGo.transform.position = position;
         fixture.System.EnemyCharacters.Add(fixture.Enemy);
         fixture.System.AssignTeamsFromLists();
-        SetPrivateField(fixture.Owner.Vision, "_characterSystem", fixture.System);
-    }
-
-    private static void BindPersonalityReferences(PlainPersonality personality, CombatCharacterSystem system, CombatMapSystem mapSystem)
-    {
-        SetPrivateField(personality, "_characterSystem", system);
-        SetPrivateField(personality, "_mapSystem", mapSystem);
-    }
-
-    private static void SetPrivateField(object target, string fieldName, object value)
-    {
-        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-        field ??= target.GetType().BaseType?.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(field, Is.Not.Null, $"Field {fieldName} was not found on {target.GetType().Name}.");
-        field.SetValue(target, value);
+        CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
     }
 
     private sealed class PlainFixture
@@ -185,10 +173,10 @@ public sealed class PlainPersonalityTests
 
         public void Destroy()
         {
-            Object.DestroyImmediate(EnemyGo);
-            Object.DestroyImmediate(OwnerGo);
-            Object.DestroyImmediate(MapGo);
-            Object.DestroyImmediate(SystemGo);
+            if (EnemyGo != null) Object.DestroyImmediate(EnemyGo);
+            if (OwnerGo != null) Object.DestroyImmediate(OwnerGo);
+            if (MapGo != null) Object.DestroyImmediate(MapGo);
+            if (SystemGo != null) Object.DestroyImmediate(SystemGo);
         }
     }
 

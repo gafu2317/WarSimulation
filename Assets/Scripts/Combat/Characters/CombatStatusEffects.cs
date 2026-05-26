@@ -1,6 +1,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public readonly struct CombatStatusEffectSnapshot
+{
+    public string Key { get; }
+    public CombatStatusEffects.StatKind Stat { get; }
+    public float Multiplier { get; }
+    public float RemainingSeconds { get; }
+    public bool IsBuff => Multiplier > 1f;
+    public bool IsDebuff => Multiplier < 1f;
+
+    public CombatStatusEffectSnapshot(
+        string key,
+        CombatStatusEffects.StatKind stat,
+        float multiplier,
+        float remainingSeconds)
+    {
+        Key = key;
+        Stat = stat;
+        Multiplier = multiplier;
+        RemainingSeconds = remainingSeconds;
+    }
+}
+
 [RequireComponent(typeof(Character))]
 public sealed class CombatStatusEffects : MonoBehaviour
 {
@@ -23,6 +45,7 @@ public sealed class CombatStatusEffects : MonoBehaviour
     private const float MinMultiplier = 0.1f;
 
     private readonly List<ActiveEffect> _effects = new();
+    private readonly List<CombatStatusEffectSnapshot> _effectSnapshots = new();
 
     public float GetMultiplier(StatKind stat)
     {
@@ -68,6 +91,25 @@ public sealed class CombatStatusEffects : MonoBehaviour
         }
 
         return 0f;
+    }
+
+    public IReadOnlyList<CombatStatusEffectSnapshot> GetActiveEffectSnapshots()
+    {
+        RemoveExpiredEffects();
+
+        _effectSnapshots.Clear();
+        float now = Time.time;
+        for (int i = 0; i < _effects.Count; i++)
+        {
+            ActiveEffect effect = _effects[i];
+            _effectSnapshots.Add(new CombatStatusEffectSnapshot(
+                effect.Key,
+                effect.Stat,
+                effect.Multiplier,
+                Mathf.Max(0f, effect.ExpiresAt - now)));
+        }
+
+        return _effectSnapshots;
     }
 
     public void Apply(StatKind stat, float multiplier, float durationSeconds, string key = null)
