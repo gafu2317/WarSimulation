@@ -103,6 +103,7 @@ public class CombatMapSystem : MonoBehaviour
     public void SetCurrentMap(MapData map)
     {
         CurrentMap = map;
+        InitializeMagicStoneSystem(map);
     }
 
     public MapData GenerateAndSetCurrentMap()
@@ -127,6 +128,17 @@ public class CombatMapSystem : MonoBehaviour
         }
 
         return map;
+    }
+
+    private void InitializeMagicStoneSystem(MapData map)
+    {
+        CombatMagicStoneSystem stoneSystem = ResolveMagicStoneSystem();
+        stoneSystem?.Initialize(map);
+    }
+
+    private CombatMagicStoneSystem ResolveMagicStoneSystem()
+    {
+        return CombatMagicStoneSystemResolver.Resolve();
     }
 
     public TerrainInfo GetTerrainInfo(Vector3 worldPosition)

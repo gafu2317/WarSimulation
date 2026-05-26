@@ -101,7 +101,7 @@ public sealed class WeaponConfigTests
             Assert.That(character.EquippedWeapon, Is.InstanceOf<Grimoire>());
             Assert.That(character.EquippedWeapon.SeekHighGroundBias, Is.EqualTo(50f).Within(0.001f));
             Assert.That(character.EquippedWeapon.HideInForestBias, Is.EqualTo(70f).Within(0.001f));
-            Assert.That(character.Attack.CurrentWeapon.Kind, Is.EqualTo(WeaponKind.Grimoire));
+            Assert.That(character.EquippedWeapon.Kind, Is.EqualTo(WeaponKind.Grimoire));
         }
         finally
         {
@@ -120,7 +120,6 @@ public sealed class WeaponConfigTests
             character.ApplyInitialWeaponFromConfig();
 
             Assert.That(character.EquippedWeapon, Is.Null);
-            Assert.That(character.Attack.CurrentWeapon, Is.SameAs(WeaponBase.Unarmed));
         }
         finally
         {

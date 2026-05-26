@@ -55,6 +55,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
     public bool TrySetDestination(Vector3 worldPosition)
     {
+        if (!CombatBattleFlow.IsRunning) return false;
         if (_agent == null || !_agent.isOnNavMesh) return false;
 
         if (!ResolveNavigationSystem().TryResolveDestination(

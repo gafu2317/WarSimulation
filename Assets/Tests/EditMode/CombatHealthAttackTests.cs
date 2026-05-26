@@ -88,66 +88,6 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
-    public void Attack_AppliesWeaponDamageAndCooldown()
-    {
-        GameObject attackerGo = new GameObject("Attacker");
-        GameObject targetGo = new GameObject("Target");
-        try
-        {
-            Character attacker = attackerGo.AddComponent<Character>();
-            Character target = targetGo.AddComponent<Character>();
-            attacker.SetTeam(CombatTeam.Ally);
-            target.SetTeam(CombatTeam.Enemy);
-            attacker.EquipWeapon(new Sword());
-            attackerGo.transform.position = Vector3.zero;
-            targetGo.transform.position = new Vector3(0f, 0f, 1.5f);
-            target.Health.Initialize(maxHP: 30);
-
-            bool attacked = attacker.Attack.TryAttack(target);
-
-            Assert.That(attacked, Is.True);
-            Assert.That(target.Health.HP, Is.EqualTo(18));
-            Assert.That(attacker.Attack.TryAttack(target), Is.False);
-        }
-        finally
-        {
-            Object.DestroyImmediate(attackerGo);
-            Object.DestroyImmediate(targetGo);
-        }
-    }
-
-    [Test]
-    public void Attack_RejectsSameTeamRangeAndRetreatingTargets()
-    {
-        GameObject attackerGo = new GameObject("Attacker");
-        GameObject targetGo = new GameObject("Target");
-        try
-        {
-            Character attacker = attackerGo.AddComponent<Character>();
-            Character target = targetGo.AddComponent<Character>();
-            attacker.SetTeam(CombatTeam.Ally);
-            target.SetTeam(CombatTeam.Ally);
-            attacker.EquipWeapon(new Sword());
-            target.Health.Initialize(maxHP: 30);
-
-            Assert.That(attacker.Attack.CanAttack(target), Is.False);
-
-            target.SetTeam(CombatTeam.Enemy);
-            targetGo.transform.position = new Vector3(0f, 0f, 10f);
-            Assert.That(attacker.Attack.CanAttack(target), Is.False);
-
-            targetGo.transform.position = new Vector3(0f, 0f, 1f);
-            target.Health.TakeDamage(30);
-            Assert.That(attacker.Attack.CanAttack(target), Is.False);
-        }
-        finally
-        {
-            Object.DestroyImmediate(attackerGo);
-            Object.DestroyImmediate(targetGo);
-        }
-    }
-
-    [Test]
     public void CharacterSystem_ResolvesHomePositionFromTeamMainStoneOrInitialPosition()
     {
         GameObject mapGo = new GameObject("CombatMapSystem");

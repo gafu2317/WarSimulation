@@ -26,6 +26,7 @@ public abstract class PersonalityBase : MonoBehaviour
 
     protected virtual void Update()
     {
+        if (!CombatBattleFlow.IsRunning) return;
         if (Time.time < _nextDecisionTime) return;
 
         _nextDecisionTime = Time.time + _decisionInterval;

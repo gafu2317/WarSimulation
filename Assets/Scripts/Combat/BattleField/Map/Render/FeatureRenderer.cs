@@ -119,16 +119,16 @@ namespace WarSimulation.Combat.Map
                         SpawnRock(root.transform, f, rockMat, cubeMesh, rockIdx++);
                         break;
                     case FeatureType.OwnMainStone:
-                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnMain", isMain: true, stoneIdx++);
+                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnMain", isMain: true, stoneIdx++, featureIndex: i);
                         break;
                     case FeatureType.OwnSubStone:
-                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnSub", isMain: false, stoneIdx++);
+                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnSub", isMain: false, stoneIdx++, featureIndex: i);
                         break;
                     case FeatureType.EnemyMainStone:
-                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemyMain", isMain: true, stoneIdx++);
+                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemyMain", isMain: true, stoneIdx++, featureIndex: i);
                         break;
                     case FeatureType.EnemySubStone:
-                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemySub", isMain: false, stoneIdx++);
+                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemySub", isMain: false, stoneIdx++, featureIndex: i);
                         break;
                 }
             }
@@ -257,7 +257,7 @@ namespace WarSimulation.Combat.Map
         /// </summary>
         private void SpawnMagicStone(
             Transform parent, PlacedFeature f, Material mat, Mesh cube,
-            string label, bool isMain, int idx)
+            string label, bool isMain, int idx, int featureIndex)
         {
             float baseSize = isMain ? _mainStoneBaseSize : _subStoneBaseSize;
             float height = isMain ? _mainStoneHeight : _subStoneHeight;
@@ -280,6 +280,9 @@ namespace WarSimulation.Combat.Map
             stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
             stone.GetComponent<BoxCollider>().isTrigger = false;
             IgnoreFromNavMeshBuild(stone);
+
+            MagicStone instance = stone.AddComponent<MagicStone>();
+            instance.Setup(featureIndex, f.Type, isMain, height);
         }
 
         private static void IgnoreFromNavMeshBuild(GameObject go)

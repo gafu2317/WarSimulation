@@ -41,6 +41,11 @@ internal static class CombatEditModeTestUtil
         SetPrivateField(personality, "_mapSystem", mapSystem);
     }
 
+    public static void WireBattleFlow(CombatBattleFlow flow, CombatMagicStoneSystem stoneSystem)
+    {
+        flow.SetMagicStoneSystem(stoneSystem);
+    }
+
     public static PlainPersonality EnsurePlainPersonality(GameObject go)
     {
         Assert.That(go, Is.Not.Null);

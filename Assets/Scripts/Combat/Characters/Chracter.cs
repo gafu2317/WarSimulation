@@ -5,7 +5,6 @@ using UnityEngine.AI;
 [RequireComponent(typeof(CombatCharacterBody))]
 [RequireComponent(typeof(CombatVision))]
 [RequireComponent(typeof(CombatHealth))]
-[RequireComponent(typeof(CombatAttack))]
 [RequireComponent(typeof(CombatStatusEffects))]
 [RequireComponent(typeof(CombatSkillCooldowns))]
 public class Character : MonoBehaviour
@@ -18,7 +17,6 @@ public class Character : MonoBehaviour
     public CombatTeam Team => _team;
     public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
     public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
-    public CombatAttack Attack => _attack != null ? _attack : GetComponent<CombatAttack>();
     public CombatStatusEffects StatusEffects => ResolveStatusEffects();
     public CombatSkillCooldowns SkillCooldowns => ResolveSkillCooldowns();
 
@@ -47,7 +45,6 @@ public class Character : MonoBehaviour
     private CombatCharacterBody _body;
     private CombatVision _vision;
     private CombatHealth _health;
-    private CombatAttack _attack;
     private CombatStatusEffects _statusEffects;
     private CombatSkillCooldowns _skillCooldowns;
     private PersonalityBase _personality;
@@ -73,12 +70,6 @@ public class Character : MonoBehaviour
             _health = gameObject.AddComponent<CombatHealth>();
         }
 
-        _attack = GetComponent<CombatAttack>();
-        if (_attack == null)
-        {
-            _attack = gameObject.AddComponent<CombatAttack>();
-        }
-
         _statusEffects = GetComponent<CombatStatusEffects>();
         if (_statusEffects == null)
         {
@@ -94,6 +85,26 @@ public class Character : MonoBehaviour
         ResolvePersonality();
 
         ApplyInitialWeaponFromConfig();
+    }
+
+    private void Start()
+    {
+        EnsureHealthBar();
+    }
+
+    private void EnsureHealthBar()
+    {
+        CombatWorldHealthBar bar = GetComponent<CombatWorldHealthBar>();
+        if (bar == null)
+        {
+            bar = gameObject.AddComponent<CombatWorldHealthBar>();
+        }
+
+        _health ??= GetComponent<CombatHealth>();
+        if (_health != null)
+        {
+            bar.Configure(_health);
+        }
     }
 
     private CombatStatusEffects ResolveStatusEffects()

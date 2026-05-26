@@ -104,39 +104,6 @@ public sealed class CombatStatusEffectsTests
         }
     }
 
-    [Test]
-    public void CombatAttack_DamageIsReducedWhenAttackerHasStrDebuff()
-    {
-        GameObject attackerGo = new GameObject("Attacker");
-        try
-        {
-            Character attacker = attackerGo.AddComponent<Character>();
-            attacker.EquipWeapon(new Sword());
-            SetCharacterStr(attacker, 20);
-
-            int baseDamage = attacker.Attack.CalculateDamage(attacker.EquippedWeapon);
-
-            attacker.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 0.7f, 5f);
-            int debuffedDamage = attacker.Attack.CalculateDamage(attacker.EquippedWeapon);
-
-            Assert.That(baseDamage, Is.EqualTo(22));
-            Assert.That(debuffedDamage, Is.EqualTo(19));
-            Assert.That(debuffedDamage, Is.LessThan(baseDamage));
-        }
-        finally
-        {
-            Object.DestroyImmediate(attackerGo);
-        }
-    }
-
-    private static void SetCharacterStr(Character character, int str)
-    {
-        PropertyInfo property = typeof(Character).GetProperty(
-            nameof(Character.STR),
-            BindingFlags.Public | BindingFlags.Instance);
-        property?.SetValue(character, str);
-    }
-
     private static void ExpireAllEffects(CombatStatusEffects statusEffects)
     {
         FieldInfo effectsField = typeof(CombatStatusEffects).GetField(

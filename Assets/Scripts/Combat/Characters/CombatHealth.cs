@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(Character))]
 [RequireComponent(typeof(CombatCharacterBody))]
-public sealed class CombatHealth : MonoBehaviour
+public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 {
     [SerializeField, Min(1)] private int _maxHP = 1;
     [SerializeField, Min(0)] private int _hp = 1;
@@ -16,10 +17,13 @@ public sealed class CombatHealth : MonoBehaviour
 
     public int MaxHP => _maxHP;
     public int HP => _hp;
+    public bool IsAlive => _hp > 0;
     public LifeState LifeState { get; private set; } = LifeState.Active;
     public bool IsTargetable => LifeState == LifeState.Active && _hp > 0;
     public bool CanAct => LifeState == LifeState.Active && _hp > 0;
     public bool HasRetreatDestination => _hasRetreatDestination;
+
+    public event Action HealthChanged;
 
     private void Awake()
     {
@@ -38,6 +42,7 @@ public sealed class CombatHealth : MonoBehaviour
         _hp = Mathf.Clamp(currentHP < 0 ? _maxHP : currentHP, 0, _maxHP);
         LifeState = _hp > 0 ? LifeState.Active : LifeState.Retreating;
         _hasRetreatDestination = false;
+        NotifyHealthChanged();
     }
 
     public int TakeDamage(int amount, Character attacker = null)
@@ -53,6 +58,7 @@ public sealed class CombatHealth : MonoBehaviour
             EnterRetreat();
         }
 
+        NotifyHealthChanged();
         return appliedDamage;
     }
 
@@ -62,7 +68,9 @@ public sealed class CombatHealth : MonoBehaviour
 
         int previousHP = _hp;
         _hp = Mathf.Min(_maxHP, _hp + amount);
-        return _hp - previousHP;
+        int healed = _hp - previousHP;
+        if (healed > 0) NotifyHealthChanged();
+        return healed;
     }
 
     public void RestoreFull()
@@ -70,6 +78,7 @@ public sealed class CombatHealth : MonoBehaviour
         _hp = _maxHP;
         LifeState = LifeState.Active;
         _hasRetreatDestination = false;
+        NotifyHealthChanged();
     }
 
     public void EnterRetreat()
@@ -141,5 +150,10 @@ public sealed class CombatHealth : MonoBehaviour
 
         _characterSystem = FindAnyObjectByType<CombatCharacterSystem>();
         return _characterSystem;
+    }
+
+    private void NotifyHealthChanged()
+    {
+        HealthChanged?.Invoke();
     }
 }
