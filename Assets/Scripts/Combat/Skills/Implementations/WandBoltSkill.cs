@@ -25,8 +25,9 @@ public sealed class WandBoltSkill : SkillBase
 
     public override float MaxRange => _maxRange;
 
-    public override void Execute(Character self, Character target)
+    public override void Execute(Character self, SkillExecutionContext context)
     {
+        Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
 
@@ -34,6 +35,14 @@ public sealed class WandBoltSkill : SkillBase
         if (distance > _maxRange) return;
 
         int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
+        damage = ComputeDistanceScaledAmount(
+            damage,
+            distance,
+            _maxRange,
+            nearMultiplier: 0.8f,
+            farMultiplier: 1.5f);
+        damage = ComputeStealthAwareDamage(self, target, damage);
         target.Health.TakeDamage(damage, self);
+        BreakStealthOnUse(self);
     }
 }

@@ -46,6 +46,7 @@ public sealed class CombatAiContextCollectorTests
             CombatCharacterIntel enemyIntel = FindIntel(context.EnemyIntel, fixture.Enemy);
             Assert.That(enemyIntel.HasDirectSight, Is.True);
             Assert.That(enemyIntel.HasMemory, Is.True);
+            Assert.That(enemyIntel.RecognizesOwner, Is.False);
             Assert.That(enemyIntel.WeaponKind, Is.EqualTo(WeaponKind.Sword));
             Assert.That(enemyIntel.WeaponRange, Is.EqualTo(7f).Within(0.001f));
             Assert.That(enemyIntel.HP, Is.EqualTo(30));
@@ -60,6 +61,7 @@ public sealed class CombatAiContextCollectorTests
             Assert.That(rememberedIntel.HasMemory, Is.True);
             Assert.That(rememberedIntel.HasLastKnownPosition, Is.True);
             Assert.That(rememberedIntel.LastKnownPosition, Is.EqualTo(new Vector3(4f, 0f, 7f)));
+            Assert.That(rememberedIntel.RecognizesOwner, Is.False);
             Assert.That(rememberedIntel.HasObjective, Is.False);
 
             CombatCharacterIntel allyIntel = FindIntel(context.AllyIntel, fixture.Owner);

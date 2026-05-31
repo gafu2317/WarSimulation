@@ -35,8 +35,9 @@ public sealed class StatDebuffSkill : SkillBase
 
     public static string GetEffectKey(CombatStatusEffects.StatKind stat) => $"StatDebuff_{stat}";
 
-    public override void Execute(Character self, Character target)
+    public override void Execute(Character self, SkillExecutionContext context)
     {
+        Character target = context.PrimaryTarget;
         if (self == null || target == null) return;
 
         float distance = Vector3.Distance(self.transform.position, target.transform.position);

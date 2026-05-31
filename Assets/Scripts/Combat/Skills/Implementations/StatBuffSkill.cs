@@ -30,9 +30,10 @@ public sealed class StatBuffSkill : SkillBase
 
     public static string GetEffectKey(CombatStatusEffects.StatKind stat) => $"StatBuff_{stat}";
 
-    public override void Execute(Character self, Character target)
+    public override void Execute(Character self, SkillExecutionContext context)
     {
-        if (target == null) return;
+        Character target = context.PrimaryTarget;
+        if (target == null || target.Health == null || !target.Health.IsAlive) return;
 
         target.StatusEffects?.Apply(
             _stat,

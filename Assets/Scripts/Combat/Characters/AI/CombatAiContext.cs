@@ -68,6 +68,7 @@ public readonly struct CombatCharacterIntel
     public bool HasLastKnownPosition { get; }
     public Vector3 LastKnownPosition { get; }
     public float MemoryAgeSeconds { get; }
+    public bool RecognizesOwner { get; }
     public int HP { get; }
     public int MaxHP { get; }
     public bool CanAct { get; }
@@ -86,6 +87,7 @@ public readonly struct CombatCharacterIntel
         bool hasLastKnownPosition,
         Vector3 lastKnownPosition,
         float memoryAgeSeconds,
+        bool recognizesOwner,
         int hp,
         int maxHp,
         bool canAct,
@@ -103,6 +105,7 @@ public readonly struct CombatCharacterIntel
         HasLastKnownPosition = hasLastKnownPosition;
         LastKnownPosition = lastKnownPosition;
         MemoryAgeSeconds = memoryAgeSeconds;
+        RecognizesOwner = recognizesOwner;
         HP = hp;
         MaxHP = maxHp;
         CanAct = canAct;

@@ -5,6 +5,19 @@ using UnityEngine;
 [RequireComponent(typeof(CombatCharacterBody))]
 public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 {
+    public sealed class IncomingDamageContext
+    {
+        public IncomingDamageContext(int amount, Character attacker)
+        {
+            Amount = amount;
+            Attacker = attacker;
+        }
+
+        public int Amount { get; set; }
+        public Character Attacker { get; }
+        public bool IsHandled { get; set; }
+    }
+
     [SerializeField, Min(1)] private int _maxHP = 1;
     [SerializeField, Min(0)] private int _hp = 1;
     [SerializeField, Min(0.1f)] private float _retreatArrivalDistance = 1.25f;
@@ -20,10 +33,17 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     public bool IsAlive => _hp > 0;
     public LifeState LifeState { get; private set; } = LifeState.Active;
     public bool IsTargetable => LifeState == LifeState.Active && _hp > 0;
-    public bool CanAct => LifeState == LifeState.Active && _hp > 0;
+    public bool CanAct =>
+        LifeState == LifeState.Active &&
+        _hp > 0 &&
+        (ResolveOwner() == null ||
+            ResolveOwner().StatusEffects == null ||
+            !ResolveOwner().StatusEffects.HasActiveEffectImmediate(CombatStatusEffects.EffectType.Bind));
     public bool HasRetreatDestination => _hasRetreatDestination;
 
     public event Action HealthChanged;
+    public event Action<IncomingDamageContext> IncomingDamage;
+    public event Action<int, Character> Damaged;
 
     private void Awake()
     {
@@ -49,6 +69,21 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     {
         if (amount <= 0 || !IsTargetable) return 0;
 
+        var incomingDamage = new IncomingDamageContext(amount, attacker);
+        IncomingDamage?.Invoke(incomingDamage);
+        if (incomingDamage.IsHandled) return 0;
+
+        amount = incomingDamage.Amount;
+        if (amount <= 0 || !IsTargetable) return 0;
+
+        Character owner = ResolveOwner();
+        if (owner != null &&
+            owner.StatusEffects != null &&
+            owner.StatusEffects.HasActiveEffectImmediate(CombatStatusEffects.EffectType.Invulnerable))
+        {
+            return 0;
+        }
+
         int previousHP = _hp;
         _hp = Mathf.Max(0, _hp - amount);
         int appliedDamage = previousHP - _hp;
@@ -56,6 +91,11 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         if (_hp == 0)
         {
             EnterRetreat();
+        }
+
+        if (appliedDamage > 0)
+        {
+            Damaged?.Invoke(appliedDamage, attacker);
         }
 
         NotifyHealthChanged();
@@ -155,5 +195,11 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     private void NotifyHealthChanged()
     {
         HealthChanged?.Invoke();
+    }
+
+    private Character ResolveOwner()
+    {
+        _owner ??= GetComponent<Character>();
+        return _owner;
     }
 }

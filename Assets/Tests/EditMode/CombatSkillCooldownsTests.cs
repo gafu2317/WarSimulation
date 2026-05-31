@@ -83,7 +83,7 @@ public sealed class CombatSkillCooldownsTests
 
         public override float CooldownSeconds => _cooldownSeconds;
 
-        public override void Execute(Character self, Character target)
+        public override void Execute(Character self, SkillExecutionContext context)
         {
         }
     }

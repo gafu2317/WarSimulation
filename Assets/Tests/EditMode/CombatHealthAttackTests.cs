@@ -53,6 +53,29 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
+    public void Health_InvulnerablePreventsDamage()
+    {
+        GameObject characterGo = new GameObject("Character");
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            CombatHealth health = character.Health;
+            health.Initialize(maxHP: 20);
+            character.StatusEffects.ApplyInvulnerable(5f);
+
+            int damage = health.TakeDamage(7);
+
+            Assert.That(damage, Is.EqualTo(0));
+            Assert.That(health.HP, Is.EqualTo(20));
+            Assert.That(health.LifeState, Is.EqualTo(LifeState.Active));
+        }
+        finally
+        {
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
     public void Health_DoesNotMarkRetreatDestinationWhenReturnMoveCannotStart()
     {
         GameObject mapGo = new GameObject("CombatMapSystem");
@@ -157,7 +180,7 @@ public sealed class CombatHealthAttackTests
             bibleCharacter.EquipWeapon(new Bible());
             rosaryCharacter.EquipWeapon(new Rosary());
 
-            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(5));
+            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(8));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Smite));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
@@ -168,13 +191,25 @@ public sealed class CombatHealthAttackTests
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_FaiBuff));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_AgiBuff));
-            Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(3));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Invulnerable));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Gotsume));
+            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_CarryRush));
+            Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(6));
             Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_Strike));
             Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_DistantHeal));
             Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_CloseHeal));
+            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_Regeneration));
+            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_HealingArea));
+            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
+                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_SacrificeThunder));
         }
         finally
         {

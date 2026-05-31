@@ -25,8 +25,9 @@ public sealed class GrimoireBoltSkill : SkillBase
 
     public override float MaxRange => _maxRange;
 
-    public override void Execute(Character self, Character target)
+    public override void Execute(Character self, SkillExecutionContext context)
     {
+        Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
 
@@ -34,6 +35,8 @@ public sealed class GrimoireBoltSkill : SkillBase
         if (distance > _maxRange) return;
 
         int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
+        damage = ComputeStealthAwareDamage(self, target, damage);
         target.Health.TakeDamage(damage, self);
+        BreakStealthOnUse(self);
     }
 }

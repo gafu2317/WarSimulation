@@ -1,183 +1,326 @@
-# 戦闘スキル実装メモ
+# 戦闘スキル設計書
 
-`docs/game.md` の「技」設計に対する、現時点のコード実装状況をまとめる。
+`docs/game.md` の「技」設計と、現在のコード実装、および今後の拡張方針をまとめる。
 
-## 設計上の前提
+## 前提
 
-- **通常攻撃という独立概念はない**。設計書の「通常の斬撃」「通常の攻撃」も含め、すべて `SkillBase` として実装する。
-- **戦闘時は武器種（`WeaponKind`）に合う技だけ使える**（双剣・盾・杖・魔導書・聖書・ロザリオ）。
-- **習得**（職業施設レベル）と **武器個体**（性能・専用技）は分離する。国家シミュ側の習得管理は未接続。
+- 通常攻撃も含め、戦闘中の行動はすべて `SkillBase` 系のスキルとして扱う。
+- 戦闘時に使えるスキルは、装備中の `WeaponKind` に一致するものだけとする。
+- スキルの習得管理と、武器が個別に付与するスキルは分離する。
+- 演出はこの設計書の責務に含めない。ここでは判定・効果・AI判断に必要な設計だけを扱う。
 
-## 3層アーキテクチャ
+## 現在の実装範囲
 
-```
+### 基本構造
+
+使える `SkillId` は以下の合成で決まる。
+
+```text
 使える SkillId
   = (キャラ習得済み ∩ RequiredWeaponKind == 装備Kind)
   ∪ (武器付与 ∩ RequiredWeaponKind == 装備Kind)
 
 ↓ CombatSkillFactory
 
-Character.AvailableCombatSkills  ← AI / 実行が参照する唯一のリスト
+Character.AvailableCombatSkills
 ```
+
+現在の主な責務は以下。
 
 | 層 | 役割 | 主な型 |
 |----|------|--------|
 | マスタ | 技ID・必要武器種・将来用施設Lv | `SkillId`, `SkillDefinition`, `CombatSkillCatalog` |
-| キャラ習得 | 国家で解放される技（後日） | `Character._learnedSkillIds` |
-| 武器個体 | 性能 + レア専用技 | `WeaponConfig._grantedSkillIds` → `WeaponBase.GrantedSkillIds` |
+| キャラ習得 | 国家シミュ側の習得スキル | `Character._learnedSkillIds` |
+| 武器個体 | 武器固有で付与されるスキル | `WeaponConfig._grantedSkillIds`, `WeaponBase.GrantedSkillIds` |
+| ランタイム | 実際に使うスキル一覧 | `Character.AvailableCombatSkills` |
 
-### 開発用スタブ
+### 実行フロー
 
-`_learnedSkillIds` が空で、`_unlockAllCatalogSkillsForKindWhenLearnedEmpty == true`（デフォルト）のとき、
-装備中 `WeaponKind` に一致するカタログ内スキルをすべて習得済み扱いにする。
-国家シミュ接続前の開発・確認用。
-
-## 実行フロー
-
-```
+```text
 PersonalityBase.Update()
   └─ Tick()
-       ├─ DecidePlan()     … PlainPersonality が目的・移動を選択（スキルは null）
+       ├─ DecidePlan()
        ├─ ExecuteMove()
-       └─ ExecuteSkill()    … plan.Skill が null なら no-op。非 null なら Execute + StartCooldown
+       └─ ExecuteSkill()
 ```
 
-現状の `PlainPersonality` は **目的に基づく移動のみ**（敵魔石が分かれば向かう、否则索敵移動）。スキル選択は Personality 側の将来実装。`PersonalityBase.ExecuteSkill` とスキル実行基盤（`Execute` / CD / loadout）は温存している。
+- `ExecuteSkill()` は `plan.Skill` と `plan.SkillContext` があるときに実行する。
+- クールダウンは `CombatSkillCooldowns` が管理する。
+- 現在の `PlainPersonality` は移動しか決めず、スキル選択はまだ行わない。
 
-## ファイル配置
+### 実装済みスキル
 
-すべて `Assets/Scripts/Combat/Skills/` 配下に集約する。
+#### 杖
 
-```
-Combat/Skills/
-├── SkillBase.cs
-├── SkillTargetKind.cs
-├── SkillId.cs
-├── SkillDefinition.cs
-├── CombatSkillCatalog.cs
-├── CombatSkillFactory.cs
-├── CombatSkillLoadoutBuilder.cs
-├── IdentifiedSkill.cs
-└── Implementations/          … 各スキルの Execute 実装
-    ├── SwordSlashSkill.cs
-    └── ...
-```
+- `Wand_Bolt`: 単体魔法攻撃
+- `Wand_ArcaneBlast`: 単体高威力魔法攻撃
+- `Wand_AreaBlast`: 指定地点の範囲攻撃
+- `Wand_GodsHand`: 単体超高威力攻撃
 
-### 基盤
+#### 魔導書
 
-| パス | 内容 |
-|------|------|
-| `Assets/Scripts/Combat/Skills/SkillBase.cs` | スキル抽象クラス |
-| `Assets/Scripts/Combat/Skills/SkillTargetKind.cs` | ターゲット種別 |
-| `Assets/Scripts/Combat/Skills/SkillId.cs` | 技ID列挙 |
-| `Assets/Scripts/Combat/Skills/SkillDefinition.cs` | マスタ SO |
-| `Assets/Scripts/Combat/Skills/CombatSkillCatalog.cs` | カタログ SO + `CreateDefaultRuntimeCatalog()` |
-| `Assets/Scripts/Combat/Skills/CombatSkillFactory.cs` | ID → 実装クラス |
-| `Assets/Scripts/Combat/Skills/CombatSkillLoadoutBuilder.cs` | 3層合成 |
-| `Assets/Scripts/Combat/Skills/IdentifiedSkill.cs` | `CooldownKey = SkillId.ToString()` のラッパー |
+- `Grimoire_Bolt`: 単体魔法攻撃
+- `Grimoire_StrDebuff`: STRデバフ
+- `StatDebuff_INT`: INTデバフ
+- `StatDebuff_FAI`: FAIデバフ
+- `StatDebuff_AGI`: AGIデバフ
+- `Grimoire_Bind`: 行動不能を含む拘束
+- `Grimoire_Poison`: 継続ダメージ
+- `Grimoire_Stealth`: 自己不可視
 
-### スキル実装
+#### 聖書
 
-`Assets/Scripts/Combat/Skills/Implementations/` に `SkillBase` 継承クラスを置く。
+- `Bible_Smite`: 単体攻撃
+- `Bible_StrBuff`: STRバフ
+- `Bible_IntBuff`: INTバフ
+- `Bible_FaiBuff`: FAIバフ
+- `Bible_AgiBuff`: AGIバフ
+- `Bible_Invulnerable`: 一定時間ダメージ無効
+- `Bible_Gotsume`: 被弾反射バフ
+- `Bible_CarryRush`: 味方を連れて高速移動
 
-### 接続
+#### ロザリオ
 
-| パス | 内容 |
-|------|------|
-| `Assets/Scripts/Combat/Characters/Chracter.cs` | `AvailableCombatSkills`, `RebuildCombatSkills()` |
-| `Assets/Scripts/Combat/Weapons/WeaponConfig.cs` | `GrantedSkillIds` |
-| `Assets/Scripts/Combat/Characters/personality/PersonalityBase.cs` | スキル実行 |
-| `Assets/Scripts/Combat/Characters/personality/PlainPersonality.cs` | スキル選択 |
-| `Assets/Scripts/SceneContexts/CombatSceneContext.cs` | `SkillCatalog` 参照 |
+- `Rosary_Strike`: 単体攻撃
+- `Rosary_DistantHeal`: 距離依存の単体回復
+- `Rosary_CloseHeal`: 単体回復
+- `Rosary_Regeneration`: 継続回復
+- `Rosary_HealingArea`: 地点設置の回復エリア
+- `Rosary_SacrificeThunder`: 自傷つき全体攻撃
 
-### データアセット
+#### 近接武器
 
-```
-Assets/Data/Combat/Skills/
-├── CombatSkillCatalog.asset
-└── *SkillDefinition.asset（6件）
-```
+- `Sword_Slash`
+- `Shield_Slash`
+- `Shield_ShoulderGuard`: 味方の被弾肩代わり
 
-カタログ解決の優先順位:
+## 実装予定スキル
 
-1. `Character._skillCatalogOverride`
-2. `CombatSceneContext.SkillCatalog`
-3. `CombatSkillCatalog.CreateDefaultRuntimeCatalog()`（フォールバック）
+### 杖
 
-## 実装済みスキル
+- 通常の攻撃
+- 距離に応じた威力の魔法
+- 認識されていない状態で攻撃するとダメージ倍率増加
+- 射線が通っていなくても使用可能な範囲魔法。低倍率ダメージ
 
-### 通常攻撃（武器ごと1ファイル）
+### 魔導書
 
-| SkillId | 武器種 | クラス | 係数 | 射程 | CD | 概要 |
-|---------|--------|--------|------|------|-----|------|
-| `Sword_Slash` | 双剣 | `SwordSlashSkill` | STR | 2m | 1.0s | 斬撃 |
-| `Shield_Slash` | 盾 | `ShieldSlashSkill` | STR | 2m | 1.1s | 盾撃（双剣よりやや弱め） |
-| `Wand_Bolt` | 杖 | `WandBoltSkill` | INT | 8m | 1.4s | 魔弾 |
-| `Wand_ArcaneBlast` | 杖 | `WandArcaneBlastSkill` | INT | 15m | 8.0s | 極大魔弾（長CD・高威力） |
-| `Grimoire_Bolt` | 魔導書 | `GrimoireBoltSkill` | INT | 6m | 1.3s | 呪弾 |
-| `Bible_Smite` | 聖書 | `BibleSmiteSkill` | FAI | 5m | 1.5s | 制裁 |
-| `Rosary_Strike` | ロザリオ | `RosaryStrikeSkill` | FAI | 4m | 1.3s | 聖撃 |
+- 通常の攻撃
+- 敵のSTRデバフ
+- 敵のINTデバフ
+- 敵のFAIデバフ
+- 敵のAGIデバフ
+- 近くの敵を金縛り
+- 毒
 
-### 回復
+### 聖職者
 
-| SkillId | 武器種 | クラス | 対象 | 射程 | CD | 効果 |
-|---------|--------|--------|------|------|-----|------|
-| `Rosary_DistantHeal` | ロザリオ | `RosaryDistantHealSkill` | 味方/自分 | 9m | 3.5s | `3 + FAI×0.3` 微回復 |
-| `Rosary_CloseHeal` | ロザリオ | `RosaryCloseHealSkill` | 味方/自分 | 2.5m | 7.0s | `15 + FAI×0.8` 大回復 |
+#### 聖書
 
-味方対象スキルは `PersonalityBase.IsValidSkillTarget` でも `MaxRange` を参照する（自分自身は距離不問）。
+- 通常の攻撃
+- 味方のSTRバフ
+- 味方のINTバフ
+- 味方のFAIバフ
+- 味方のAGIバフ
+- 味方をつれて高速移動
+- 一定期間ダメージ無効
 
-### ステータスバフ（`StatBuffSkill`・聖書専用）
+#### ロザリオ
 
-| SkillId | 対象ステ | 武器種（カタログ） | 表示名 |
-|---------|----------|-------------------|--------|
-| `Bible_StrBuff` | STR | 聖書 | 守護 |
-| `Bible_IntBuff` | INT | 聖書 | INTバフ |
-| `Bible_FaiBuff` | FAI | 聖書 | 信仰バフ |
-| `Bible_AgiBuff` | AGI | 聖書 | AGIバフ |
+- 通常の攻撃
+- 距離に応じた回復
+- 近くの味方に継続回復の加護
+- 自分の体力を犠牲に敵全員へ神の雷
 
-### ステータスデバフ（`StatDebuffSkill`）
+## 実装済みの基盤
 
-| SkillId | 対象ステ | 武器種（カタログ） | 表示名 |
-|---------|----------|-------------------|--------|
-| `Grimoire_StrDebuff` | STR | 魔導書 | STRデバフ |
-| `StatDebuff_INT` | INT | 魔導書 | INTデバフ |
-| `StatDebuff_FAI` | FAI | 魔導書 | FAIデバフ |
-| `StatDebuff_AGI` | AGI | 魔導書 | AGIデバフ |
+- 単体攻撃
+- 単体回復
+- 単体バフ
+- 単体デバフ
+- 範囲攻撃
+- 全体攻撃
+- クールダウン
+- 武器種ごとの使用制限
+- 習得スキルと武器付与スキルの合成
+- `SkillExecutionContext` による単体・地点・複数対象の実行文脈
+- `SkillTargetKind` の拡張
+- 範囲対象検索
+- 全体対象検索
+- 継続効果
+- 状態異常
+- 無敵
+- ステルス基盤
 
-バフ・デバフは `StatBuffSkill` / `StatDebuffSkill` に集約。EffectKey は `StatBuff_{Stat}` / `StatDebuff_{Stat}`。
+## 制約ありの基盤
 
-`docs/game.md` には武器ごと約5技が定義されているが、現時点では上記17件（通常攻撃7 + 回復2 + バフ4 + デバフ4）。
+- `Area` は「地点指定かつ対象必須」の範囲スキルとして扱う。設置系は `Point` 前提。
+- 継続効果は実装済みだが、効果種別はまだ必要最小限。
+- ステルスは「新規視認を阻害し、攻撃で解除される」最小基盤まで。
+- HPコストは一部スキルで実装済みだが、通常ダメージとの分離は未整理。
+- AI はスキル選択をまだ行わない。
 
-## 非推奨・削除済みパターン
+## 未実装または今後の拡張点
 
-- `WeaponBase.Skills` への直書き → `[Obsolete]`、常に空。参照しない。
-- 武器コンストラクタ内の `_skills = new ...` → 削除済み。
-- `Combat/Weapons/Skills/` フォルダ → 削除済み（`Combat/Skills/` に統合）
+### 1. 距離依存の効果計算
 
-## 新スキルを追加するとき
+- 距離が遠いほど威力上昇
+- 距離が近いほど回復量上昇
+- 距離による線形補正
+- 距離による段階補正
 
-1. `Assets/Scripts/Combat/Skills/SkillId.cs` に enum を追加
-2. `Assets/Scripts/Combat/Skills/Implementations/` に `SkillBase` 実装を追加
-3. `Assets/Scripts/Combat/Skills/CombatSkillFactory.cs` に case を追加
-4. `Assets/Data/Combat/Skills/` に `SkillDefinition` アセットを作成し `CombatSkillCatalog.asset` に登録
-5. （任意）特定武器だけ使わせる → `WeaponConfig.GrantedSkillIds`
-6. EditMode テストを追加
+杖の距離依存攻撃と、ロザリオの距離依存回復で必要になる。
 
-## テスト
+### 2. 認識状態の拡張
 
-| パス | 内容 |
-|------|------|
-| `Assets/Tests/EditMode/CombatSkillLoadoutBuilderTests.cs` | 習得 / 付与 / Kind フィルタ |
-| `Assets/Tests/EditMode/CombatSkillExecutionTests.cs` | Execute + CD |
-| `Assets/Tests/EditMode/PlainPersonalityTests.cs` | AI スキル選択 |
-| `Assets/Tests/EditMode/CombatHealthAttackTests.cs` | キャラ loadout |
-| `Assets/Tests/EditMode/CombatEditModeTestUtil.cs` | カタログ・スキルリストのテスト用ヘルパ |
+「認識されていない状態で攻撃するとダメージ倍率増加」は最小形で入っているが、詳細化はまだ必要。
 
-## 未実装（将来）
+- 対象が術者を認識済みか
+- いつ認識したか
+- 不可視中か
+- 攻撃で不可視解除するか
 
-- 国家シミュ: 職業施設 Lv → `LearnedSkillIds` 追加
-- 精霊リロールでの習得リセット
-- `SkillDefinition.UnlockFacilityLevel` によるフィルタ
-- 設計書の残りの技（詠唱・カウンター・AoE 等）
-- プレイヤー援護魔法・煙幕
+### 3. 射線不要スキルの扱い
+
+今後は `LoS` が必要なスキルと不要なスキルを分けたい。
+
+- 単体直撃魔法は `LoS` 必須
+- 射線不要範囲魔法は `LoS` 不要
+
+そのため、スキル定義側に `RequiresLineOfSight` 相当の情報が必要。
+
+### 4. コストの整理
+
+今は一部スキルだけ HP 消費を持つ。今後は整理が必要。
+
+- HP消費
+- 自傷で発動
+
+### 5. 移動系スキル
+
+「味方をつれて高速移動」は通常攻撃系と別物なので、以下が必要。
+
+- 味方1体を対象に取る
+- 一時的に同行状態にする
+- 高速移動中の位置同期
+- 中断条件
+
+### 6. エリア設置
+
+「自分の周囲に回復エリア」は設置系の仕組みが必要。
+
+- 発生位置
+- 半径
+- 持続時間
+- 効果間隔
+- 範囲内対象への周期適用
+
+## 必要な設計拡張
+
+### SkillDefinition の拡張候補
+
+今の `SkillDefinition` は情報が少ない。今後は少なくとも以下のどれかが必要。
+
+- 対象タイプ
+- 発動タイプ
+- 最大射程
+- 効果半径
+- 持続時間
+- 効果間隔
+- 射線要否
+- HPコスト
+- 距離補正タイプ
+- 自己中心か指定地点中心か
+
+### ランタイム文脈の拡張
+
+`SkillExecutionContext` は導入済みだが、将来的には以下の情報を追加したい。
+
+- 発動地点
+- 対象一覧
+- 使用時点の距離
+- 射線判定結果
+- AIが選んだ主対象
+
+### 効果適用の共通化
+
+理想は「スキルが直接全部やる」のではなく、
+
+- 対象決定
+- 条件判定
+- 効果適用
+
+を分けること。
+
+最低限でも、
+
+- 単体攻撃ヘルパ
+- 単体回復ヘルパ
+- 範囲検索ヘルパ
+- 状態異常付与ヘルパ
+
+は欲しい。
+
+## 武器種ごとの必要機能
+
+### 杖
+
+必要な追加機能:
+
+- 距離依存ダメージ
+- 未認識ボーナスの詳細化
+- 射線不要設定
+- 高威力単体攻撃
+
+### 魔導書
+
+デバフ4種、拘束、毒、不可視は実装済み。
+
+### 聖書
+
+必要な追加機能:
+
+バフ4種、無敵、反射バフ、味方同行移動は実装済み。
+
+### ロザリオ
+
+必要な追加機能:
+
+- 距離依存回復
+
+継続回復、地点設置の回復エリア、HP 消費全体攻撃は実装済み。
+
+## AI に必要な拡張
+
+今の `PlainPersonality` はスキルを選ばない。以下が必要。
+
+- 攻撃スキルと支援スキルの優先順位
+- 範囲攻撃を撃つ価値の判断
+- 瀕死の味方への回復判断
+- 開幕不可視や奇襲判断
+- バフを切らさない判断
+- HPコスト技を撃ってよいかの判断
+
+## 実装の優先順
+
+以下の順で拡張すると、後戻りが少ない。
+
+1. `SkillDefinition` の拡張
+2. 距離依存計算と射線要否の追加
+3. エリア設置系の追加
+4. AI のスキル選択追加
+5. 認識・不可視の詳細化
+6. 移動系スキル追加
+
+## 現時点の結論
+
+単体・範囲・全体・継続効果・状態異常・無敵・ステルスの最小基盤までは入っている。
+
+次の主課題は以下。
+
+- 距離依存ルール
+- 射線要否
+- 設置系
+- 特殊移動
+- AI のスキル判断
+- 認識と不可視の詳細化

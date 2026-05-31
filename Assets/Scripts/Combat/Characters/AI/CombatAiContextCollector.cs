@@ -158,6 +158,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             CombatHealth health = character.Health;
             PersonalityBase personality = character.GetComponent<PersonalityBase>();
             CombatStatusEffects statusEffectsComponent = character.GetComponent<CombatStatusEffects>();
+            CombatVision targetVision = character.Vision;
             IReadOnlyList<CombatStatusEffectSnapshot> statusEffects = statusEffectsComponent != null
                 ? statusEffectsComponent.GetActiveEffectSnapshots()
                 : Array.Empty<CombatStatusEffectSnapshot>();
@@ -165,6 +166,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             CombatObjective objective = hasObjective
                 ? personality.LastPlan.Objective
                 : default;
+            bool recognizesOwner = targetVision != null && owner != null && targetVision.HasRecognitionOf(owner);
 
             destination.Add(new CombatCharacterIntel(
                 character,
@@ -175,6 +177,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 hasLastKnownPosition,
                 hasLastKnownPosition ? lastKnownPosition : default,
                 memoryAgeSeconds,
+                recognizesOwner,
                 health != null ? health.HP : 0,
                 health != null ? health.MaxHP : 0,
                 health != null && health.CanAct,

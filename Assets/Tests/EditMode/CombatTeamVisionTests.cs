@@ -122,6 +122,50 @@ public sealed class CombatTeamVisionTests
             Assert.That(vision.VisibleEnemies, Does.Contain(enemy));
             Assert.That(vision.TryGetLastKnownPosition(enemy, out Vector3 lastKnownPosition), Is.True);
             Assert.That(lastKnownPosition, Is.EqualTo(enemyGo.transform.position));
+            Assert.That(vision.HasRecognitionOf(enemy), Is.True);
+            Assert.That(enemy.Vision.IsRecognizedBy(ally), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(enemyGo);
+        }
+    }
+
+    [Test]
+    public void CombatVision_DoesNotSeeStealthedEnemy()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject allyGo = new GameObject("Ally");
+        GameObject enemyGo = new GameObject("Enemy");
+
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character ally = allyGo.AddComponent<Character>();
+            Character enemy = enemyGo.AddComponent<Character>();
+            var allyCollider = allyGo.AddComponent<CapsuleCollider>();
+            allyCollider.center = new Vector3(0f, 1f, 0f);
+            allyCollider.height = 2f;
+            var enemyCollider = enemyGo.AddComponent<CapsuleCollider>();
+            enemyCollider.center = new Vector3(0f, 1f, 0f);
+            enemyCollider.height = 2f;
+            allyGo.transform.position = Vector3.zero;
+            enemyGo.transform.position = new Vector3(0f, 0f, 5f);
+            enemy.StatusEffects.ApplyStealth(5f);
+            Physics.SyncTransforms();
+
+            system.AllyCharacters.Add(ally);
+            system.EnemyCharacters.Add(enemy);
+            system.AssignTeamsFromLists();
+
+            CombatVision vision = ally.Vision;
+            vision.Initialize();
+            vision.UpdateVision();
+
+            Assert.That(vision.IsVisible(enemy), Is.False);
+            Assert.That(vision.HasRecognitionOf(enemy), Is.False);
         }
         finally
         {

@@ -21,8 +21,10 @@ public sealed class IdentifiedSkill : SkillBase
 
     public override float MaxRange => _inner.MaxRange;
 
-    public override void Execute(Character self, Character target)
+    public override float AreaRadius => _inner.AreaRadius;
+
+    public override void Execute(Character self, SkillExecutionContext context)
     {
-        _inner.Execute(self, target);
+        _inner.Execute(self, context);
     }
 }

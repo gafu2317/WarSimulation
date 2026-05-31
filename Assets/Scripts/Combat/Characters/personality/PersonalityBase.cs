@@ -79,32 +79,35 @@ public abstract class PersonalityBase : MonoBehaviour
     protected bool IsValidSkillTarget(SkillBase skill, Character target)
     {
         Character owner = Owner;
-        if (skill == null || target == null || target.Health == null || owner == null) return false;
+        if (owner == null || skill == null) return false;
 
-        if (skill.TargetKind == SkillTargetKind.Ally ||
-            skill.TargetKind == SkillTargetKind.AllyOrSelf)
-        {
-            if (target == owner) return target.Health.CanAct;
-            if (target.Team != owner.Team || !target.Health.CanAct) return false;
+        CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+            skill,
+            CombatSkillEvaluationRequest.ForTarget(owner, target));
+        return result.CanUse;
+    }
 
-            float allyDistance = Vector3.Distance(owner.transform.position, target.transform.position);
-            return allyDistance <= skill.MaxRange;
-        }
+    protected bool IsValidSkillContext(SkillBase skill, SkillExecutionContext context)
+    {
+        Character owner = Owner;
+        if (skill == null || owner == null) return false;
 
-        if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
-
-        float enemyDistance = Vector3.Distance(owner.transform.position, target.transform.position);
-        return enemyDistance <= skill.MaxRange;
+        CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(owner, skill, context);
+        return result.CanUse;
     }
 
     protected bool CanExecuteSkill(SkillBase skill, Character target)
     {
-        Character owner = Owner;
-        if (owner == null || owner.Health == null || !owner.Health.CanAct) return false;
-        if (skill == null || target == null) return false;
-        if (owner.SkillCooldowns != null && !owner.SkillCooldowns.IsReady(skill)) return false;
+        return CanExecuteSkill(skill, SkillExecutionContext.ForTarget(target));
+    }
 
-        return IsValidSkillTarget(skill, target);
+    protected bool CanExecuteSkill(SkillBase skill, SkillExecutionContext context)
+    {
+        Character owner = Owner;
+        if (owner == null || skill == null) return false;
+
+        CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(owner, skill, context);
+        return result.CanUse;
     }
 
     protected CombatAiContext CollectContext()
@@ -142,12 +145,13 @@ public abstract class PersonalityBase : MonoBehaviour
 
     private void ExecuteSkill(CombatAiPlan plan)
     {
-        if (plan.Skill == null || plan.SkillTarget == null) return;
+        if (plan.Skill == null) return;
         if (Time.time < _nextSkillCommandTime) return;
-        if (!CanExecuteSkill(plan.Skill, plan.SkillTarget)) return;
-
         Character owner = Owner;
-        plan.Skill.Execute(owner, plan.SkillTarget);
+        CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(owner, plan.Skill, plan.SkillContext);
+        if (!result.CanUse) return;
+
+        plan.Skill.Execute(owner, result.Context);
         owner.SkillCooldowns?.StartCooldown(plan.Skill);
         _nextSkillCommandTime = Time.time + _skillCommandInterval;
     }

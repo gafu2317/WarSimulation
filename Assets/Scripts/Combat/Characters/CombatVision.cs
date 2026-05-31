@@ -175,6 +175,21 @@ public sealed class CombatVision : MonoBehaviour
         return target != null && _visibleEnemies.Contains(target);
     }
 
+    public bool HasRecognitionOf(Character target)
+    {
+        if (target == null) return false;
+        return IsVisible(target) || HasMemoryOf(target);
+    }
+
+    public bool IsRecognizedBy(Character observer)
+    {
+        _owner ??= GetComponent<Character>();
+        return observer != null &&
+            _owner != null &&
+            observer.Vision != null &&
+            observer.Vision.HasRecognitionOf(_owner);
+    }
+
     public bool TryGetLastKnownPosition(Character target, out Vector3 position)
     {
         position = default;
@@ -272,6 +287,14 @@ public sealed class CombatVision : MonoBehaviour
     public bool HasLineOfSight(Transform target)
     {
         if (target == null) return false;
+        Character targetCharacter = target.GetComponent<Character>();
+        if (targetCharacter != null &&
+            targetCharacter != _owner &&
+            targetCharacter.StatusEffects != null &&
+            targetCharacter.StatusEffects.IsStealthed)
+        {
+            return false;
+        }
 
         Vector3 headPos = transform.TransformPoint(_headOffsetFromFoot);
         Vector3 targetHeadPos = target.TransformPoint(_headOffsetFromFoot);

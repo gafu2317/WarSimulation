@@ -57,6 +57,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
     {
         if (!CombatBattleFlow.IsRunning) return false;
         if (_agent == null || !_agent.isOnNavMesh) return false;
+        if (IsMovementRestricted()) return false;
 
         if (!ResolveNavigationSystem().TryResolveDestination(
                 _agent,
@@ -99,6 +100,12 @@ public sealed class CombatCharacterBody : MonoBehaviour
     private void UpdateMoveSpeed()
     {
         if (_agent == null) return;
+
+        if (IsMovementRestricted())
+        {
+            Stop();
+            return;
+        }
 
         if (!_agent.isOnNavMesh || !_agent.hasPath)
         {
@@ -179,5 +186,13 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
         _navigationSystem = gameObject.AddComponent<CombatNavigationSystem>();
         return _navigationSystem;
+    }
+
+    private bool IsMovementRestricted()
+    {
+        Character owner = GetComponent<Character>();
+        return owner != null &&
+            owner.StatusEffects != null &&
+            (owner.StatusEffects.IsRooted || owner.StatusEffects.IsBound);
     }
 }
