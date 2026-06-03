@@ -31,7 +31,6 @@ public sealed class GrimoirePoisonSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
-        if (Vector3.Distance(self.transform.position, target.transform.position) > _maxRange) return;
 
         target.StatusEffects?.ApplyPoison(_damagePerTick, _durationSeconds, _tickIntervalSeconds, "GrimoirePoison");
     }

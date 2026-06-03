@@ -32,17 +32,8 @@ public sealed class RosaryCloseHealSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
-        if (!IsWithinRange(self, target)) return;
 
         int healAmount = Mathf.Max(1, _baseHeal + Mathf.RoundToInt(self.FAI * _faiScale));
         target.Health.Heal(healAmount);
-    }
-
-    private bool IsWithinRange(Character self, Character target)
-    {
-        if (target == self) return true;
-
-        float distance = Vector3.Distance(self.transform.position, target.transform.position);
-        return distance <= _maxRange;
     }
 }

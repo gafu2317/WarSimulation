@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public sealed class BibleCarryRushEffect : MonoBehaviour
 {
@@ -41,7 +42,7 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
 
         if (_carrier != null && _passenger != null)
         {
-            _passenger.transform.position = _carrier.transform.position;
+            SyncPassengerPosition();
         }
 
         _hasAppliedSpeedBoost = true;
@@ -61,7 +62,7 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
             return;
         }
 
-        _passenger.transform.position = _carrier.transform.position;
+        SyncPassengerPosition();
 
         if (Time.time >= _expiresAt)
         {
@@ -101,5 +102,22 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
         }
 
         DestroyImmediate(this);
+    }
+
+    private void SyncPassengerPosition()
+    {
+        if (_carrier == null || _passenger == null) return;
+
+        _passengerBody?.Stop();
+        Vector3 destination = _carrier.transform.position;
+
+        NavMeshAgent passengerAgent = _passenger.GetComponent<NavMeshAgent>();
+        if (passengerAgent != null && passengerAgent.isOnNavMesh)
+        {
+            passengerAgent.Warp(destination);
+            return;
+        }
+
+        _passenger.transform.position = destination;
     }
 }

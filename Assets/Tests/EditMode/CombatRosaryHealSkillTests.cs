@@ -20,7 +20,11 @@ public sealed class CombatRosaryHealSkillTests
             allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 8f;
 
             var skill = new RosaryDistantHealSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, ally));
+            Assert.That(result.CanUse, Is.True);
+            skill.Execute(owner, result.Context);
 
             Assert.That(ally.Health.HP, Is.EqualTo(15));
         }
@@ -46,7 +50,11 @@ public sealed class CombatRosaryHealSkillTests
             allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 10f;
 
             var skill = new RosaryDistantHealSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, ally));
+
+            Assert.That(result.CanUse, Is.False);
 
             Assert.That(ally.Health.HP, Is.EqualTo(10));
         }
@@ -72,7 +80,11 @@ public sealed class CombatRosaryHealSkillTests
             allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 2f;
 
             var skill = new RosaryCloseHealSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, ally));
+            Assert.That(result.CanUse, Is.True);
+            skill.Execute(owner, result.Context);
 
             Assert.That(ally.Health.HP, Is.EqualTo(30));
         }
@@ -98,7 +110,11 @@ public sealed class CombatRosaryHealSkillTests
             allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 4f;
 
             var skill = new RosaryCloseHealSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, ally));
+
+            Assert.That(result.CanUse, Is.False);
 
             Assert.That(ally.Health.HP, Is.EqualTo(10));
         }
@@ -127,7 +143,11 @@ public sealed class CombatRosaryHealSkillTests
             allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 3f;
 
             var skill = new RosaryDistantHealSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, ally));
+            Assert.That(result.CanUse, Is.True);
+            skill.Execute(owner, result.Context);
 
             Assert.That(ally.Health.CanAct, Is.False);
             Assert.That(ally.Health.HP, Is.EqualTo(18));
@@ -161,8 +181,16 @@ public sealed class CombatRosaryHealSkillTests
             farAllyGo.transform.position = ownerGo.transform.position + Vector3.forward * 8f;
 
             var skill = new RosaryDistantHealSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(nearAlly));
-            skill.Execute(owner, SkillExecutionContext.ForTarget(farAlly));
+            CombatSkillEvaluationResult nearResult = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, nearAlly));
+            CombatSkillEvaluationResult farResult = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, farAlly));
+            Assert.That(nearResult.CanUse, Is.True);
+            Assert.That(farResult.CanUse, Is.True);
+            skill.Execute(owner, nearResult.Context);
+            skill.Execute(owner, farResult.Context);
 
             Assert.That(nearAlly.Health.HP, Is.GreaterThan(farAlly.Health.HP));
         }

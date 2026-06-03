@@ -29,7 +29,6 @@ public sealed class BibleCarryRushSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target == self) return;
         if (target.Team != self.Team || target.Health == null || !target.Health.IsAlive) return;
-        if (Vector3.Distance(self.transform.position, target.transform.position) > _maxRange) return;
 
         BibleCarryRushEffect effect = self.GetComponent<BibleCarryRushEffect>();
         if (effect == null)

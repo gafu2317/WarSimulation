@@ -40,8 +40,7 @@ public sealed class StatDebuffSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null) return;
 
-        float distance = Vector3.Distance(self.transform.position, target.transform.position);
-        if (distance > _maxRange) return;
+        float distance = ComputeHorizontalDistance(self, target);
 
         target.StatusEffects?.Apply(
             _stat,

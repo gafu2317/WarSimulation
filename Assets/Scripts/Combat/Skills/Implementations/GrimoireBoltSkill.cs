@@ -19,7 +19,7 @@ public sealed class GrimoireBoltSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "呪弾";
+    public override string Name => "通常攻撃";
 
     public override float CooldownSeconds => _cooldownSeconds;
 
@@ -31,8 +31,7 @@ public sealed class GrimoireBoltSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
 
-        float distance = Vector3.Distance(self.transform.position, target.transform.position);
-        if (distance > _maxRange) return;
+        float distance = ComputeHorizontalDistance(self, target);
 
         int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
         damage = ComputeStealthAwareDamage(self, target, damage);

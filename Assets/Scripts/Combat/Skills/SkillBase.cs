@@ -16,6 +16,25 @@ public abstract class SkillBase
 
     public abstract void Execute(Character self, SkillExecutionContext context);
 
+    protected static float ComputeHorizontalDistance(Character self, Character target)
+    {
+        if (self == null || target == null) return 0f;
+        return ComputeHorizontalDistance(self.transform.position, target.transform.position);
+    }
+
+    protected static float ComputeHorizontalDistance(Character self, Vector3 targetPoint)
+    {
+        if (self == null) return 0f;
+        return ComputeHorizontalDistance(self.transform.position, targetPoint);
+    }
+
+    protected static float ComputeHorizontalDistance(Vector3 from, Vector3 to)
+    {
+        from.y = 0f;
+        to.y = 0f;
+        return Vector3.Distance(from, to);
+    }
+
     protected static int ComputeDistanceScaledAmount(
         int baseAmount,
         float distance,

@@ -32,7 +32,7 @@ public sealed class RosaryDistantHealSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
-        if (!TryGetDistanceWithinRange(self, target, out float distance)) return;
+        float distance = target == self ? 0f : ComputeHorizontalDistance(self, target);
 
         int healAmount = Mathf.Max(1, _baseHeal + Mathf.RoundToInt(self.FAI * _faiScale));
         healAmount = ComputeDistanceScaledAmount(
@@ -42,17 +42,5 @@ public sealed class RosaryDistantHealSkill : SkillBase
             nearMultiplier: 1.5f,
             farMultiplier: 0.8f);
         target.Health.Heal(healAmount);
-    }
-
-    private bool TryGetDistanceWithinRange(Character self, Character target, out float distance)
-    {
-        if (target == self)
-        {
-            distance = 0f;
-            return true;
-        }
-
-        distance = Vector3.Distance(self.transform.position, target.transform.position);
-        return distance <= _maxRange;
     }
 }

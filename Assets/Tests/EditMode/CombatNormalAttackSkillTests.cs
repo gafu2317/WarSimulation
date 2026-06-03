@@ -31,7 +31,11 @@ public sealed class CombatNormalAttackSkillTests
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward;
 
             SkillBase skill = CombatSkillFactory.Create(skillId);
-            skill.Execute(owner, SkillExecutionContext.ForTarget(target));
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, target));
+            Assert.That(result.CanUse, Is.True);
+            skill.Execute(owner, result.Context);
 
             Assert.That(target.Health.HP, Is.LessThan(30));
         }
@@ -59,11 +63,19 @@ public sealed class CombatNormalAttackSkillTests
             var bolt = new WandBoltSkill();
             var blast = new WandArcaneBlastSkill();
 
-            bolt.Execute(owner, SkillExecutionContext.ForTarget(target));
+            CombatSkillEvaluationResult boltResult = CombatSkillEvaluator.Evaluate(
+                bolt,
+                CombatSkillEvaluationRequest.ForTarget(owner, target));
+            Assert.That(boltResult.CanUse, Is.True);
+            bolt.Execute(owner, boltResult.Context);
             int hpAfterBolt = target.Health.HP;
 
             target.Health.Initialize(maxHP: 200);
-            blast.Execute(owner, SkillExecutionContext.ForTarget(target));
+            CombatSkillEvaluationResult blastResult = CombatSkillEvaluator.Evaluate(
+                blast,
+                CombatSkillEvaluationRequest.ForTarget(owner, target));
+            Assert.That(blastResult.CanUse, Is.True);
+            blast.Execute(owner, blastResult.Context);
             int hpAfterBlast = target.Health.HP;
 
             Assert.That(hpAfterBlast, Is.LessThan(hpAfterBolt));
@@ -98,10 +110,18 @@ public sealed class CombatNormalAttackSkillTests
             farTargetGo.transform.position = ownerGo.transform.position + Vector3.forward * 7f;
 
             var skill = new WandBoltSkill();
-            skill.Execute(owner, SkillExecutionContext.ForTarget(nearTarget));
+            CombatSkillEvaluationResult nearResult = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, nearTarget));
+            Assert.That(nearResult.CanUse, Is.True);
+            skill.Execute(owner, nearResult.Context);
             int nearHpAfterHit = nearTarget.Health.HP;
 
-            skill.Execute(owner, SkillExecutionContext.ForTarget(farTarget));
+            CombatSkillEvaluationResult farResult = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, farTarget));
+            Assert.That(farResult.CanUse, Is.True);
+            skill.Execute(owner, farResult.Context);
             int farHpAfterHit = farTarget.Health.HP;
 
             Assert.That(farHpAfterHit, Is.LessThan(nearHpAfterHit));
@@ -128,7 +148,12 @@ public sealed class CombatNormalAttackSkillTests
             typeof(Character).GetProperty("INT").SetValue(owner, 10);
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 16f;
 
-            new WandArcaneBlastSkill().Execute(owner, SkillExecutionContext.ForTarget(target));
+            var skill = new WandArcaneBlastSkill();
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(owner, target));
+
+            Assert.That(result.CanUse, Is.False);
 
             Assert.That(target.Health.HP, Is.EqualTo(30));
         }

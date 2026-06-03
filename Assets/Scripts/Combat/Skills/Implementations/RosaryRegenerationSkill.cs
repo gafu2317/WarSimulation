@@ -22,7 +22,7 @@ public sealed class RosaryRegenerationSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "再生";
+    public override string Name => "継続回復";
     public override float CooldownSeconds => _cooldownSeconds;
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
     public override float MaxRange => _maxRange;
@@ -32,12 +32,6 @@ public sealed class RosaryRegenerationSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
-
-        if (target != self &&
-            Vector3.Distance(self.transform.position, target.transform.position) > _maxRange)
-        {
-            return;
-        }
 
         target.StatusEffects?.ApplyHealOverTime(_healPerTick, _durationSeconds, _tickIntervalSeconds, "RosaryRegeneration");
     }

@@ -34,7 +34,6 @@ public sealed class RosaryHealingAreaSkill : SkillBase
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasTargetPoint) return;
-        if (Vector3.Distance(self.transform.position, context.TargetPoint) > _maxRange) return;
 
         var zoneGo = new GameObject("RosaryHealingAreaZone");
         zoneGo.transform.position = context.TargetPoint;

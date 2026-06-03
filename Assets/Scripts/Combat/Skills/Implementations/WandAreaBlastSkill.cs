@@ -31,7 +31,6 @@ public sealed class WandAreaBlastSkill : SkillBase
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasTargetPoint) return;
-        if (Vector3.Distance(self.transform.position, context.TargetPoint) > _maxRange) return;
         if (context.ResolvedTargets == null || context.ResolvedTargets.Count == 0) return;
 
         int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));

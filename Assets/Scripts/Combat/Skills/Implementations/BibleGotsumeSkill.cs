@@ -28,7 +28,6 @@ public sealed class BibleGotsumeSkill : SkillBase
     {
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null || !target.Health.IsAlive) return;
-        if (target != self && Vector3.Distance(self.transform.position, target.transform.position) > _maxRange) return;
 
         BibleGotsumeEffect effect = target.GetComponent<BibleGotsumeEffect>();
         if (effect == null)

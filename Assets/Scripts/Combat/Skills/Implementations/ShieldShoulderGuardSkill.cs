@@ -30,7 +30,6 @@ public sealed class ShieldShoulderGuardSkill : SkillBase
         if (self == null || target == null || target == self) return;
         if (target.Health == null || !target.Health.IsAlive) return;
         if (target.Team != self.Team) return;
-        if (Vector3.Distance(self.transform.position, target.transform.position) > _maxRange) return;
 
         ShieldShoulderGuardEffect effect = target.GetComponent<ShieldShoulderGuardEffect>();
         if (effect == null)

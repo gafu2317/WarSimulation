@@ -20,7 +20,8 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
 
     [SerializeField] private List<Character> _characters = new();
     [SerializeField] private Transform _pointTargetMarker;
-    [SerializeField] private bool _showMenu = true;
+    [SerializeField] private bool _showMenu = false;
+    [SerializeField, Min(1)] private int _debugDamageAmount = 10;
     [SerializeField, Min(0.2f)] private float _selectionRingRadius = 0.9f;
     [SerializeField, Min(0.01f)] private float _selectionRingWidth = 0.08f;
     [SerializeField] private float _selectionRingYOffset = 0.05f;
@@ -43,6 +44,12 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
 
     private void Awake()
     {
+        if (!IsDebugMenuAllowed())
+        {
+            enabled = false;
+            return;
+        }
+
         AutoPopulateCharactersIfNeeded();
         CaptureInitialPositions();
         EnsureSelectionRings();
@@ -51,6 +58,14 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
 
     private void Update()
     {
+        if (!IsDebugMenuAllowed()) return;
+        if (!_showMenu)
+        {
+            HideSelectionRings();
+            HideSkillVisuals();
+            return;
+        }
+
         UpdateSelectionRings();
         UpdateSkillVisuals();
     }
@@ -66,7 +81,7 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!_showMenu) return;
+        if (!IsDebugMenuAllowed() || !_showMenu) return;
 
         EnsureStyles();
         _windowRect = GUI.Window(GetInstanceID(), _windowRect, DrawWindow, "Skill Debug Menu");
@@ -149,6 +164,18 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
         if (GUILayout.Button("Heal Target", _buttonStyle, GUILayout.Height(ButtonHeight)))
         {
             RestoreFull(target);
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Damage Owner", _buttonStyle, GUILayout.Height(ButtonHeight)))
+        {
+            ApplyDebugDamage(owner, attacker: target);
+        }
+
+        if (GUILayout.Button("Damage Target", _buttonStyle, GUILayout.Height(ButtonHeight)))
+        {
+            ApplyDebugDamage(target, attacker: owner);
         }
         GUILayout.EndHorizontal();
 
@@ -260,7 +287,7 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
         for (int i = 0; i < effects.Count; i++)
         {
             CombatStatusEffectSnapshot effect = effects[i];
-            GUILayout.Label("- " + effect.Type + " " + effect.RemainingSeconds.ToString("0.0") + "s", _labelStyle);
+            GUILayout.Label("- " + FormatEffectLabel(effect) + " " + effect.RemainingSeconds.ToString("0.0") + "s", _labelStyle);
         }
     }
 
@@ -274,6 +301,20 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
 
         character.Health.RestoreFull();
         _lastMessage = "Healed " + character.name;
+    }
+
+    private void ApplyDebugDamage(Character character, Character attacker)
+    {
+        if (character == null || character.Health == null)
+        {
+            _lastMessage = "Character missing.";
+            return;
+        }
+
+        int applied = character.Health.TakeDamage(_debugDamageAmount, attacker);
+        _lastMessage = applied > 0
+            ? "Damaged " + character.name + " for " + applied
+            : "No damage applied to " + character.name;
     }
 
     private void ResetPosition(Character character)
@@ -461,6 +502,46 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
         return value.x.ToString("0.0") + ", " + value.y.ToString("0.0") + ", " + value.z.ToString("0.0");
     }
 
+    private static string FormatEffectLabel(CombatStatusEffectSnapshot effect)
+    {
+        return effect.Type switch
+        {
+            CombatStatusEffects.EffectType.StatModifier => FormatStatModifierLabel(effect),
+            CombatStatusEffects.EffectType.Invulnerable => "無敵",
+            CombatStatusEffects.EffectType.Root => "移動不能",
+            CombatStatusEffects.EffectType.Bind => "金縛り",
+            CombatStatusEffects.EffectType.Poison => "毒",
+            CombatStatusEffects.EffectType.HealOverTime => "継続回復",
+            CombatStatusEffects.EffectType.Stealth => "不可視",
+            _ => effect.Type.ToString(),
+        };
+    }
+
+    private static string FormatStatModifierLabel(CombatStatusEffectSnapshot effect)
+    {
+        string statName = effect.Stat switch
+        {
+            CombatStatusEffects.StatKind.STR => "STR",
+            CombatStatusEffects.StatKind.INT => "INT",
+            CombatStatusEffects.StatKind.FAI => "FAI",
+            CombatStatusEffects.StatKind.AGI => "AGI",
+            _ => effect.Stat.ToString(),
+        };
+
+        if (effect.IsBuff) return statName + "バフ";
+        if (effect.IsDebuff) return statName + "デバフ";
+        return statName + "補正";
+    }
+
+    private static bool IsDebugMenuAllowed()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        return true;
+#else
+        return false;
+#endif
+    }
+
     private void EnsureSelectionRings()
     {
         _ownerRing = EnsureRing(_ownerRing, "DebugOwnerSelectionRing", owner: true);
@@ -487,6 +568,12 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
 
         UpdateRing(_ownerRing, owner, isSharedSelection ? SharedRingColor : OwnerRingColor, scaleMultiplier: isSharedSelection ? 1.15f : 1f);
         UpdateRing(_targetRing, target, isSharedSelection ? SharedRingColor : TargetRingColor, scaleMultiplier: isSharedSelection ? 0.8f : 1f);
+    }
+
+    private void HideSelectionRings()
+    {
+        if (_ownerRing != null) _ownerRing.enabled = false;
+        if (_targetRing != null) _targetRing.enabled = false;
     }
 
     private void UpdateSkillVisuals()

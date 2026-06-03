@@ -25,7 +25,6 @@ public sealed class GrimoireBindSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
-        if (Vector3.Distance(self.transform.position, target.transform.position) > _maxRange) return;
 
         target.StatusEffects?.ApplyBind(_durationSeconds, "GrimoireBind");
     }

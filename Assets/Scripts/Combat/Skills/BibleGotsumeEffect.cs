@@ -8,14 +8,13 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
 
     public void Initialize(Character wearer, int reflectDamage, float durationSeconds)
     {
+        CleanupSubscription();
+
         _wearer = wearer;
         _reflectDamage = Mathf.Max(1, reflectDamage);
         _expiresAt = Time.time + Mathf.Max(0f, durationSeconds);
 
-        if (_wearer != null && _wearer.Health != null)
-        {
-            _wearer.Health.Damaged += OnWearerDamaged;
-        }
+        Subscribe();
     }
 
     private void Update()
@@ -28,10 +27,7 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (_wearer != null && _wearer.Health != null)
-        {
-            _wearer.Health.Damaged -= OnWearerDamaged;
-        }
+        CleanupSubscription();
     }
 
     private void OnWearerDamaged(int damage, Character attacker)
@@ -52,5 +48,21 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
         }
 
         DestroyImmediate(this);
+    }
+
+    private void Subscribe()
+    {
+        if (_wearer != null && _wearer.Health != null)
+        {
+            _wearer.Health.Damaged += OnWearerDamaged;
+        }
+    }
+
+    private void CleanupSubscription()
+    {
+        if (_wearer != null && _wearer.Health != null)
+        {
+            _wearer.Health.Damaged -= OnWearerDamaged;
+        }
     }
 }

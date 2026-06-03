@@ -5,12 +5,84 @@ public static class CombatSkillEvaluator
 {
     public static CombatSkillEvaluationResult Evaluate(Character owner, SkillBase skill, SkillExecutionContext context)
     {
-        var request = new CombatSkillEvaluationRequest(
-            owner,
-            context.PrimaryTarget,
-            context.HasTargetPoint,
-            context.TargetPoint);
-        return Evaluate(skill, request);
+        if (owner == null || skill == null)
+        {
+            var request = new CombatSkillEvaluationRequest(
+                owner,
+                context.PrimaryTarget,
+                context.HasTargetPoint,
+                context.TargetPoint);
+            return Evaluate(skill, request);
+        }
+
+        Vector3 originPoint = Flatten(owner.transform.position);
+        Vector3 requestedPoint = context.HasTargetPoint ? Flatten(context.TargetPoint) : default;
+        var baseResult = new CombatSkillEvaluationResult(
+            canUse: false,
+            failureReason: string.Empty,
+            context: context,
+            originPoint: originPoint,
+            hasRangePreview: skill.MaxRange > 0f && !float.IsPositiveInfinity(skill.MaxRange),
+            rangeRadius: skill.MaxRange,
+            areaCenter: context.HasTargetPoint ? requestedPoint : default,
+            hasAreaPreview: skill.AreaRadius > 0f &&
+                (skill.TargetKind == SkillTargetKind.Point || skill.TargetKind == SkillTargetKind.Area),
+            areaRadius: skill.AreaRadius,
+            resolvedTargets: context.ResolvedTargets);
+
+        if (owner.Health == null || !owner.Health.CanAct)
+        {
+            return Fail(baseResult, "owner cannot act");
+        }
+
+        if (owner.SkillCooldowns != null && !owner.SkillCooldowns.IsReady(skill))
+        {
+            return Fail(baseResult, "cooldown " + owner.SkillCooldowns.GetRemainingSeconds(skill).ToString("0.0") + "s");
+        }
+
+        switch (skill.TargetKind)
+        {
+            case SkillTargetKind.AllEnemies:
+                return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, requireEnemy: true, emptyReason: "no enemies");
+            case SkillTargetKind.AllAllies:
+                return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, requireEnemy: false, emptyReason: "no allies");
+            case SkillTargetKind.Area:
+                if (!context.HasTargetPoint)
+                {
+                    return Fail(baseResult, "point missing");
+                }
+
+                if (!IsInHorizontalRange(originPoint, requestedPoint, skill.MaxRange))
+                {
+                    return Fail(baseResult, "point out of range");
+                }
+
+                if (skill.AreaRadius <= 0f)
+                {
+                    return Fail(baseResult, "area radius missing");
+                }
+
+                if (context.ResolvedTargets == null || context.ResolvedTargets.Count == 0)
+                {
+                    return Fail(baseResult, "no targets in area");
+                }
+
+                if (!AreValidTargets(owner, skill, context.ResolvedTargets, requireEnemy: true))
+                {
+                    return Fail(baseResult, "invalid targets");
+                }
+
+                return Success(baseResult, context, context.ResolvedTargets);
+            default:
+            {
+                var request = new CombatSkillEvaluationRequest(
+                    owner,
+                    context.PrimaryTarget,
+                    context.HasTargetPoint,
+                    context.TargetPoint);
+                return Evaluate(skill, request);
+            }
+        }
     }
 
     public static CombatSkillEvaluationResult Evaluate(SkillBase skill, CombatSkillEvaluationRequest request)
@@ -299,6 +371,64 @@ public static class CombatSkillEvaluator
 
         SkillExecutionContext context = SkillExecutionContext.ForTarget(target);
         return Success(baseResult, context, context.ResolvedTargets);
+    }
+
+    private static CombatSkillEvaluationResult EvaluateProvidedTargets(
+        CombatSkillEvaluationResult baseResult,
+        Character owner,
+        SkillBase skill,
+        IReadOnlyList<Character> targets,
+        bool requireEnemy,
+        string emptyReason)
+    {
+        if (targets == null || targets.Count == 0)
+        {
+            return Fail(baseResult, emptyReason);
+        }
+
+        if (!AreValidTargets(owner, skill, targets, requireEnemy))
+        {
+            return Fail(baseResult, "invalid targets");
+        }
+
+        SkillExecutionContext context = SkillExecutionContext.ForTargets(targets);
+        return Success(baseResult, context, targets);
+    }
+
+    private static bool AreValidTargets(Character owner, SkillBase skill, IReadOnlyList<Character> targets, bool requireEnemy)
+    {
+        for (int i = 0; i < targets.Count; i++)
+        {
+            Character target = targets[i];
+            bool isValid = requireEnemy
+                ? IsValidEnemyTarget(owner, skill, target)
+                : IsValidAllyTarget(owner, skill, target, allowSelf: true);
+            if (!isValid)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsValidEnemyTarget(Character owner, SkillBase skill, Character target)
+    {
+        if (target == null || target.Health == null) return false;
+        if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
+        return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
+    }
+
+    private static bool IsValidAllyTarget(Character owner, SkillBase skill, Character target, bool allowSelf)
+    {
+        if (target == null || target.Health == null) return false;
+        if (target == owner)
+        {
+            return allowSelf && target.Health.IsAlive;
+        }
+
+        if (target.Team != owner.Team || !target.Health.IsAlive) return false;
+        return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
     }
 
     private static CombatSkillEvaluationResult Fail(CombatSkillEvaluationResult baseResult, string reason)

@@ -29,8 +29,7 @@ public sealed class WandGodsHandSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
 
-        float distance = Vector3.Distance(self.transform.position, target.transform.position);
-        if (distance > _maxRange) return;
+        float distance = ComputeHorizontalDistance(self, target);
 
         int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
         damage = ComputeStealthAwareDamage(self, target, damage);

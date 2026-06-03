@@ -58,6 +58,40 @@ public sealed class CombatPhase4SkillTests
     }
 
     [Test]
+    public void BibleGotsumeSkill_RecastDoesNotDuplicateReflectSubscription()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject allyGo = new GameObject("Ally");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            Character ally = allyGo.AddComponent<Character>();
+            Character enemy = enemyGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            ally.SetTeam(CombatTeam.Ally);
+            enemy.SetTeam(CombatTeam.Enemy);
+            owner.Health.Initialize(30);
+            ally.Health.Initialize(30);
+            enemy.Health.Initialize(30);
+            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 2f;
+
+            var skill = new BibleGotsumeSkill();
+            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
+            ally.Health.TakeDamage(5, enemy);
+
+            Assert.That(enemy.Health.HP, Is.EqualTo(26));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void BibleCarryRushSkill_BoostsSpeedAndCarriesAlly()
     {
         GameObject ownerGo = new GameObject("Owner");
