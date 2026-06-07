@@ -37,16 +37,17 @@ Character.AvailableCombatSkills
 ### 実行フロー
 
 ```text
-PersonalityBase.Update()
-  └─ Tick()
-       ├─ DecidePlan()
-       ├─ ExecuteMove()
-       └─ ExecuteSkill()
+CombatAiContext
+  └─ CombatAiAssessmentBuilder
+       └─ CombatAiPlanner
+            ├─ Objective scoring
+            ├─ Move candidate scoring
+            └─ Skill candidate scoring
 ```
 
-- `ExecuteSkill()` は `plan.Skill` と `plan.SkillContext` があるときに実行する。
+- `CombatAiPlan` は `plan.Skill` と `plan.SkillContext` を保持する。
 - クールダウンは `CombatSkillCooldowns` が管理する。
-- 現在の `PlainPersonality` は移動しか決めず、スキル選択はまだ行わない。
+- AI の実行主体は `PersonalityBase` ではなく、`CombatAiPlanner` とそのデバッグ可視化へ移行した。
 
 ### 実装済みスキル
 
@@ -294,7 +295,7 @@ PersonalityBase.Update()
 
 ## AI に必要な拡張
 
-今の `PlainPersonality` はスキルを選ばない。以下が必要。
+AI のスキル選択は `CombatAiPlanner` で行う。以下が必要。
 
 - 攻撃スキルと支援スキルの優先順位
 - 範囲攻撃を撃つ価値の判断

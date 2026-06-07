@@ -909,16 +909,10 @@ AI の判断ロジックは AI 系ディレクトリへまとめる。
   * `CombatAiContext -> CombatAiAssessment`
   * 共通変換のみを持つ
   * 武器差分、性格差分はここへ直接入れない
-* `Assets/Scripts/Combat/Characters/AI/CombatAiObjectiveScoreSet.cs`
-  * 目的ごとの点数入れ物
-* `Assets/Scripts/Combat/Characters/AI/CombatAiObjectiveScorer.cs`
-  * `CombatAiAssessment -> 目的スコア`
-  * 共通の目的評価を担当
-* `Assets/Scripts/Combat/Characters/AI/CombatAiWeaponProfile.cs`
-  * 武器ごとの差分定義
-  * 目的補正
-  * 移動補正
-  * 将来のスキル補正
+* `Assets/Scripts/Combat/Characters/AI/CombatAiAssessment.cs`
+  * `CombatAiAssessment`
+  * `CombatAiDebugSnapshot`
+  * 目的 / 移動 / スキル候補 1 件分のスコアと内訳
 * `Assets/Scripts/Combat/Characters/AI/CombatAiPersonalityProfile.cs`
   * 性格ごとの差分定義
   * 目的補正
@@ -927,30 +921,20 @@ AI の判断ロジックは AI 系ディレクトリへまとめる。
 * `Assets/Scripts/Combat/Characters/AI/CombatAiPlanner.cs`
   * 全体の組み立て
   * `CombatAiContext` 収集後の判断フローをまとめる
-* `Assets/Scripts/Combat/Characters/AI/CombatAiDebugSnapshot.cs`
-  * 判断フロー全体のスナップショット
-  * `Context -> Assessment -> Objective -> Move -> Skill -> Plan` を保持する
-* `Assets/Scripts/Combat/Characters/AI/CombatAiObjectiveScoreEntry.cs`
-  * 目的候補 1 件分のスコアと内訳
-* `Assets/Scripts/Combat/Characters/AI/CombatAiMoveCandidateEntry.cs`
-  * 移動候補 1 件分のスコアと内訳
-* `Assets/Scripts/Combat/Characters/AI/CombatAiSkillCandidateEntry.cs`
-  * スキル候補 1 件分のスコアと内訳
 * `Assets/Scripts/Combat/Characters/AI/CombatAiReasonCode.cs`
   * 候補が選ばれた理由コード
   * 英語名を内部保持し、日本語訳を対応づける
-* `Assets/Editor/Combat/AI/CombatAiDebugWindow.cs`
-  * 判断フローを 2D で可視化する `EditorWindow`
-* `Assets/Editor/Combat/AI/CombatAiDebugDrawer.cs`
-  * 2D 表示の描画補助
+* `Assets/Scripts/Combat/Debug/CombatAiDecisionDebugView.cs`
+  * 判断フローを 2D で可視化する表示専用ビュー
+  * `CombatAiContextCollector` と `CombatAiPlanner` を呼んで描画する
 
 ### 既存編集
 
-* `Assets/Scripts/Combat/Characters/personality/PersonalityBase.cs`
-  * `CombatAiPlanner` を呼ぶ入口へ寄せる
-  * 性格補正プロファイルの受け渡し入口にする
-* `Assets/Scripts/Combat/Characters/personality/PlainPersonality.cs`
-  * まずは新フローへ移行する対象
+* `Assets/Scripts/Combat/Characters/Chracter.cs`
+  * `PersonalityBase` 依存を削除し、`SpiritData.PersonalityProfile` を保持する
+  * `PlainPersonality` 自動追加を行わない
+* `Assets/Scripts/Combat/Characters/SpiritData.cs`
+  * `CombatAiPersonalityProfile PersonalityProfile` を保持する
 * `Assets/Scripts/Combat/Characters/AI/CombatAiContext.cs`
   * 必要な生データが不足していれば追加する
   * AI 用の解釈は入れない

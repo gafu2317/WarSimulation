@@ -84,7 +84,7 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
         if (!IsDebugMenuAllowed() || !_showMenu) return;
 
         EnsureStyles();
-        _windowRect = GUI.Window(GetInstanceID(), _windowRect, DrawWindow, "Skill Debug Menu");
+        _windowRect = GUI.Window(GetHashCode(), _windowRect, DrawWindow, "Skill Debug Menu");
     }
 
     private void DrawWindow(int windowId)
@@ -431,7 +431,7 @@ public sealed class CombatSkillDebugMenu : MonoBehaviour
     private void RefreshCharacters()
     {
         _characters.Clear();
-        Character[] found = FindObjectsByType<Character>(FindObjectsSortMode.None);
+        Character[] found = FindObjectsByType<Character>(FindObjectsInactive.Exclude);
         for (int i = 0; i < found.Length; i++)
         {
             Character character = found[i];

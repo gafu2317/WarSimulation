@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -40,15 +39,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
     }
 
     /// <summary>
-    /// ベイク済み NavMesh を MapData と同解像度の 2D テクスチャに落とす。
-    /// 同一 XZ で上下に重なる NavMesh がある場合は、マップ上方からサンプルして最も高い歩行面を表示する。
+    /// MapData ベースの NavMesh エリアプレビューを 2D テクスチャに落とす。
+    /// 木・岩・魔石などの局所障害物は含めず、地形・水域・橋によるエリアだけを表示する。
     /// </summary>
     public static class NavMeshPreviewTextureBuilder
     {
-        private const float MinVerticalSearchRadius = 4f;
-        private const float VerticalSearchPadding = 4f;
-        private const int ProgressUpdateInterval = 4096;
-
         private static readonly (string Name, Color32 Color)[] s_areaPalette =
         {
             ("Walkable", new Color32(210, 195, 160, 255)),
@@ -66,26 +61,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         public static NavMeshPreviewBuildResult Build(MapData map)
         {
-            if (map == null)
-            {
-                return new NavMeshPreviewBuildResult(null, null, false);
-            }
-
-            NavMeshTriangulation triangulation = NavMesh.CalculateTriangulation();
-            if (triangulation.vertices == null || triangulation.vertices.Length == 0)
-            {
-                return new NavMeshPreviewBuildResult(null, null, false);
-            }
+            if (map == null) return new NavMeshPreviewBuildResult(null, null, false);
 
             HeightMap heightMap = map.Height;
             int width = heightMap.Width;
             int height = heightMap.Height;
-            float cellSize = heightMap.CellSize;
-
-            float probeY = GetTopDownProbeHeight(map, heightMap, out float minHeight);
-            float sampleRadius = Mathf.Max(
-                MinVerticalSearchRadius,
-                probeY - minHeight + VerticalSearchPadding);
 
             var tex = new Texture2D(width, height, TextureFormat.RGB24, false)
             {
@@ -95,49 +75,18 @@ namespace WarSimulation.Combat.Map.EditorOnly
             };
 
             var pixels = new Color32[width * height];
+            CombatNavAreaKind[,] areaGrid = CombatNavMeshAreaGridBuilder.Build(map);
             var usedAreas = new HashSet<int>();
-            int totalCells = width * height;
-            int processed = 0;
 
-            try
+            for (int z = 0; z < height; z++)
             {
-                for (int z = 0; z < height; z++)
+                for (int x = 0; x < width; x++)
                 {
-                    float worldZ = (z + 0.5f) * cellSize;
-                    for (int x = 0; x < width; x++)
-                    {
-                        float worldX = (x + 0.5f) * cellSize;
-                        var probe = new Vector3(worldX, probeY, worldZ);
-
-                        if (NavMesh.SamplePosition(
-                                probe,
-                                out NavMeshHit hit,
-                                sampleRadius,
-                                NavMesh.AllAreas))
-                        {
-                            int areaIndex = MaskToAreaIndex(hit.mask);
-                            usedAreas.Add(areaIndex);
-                            pixels[z * width + x] = ResolveAreaColor(areaIndex);
-                        }
-                        else
-                        {
-                            pixels[z * width + x] = s_unwalkableColor;
-                        }
-
-                        processed++;
-                        if (processed % ProgressUpdateInterval == 0)
-                        {
-                            EditorUtility.DisplayProgressBar(
-                                "NavMesh Preview",
-                                $"Sampling NavMesh ({processed}/{totalCells})",
-                                (float)processed / totalCells);
-                        }
-                    }
+                    string areaName = CombatNavMeshAreaGridBuilder.GetAreaName(areaGrid[x, z]);
+                    int areaIndex = ResolveAreaIndex(areaName);
+                    usedAreas.Add(areaIndex);
+                    pixels[z * width + x] = ResolveAreaColor(areaIndex);
                 }
-            }
-            finally
-            {
-                EditorUtility.ClearProgressBar();
             }
 
             tex.SetPixels32(pixels);
@@ -210,64 +159,10 @@ namespace WarSimulation.Combat.Map.EditorOnly
             return $"Area {areaIndex}";
         }
 
-        private static int MaskToAreaIndex(int mask)
+        private static int ResolveAreaIndex(string areaName)
         {
-            if (mask <= 0) return 0;
-
-            int area = 0;
-            int m = mask;
-            while ((m & 1) == 0)
-            {
-                m >>= 1;
-                area++;
-            }
-
-            return area;
-        }
-
-        private static float GetTopDownProbeHeight(MapData map, HeightMap heightMap, out float minHeight)
-        {
-            GetHeightRange(heightMap, out minHeight, out float maxHeight);
-
-            float maxBridgeDeckY = float.NegativeInfinity;
-            List<PlacedFeature> features = map.Features;
-            if (features != null)
-            {
-                for (int i = 0; i < features.Count; i++)
-                {
-                    PlacedFeature feature = features[i];
-                    if (feature.Type != FeatureType.Bridge) continue;
-
-                    float deckY = feature.WorldPosition.y + feature.Scale.y * 0.5f;
-                    if (deckY > maxBridgeDeckY) maxBridgeDeckY = deckY;
-                }
-            }
-
-            float topSurfaceY = maxHeight;
-            if (maxBridgeDeckY > topSurfaceY) topSurfaceY = maxBridgeDeckY;
-            return topSurfaceY + VerticalSearchPadding;
-        }
-
-        private static void GetHeightRange(HeightMap heightMap, out float min, out float max)
-        {
-            min = float.PositiveInfinity;
-            max = float.NegativeInfinity;
-
-            for (int z = 0; z < heightMap.Height; z++)
-            {
-                for (int x = 0; x < heightMap.Width; x++)
-                {
-                    float h = heightMap.GetHeight(x, z);
-                    if (h < min) min = h;
-                    if (h > max) max = h;
-                }
-            }
-
-            if (float.IsInfinity(min) || float.IsInfinity(max))
-            {
-                min = 0f;
-                max = 0f;
-            }
+            int areaIndex = NavMesh.GetAreaFromName(areaName);
+            return areaIndex >= 0 ? areaIndex : 0;
         }
     }
 }

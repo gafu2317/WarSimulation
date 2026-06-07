@@ -207,8 +207,6 @@ namespace WarSimulation.Combat.Map
             var trunkCollider = trunk.GetComponent<CapsuleCollider>();
             trunkCollider.direction = 1; // Y axis
             trunkCollider.isTrigger = false;
-            IgnoreFromNavMeshBuild(trunk);
-
             // Unity のデフォルト Sphere は直径 1m。localScale = diameter で好きなサイズに。
             var foliage = new GameObject("Foliage", typeof(MeshFilter), typeof(MeshRenderer), typeof(SphereCollider));
             foliage.transform.SetParent(tree.transform, worldPositionStays: false);
@@ -248,7 +246,6 @@ namespace WarSimulation.Combat.Map
             rock.GetComponent<MeshFilter>().sharedMesh = cube;
             rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
             rock.GetComponent<BoxCollider>().isTrigger = false;
-            IgnoreFromNavMeshBuild(rock);
         }
 
         /// <summary>
@@ -279,8 +276,6 @@ namespace WarSimulation.Combat.Map
             stone.GetComponent<MeshFilter>().sharedMesh = cube;
             stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
             stone.GetComponent<BoxCollider>().isTrigger = false;
-            IgnoreFromNavMeshBuild(stone);
-
             MagicStone instance = stone.AddComponent<MagicStone>();
             instance.Setup(featureIndex, f.Type, isMain, height);
         }

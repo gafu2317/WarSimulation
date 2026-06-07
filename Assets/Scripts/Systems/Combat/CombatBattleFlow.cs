@@ -129,9 +129,6 @@ public sealed class CombatBattleFlow : MonoBehaviour
             Character character = characters[i];
             if (character == null) continue;
 
-            PersonalityBase personality = character.GetComponent<PersonalityBase>();
-            if (personality != null) personality.enabled = false;
-
             CombatCharacterBody body = character.GetComponent<CombatCharacterBody>();
             body?.Stop();
         }

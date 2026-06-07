@@ -11,7 +11,6 @@ public sealed class CombatAiContextCollectorTests
         AiContextFixture fixture = CreateFixture();
         try
         {
-            fixture.OwnerPersonality.Tick();
             fixture.Enemy.StatusEffects.Apply(
                 CombatStatusEffects.StatKind.STR,
                 0.5f,
@@ -65,8 +64,7 @@ public sealed class CombatAiContextCollectorTests
             Assert.That(rememberedIntel.HasObjective, Is.False);
 
             CombatCharacterIntel allyIntel = FindIntel(context.AllyIntel, fixture.Owner);
-            Assert.That(allyIntel.HasObjective, Is.True);
-            Assert.That(allyIntel.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+            Assert.That(allyIntel.HasObjective, Is.False);
         }
         finally
         {
@@ -109,6 +107,201 @@ public sealed class CombatAiContextCollectorTests
         {
             Object.DestroyImmediate(ownerGo);
             Object.DestroyImmediate(mapGo);
+            Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
+    public void Assessment_IgnoresEnemyWithoutKnownPosition()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject enemyGo = new GameObject("UnknownEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(1f, 0f, 0f);
+
+            CombatAiContext context = new CombatAiContext(
+                owner,
+                visibleEnemies: System.Array.Empty<Character>(),
+                rememberedEnemies: System.Array.Empty<Character>(),
+                allies: System.Array.Empty<Character>(),
+                enemyIntel: new[] { CreateIntel(enemy, hasKnownPosition: false, knownPosition: default) },
+                allyIntel: System.Array.Empty<CombatCharacterIntel>(),
+                weather: CombatMapSystem.Weather.Sunny,
+                windVector: Vector3.zero,
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: false,
+                enemyStonePosition: default,
+                rockPositions: System.Array.Empty<Vector3>(),
+                bridgePositions: System.Array.Empty<Vector3>(),
+                highGroundCandidates: System.Array.Empty<Vector3>(),
+                forestCandidates: System.Array.Empty<Vector3>());
+
+            CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context);
+
+            Assert.That(assessment.GetValue("OwnStoneThreat"), Is.EqualTo(0f));
+            Assert.That(assessment.GetValue("ReachableEnemyValue"), Is.EqualTo(0f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_SelectsHoldPositionWhenNoMoveTargetsExist()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            CombatAiContext context = CreatePlannerContext(owner);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo("HoldPosition"));
+            Assert.That(snapshot.FinalPlan.MoveTarget.Kind, Is.EqualTo(CombatMoveTargetKind.None));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_DoesNotSelectCooldownSkill()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = Vector3.forward;
+
+            var cooldownSkill = new AiPlannerBoltCooldownSkill();
+            var basicSkill = new AiPlannerBasicAttackSkill();
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, cooldownSkill, basicSkill);
+            owner.SkillCooldowns.StartCooldown(cooldownSkill);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy },
+                enemyIntel: new[] { CreateIntel(enemy, hasKnownPosition: true, knownPosition: enemyGo.transform.position) });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedSkill.Skill, Is.EqualTo(basicSkill));
+            Assert.That(snapshot.SelectedSkill.Evaluation.CanUse, Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ChoosesLowHpAllyForHealSkill()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject healthyGo = new GameObject("HealthyAlly");
+        GameObject lowHpGo = new GameObject("LowHpAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            Character healthy = healthyGo.AddComponent<Character>();
+            healthy.Health.Initialize(30, 30);
+            Character lowHp = lowHpGo.AddComponent<Character>();
+            lowHp.Health.Initialize(30, 5);
+            healthyGo.transform.position = Vector3.right;
+            lowHpGo.transform.position = Vector3.left;
+
+            var healSkill = new AiPlannerHealSkill();
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, healSkill);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allies: new[] { healthy, lowHp },
+                allyIntel: new[]
+                {
+                    CreateIntel(healthy, hasKnownPosition: true, knownPosition: healthyGo.transform.position),
+                    CreateIntel(lowHp, hasKnownPosition: true, knownPosition: lowHpGo.transform.position),
+                });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedSkill.Skill, Is.EqualTo(healSkill));
+            Assert.That(snapshot.SelectedSkill.SkillContext.PrimaryTarget, Is.EqualTo(lowHp));
+        }
+        finally
+        {
+            Object.DestroyImmediate(lowHpGo);
+            Object.DestroyImmediate(healthyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_AreaSkillPrefersPointThatHitsMultipleEnemies()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject enemyGo = new GameObject("Enemy");
+        GameObject secondEnemyGo = new GameObject("Enemy2");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(30);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            Character secondEnemy = secondEnemyGo.AddComponent<Character>();
+            secondEnemy.SetTeam(CombatTeam.Enemy);
+            secondEnemy.Health.Initialize(30);
+
+            ownerGo.transform.position = Vector3.zero;
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+            secondEnemyGo.transform.position = new Vector3(3f, 0f, 0f);
+            system.AllyCharacters.Add(owner);
+            system.EnemyCharacters.Add(enemy);
+            system.EnemyCharacters.Add(secondEnemy);
+            system.AssignTeamsFromLists();
+
+            var areaSkill = new AiPlannerAreaBlastSkill();
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, areaSkill);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy, secondEnemy },
+                enemyIntel: new[]
+                {
+                    CreateIntel(enemy, hasKnownPosition: true, knownPosition: enemyGo.transform.position),
+                    CreateIntel(secondEnemy, hasKnownPosition: true, knownPosition: secondEnemyGo.transform.position),
+                });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedSkill.Skill, Is.EqualTo(areaSkill));
+            Assert.That(snapshot.SelectedSkill.Evaluation.ResolvedTargets.Count, Is.EqualTo(2));
+        }
+        finally
+        {
+            Object.DestroyImmediate(secondEnemyGo);
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
             Object.DestroyImmediate(systemGo);
         }
     }
@@ -157,8 +350,6 @@ public sealed class CombatAiContextCollectorTests
         fixture.System.EnemyCharacters.Add(fixture.RememberedEnemy);
         fixture.System.AssignTeamsFromLists();
 
-        fixture.OwnerPersonality = CombatEditModeTestUtil.EnsurePlainPersonality(fixture.OwnerGo);
-        CombatEditModeTestUtil.WirePersonality(fixture.OwnerPersonality, fixture.System, fixture.MapSystem);
         CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
         fixture.Owner.Vision.Initialize();
 
@@ -220,6 +411,98 @@ public sealed class CombatAiContextCollectorTests
         return default;
     }
 
+    private static CombatAiContext CreatePlannerContext(
+        Character owner,
+        IReadOnlyList<Character> visibleEnemies = null,
+        IReadOnlyList<Character> rememberedEnemies = null,
+        IReadOnlyList<Character> allies = null,
+        IReadOnlyList<CombatCharacterIntel> enemyIntel = null,
+        IReadOnlyList<CombatCharacterIntel> allyIntel = null,
+        bool hasEnemyStonePosition = false,
+        Vector3 enemyStonePosition = default)
+    {
+        return new CombatAiContext(
+            owner,
+            visibleEnemies ?? System.Array.Empty<Character>(),
+            rememberedEnemies ?? System.Array.Empty<Character>(),
+            allies ?? System.Array.Empty<Character>(),
+            enemyIntel ?? System.Array.Empty<CombatCharacterIntel>(),
+            allyIntel ?? System.Array.Empty<CombatCharacterIntel>(),
+            CombatMapSystem.Weather.Sunny,
+            Vector3.zero,
+            hasOwnStonePosition: false,
+            ownStonePosition: default,
+            hasEnemyStonePosition,
+            enemyStonePosition,
+            System.Array.Empty<Vector3>(),
+            System.Array.Empty<Vector3>(),
+            System.Array.Empty<Vector3>(),
+            System.Array.Empty<Vector3>());
+    }
+
+    private static CombatCharacterIntel CreateIntel(
+        Character character,
+        bool hasKnownPosition,
+        Vector3 knownPosition,
+        bool hasDirectSight = true,
+        bool hasMemory = false)
+    {
+        CombatHealth health = character != null ? character.Health : null;
+        WeaponBase weapon = character != null ? character.EquippedWeapon ?? WeaponBase.Unarmed : WeaponBase.Unarmed;
+        return new CombatCharacterIntel(
+            character,
+            character != null ? character.Team : default,
+            character != null ? character.transform.position : default,
+            hasDirectSight,
+            hasMemory,
+            hasKnownPosition,
+            knownPosition,
+            hasLastKnownPosition: hasMemory,
+            lastKnownPosition: hasMemory ? knownPosition : default,
+            memoryAgeSeconds: hasMemory ? 0f : float.PositiveInfinity,
+            recognizesOwner: false,
+            hp: health != null ? health.HP : 0,
+            maxHp: health != null ? health.MaxHP : 0,
+            canAct: health != null && health.CanAct,
+            weaponKind: weapon.Kind,
+            weaponRange: weapon.Range,
+            statusEffects: System.Array.Empty<CombatStatusEffectSnapshot>(),
+            hasObjective: false,
+            objective: default);
+    }
+
+    private sealed class AiPlannerBasicAttackSkill : SkillBase
+    {
+        public override string Name => "通常攻撃";
+        public override float MaxRange => 3f;
+        public override void Execute(Character self, SkillExecutionContext context) { }
+    }
+
+    private sealed class AiPlannerBoltCooldownSkill : SkillBase
+    {
+        public override string Name => "BoltCooldown";
+        public override float CooldownSeconds => 10f;
+        public override float MaxRange => 3f;
+        public override void Execute(Character self, SkillExecutionContext context) { }
+    }
+
+    private sealed class AiPlannerHealSkill : SkillBase
+    {
+        public override string Name => "PlannerHeal";
+        public override SkillTargetKind TargetKind => SkillTargetKind.Ally;
+        public override float MaxRange => 10f;
+        public override void Execute(Character self, SkillExecutionContext context) { }
+    }
+
+    private sealed class AiPlannerAreaBlastSkill : SkillBase
+    {
+        public override string Name => "PlannerAreaBlast";
+        public override SkillTargetKind TargetKind => SkillTargetKind.Area;
+        public override float MaxRange => 10f;
+        public override float AreaRadius => 2f;
+        public override void Execute(Character self, SkillExecutionContext context) { }
+    }
+
     private sealed class AiContextFixture
     {
         public GameObject SystemGo;
@@ -235,7 +518,6 @@ public sealed class CombatAiContextCollectorTests
         public Character Observer;
         public Character Enemy;
         public Character RememberedEnemy;
-        public PlainPersonality OwnerPersonality;
         public CombatVision ObserverVision;
         public CombatAiContextCollector Collector;
 

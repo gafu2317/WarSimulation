@@ -3,8 +3,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewCharacterData", menuName = "ScriptableObjects/SpiritData")]
 public class SpiritData : ScriptableObject
 {
-    // 性格
-    [field: SerializeField] public PersonalityBase Personality { private set; get; }
+    [field: Header("AI Personality")]
+    [field: SerializeField] public CombatAiPersonalityProfile PersonalityProfile { private set; get; }
 
     // 向上パラメータ量
     [Header("Additional Parameters")]

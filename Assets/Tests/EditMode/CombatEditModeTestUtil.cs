@@ -32,30 +32,9 @@ internal static class CombatEditModeTestUtil
         SetPrivateField(collector, "_mapSystem", mapSystem);
     }
 
-    public static void WirePersonality(
-        PlainPersonality personality,
-        CombatCharacterSystem system,
-        CombatMapSystem mapSystem)
-    {
-        SetPrivateField(personality, "_characterSystem", system);
-        SetPrivateField(personality, "_mapSystem", mapSystem);
-    }
-
     public static void WireBattleFlow(CombatBattleFlow flow, CombatMagicStoneSystem stoneSystem)
     {
         flow.SetMagicStoneSystem(stoneSystem);
-    }
-
-    public static PlainPersonality EnsurePlainPersonality(GameObject go)
-    {
-        Assert.That(go, Is.Not.Null);
-        PlainPersonality personality = go.GetComponent<PlainPersonality>();
-        if (personality == null)
-        {
-            personality = go.AddComponent<PlainPersonality>();
-        }
-
-        return personality;
     }
 
     public static CombatSkillCatalog CreateTestSkillCatalog(params SkillDefinition[] definitions)
@@ -83,7 +62,12 @@ internal static class CombatEditModeTestUtil
 
     public static void SetAvailableCombatSkills(Character character, params SkillBase[] skills)
     {
-        var list = new System.Collections.Generic.List<SkillBase>();
+        Assert.That(character, Is.Not.Null);
+        var field = character.GetType().GetField("_availableCombatSkills", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null);
+        var list = (System.Collections.Generic.List<SkillBase>)field.GetValue(character);
+        list.Clear();
+
         if (skills != null)
         {
             for (int i = 0; i < skills.Length; i++)
@@ -94,7 +78,5 @@ internal static class CombatEditModeTestUtil
                 }
             }
         }
-
-        SetPrivateField(character, "_availableCombatSkills", list);
     }
 }

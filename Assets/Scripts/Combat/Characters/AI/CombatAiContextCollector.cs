@@ -4,7 +4,6 @@ using UnityEngine;
 using WarSimulation.Combat.Map;
 
 [DisallowMultipleComponent]
-    [RequireComponent(typeof(Character))]
 public sealed class CombatAiContextCollector : MonoBehaviour
 {
     [SerializeField] private CombatCharacterSystem _characterSystem;
@@ -153,27 +152,33 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             bool hasLastKnownPosition = vision != null &&
                 vision.TryGetLastKnownPosition(character, out lastKnownPosition);
             bool hasMemory = vision != null && vision.HasMemoryOf(character);
+            bool hasDirectSight = vision != null && vision.IsVisible(character);
+            bool hasKnownPosition = hasDirectSight || (hasMemory && hasLastKnownPosition);
+            Vector3 knownPosition = hasDirectSight
+                ? character.transform.position
+                : hasKnownPosition
+                    ? lastKnownPosition
+                    : default;
             float memoryAgeSeconds = vision != null ? vision.GetMemoryAgeSeconds(character) : float.PositiveInfinity;
             WeaponBase weapon = character.EquippedWeapon ?? WeaponBase.Unarmed;
             CombatHealth health = character.Health;
-            PersonalityBase personality = character.GetComponent<PersonalityBase>();
             CombatStatusEffects statusEffectsComponent = character.GetComponent<CombatStatusEffects>();
             CombatVision targetVision = character.Vision;
             IReadOnlyList<CombatStatusEffectSnapshot> statusEffects = statusEffectsComponent != null
                 ? statusEffectsComponent.GetActiveEffectSnapshots()
                 : Array.Empty<CombatStatusEffectSnapshot>();
-            bool hasObjective = personality != null && personality.HasPlannedOnce;
-            CombatObjective objective = hasObjective
-                ? personality.LastPlan.Objective
-                : default;
+            bool hasObjective = false;
+            CombatObjective objective = default;
             bool recognizesOwner = targetVision != null && owner != null && targetVision.HasRecognitionOf(owner);
 
             destination.Add(new CombatCharacterIntel(
                 character,
                 character.Team,
                 character.transform.position,
-                vision != null && vision.IsVisible(character),
+                hasDirectSight,
                 hasMemory,
+                hasKnownPosition,
+                knownPosition,
                 hasLastKnownPosition,
                 hasLastKnownPosition ? lastKnownPosition : default,
                 memoryAgeSeconds,

@@ -9,10 +9,12 @@ public sealed class SkillTargetKindTests
         SkillTargetFixture fixture = SkillTargetFixture.Create();
         try
         {
-            var personality = fixture.OwnerGo.AddComponent<TargetValidationPersonality>();
             var skill = new TargetValidationSkill(SkillTargetKind.Self, maxRange: 0f);
 
-            bool canExecute = personality.CanExecute(skill, SkillExecutionContext.ForSelf(fixture.Owner));
+            bool canExecute = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.ForSelf(fixture.Owner)).CanUse;
 
             Assert.That(canExecute, Is.True);
         }
@@ -28,13 +30,16 @@ public sealed class SkillTargetKindTests
         SkillTargetFixture fixture = SkillTargetFixture.Create();
         try
         {
-            var personality = fixture.OwnerGo.AddComponent<TargetValidationPersonality>();
             var skill = new TargetValidationSkill(SkillTargetKind.Point, maxRange: 5f);
 
-            bool canExecuteWithoutPoint = personality.CanExecute(skill, SkillExecutionContext.None);
-            bool canExecuteWithPoint = personality.CanExecute(
+            bool canExecuteWithoutPoint = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
                 skill,
-                SkillExecutionContext.ForPoint(fixture.OwnerGo.transform.position + Vector3.forward * 3f));
+                SkillExecutionContext.None).CanUse;
+            bool canExecuteWithPoint = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.ForPoint(fixture.OwnerGo.transform.position + Vector3.forward * 3f)).CanUse;
 
             Assert.That(canExecuteWithoutPoint, Is.False);
             Assert.That(canExecuteWithPoint, Is.True);
@@ -51,12 +56,12 @@ public sealed class SkillTargetKindTests
         SkillTargetFixture fixture = SkillTargetFixture.Create();
         try
         {
-            var personality = fixture.OwnerGo.AddComponent<TargetValidationPersonality>();
             var skill = new TargetValidationSkill(SkillTargetKind.Point, maxRange: 5f);
 
-            bool canExecute = personality.CanExecute(
+            bool canExecute = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
                 skill,
-                SkillExecutionContext.ForPoint(fixture.OwnerGo.transform.position + Vector3.forward * 7f));
+                SkillExecutionContext.ForPoint(fixture.OwnerGo.transform.position + Vector3.forward * 7f)).CanUse;
 
             Assert.That(canExecute, Is.False);
         }
@@ -72,12 +77,11 @@ public sealed class SkillTargetKindTests
         SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, withSecondEnemy: true);
         try
         {
-            var personality = fixture.OwnerGo.AddComponent<TargetValidationPersonality>();
             var skill = new TargetValidationSkill(SkillTargetKind.AllEnemies, maxRange: 5f);
             SkillExecutionContext context = SkillExecutionContext.ForTargets(
                 new[] { fixture.Enemy, fixture.SecondEnemy });
 
-            bool canExecute = personality.CanExecute(skill, context);
+            bool canExecute = CombatSkillEvaluator.Evaluate(fixture.Owner, skill, context).CanUse;
 
             Assert.That(canExecute, Is.True);
         }
@@ -93,12 +97,11 @@ public sealed class SkillTargetKindTests
         SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, withAlly: true);
         try
         {
-            var personality = fixture.OwnerGo.AddComponent<TargetValidationPersonality>();
             var skill = new TargetValidationSkill(SkillTargetKind.AllEnemies, maxRange: 5f);
             SkillExecutionContext context = SkillExecutionContext.ForTargets(
                 new[] { fixture.Enemy, fixture.Ally });
 
-            bool canExecute = personality.CanExecute(skill, context);
+            bool canExecute = CombatSkillEvaluator.Evaluate(fixture.Owner, skill, context).CanUse;
 
             Assert.That(canExecute, Is.False);
         }
@@ -114,28 +117,17 @@ public sealed class SkillTargetKindTests
         SkillTargetFixture fixture = SkillTargetFixture.Create();
         try
         {
-            var personality = fixture.OwnerGo.AddComponent<TargetValidationPersonality>();
             var skill = new TargetValidationSkill(SkillTargetKind.Area, maxRange: 5f);
             SkillExecutionContext context = SkillExecutionContext.ForPoint(
                 fixture.OwnerGo.transform.position + Vector3.forward * 2f);
 
-            bool canExecute = personality.CanExecute(skill, context);
+            bool canExecute = CombatSkillEvaluator.Evaluate(fixture.Owner, skill, context).CanUse;
 
             Assert.That(canExecute, Is.False);
         }
         finally
         {
             fixture.Destroy();
-        }
-    }
-
-    private sealed class TargetValidationPersonality : PersonalityBase
-    {
-        public override CombatAiPlan DecidePlan() => CombatAiPlan.None;
-
-        public bool CanExecute(SkillBase skill, SkillExecutionContext context)
-        {
-            return CanExecuteSkill(skill, context);
         }
     }
 

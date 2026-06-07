@@ -65,6 +65,8 @@ public readonly struct CombatCharacterIntel
     public Vector3 CurrentPosition { get; }
     public bool HasDirectSight { get; }
     public bool HasMemory { get; }
+    public bool HasKnownPosition { get; }
+    public Vector3 KnownPosition { get; }
     public bool HasLastKnownPosition { get; }
     public Vector3 LastKnownPosition { get; }
     public float MemoryAgeSeconds { get; }
@@ -84,6 +86,8 @@ public readonly struct CombatCharacterIntel
         Vector3 currentPosition,
         bool hasDirectSight,
         bool hasMemory,
+        bool hasKnownPosition,
+        Vector3 knownPosition,
         bool hasLastKnownPosition,
         Vector3 lastKnownPosition,
         float memoryAgeSeconds,
@@ -102,6 +106,8 @@ public readonly struct CombatCharacterIntel
         CurrentPosition = currentPosition;
         HasDirectSight = hasDirectSight;
         HasMemory = hasMemory;
+        HasKnownPosition = hasKnownPosition;
+        KnownPosition = knownPosition;
         HasLastKnownPosition = hasLastKnownPosition;
         LastKnownPosition = lastKnownPosition;
         MemoryAgeSeconds = memoryAgeSeconds;
