@@ -1,4 +1,5 @@
 using UnityEngine;
+using WarSimulation.Combat.Map;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Character))]
@@ -9,17 +10,20 @@ public sealed class CombatAiBrain : MonoBehaviour
     [SerializeField, Min(0.05f)] private float _decisionIntervalSeconds = 0.5f;
     [SerializeField] private bool _executeMovement = true;
     [SerializeField] private bool _executeSkills = true;
+    [SerializeField] private bool _executeStoneAttacks = true;
     [SerializeField] private bool _showObjectiveLabel = true;
 
     private Character _owner;
     private CombatAiContextCollector _contextCollector;
     private CombatAiWorldLabel _worldLabel;
     private float _nextDecisionTime;
+    private float _nextStoneAttackTime;
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
     public CombatAiContext LastContext { get; private set; }
     public CombatSkillEvaluationResult LastSkillEvaluation { get; private set; }
     public bool HasLastSkillEvaluation { get; private set; }
+    public int LastStoneDamage { get; private set; }
 
     private void Awake()
     {
@@ -54,9 +58,33 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         LastPlan = plan;
         RefreshWorldLabel();
-        bool usedSkill = TryExecuteSkill(plan);
-        bool moved = TryExecuteMovement(plan);
-        return usedSkill || moved;
+        bool attackedStone = TryExecuteStoneAttack(plan);
+        bool usedSkill = !attackedStone && TryExecuteSkill(plan);
+        bool moved = !attackedStone && TryExecuteMovement(plan);
+        return attackedStone || usedSkill || moved;
+    }
+
+    private bool TryExecuteStoneAttack(CombatAiPlan plan)
+    {
+        LastStoneDamage = 0;
+        if (!_executeStoneAttacks || plan.Objective != CombatObjective.DestroyEnemyStone) return false;
+        if (Time.time < _nextStoneAttackTime) return false;
+
+        MagicStone stone = FindEnemyMainStone();
+        CombatMagicStoneSystem stoneSystem = CombatMagicStoneSystemResolver.Resolve();
+        if (stone == null || stoneSystem == null || stone.FeatureIndex < 0) return false;
+        if (!stoneSystem.TryGetState(stone.FeatureIndex, out MagicStoneRuntimeState state) || state.HP <= 0) return false;
+
+        WeaponBase weapon = _owner.EquippedWeapon ?? WeaponBase.Unarmed;
+        float attackRange = Mathf.Max(0.5f, weapon.Range) + 1.2f;
+        if (HorizontalDistance(_owner.transform.position, stone.transform.position) > attackRange) return false;
+
+        int damage = Mathf.Max(1, weapon.BasePower + Mathf.RoundToInt(GetEffectiveScalingStat(weapon.ScalingStat) * 0.5f));
+        LastStoneDamage = stoneSystem.TakeDamage(stone.FeatureIndex, damage);
+        if (LastStoneDamage <= 0) return false;
+
+        _nextStoneAttackTime = Time.time + Mathf.Max(0.1f, weapon.CooldownSeconds);
+        return true;
     }
 
     private bool TryExecuteSkill(CombatAiPlan plan)
@@ -88,6 +116,47 @@ public sealed class CombatAiBrain : MonoBehaviour
                 : plan.MoveTarget.Destination;
         _owner.MoveToTarget(destination);
         return true;
+    }
+
+    private MagicStone FindEnemyMainStone()
+    {
+        FeatureType targetType = _owner.Team == CombatTeam.Ally
+            ? FeatureType.EnemyMainStone
+            : FeatureType.OwnMainStone;
+        MagicStone[] stones = FindObjectsByType<MagicStone>(FindObjectsInactive.Exclude);
+        MagicStone best = null;
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < stones.Length; i++)
+        {
+            MagicStone stone = stones[i];
+            if (stone == null || stone.FeatureType != targetType) continue;
+
+            float distance = HorizontalDistance(_owner.transform.position, stone.transform.position);
+            if (distance >= bestDistance) continue;
+            bestDistance = distance;
+            best = stone;
+        }
+
+        return best;
+    }
+
+    private float GetEffectiveScalingStat(CombatStat stat)
+    {
+        return stat switch
+        {
+            CombatStat.STR => _owner.STR * _owner.STRBuff,
+            CombatStat.INT => _owner.INT * _owner.INTBuff,
+            CombatStat.FAI => _owner.FAI * _owner.FAIBuff,
+            CombatStat.AGI => _owner.AGI * _owner.AGIBuff,
+            _ => 0f,
+        };
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
     }
 
     private bool CanRun()

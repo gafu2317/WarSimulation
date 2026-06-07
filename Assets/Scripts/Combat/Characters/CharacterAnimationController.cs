@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public class CharacterAnimationController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class CharacterAnimationController : MonoBehaviour
     [SerializeField] private GameObject _backLeftObj;
     [SerializeField] private GameObject _backRightObj;
     [SerializeField] private Animator[] _characterAnimators;
+    [SerializeField] private NavMeshAgent _agent;
 
     [Header("Billboard Settings")]
     [SerializeField, Range(0f, 45f), Tooltip("各表示範囲の中央からのビルボード回転許容角度（度）")]
@@ -16,6 +18,11 @@ public class CharacterAnimationController : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField, Tooltip("オブジェクト切り替え時の回転速度（度/秒）")] 
     private float _flipSpeed = 720f;
+    [SerializeField, Min(0f), Tooltip("この速度未満は停止アニメーションとして扱う")]
+    private float _stopSpeedThreshold = 0.05f;
+    [SerializeField, Tooltip("実行中に計測した現在速度")]
+    private float _currentSpeed;
+    [SerializeField] private bool _logCurrentSpeed;
 
     // 列挙型にインデックスを割り当て、配列の参照に使用できるようにする
     private enum Direction
@@ -39,6 +46,18 @@ public class CharacterAnimationController : MonoBehaviour
     // Transformアクセスの負荷を下げるためのキャッシュ
     private Transform _myTransform;
     private Transform _cameraTransform;
+    private Vector3 _lastAgentPosition;
+    private bool _hasLastAgentPosition;
+
+    private void Awake()
+    {
+        _agent ??= GetComponentInParent<NavMeshAgent>();
+        if (_agent != null)
+        {
+            _lastAgentPosition = _agent.transform.position;
+            _hasLastAgentPosition = true;
+        }
+    }
 
     private void Start()
     {
@@ -52,6 +71,25 @@ public class CharacterAnimationController : MonoBehaviour
         _currentState = GetDirectionFromCamera(out _);
         _targetState = _currentState;
         UpdateActiveObject(_currentState);
+    }
+
+    private void Update()
+    {
+        if (_agent == null || Time.deltaTime <= 0f) return;
+
+        Vector3 currentPosition = _agent.transform.position;
+        Vector3 movement = currentPosition - _lastAgentPosition;
+        movement.y = 0f;
+        _currentSpeed = _hasLastAgentPosition ? movement.magnitude / Time.deltaTime : 0f;
+        _lastAgentPosition = currentPosition;
+        _hasLastAgentPosition = true;
+
+        if (_logCurrentSpeed)
+        {
+            Debug.Log($"[{nameof(CharacterAnimationController)}] {name}: currentSpeed={_currentSpeed:F4}", this);
+        }
+
+        UpdateWalkAnimationSpeed(_currentSpeed >= _stopSpeedThreshold ? _currentSpeed : 0f);
     }
 
     private void LateUpdate()
@@ -150,6 +188,8 @@ public class CharacterAnimationController : MonoBehaviour
     {
         foreach (Animator animator in _characterAnimators)
         {
+            if (animator == null || !animator.isActiveAndEnabled || animator.runtimeAnimatorController == null) continue;
+
             animator.SetFloat("Speed", speed);
         }
     }

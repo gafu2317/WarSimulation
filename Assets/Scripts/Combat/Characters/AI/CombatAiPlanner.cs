@@ -49,7 +49,7 @@ public static class CombatAiPlanner
             var breakdown = new CombatAiScoreBreakdown
             {
                 BaseScore = GetObjectiveBaseScore(objective),
-                SituationScore = GetObjectiveSituationScore(snapshot.Assessment, objective),
+                SituationScore = GetObjectiveSituationScore(snapshot.Context, snapshot.Assessment, objective),
                 WeaponScore = GetObjectiveWeaponScore(snapshot.Owner.EquippedWeapon, objective),
                 PersonalityScore = GetObjectivePersonalityScore(personalityProfile, objective),
             };
@@ -164,7 +164,7 @@ public static class CombatAiPlanner
             BaseScore = GetSkillBaseScore(skill, objective),
             WeaponScore = GetSkillWeaponScore(snapshot.Owner.EquippedWeapon, skill),
             PersonalityScore = GetSkillPersonalityScore(personalityProfile, skill, objective),
-            SituationScore = GetSkillSituationScore(snapshot.Context, snapshot.Assessment, skill, evaluation),
+            SituationScore = GetSkillSituationScore(snapshot.Context, snapshot.Assessment, skill, evaluation, objective),
         };
         AddSkillReasons(evaluation, breakdown);
         if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
@@ -195,7 +195,10 @@ public static class CombatAiPlanner
         };
     }
 
-    private static float GetObjectiveSituationScore(CombatAiAssessment assessment, CombatObjective objective)
+    private static float GetObjectiveSituationScore(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
     {
         return objective switch
         {
@@ -209,9 +212,12 @@ public static class CombatAiPlanner
                 + assessment.GetValue("TerrainAdvantage") * 0.1f,
             CombatObjective.DestroyEnemyStone => assessment.GetValue("EnemyStoneReachability") * 0.85f
                 - assessment.GetValue("OwnStoneThreat") * 0.35f
-                - assessment.GetValue("SelfThreat") * 0.2f,
+                - assessment.GetValue("SelfThreat") * 0.2f
+                + (context.HasEnemyStonePosition ? 24f : 0f)
+                + Mathf.Max(0f, 20f - assessment.GetValue("AllyFragility") * 0.2f),
             CombatObjective.Search => (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.55f
-                + assessment.GetValue("TerrainAdvantage") * 0.2f,
+                + assessment.GetValue("TerrainAdvantage") * 0.2f
+                - (context.HasEnemyStonePosition ? 28f : 0f),
             CombatObjective.Retreat => assessment.GetValue("SelfThreat") * 0.9f
                 + assessment.GetValue("RetreatRouteSafety") * 0.3f
                 + assessment.GetValue("AllyFragility") * 0.1f,
@@ -253,44 +259,59 @@ public static class CombatAiPlanner
         {
             WeaponKind.Sword => objective switch
             {
-                CombatObjective.AttackEnemy => 18f,
-                CombatObjective.DestroyEnemyStone => 12f,
-                CombatObjective.SupportAlly => -8f,
+                CombatObjective.AttackEnemy => 24f,
+                CombatObjective.DestroyEnemyStone => 22f,
+                CombatObjective.DefendOwnStone => 4f,
+                CombatObjective.Search => -4f,
+                CombatObjective.SupportAlly => -14f,
                 _ => 0f,
             },
             WeaponKind.Shield => objective switch
             {
-                CombatObjective.DefendOwnStone => 18f,
-                CombatObjective.SupportAlly => 6f,
+                CombatObjective.DefendOwnStone => 28f,
+                CombatObjective.SupportAlly => 18f,
                 CombatObjective.AttackEnemy => 8f,
+                CombatObjective.DestroyEnemyStone => 4f,
+                CombatObjective.Search => -6f,
                 _ => 0f,
             },
             WeaponKind.Wand => objective switch
             {
-                CombatObjective.AttackEnemy => 14f,
-                CombatObjective.Search => 8f,
-                CombatObjective.Retreat => 6f,
+                CombatObjective.AttackEnemy => 24f,
+                CombatObjective.DestroyEnemyStone => 12f,
+                CombatObjective.Search => 10f,
+                CombatObjective.Retreat => 8f,
+                CombatObjective.SupportAlly => -12f,
+                CombatObjective.DefendOwnStone => -6f,
                 _ => 0f,
             },
             WeaponKind.Grimoire => objective switch
             {
-                CombatObjective.AttackEnemy => 14f,
-                CombatObjective.DestroyEnemyStone => 8f,
-                CombatObjective.Search => 6f,
+                CombatObjective.AttackEnemy => 22f,
+                CombatObjective.DestroyEnemyStone => 16f,
+                CombatObjective.Search => 8f,
+                CombatObjective.Retreat => 8f,
+                CombatObjective.SupportAlly => -10f,
+                CombatObjective.DefendOwnStone => -6f,
                 _ => 0f,
             },
             WeaponKind.Bible => objective switch
             {
-                CombatObjective.SupportAlly => 18f,
-                CombatObjective.DefendOwnStone => 10f,
-                CombatObjective.AttackEnemy => 4f,
+                CombatObjective.SupportAlly => 28f,
+                CombatObjective.DefendOwnStone => 20f,
+                CombatObjective.AttackEnemy => 2f,
+                CombatObjective.DestroyEnemyStone => -4f,
+                CombatObjective.Retreat => 6f,
                 _ => 0f,
             },
             WeaponKind.Rosary => objective switch
             {
-                CombatObjective.SupportAlly => 16f,
-                CombatObjective.Retreat => 10f,
-                CombatObjective.Search => 6f,
+                CombatObjective.SupportAlly => 32f,
+                CombatObjective.Retreat => 16f,
+                CombatObjective.DefendOwnStone => 12f,
+                CombatObjective.AttackEnemy => -4f,
+                CombatObjective.DestroyEnemyStone => -16f,
+                CombatObjective.Search => 2f,
                 _ => 0f,
             },
             _ => 0f,
@@ -317,16 +338,18 @@ public static class CombatAiPlanner
     {
         return code switch
         {
-            "AdvanceEnemyStone" => assessment.GetValue("EnemyStoneReachability") * 0.6f - assessment.GetValue("OwnStoneThreat") * 0.2f,
+            "AdvanceEnemyStone" => assessment.GetValue("EnemyStoneReachability") * 0.6f
+                - assessment.GetValue("OwnStoneThreat") * 0.2f
+                + GetSearchAdvanceBonus(assessment, objective),
             "ReturnOwnStone" => assessment.GetValue("OwnStoneThreat") * 0.65f + assessment.GetValue("RetreatRouteSafety") * 0.2f,
             "PursueEnemy" => assessment.GetValue("ReachableEnemyValue") * 0.65f + assessment.GetValue("EnemyLocationConfidence") * 0.1f,
             "SupportAlly" => assessment.GetValue("AllyFragility") * 0.65f,
-            "TakeHighGround" => assessment.GetValue("TerrainAdvantage") * 0.8f,
+            "TakeHighGround" => GetHighGroundSituationScore(assessment, objective),
             "MoveForest" => assessment.GetValue("RetreatRouteSafety") * 0.3f + assessment.GetValue("TerrainAdvantage") * 0.3f,
             "SearchLastKnown" => (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.45f,
             "HoldPosition" => objective == CombatObjective.DefendOwnStone ? 12f : 2f,
             _ => 0f,
-        };
+        } + GetMoveObjectiveAlignmentScore(code, objective);
     }
 
     private static float GetMoveWeaponScore(WeaponBase weapon, string code)
@@ -336,39 +359,46 @@ public static class CombatAiPlanner
         {
             WeaponKind.Sword => code switch
             {
-                "PursueEnemy" => 18f,
-                "TakeHighGround" => 6f,
+                "PursueEnemy" => 22f,
+                "AdvanceEnemyStone" => 16f,
                 _ => 0f,
             },
             WeaponKind.Shield => code switch
             {
-                "ReturnOwnStone" => 14f,
-                "SupportAlly" => 10f,
+                "ReturnOwnStone" => 22f,
+                "SupportAlly" => 20f,
+                "PursueEnemy" => 4f,
                 _ => 0f,
             },
             WeaponKind.Wand => code switch
             {
-                "TakeHighGround" => 18f,
-                "MoveForest" => 6f,
-                "PursueEnemy" => -8f,
+                "TakeHighGround" => 20f,
+                "MoveForest" => 12f,
+                "PursueEnemy" => -10f,
+                "AdvanceEnemyStone" => 6f,
                 _ => 0f,
             },
             WeaponKind.Grimoire => code switch
             {
-                "TakeHighGround" => 8f,
-                "PursueEnemy" => 4f,
+                "TakeHighGround" => 10f,
+                "MoveForest" => 12f,
+                "PursueEnemy" => -4f,
+                "AdvanceEnemyStone" => 8f,
                 _ => 0f,
             },
             WeaponKind.Bible => code switch
             {
-                "SupportAlly" => 16f,
-                "ReturnOwnStone" => 6f,
+                "SupportAlly" => 24f,
+                "ReturnOwnStone" => 12f,
+                "MoveForest" => 8f,
                 _ => 0f,
             },
             WeaponKind.Rosary => code switch
             {
-                "SupportAlly" => 14f,
-                "MoveForest" => 6f,
+                "SupportAlly" => 26f,
+                "ReturnOwnStone" => 8f,
+                "MoveForest" => 10f,
+                "PursueEnemy" => -12f,
                 _ => 0f,
             },
             _ => 0f,
@@ -445,12 +475,12 @@ public static class CombatAiPlanner
         if (weapon == null || skill == null) return 0f;
         return weapon.Kind switch
         {
-            WeaponKind.Sword => IsDamageSkill(skill) ? 10f : 0f,
-            WeaponKind.Shield => IsProtectSkill(skill) ? 12f : IsDamageSkill(skill) ? 4f : 0f,
-            WeaponKind.Wand => IsDamageSkill(skill) ? 12f : 0f,
-            WeaponKind.Grimoire => IsDebuffSkill(skill) || IsDamageSkill(skill) ? 10f : 0f,
-            WeaponKind.Bible => IsBuffSkill(skill) || IsProtectSkill(skill) ? 12f : IsDamageSkill(skill) ? 3f : 0f,
-            WeaponKind.Rosary => IsHealSkill(skill) ? 14f : IsDamageSkill(skill) ? 4f : 0f,
+            WeaponKind.Sword => IsDamageSkill(skill) ? 18f : -8f,
+            WeaponKind.Shield => IsProtectSkill(skill) ? 24f : IsDamageSkill(skill) ? 4f : 0f,
+            WeaponKind.Wand => IsDamageSkill(skill) ? 20f : IsProtectSkill(skill) || IsHealSkill(skill) ? -10f : 0f,
+            WeaponKind.Grimoire => IsDebuffSkill(skill) ? 24f : IsDamageSkill(skill) ? 8f : IsStealthSkill(skill) ? 12f : 0f,
+            WeaponKind.Bible => IsBuffSkill(skill) || IsProtectSkill(skill) ? 24f : IsDamageSkill(skill) ? 0f : 0f,
+            WeaponKind.Rosary => IsHealSkill(skill) ? 28f : IsProtectSkill(skill) ? 10f : IsDamageSkill(skill) ? -6f : 0f,
             _ => 0f,
         };
     }
@@ -480,7 +510,8 @@ public static class CombatAiPlanner
         CombatAiContext context,
         CombatAiAssessment assessment,
         SkillBase skill,
-        CombatSkillEvaluationResult evaluation)
+        CombatSkillEvaluationResult evaluation,
+        CombatObjective objective)
     {
         if (skill == null) return 0f;
         if (!evaluation.CanUse) return UnselectableScore;
@@ -495,6 +526,8 @@ public static class CombatAiPlanner
         {
             score += assessment.GetValue("ReachableEnemyValue") * 0.25f;
         }
+
+        score += GetObjectiveSkillAlignmentScore(skill, evaluation, assessment, context, objective);
 
         if (evaluation.HasAreaPreview && evaluation.ResolvedTargets != null && evaluation.ResolvedTargets.Count >= 2)
         {
@@ -515,10 +548,22 @@ public static class CombatAiPlanner
             if (ally.MaxHP <= 0) return 0f;
 
             float hpRatio = (float)ally.HP / ally.MaxHP;
-            float score = (1f - hpRatio) * 24f;
+            float missingHpRatio = 1f - hpRatio;
+            if (IsHealSkill(skill) && missingHpRatio <= 0.05f)
+            {
+                return -80f;
+            }
+
+            float score = missingHpRatio * (IsHealSkill(skill) ? 50f : 18f);
             if (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f))
             {
-                score += 8f;
+                score += IsProtectSkill(skill) ? 24f : 8f;
+            }
+
+            score += GetSupportTargetAffinityScore(skill, ally);
+            if (HasEquivalentEffect(skill, ally.StatusEffects))
+            {
+                score -= 70f;
             }
 
             return score;
@@ -530,7 +575,14 @@ public static class CombatAiPlanner
             if (enemy.Character == null) return 0f;
 
             float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
-            return (1f - hpRatio) * 18f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
+            float score = (1f - hpRatio) * 18f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
+            score += GetDebuffTargetAffinityScore(skill, enemy);
+            if (HasEquivalentEffect(skill, enemy.StatusEffects))
+            {
+                score -= 70f;
+            }
+
+            return score;
         }
 
         return 0f;
@@ -846,28 +898,40 @@ public static class CombatAiPlanner
 
     private static CombatMoveTarget CreateLastKnownEnemyTarget(CombatAiContext context)
     {
+        float bestScore = float.NegativeInfinity;
+        Vector3 bestPosition = default;
+        bool found = false;
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.HasKnownPosition)
-            {
-                return CombatMoveTarget.ForPosition(enemy.KnownPosition);
-            }
+            if (!enemy.HasKnownPosition) continue;
+
+            float score = enemy.HasDirectSight ? 1000f : 0f;
+            score -= enemy.HasMemory ? enemy.MemoryAgeSeconds : 0f;
+            score += enemy.MaxHP > 0 ? (1f - enemy.HP / (float)enemy.MaxHP) * 10f : 0f;
+            score -= HorizontalDistance(context.Owner.transform.position, enemy.KnownPosition) * 0.05f;
+            if (score <= bestScore) continue;
+
+            bestScore = score;
+            bestPosition = enemy.KnownPosition;
+            found = true;
         }
 
-        return CombatMoveTarget.None;
+        return found ? CombatMoveTarget.ForPosition(bestPosition) : CombatMoveTarget.None;
     }
 
     private static CombatMoveTarget CreateNearestPositionTarget(Character owner, IReadOnlyList<Vector3> positions)
     {
         if (owner == null || positions == null || positions.Count == 0) return CombatMoveTarget.None;
 
+        const float minimumMeaningfulDistance = 2f;
         float bestDistance = float.PositiveInfinity;
         Vector3 best = default;
         bool found = false;
         for (int i = 0; i < positions.Count; i++)
         {
             float distance = HorizontalDistance(owner.transform.position, positions[i]);
+            if (distance <= minimumMeaningfulDistance) continue;
             if (distance >= bestDistance) continue;
             bestDistance = distance;
             best = positions[i];
@@ -955,7 +1019,9 @@ public static class CombatAiPlanner
                 canAct: character.Health.CanAct,
                 weaponKind: character.EquippedWeapon != null ? character.EquippedWeapon.Kind : WeaponKind.Unarmed,
                 weaponRange: character.EquippedWeapon != null ? character.EquippedWeapon.Range : WeaponBase.Unarmed.Range,
-                statusEffects: System.Array.Empty<CombatStatusEffectSnapshot>(),
+                statusEffects: character.StatusEffects != null
+                    ? character.StatusEffects.GetActiveEffectSnapshots()
+                    : System.Array.Empty<CombatStatusEffectSnapshot>(),
                 hasObjective: false,
                 objective: default);
         }
@@ -991,6 +1057,141 @@ public static class CombatAiPlanner
         a.y = 0f;
         b.y = 0f;
         return Vector3.Distance(a, b);
+    }
+
+    private static float GetSearchAdvanceBonus(CombatAiAssessment assessment, CombatObjective objective)
+    {
+        if (objective != CombatObjective.Search)
+        {
+            return 0f;
+        }
+
+        return (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.3f;
+    }
+
+    private static float GetHighGroundSituationScore(CombatAiAssessment assessment, CombatObjective objective)
+    {
+        float terrainAdvantage = assessment.GetValue("TerrainAdvantage");
+        if (objective != CombatObjective.Search)
+        {
+            return terrainAdvantage * 0.8f;
+        }
+
+        float confidence = assessment.GetValue("EnemyLocationConfidence");
+        if (confidence <= 0f)
+        {
+            return terrainAdvantage * 0.15f;
+        }
+
+        return terrainAdvantage * 0.3f + confidence * 0.15f;
+    }
+
+    private static float GetMoveObjectiveAlignmentScore(string code, CombatObjective objective)
+    {
+        return objective switch
+        {
+            CombatObjective.DestroyEnemyStone when code == "AdvanceEnemyStone" => 42f,
+            CombatObjective.DefendOwnStone when code == "ReturnOwnStone" => 42f,
+            CombatObjective.AttackEnemy when code == "PursueEnemy" => 40f,
+            CombatObjective.SupportAlly when code == "SupportAlly" => 42f,
+            CombatObjective.Search when code == "SearchLastKnown" => 34f,
+            CombatObjective.Retreat when code == "ReturnOwnStone" || code == "MoveForest" => 24f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetObjectiveSkillAlignmentScore(
+        SkillBase skill,
+        CombatSkillEvaluationResult evaluation,
+        CombatAiAssessment assessment,
+        CombatAiContext context,
+        CombatObjective objective)
+    {
+        if (!evaluation.CanUse) return 0f;
+
+        return objective switch
+        {
+            CombatObjective.AttackEnemy when IsDamageSkill(skill) => 18f,
+            CombatObjective.AttackEnemy when IsDebuffSkill(skill) => 14f,
+            CombatObjective.SupportAlly when IsHealSkill(skill) => 24f,
+            CombatObjective.SupportAlly when IsBuffSkill(skill) || IsProtectSkill(skill) => 18f,
+            CombatObjective.DefendOwnStone when IsProtectSkill(skill) => 20f,
+            CombatObjective.DefendOwnStone when IsDamageSkill(skill) => assessment.GetValue("OwnStoneThreat") * 0.2f,
+            CombatObjective.Retreat when IsHealSkill(skill) || IsProtectSkill(skill) || IsStealthSkill(skill) => 20f,
+            CombatObjective.Search when IsStealthSkill(skill) || IsMobilitySkill(skill) => 16f,
+            CombatObjective.DestroyEnemyStone when IsSupportSkill(skill) && assessment.GetValue("AllyFragility") < 20f => -20f,
+            CombatObjective.DestroyEnemyStone when IsDamageSkill(skill) && context.VisibleEnemies.Count > 0 => 6f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetSupportTargetAffinityScore(SkillBase skill, CombatCharacterIntel ally)
+    {
+        if (skill is not IdentifiedSkill identified) return 0f;
+
+        return identified.SkillId switch
+        {
+            SkillId.Bible_StrBuff when ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Shield => 28f,
+            SkillId.Bible_IntBuff when ally.WeaponKind == WeaponKind.Wand || ally.WeaponKind == WeaponKind.Grimoire => 28f,
+            SkillId.Bible_FaiBuff when ally.WeaponKind == WeaponKind.Bible || ally.WeaponKind == WeaponKind.Rosary => 28f,
+            SkillId.Bible_AgiBuff when ally.WeaponKind == WeaponKind.Sword => 14f,
+            SkillId.Shield_ShoulderGuard when ally.WeaponKind != WeaponKind.Shield => 10f,
+            SkillId.Bible_Gotsume when ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Shield => 14f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetDebuffTargetAffinityScore(SkillBase skill, CombatCharacterIntel enemy)
+    {
+        if (skill is not IdentifiedSkill identified) return 0f;
+
+        return identified.SkillId switch
+        {
+            SkillId.Grimoire_StrDebuff when enemy.WeaponKind == WeaponKind.Sword || enemy.WeaponKind == WeaponKind.Shield => 28f,
+            SkillId.StatDebuff_INT when enemy.WeaponKind == WeaponKind.Wand || enemy.WeaponKind == WeaponKind.Grimoire => 28f,
+            SkillId.StatDebuff_FAI when enemy.WeaponKind == WeaponKind.Bible || enemy.WeaponKind == WeaponKind.Rosary => 28f,
+            SkillId.StatDebuff_AGI when enemy.WeaponKind == WeaponKind.Sword => 16f,
+            SkillId.Grimoire_Bind when enemy.WeaponKind == WeaponKind.Sword || enemy.WeaponKind == WeaponKind.Shield => 20f,
+            SkillId.Grimoire_Poison when enemy.MaxHP > 0 && enemy.HP / (float)enemy.MaxHP > 0.35f => 14f,
+            _ => 0f,
+        };
+    }
+
+    private static bool HasEquivalentEffect(SkillBase skill, IReadOnlyList<CombatStatusEffectSnapshot> effects)
+    {
+        if (skill is not IdentifiedSkill identified || effects == null) return false;
+
+        for (int i = 0; i < effects.Count; i++)
+        {
+            CombatStatusEffectSnapshot effect = effects[i];
+            if (MatchesEffect(identified.SkillId, effect))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool MatchesEffect(SkillId skillId, CombatStatusEffectSnapshot effect)
+    {
+        return skillId switch
+        {
+            SkillId.Bible_StrBuff => effect.IsBuff && effect.Stat == CombatStatusEffects.StatKind.STR,
+            SkillId.Bible_IntBuff => effect.IsBuff && effect.Stat == CombatStatusEffects.StatKind.INT,
+            SkillId.Bible_FaiBuff => effect.IsBuff && effect.Stat == CombatStatusEffects.StatKind.FAI,
+            SkillId.Bible_AgiBuff => effect.IsBuff && effect.Stat == CombatStatusEffects.StatKind.AGI,
+            SkillId.Grimoire_StrDebuff => effect.IsDebuff && effect.Stat == CombatStatusEffects.StatKind.STR,
+            SkillId.StatDebuff_INT => effect.IsDebuff && effect.Stat == CombatStatusEffects.StatKind.INT,
+            SkillId.StatDebuff_FAI => effect.IsDebuff && effect.Stat == CombatStatusEffects.StatKind.FAI,
+            SkillId.StatDebuff_AGI => effect.IsDebuff && effect.Stat == CombatStatusEffects.StatKind.AGI,
+            SkillId.Grimoire_Bind => effect.Type == CombatStatusEffects.EffectType.Bind,
+            SkillId.Grimoire_Poison => effect.Type == CombatStatusEffects.EffectType.Poison,
+            SkillId.Grimoire_Stealth => effect.Type == CombatStatusEffects.EffectType.Stealth,
+            SkillId.Bible_Invulnerable => effect.Type == CombatStatusEffects.EffectType.Invulnerable,
+            SkillId.Rosary_Regeneration => effect.Type == CombatStatusEffects.EffectType.HealOverTime,
+            _ => false,
+        };
     }
 
     private static bool IsBasicAttackSkill(SkillBase skill)
@@ -1044,6 +1245,13 @@ public static class CombatAiPlanner
         if (skill == null) return false;
         string code = skill is IdentifiedSkill identified ? identified.SkillId.ToString() : skill.GetType().Name;
         return code.Contains("CarryRush");
+    }
+
+    private static bool IsStealthSkill(SkillBase skill)
+    {
+        if (skill == null) return false;
+        string code = skill is IdentifiedSkill identified ? identified.SkillId.ToString() : skill.GetType().Name;
+        return code.Contains("Stealth");
     }
 
     private static bool IsSupportSkill(SkillBase skill)

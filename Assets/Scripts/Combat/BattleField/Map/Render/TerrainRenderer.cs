@@ -25,6 +25,30 @@ namespace WarSimulation.Combat.Map
         [Tooltip("スプラットマップの解像度。未指定（0）なら GroundStateGrid の解像度に合わせる。")]
         [SerializeField, Min(0)] private int _alphamapResolutionOverride = 0;
 
+        [Tooltip("バイオーム未設定の通常地面に貼る草テクスチャ。未設定なら単色の通常地面を使う。")]
+        [SerializeField] private Texture2D _grassTexture;
+
+        [Tooltip("草テクスチャ1枚を貼るワールド寸法（メートル）。")]
+        [SerializeField, Min(0.01f)] private float _grassTileSize = 4f;
+
+        [Tooltip("雪地面に貼るテクスチャ。未設定なら白色の雪地面を使う。")]
+        [SerializeField] private Texture2D _snowTexture;
+
+        [Tooltip("雪テクスチャ1枚を貼るワールド寸法（メートル）。")]
+        [SerializeField, Min(0.01f)] private float _snowTileSize = 4f;
+
+        [Tooltip("沼地に貼るテクスチャ。未設定なら単色の沼地を使う。")]
+        [SerializeField] private Texture2D _swampTexture;
+
+        [Tooltip("沼地テクスチャ1枚を貼るワールド寸法（メートル）。")]
+        [SerializeField, Min(0.01f)] private float _swampTileSize = 4f;
+
+        [Tooltip("森床に貼るテクスチャ。未設定なら単色の森床を使う。")]
+        [SerializeField] private Texture2D _forestFloorTexture;
+
+        [Tooltip("森床テクスチャ1枚を貼るワールド寸法（メートル）。")]
+        [SerializeField, Min(0.01f)] private float _forestFloorTileSize = 4f;
+
         [SerializeField, HideInInspector] private Terrain _terrain;
 
         /// <summary>
@@ -50,7 +74,10 @@ namespace WarSimulation.Combat.Map
         /// <see cref="HeightMap.CliffFaces"/>（スタンプの崖スカートと一致。勾配推定は使わない）。
         /// </summary>
         private const int CliffLayerIndex = 5;
-        private const int TotalLayerCount = 6;
+
+        /// <summary>バイオーム未設定の通常地面用の草レイヤ。</summary>
+        private const int GrassLayerIndex = 6;
+        private const int TotalLayerCount = 7;
 
         public Terrain Terrain => _terrain;
 
@@ -177,7 +204,8 @@ namespace WarSimulation.Combat.Map
                 {
                     float worldX = (x + 0.5f) / res * worldSize;
                     Vector3 worldPos = new Vector3(worldX, 0f, worldZ);
-                    GroundState s = g.SampleAt(worldPos);
+                    GroundState sampledState = g.SampleAt(worldPos);
+                    GroundState s = sampledState;
 
                     // Water タグ（川・湖・凍結湖）は水面/氷メッシュで覆うため Terrain では Normal 相当で塗る。
                     if (s == GroundState.Water)
@@ -206,6 +234,14 @@ namespace WarSimulation.Combat.Map
                         continue;
                     }
 
+                    Vector2Int cell = g.WorldToCell(worldPos);
+                    bool hasNoBiome = map.GetBiomeId(cell.x, cell.y) == MapData.UnsetBiomeId;
+                    if (sampledState == GroundState.Normal && hasNoBiome && _grassTexture != null)
+                    {
+                        alphas[z, x, GrassLayerIndex] = 1f;
+                        continue;
+                    }
+
                     alphas[z, x, IndexOfLayer(s)] = 1f;
                 }
             }
@@ -227,7 +263,7 @@ namespace WarSimulation.Combat.Map
         /// TerrainData が既に同じ数のレイヤーを持っていればそのまま使い、
         /// 違う場合は地面状態毎に単色レイヤーを新規生成する。
         /// </summary>
-        private static TerrainLayer[] BuildOrReuseLayers(TerrainData td)
+        private TerrainLayer[] BuildOrReuseLayers(TerrainData td)
         {
             TerrainLayer[] existing = td.terrainLayers;
             if (existing != null && existing.Length == TotalLayerCount)
@@ -241,7 +277,14 @@ namespace WarSimulation.Combat.Map
                         break;
                     }
                 }
-                if (allValid) return existing;
+                if (allValid)
+                {
+                    ConfigureGrassLayer(existing[GrassLayerIndex]);
+                    ConfigureSnowLayer(existing[IndexOfLayer(GroundState.Snow)]);
+                    ConfigureSwampLayer(existing[IndexOfLayer(GroundState.Swamp)]);
+                    ConfigureForestFloorLayer(existing[ForestFloorLayerIndex]);
+                    return existing;
+                }
             }
 
             var layers = new TerrainLayer[TotalLayerCount];
@@ -249,9 +292,61 @@ namespace WarSimulation.Combat.Map
             {
                 layers[i] = CreateSolidColorLayer(s_layerOrder[i]);
             }
+            ConfigureSnowLayer(layers[IndexOfLayer(GroundState.Snow)]);
+            ConfigureSwampLayer(layers[IndexOfLayer(GroundState.Swamp)]);
             layers[ForestFloorLayerIndex] = CreateSolidColorLayer("ForestFloor", new Color(0.14f, 0.42f, 0.17f));
+            ConfigureForestFloorLayer(layers[ForestFloorLayerIndex]);
             layers[CliffLayerIndex] = CreateSolidColorLayer("Cliff", new Color(0.30f, 0.18f, 0.10f));
+            layers[GrassLayerIndex] = CreateGrassLayer();
             return layers;
+        }
+
+        private TerrainLayer CreateGrassLayer()
+        {
+            TerrainLayer layer = CreateSolidColorLayer(GroundState.Normal);
+            layer.name = "Auto_Grass";
+            ConfigureGrassLayer(layer);
+            return layer;
+        }
+
+        private void ConfigureGrassLayer(TerrainLayer layer)
+        {
+            if (_grassTexture != null)
+            {
+                layer.diffuseTexture = _grassTexture;
+            }
+            layer.tileSize = Vector2.one * _grassTileSize;
+            layer.tileOffset = Vector2.zero;
+        }
+
+        private void ConfigureSnowLayer(TerrainLayer layer)
+        {
+            if (_snowTexture != null)
+            {
+                layer.diffuseTexture = _snowTexture;
+            }
+            layer.tileSize = Vector2.one * _snowTileSize;
+            layer.tileOffset = Vector2.zero;
+        }
+
+        private void ConfigureSwampLayer(TerrainLayer layer)
+        {
+            if (_swampTexture != null)
+            {
+                layer.diffuseTexture = _swampTexture;
+            }
+            layer.tileSize = Vector2.one * _swampTileSize;
+            layer.tileOffset = Vector2.zero;
+        }
+
+        private void ConfigureForestFloorLayer(TerrainLayer layer)
+        {
+            if (_forestFloorTexture != null)
+            {
+                layer.diffuseTexture = _forestFloorTexture;
+            }
+            layer.tileSize = Vector2.one * _forestFloorTileSize;
+            layer.tileOffset = Vector2.zero;
         }
 
         private static int IndexOfLayer(GroundState state)

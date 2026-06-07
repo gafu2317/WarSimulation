@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using WarSimulation.Combat.Map;
 
 public sealed class CombatSkillExecutionTests
 {
@@ -143,6 +144,51 @@ public sealed class CombatSkillExecutionTests
         }
         finally
         {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void AiBrain_DestroyEnemyStonePlan_DamagesEnemyMainStoneInRange()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject stoneGo = new GameObject("EnemyMainStone");
+        GameObject systemGo = new GameObject("MagicStoneSystem");
+        try
+        {
+            CombatMagicStoneSystem system = systemGo.AddComponent<CombatMagicStoneSystem>();
+            var map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), seed: 1);
+            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, Vector3.zero));
+            map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, Vector3.forward));
+            system.Initialize(map);
+
+            MagicStone stone = stoneGo.AddComponent<MagicStone>();
+            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
+            stoneGo.transform.position = Vector3.forward;
+
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(maxHP: 30);
+            owner.EquipWeapon(new Sword(range: 2f, basePower: 12f));
+
+            CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
+            var plan = new CombatAiPlan(
+                CombatObjective.DestroyEnemyStone,
+                CombatMoveTarget.ForPosition(stoneGo.transform.position),
+                null,
+                SkillExecutionContext.None);
+
+            bool acted = brain.ExecutePlan(plan);
+
+            Assert.That(acted, Is.True);
+            Assert.That(brain.LastStoneDamage, Is.GreaterThan(0));
+            Assert.That(system.TryGetHP(1, out int hp), Is.True);
+            Assert.That(hp, Is.LessThan(500));
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(stoneGo);
             Object.DestroyImmediate(ownerGo);
         }
     }
