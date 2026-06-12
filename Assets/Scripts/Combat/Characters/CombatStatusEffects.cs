@@ -228,6 +228,12 @@ public sealed class CombatStatusEffects : MonoBehaviour
         }
     }
 
+    public void ClearAll()
+    {
+        _effects.Clear();
+        _effectSnapshots.Clear();
+    }
+
     private void Update()
     {
         UpdateEffects();

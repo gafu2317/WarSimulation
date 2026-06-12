@@ -5,13 +5,19 @@ public static class CombatAiPlanner
 {
     private const float UnselectableScore = -100000f;
 
-    public static CombatAiPlan BuildPlan(CombatAiContext context, CombatAiPersonalityProfile personalityProfile)
+    public static CombatAiPlan BuildPlan(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile = null)
     {
-        CombatAiDebugSnapshot snapshot = BuildDebugSnapshot(context, personalityProfile);
+        CombatAiDebugSnapshot snapshot = BuildDebugSnapshot(context, personalityProfile, weaponWeightsProfile);
         return snapshot != null ? snapshot.FinalPlan : CombatAiPlan.None;
     }
 
-    public static CombatAiDebugSnapshot BuildDebugSnapshot(CombatAiContext context, CombatAiPersonalityProfile personalityProfile)
+    public static CombatAiDebugSnapshot BuildDebugSnapshot(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile = null)
     {
         if (context == null || context.Owner == null)
         {
@@ -22,15 +28,15 @@ public static class CombatAiPlanner
         {
             Owner = context.Owner,
             Context = context,
-            ContextSummary = CombatAiAssessmentBuilder.BuildSummary(context, personalityProfile),
+            ContextSummary = CombatAiAssessmentBuilder.BuildSummary(context, personalityProfile, weaponWeightsProfile),
             Assessment = CombatAiAssessmentBuilder.Build(context),
         };
 
-        BuildObjectiveEntries(snapshot, personalityProfile);
+        BuildObjectiveEntries(snapshot, personalityProfile, weaponWeightsProfile);
         snapshot.SelectedObjective = SelectHighest(snapshot.ObjectiveEntries);
-        BuildMoveEntries(snapshot, personalityProfile);
+        BuildMoveEntries(snapshot, personalityProfile, weaponWeightsProfile);
         snapshot.SelectedMove = SelectHighest(snapshot.MoveEntries);
-        BuildSkillEntries(snapshot, personalityProfile);
+        BuildSkillEntries(snapshot, personalityProfile, weaponWeightsProfile);
         snapshot.SelectedSkill = SelectHighest(snapshot.SkillEntries);
 
         snapshot.FinalPlan = new CombatAiPlan(
@@ -41,7 +47,10 @@ public static class CombatAiPlanner
         return snapshot;
     }
 
-    private static void BuildObjectiveEntries(CombatAiDebugSnapshot snapshot, CombatAiPersonalityProfile personalityProfile)
+    private static void BuildObjectiveEntries(
+        CombatAiDebugSnapshot snapshot,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile)
     {
         snapshot.ObjectiveEntries.Clear();
         foreach (CombatObjective objective in System.Enum.GetValues(typeof(CombatObjective)))
@@ -49,8 +58,12 @@ public static class CombatAiPlanner
             var breakdown = new CombatAiScoreBreakdown
             {
                 BaseScore = GetObjectiveBaseScore(objective),
-                SituationScore = GetObjectiveSituationScore(snapshot.Context, snapshot.Assessment, objective),
-                WeaponScore = GetObjectiveWeaponScore(snapshot.Owner.EquippedWeapon, objective),
+                SituationScore = GetObjectiveSituationScore(
+                    snapshot.Context,
+                    snapshot.Assessment,
+                    snapshot.Owner.EquippedWeapon,
+                    objective),
+                WeaponScore = GetObjectiveWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, objective),
                 PersonalityScore = GetObjectivePersonalityScore(personalityProfile, objective),
             };
 
@@ -67,28 +80,34 @@ public static class CombatAiPlanner
         }
     }
 
-    private static void BuildMoveEntries(CombatAiDebugSnapshot snapshot, CombatAiPersonalityProfile personalityProfile)
+    private static void BuildMoveEntries(
+        CombatAiDebugSnapshot snapshot,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile)
     {
         snapshot.MoveEntries.Clear();
         CombatObjective objective = snapshot.SelectedObjective != null ? snapshot.SelectedObjective.Objective : CombatObjective.Search;
-        AddMoveCandidate(snapshot, personalityProfile, "AdvanceEnemyStone", "敵魔石へ前進", CreateEnemyStoneTarget(snapshot.Context), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "ReturnOwnStone", "自軍魔石へ戻る", CreateOwnStoneTarget(snapshot.Context), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "PursueEnemy", "敵へ接近", CreateBestEnemyTarget(snapshot.Context), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "SupportAlly", "味方へ接近", CreateBestAllyTarget(snapshot.Context), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "TakeHighGround", "高所へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.HighGroundCandidates), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "MoveForest", "森へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.ForestCandidates), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "SearchLastKnown", "最終既知地点へ移動", CreateLastKnownEnemyTarget(snapshot.Context), objective);
-        AddMoveCandidate(snapshot, personalityProfile, "HoldPosition", "待機", CombatMoveTarget.None, objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "AdvanceEnemyStone", "敵魔石へ前進", CreateEnemyStoneTarget(snapshot.Context), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "ReturnOwnStone", "自軍魔石へ戻る", CreateOwnStoneTarget(snapshot.Context), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "PursueEnemy", "敵へ接近", CreateBestEnemyTarget(snapshot.Context), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "SupportAlly", "味方へ接近", CreateBestAllyTarget(snapshot.Context), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "TakeHighGround", "高所へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.HighGroundCandidates), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "MoveForest", "森へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.ForestCandidates), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "SearchLastKnown", "最終既知地点へ移動", CreateLastKnownEnemyTarget(snapshot.Context), objective);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, "HoldPosition", "待機", CombatMoveTarget.None, objective);
     }
 
-    private static void BuildSkillEntries(CombatAiDebugSnapshot snapshot, CombatAiPersonalityProfile personalityProfile)
+    private static void BuildSkillEntries(
+        CombatAiDebugSnapshot snapshot,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile)
     {
         snapshot.SkillEntries.Clear();
         IReadOnlyList<SkillBase> skills = snapshot.Owner.AvailableCombatSkills;
         for (int i = 0; i < skills.Count; i++)
         {
             SkillBase skill = skills[i];
-            AddSkillEntries(snapshot, personalityProfile, skill);
+            AddSkillEntries(snapshot, personalityProfile, weaponWeightsProfile, skill);
         }
 
         var waitBreakdown = new CombatAiScoreBreakdown
@@ -110,6 +129,7 @@ public static class CombatAiPlanner
     private static void AddMoveCandidate(
         CombatAiDebugSnapshot snapshot,
         CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         string code,
         string japanese,
         CombatMoveTarget target,
@@ -125,7 +145,7 @@ public static class CombatAiPlanner
         {
             BaseScore = target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f,
             SituationScore = GetMoveSituationScore(snapshot.Assessment, code, objective),
-            WeaponScore = GetMoveWeaponScore(snapshot.Owner.EquippedWeapon, code),
+            WeaponScore = GetMoveWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, code),
             PersonalityScore = GetMovePersonalityScore(personalityProfile, code, objective),
         };
         AddMoveReasons(code, breakdown);
@@ -141,18 +161,23 @@ public static class CombatAiPlanner
         });
     }
 
-    private static void AddSkillEntries(CombatAiDebugSnapshot snapshot, CombatAiPersonalityProfile personalityProfile, SkillBase skill)
+    private static void AddSkillEntries(
+        CombatAiDebugSnapshot snapshot,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        SkillBase skill)
     {
         List<SkillExecutionContext> contexts = BuildSkillContexts(snapshot.Context, snapshot.Owner, skill);
         for (int i = 0; i < contexts.Count; i++)
         {
-            AddSkillEntry(snapshot, personalityProfile, skill, contexts[i], i);
+            AddSkillEntry(snapshot, personalityProfile, weaponWeightsProfile, skill, contexts[i], i);
         }
     }
 
     private static void AddSkillEntry(
         CombatAiDebugSnapshot snapshot,
         CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         SkillBase skill,
         SkillExecutionContext context,
         int contextIndex)
@@ -162,7 +187,7 @@ public static class CombatAiPlanner
         var breakdown = new CombatAiScoreBreakdown
         {
             BaseScore = GetSkillBaseScore(skill, objective),
-            WeaponScore = GetSkillWeaponScore(snapshot.Owner.EquippedWeapon, skill),
+            WeaponScore = GetSkillWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, skill),
             PersonalityScore = GetSkillPersonalityScore(personalityProfile, skill, objective),
             SituationScore = GetSkillSituationScore(snapshot.Context, snapshot.Assessment, skill, evaluation, objective),
         };
@@ -198,9 +223,10 @@ public static class CombatAiPlanner
     private static float GetObjectiveSituationScore(
         CombatAiContext context,
         CombatAiAssessment assessment,
+        WeaponBase weapon,
         CombatObjective objective)
     {
-        return objective switch
+        float score = objective switch
         {
             CombatObjective.AttackEnemy => assessment.GetValue("ReachableEnemyValue") * 0.9f
                 + assessment.GetValue("TerrainAdvantage") * 0.15f
@@ -221,6 +247,143 @@ public static class CombatAiPlanner
             CombatObjective.Retreat => assessment.GetValue("SelfThreat") * 0.9f
                 + assessment.GetValue("RetreatRouteSafety") * 0.3f
                 + assessment.GetValue("AllyFragility") * 0.1f,
+            _ => 0f,
+        };
+
+        return score + GetWeaponObjectiveSituationAdjustment(context, assessment, weapon, objective);
+    }
+
+    private static float GetWeaponObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        WeaponBase weapon,
+        CombatObjective objective)
+    {
+        WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
+        return kind switch
+        {
+            WeaponKind.Sword => GetSwordObjectiveSituationAdjustment(context, assessment, objective),
+            WeaponKind.Shield => GetShieldObjectiveSituationAdjustment(context, assessment, objective),
+            WeaponKind.Wand => GetWandObjectiveSituationAdjustment(context, assessment, objective),
+            WeaponKind.Grimoire => GetGrimoireObjectiveSituationAdjustment(context, assessment, objective),
+            WeaponKind.Bible => GetBibleObjectiveSituationAdjustment(context, assessment, objective),
+            WeaponKind.Rosary => GetRosaryObjectiveSituationAdjustment(context, assessment, objective),
+            _ => 0f,
+        };
+    }
+
+    private static float GetSwordObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        return objective switch
+        {
+            CombatObjective.AttackEnemy when assessment.GetValue("ReachableEnemyValue") > 30f
+                && assessment.GetValue("SelfThreat") < 35f => 16f,
+            CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
+                && assessment.GetValue("EnemyStoneReachability") > 28f
+                && assessment.GetValue("OwnStoneThreat") < 24f => 14f,
+            CombatObjective.DefendOwnStone when assessment.GetValue("OwnStoneThreat") > 28f => 12f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetShieldObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        return objective switch
+        {
+            CombatObjective.DefendOwnStone when context.HasOwnStonePosition
+                && (assessment.GetValue("OwnStoneThreat") > 18f || assessment.GetValue("AllyFragility") > 22f) => 18f,
+            CombatObjective.AttackEnemy when assessment.GetValue("OwnStoneThreat") < 16f
+                && assessment.GetValue("ReachableEnemyValue") > 24f => 10f,
+            CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
+                && assessment.GetValue("EnemyStoneReachability") > 30f
+                && assessment.GetValue("OwnStoneThreat") < 12f
+                && assessment.GetValue("AllyFragility") < 18f => 8f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetWandObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        bool lacksReliableShot = assessment.GetValue("ReachableEnemyValue") < 24f;
+        return objective switch
+        {
+            CombatObjective.Search when assessment.GetValue("EnemyLocationConfidence") < 45f
+                || (context.VisibleEnemies.Count == 0 && context.HighGroundCandidates.Count > 0)
+                || lacksReliableShot => 16f,
+            CombatObjective.AttackEnemy when assessment.GetValue("ReachableEnemyValue") > 28f
+                && assessment.GetValue("EnemyLocationConfidence") > 35f => 14f,
+            CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
+                && assessment.GetValue("EnemyStoneReachability") > 34f
+                && lacksReliableShot => 4f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetGrimoireObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        bool multipleEnemiesVisible = context.VisibleEnemies.Count >= 2;
+        return objective switch
+        {
+            CombatObjective.AttackEnemy when multipleEnemiesVisible
+                || assessment.GetValue("ReachableEnemyValue") > 28f => 16f,
+            CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
+                && assessment.GetValue("EnemyStoneReachability") > 30f
+                && assessment.GetValue("OwnStoneThreat") < 18f => 10f,
+            CombatObjective.Search when assessment.GetValue("EnemyLocationConfidence") < 35f
+                && assessment.GetValue("ReachableEnemyValue") < 18f => 10f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetBibleObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        bool stableFrontline = assessment.GetValue("AllyFragility") < 18f && assessment.GetValue("OwnStoneThreat") < 16f;
+        return objective switch
+        {
+            CombatObjective.SupportAlly when context.AllyIntel.Count > 0
+                && assessment.GetValue("AllyFragility") > 12f => 18f,
+            CombatObjective.DefendOwnStone when context.HasOwnStonePosition
+                && (assessment.GetValue("OwnStoneThreat") > 18f || assessment.GetValue("AllyFragility") > 20f) => 14f,
+            CombatObjective.AttackEnemy when stableFrontline
+                && assessment.GetValue("ReachableEnemyValue") > 26f => 6f,
+            CombatObjective.DestroyEnemyStone when stableFrontline
+                && context.HasEnemyStonePosition
+                && assessment.GetValue("EnemyStoneReachability") > 30f => 6f,
+            _ => 0f,
+        };
+    }
+
+    private static float GetRosaryObjectiveSituationAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        bool stableLine = assessment.GetValue("AllyFragility") < 16f && assessment.GetValue("SelfThreat") < 20f;
+        return objective switch
+        {
+            CombatObjective.SupportAlly when context.AllyIntel.Count > 0
+                && assessment.GetValue("AllyFragility") > 10f => 20f,
+            CombatObjective.Retreat when assessment.GetValue("SelfThreat") > 18f
+                || assessment.GetValue("AllyFragility") > 28f => 16f,
+            CombatObjective.DefendOwnStone when stableLine
+                && assessment.GetValue("OwnStoneThreat") > 18f => 8f,
+            CombatObjective.Search when stableLine
+                && assessment.GetValue("EnemyLocationConfidence") < 35f => 6f,
             _ => 0f,
         };
     }
@@ -252,9 +415,17 @@ public static class CombatAiPlanner
         }
     }
 
-    private static float GetObjectiveWeaponScore(WeaponBase weapon, CombatObjective objective)
+    private static float GetObjectiveWeaponScore(
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        WeaponBase weapon,
+        CombatObjective objective)
     {
         WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
+        if (weaponWeightsProfile != null)
+        {
+            return weaponWeightsProfile.GetObjectiveWeight(kind, objective);
+        }
+
         return kind switch
         {
             WeaponKind.Sword => objective switch
@@ -352,9 +523,17 @@ public static class CombatAiPlanner
         } + GetMoveObjectiveAlignmentScore(code, objective);
     }
 
-    private static float GetMoveWeaponScore(WeaponBase weapon, string code)
+    private static float GetMoveWeaponScore(
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        WeaponBase weapon,
+        string code)
     {
         WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
+        if (weaponWeightsProfile != null)
+        {
+            return weaponWeightsProfile.GetMoveWeight(kind, code);
+        }
+
         return kind switch
         {
             WeaponKind.Sword => code switch
@@ -470,9 +649,24 @@ public static class CombatAiPlanner
         return score;
     }
 
-    private static float GetSkillWeaponScore(WeaponBase weapon, SkillBase skill)
+    private static float GetSkillWeaponScore(
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        WeaponBase weapon,
+        SkillBase skill)
     {
         if (weapon == null || skill == null) return 0f;
+        if (weaponWeightsProfile != null)
+        {
+            WeaponKind kindFromProfile = weapon.Kind;
+            if (IsDamageSkill(skill)) return weaponWeightsProfile.GetDamageSkillWeight(kindFromProfile);
+            if (IsProtectSkill(skill)) return weaponWeightsProfile.GetProtectSkillWeight(kindFromProfile);
+            if (IsHealSkill(skill)) return weaponWeightsProfile.GetHealSkillWeight(kindFromProfile);
+            if (IsBuffSkill(skill)) return weaponWeightsProfile.GetBuffSkillWeight(kindFromProfile);
+            if (IsDebuffSkill(skill)) return weaponWeightsProfile.GetDebuffSkillWeight(kindFromProfile);
+            if (IsStealthSkill(skill)) return weaponWeightsProfile.GetStealthSkillWeight(kindFromProfile);
+            return 0f;
+        }
+
         return weapon.Kind switch
         {
             WeaponKind.Sword => IsDamageSkill(skill) ? 18f : -8f,

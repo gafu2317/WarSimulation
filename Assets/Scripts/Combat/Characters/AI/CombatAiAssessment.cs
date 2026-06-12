@@ -11,6 +11,7 @@ public sealed class CombatAiContextSummary
     public string WeatherLabel { get; set; }
     public string WeaponLabel { get; set; }
     public string PersonalityLabel { get; set; }
+    public string WeaponWeightsLabel { get; set; }
 }
 
 public sealed class CombatAiMetric

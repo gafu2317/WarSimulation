@@ -45,7 +45,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Generate + Render 3D", GUILayout.Height(26)))
+                if (GUILayout.Button("Generate + Render 3D Only", GUILayout.Height(26)))
                 {
                     GenerateAndRender3D();
                 }
@@ -58,6 +58,10 @@ namespace WarSimulation.Combat.Map.EditorOnly
             if (!string.IsNullOrEmpty(_lastInfo))
             {
                 EditorGUILayout.HelpBox(_lastInfo, MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Generate はマップ描画だけを行います。戦闘開始は CombatBattleFlow Inspector の Start ボタンから実行してください。", MessageType.Info);
             }
 
             DrawPreview("Map Preview", _previewTex);

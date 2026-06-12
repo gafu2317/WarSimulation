@@ -12,7 +12,7 @@ namespace WarSimulation.Combat.Map
     ///   - 木  ：円柱（幹）＋ 球（葉冠）の 2 パーツ
     ///   - 岩  ：立方体 1 個を横長・斜め回転で置く
     ///   - 魔石：立方体を Y 軸 45° 回転して縦長にし、結晶っぽく見せる。陣営色 × 役割（Main=大 / Sub=小）で塗り分け。
-    /// 本格的なプレハブに差し替えられるよう、マテリアルは Inspector から上書き可能。
+    /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class FeatureRenderer : MonoBehaviour
@@ -35,8 +35,15 @@ namespace WarSimulation.Combat.Map
         [Tooltip("木全体の高さ倍率の上限。幹半径・葉冠半径も同率で連動する。")]
         [SerializeField, Range(0.3f, 1.5f)] private float _treeHeightScaleMax = 1.25f;
 
-        [SerializeField] private Material _trunkMaterial;
-        [SerializeField] private Material _foliageMaterial;
+        [Tooltip("幹に貼るテクスチャ。未設定なら茶色。")]
+        [SerializeField] private Texture2D _trunkTexture;
+
+        [SerializeField, Min(0.01f)] private float _trunkTextureTiling = 1f;
+
+        [Tooltip("葉冠に貼るテクスチャ。未設定なら緑色。")]
+        [SerializeField] private Texture2D _foliageTexture;
+
+        [SerializeField, Min(0.01f)] private float _foliageTextureTiling = 1f;
 
         [Header("Rock Appearance")]
         [Tooltip("岩 1 個のベースサイズ（メートル、立方体の一辺）。ランダム揺らぎで ±20% 変動する。")]
@@ -48,7 +55,11 @@ namespace WarSimulation.Combat.Map
         [Tooltip("岩の縦潰し比の上限。0.95 で高さ 95%、1.0 で立方体。")]
         [SerializeField, Range(0.3f, 1.0f)] private float _rockHeightScaleMax = 0.95f;
 
-        [SerializeField] private Material _rockMaterial;
+        [Tooltip("岩キューブの全面に貼るテクスチャ。未設定なら灰色。")]
+        [SerializeField] private Texture2D _rockTexture;
+
+        [Tooltip("岩テクスチャのタイリング回数。1 なら各面に画像を1回表示する。")]
+        [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
 
         [Header("Magic Stone Appearance")]
         [Tooltip("メイン魔石 1 個の底面サイズ（メートル、立方体の一辺）。結晶として縦長に伸ばすのは下の Height で。")]
@@ -63,11 +74,15 @@ namespace WarSimulation.Combat.Map
         [Tooltip("サブ魔石の高さ（メートル）。")]
         [SerializeField, Min(0.2f)] private float _subStoneHeight = 1.8f;
 
-        [Tooltip("自陣営魔石の色。未設定なら明るいシアンを自動生成。")]
-        [SerializeField] private Material _ownStoneMaterial;
+        [Tooltip("自陣営魔石の全面に貼るテクスチャ。未設定なら明るいシアン。")]
+        [SerializeField] private Texture2D _ownStoneTexture;
 
-        [Tooltip("敵陣営魔石の色。未設定なら赤を自動生成。")]
-        [SerializeField] private Material _enemyStoneMaterial;
+        [SerializeField, Min(0.01f)] private float _ownStoneTextureTiling = 1f;
+
+        [Tooltip("敵陣営魔石の全面に貼るテクスチャ。未設定なら赤。")]
+        [SerializeField] private Texture2D _enemyStoneTexture;
+
+        [SerializeField, Min(0.01f)] private float _enemyStoneTextureTiling = 1f;
 
         /// <summary>魔石を地面から少し浮かせて「光っている結晶感」を出す量（メートル）。</summary>
         private const float MagicStoneFloatOffset = 0.05f;
@@ -89,16 +104,19 @@ namespace WarSimulation.Combat.Map
             var root = new GameObject(RootName);
             root.transform.SetParent(transform, worldPositionStays: false);
 
-            Material trunkMat = _trunkMaterial != null ? _trunkMaterial
-                : CreateLitMaterial("AutoTreeTrunk", new Color(0.36f, 0.22f, 0.11f));
-            Material foliageMat = _foliageMaterial != null ? _foliageMaterial
-                : CreateLitMaterial("AutoTreeFoliage", new Color(0.12f, 0.50f, 0.18f));
-            Material rockMat = _rockMaterial != null ? _rockMaterial
+            Material trunkMat = CreateLitTexturedMaterial(
+                "AutoTreeTrunk", _trunkTexture, _trunkTextureTiling, new Color(0.36f, 0.22f, 0.11f));
+            Material foliageMat = CreateLitTexturedMaterial(
+                "AutoTreeFoliage", _foliageTexture, _foliageTextureTiling, new Color(0.12f, 0.50f, 0.18f));
+            Material rockMat = _rockTexture != null
+                ? CreateLitTexturedMaterial("AutoRock", _rockTexture, _rockTextureTiling, Color.white)
                 : CreateLitMaterial("AutoRock", new Color(0.45f, 0.45f, 0.47f));
-            Material ownStoneMat = _ownStoneMaterial != null ? _ownStoneMaterial
-                : CreateLitMaterial("AutoOwnStone", new Color(0.30f, 0.85f, 1.00f), emission: new Color(0.10f, 0.35f, 0.55f));
-            Material enemyStoneMat = _enemyStoneMaterial != null ? _enemyStoneMaterial
-                : CreateLitMaterial("AutoEnemyStone", new Color(1.00f, 0.35f, 0.35f), emission: new Color(0.55f, 0.12f, 0.12f));
+            Material ownStoneMat = CreateLitTexturedMaterial(
+                "AutoOwnStone", _ownStoneTexture, _ownStoneTextureTiling,
+                new Color(0.30f, 0.85f, 1.00f), new Color(0.10f, 0.35f, 0.55f));
+            Material enemyStoneMat = CreateLitTexturedMaterial(
+                "AutoEnemyStone", _enemyStoneTexture, _enemyStoneTextureTiling,
+                new Color(1.00f, 0.35f, 0.35f), new Color(0.55f, 0.12f, 0.12f));
 
             Mesh cylinderMesh = GetSharedPrimitiveMesh(PrimitiveType.Cylinder, ref _cachedCylinder);
             Mesh sphereMesh = GetSharedPrimitiveMesh(PrimitiveType.Sphere, ref _cachedSphere);
@@ -327,6 +345,27 @@ namespace WarSimulation.Combat.Map
                     mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
                 }
                 if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.6f);
+            }
+            return mat;
+        }
+
+        private static Material CreateLitTexturedMaterial(
+            string name, Texture2D texture, float tiling, Color fallbackColor, Color? emission = null)
+        {
+            Material mat = CreateLitMaterial(name, texture != null ? Color.white : fallbackColor, emission);
+            if (mat == null) return null;
+            if (texture == null) return mat;
+
+            Vector2 scale = Vector2.one * Mathf.Max(0.01f, tiling);
+            if (mat.HasProperty("_BaseMap"))
+            {
+                mat.SetTexture("_BaseMap", texture);
+                mat.SetTextureScale("_BaseMap", scale);
+            }
+            if (mat.HasProperty("_MainTex"))
+            {
+                mat.SetTexture("_MainTex", texture);
+                mat.SetTextureScale("_MainTex", scale);
             }
             return mat;
         }

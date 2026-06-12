@@ -39,6 +39,13 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
         CleanupSubscription();
     }
 
+    public void CancelImmediate()
+    {
+        enabled = false;
+        CleanupSubscription();
+        DestroySelf();
+    }
+
     private void CleanupSubscription()
     {
         if (_protectedTarget != null && _protectedTarget.Health != null)

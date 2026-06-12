@@ -13,8 +13,10 @@ namespace WarSimulation.Combat.Map
         private const float SurfaceYOffsetMeters = -0.1f;
         private const int SmoothingIterations = 0;
 
-        [Tooltip("水面に使うマテリアル。未設定の場合は URP Lit か Standard の青色マテリアルを自動生成する。")]
-        [SerializeField] private Material _waterMaterial;
+        [Tooltip("水面に貼るテクスチャ。未設定なら青色。")]
+        [SerializeField] private Texture2D _waterTexture;
+
+        [SerializeField, Min(0.01f)] private float _waterTextureTiling = 1f;
 
         [Tooltip("川床からの水面高さを DepthMeters に対する比率で指定（0.85 で 85% の高さ）。大きいほど水位が高くなり岸に近づく。")]
         [SerializeField, Range(0f, 1f)] private float _waterYOffsetRatio = 0.85f;
@@ -34,7 +36,7 @@ namespace WarSimulation.Combat.Map
             var root = new GameObject(RiversRootName);
             root.transform.SetParent(transform, worldPositionStays: false);
 
-            Material waterMat = _waterMaterial != null ? _waterMaterial : CreateDefaultWaterMaterial();
+            Material waterMat = CreateWaterMaterial(_waterTexture, _waterTextureTiling);
             if (waterMat == null)
             {
                 Debug.LogWarning(
@@ -76,10 +78,9 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>
         /// URP or Built-in いずれでも青色で表示できるデフォルトマテリアルを生成する。
-        /// ユーザーが _waterMaterial を指定した場合はそちらが優先されるため、
-        /// ここはフォールバック用途。
+        /// テクスチャが指定されていれば Base Map に設定する。
         /// </summary>
-        private static Material CreateDefaultWaterMaterial()
+        private static Material CreateWaterMaterial(Texture2D texture, float tiling)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
@@ -94,8 +95,27 @@ namespace WarSimulation.Combat.Map
             // URP Lit の場合はスムーズネスを少し上げて水っぽく見せる。存在しないプロパティは無視される。
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.8f);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0.1f);
+            ApplyTexture(mat, texture, tiling);
 
             return mat;
+        }
+
+        private static void ApplyTexture(Material mat, Texture2D texture, float tiling)
+        {
+            if (texture == null) return;
+            Vector2 scale = Vector2.one * Mathf.Max(0.01f, tiling);
+            if (mat.HasProperty("_BaseMap"))
+            {
+                mat.SetTexture("_BaseMap", texture);
+                mat.SetTextureScale("_BaseMap", scale);
+                mat.SetColor("_BaseColor", Color.white);
+            }
+            if (mat.HasProperty("_MainTex"))
+            {
+                mat.SetTexture("_MainTex", texture);
+                mat.SetTextureScale("_MainTex", scale);
+                mat.SetColor("_Color", Color.white);
+            }
         }
     }
 }

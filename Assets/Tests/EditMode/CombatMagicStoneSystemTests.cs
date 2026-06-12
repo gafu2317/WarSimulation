@@ -38,12 +38,39 @@ public sealed class CombatMagicStoneSystemTests
 
             CombatBattleFlow flow = flowGo.AddComponent<CombatBattleFlow>();
             CombatEditModeTestUtil.WireBattleFlow(flow, system);
+            CombatEditModeTestUtil.SetPrivateField(flow, "_state", CombatBattleState.Running);
 
             MapData map = CreateMapWithMainStones();
             system.Initialize(map);
             system.TakeDamage(1, 50);
 
             Assert.That(flow.State, Is.EqualTo(CombatBattleState.Victory));
+        }
+        finally
+        {
+            Object.DestroyImmediate(flowGo);
+            Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
+    public void MainStoneDestroyed_WhileWaitingToStart_DoesNotChangeBattleState()
+    {
+        GameObject flowGo = new GameObject("BattleFlow");
+        GameObject systemGo = new GameObject("MagicStoneSystem");
+        try
+        {
+            CombatMagicStoneSystem system = systemGo.AddComponent<CombatMagicStoneSystem>();
+            CombatEditModeTestUtil.SetPrivateField(system, "_mainStoneMaxHP", 50);
+
+            CombatBattleFlow flow = flowGo.AddComponent<CombatBattleFlow>();
+            CombatEditModeTestUtil.WireBattleFlow(flow, system);
+
+            MapData map = CreateMapWithMainStones();
+            system.Initialize(map);
+            system.TakeDamage(1, 50);
+
+            Assert.That(flow.State, Is.EqualTo(CombatBattleState.WaitingToStart));
         }
         finally
         {
@@ -64,6 +91,7 @@ public sealed class CombatMagicStoneSystemTests
 
             CombatBattleFlow flow = flowGo.AddComponent<CombatBattleFlow>();
             CombatEditModeTestUtil.WireBattleFlow(flow, system);
+            CombatEditModeTestUtil.SetPrivateField(flow, "_state", CombatBattleState.Running);
 
             MapData map = CreateMapWithMainStones();
             system.Initialize(map);
@@ -90,6 +118,7 @@ public sealed class CombatMagicStoneSystemTests
 
             CombatBattleFlow flow = flowGo.AddComponent<CombatBattleFlow>();
             CombatEditModeTestUtil.WireBattleFlow(flow, system);
+            CombatEditModeTestUtil.SetPrivateField(flow, "_state", CombatBattleState.Running);
 
             MapData map = CreateMapWithMainAndSubStones();
             system.Initialize(map);

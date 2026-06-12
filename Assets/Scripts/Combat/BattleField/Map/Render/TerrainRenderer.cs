@@ -43,17 +43,29 @@ namespace WarSimulation.Combat.Map
         [Tooltip("沼地テクスチャ1枚を貼るワールド寸法（メートル）。")]
         [SerializeField, Min(0.01f)] private float _swampTileSize = 4f;
 
+        [Tooltip("川・湖・凍結湖の地面下地に貼るテクスチャ。水面メッシュ自体の見た目は変更しない。")]
+        [SerializeField] private Texture2D _waterGroundTexture;
+
+        [Tooltip("水地面テクスチャ1枚を貼るワールド寸法（メートル）。")]
+        [SerializeField, Min(0.01f)] private float _waterGroundTileSize = 4f;
+
         [Tooltip("森床に貼るテクスチャ。未設定なら単色の森床を使う。")]
         [SerializeField] private Texture2D _forestFloorTexture;
 
         [Tooltip("森床テクスチャ1枚を貼るワールド寸法（メートル）。")]
         [SerializeField, Min(0.01f)] private float _forestFloorTileSize = 4f;
 
+        [Tooltip("崖面に貼るテクスチャ。未設定なら茶色の崖面を使う。")]
+        [SerializeField] private Texture2D _cliffTexture;
+
+        [Tooltip("崖面テクスチャ1枚を貼るワールド寸法（メートル）。")]
+        [SerializeField, Min(0.01f)] private float _cliffTileSize = 4f;
+
         [SerializeField, HideInInspector] private Terrain _terrain;
 
         /// <summary>
         /// スプラットマップで使うレイヤー順。index はそのまま alphamap のチャンネルになる。
-        /// Water レイヤは互換用に残すが、通常の Water タグセルには割り当てない（水面メッシュで覆う）。
+        /// Water は水面メッシュの下地として Terrain にも塗る。
         /// </summary>
         private static readonly GroundState[] s_layerOrder =
         {
@@ -207,14 +219,8 @@ namespace WarSimulation.Combat.Map
                     GroundState sampledState = g.SampleAt(worldPos);
                     GroundState s = sampledState;
 
-                    // Water タグ（川・湖・凍結湖）は水面/氷メッシュで覆うため Terrain では Normal 相当で塗る。
-                    if (s == GroundState.Water)
-                    {
-                        s = GroundState.Normal;
-                    }
-
-                    // Swamp / Snow は地面状態を優先。
-                    if (s == GroundState.Swamp || s == GroundState.Snow)
+                    // Water / Swamp / Snow は地面状態を優先。
+                    if (s == GroundState.Water || s == GroundState.Swamp || s == GroundState.Snow)
                     {
                         alphas[z, x, IndexOfLayer(s)] = 1f;
                         continue;
@@ -280,9 +286,11 @@ namespace WarSimulation.Combat.Map
                 if (allValid)
                 {
                     ConfigureGrassLayer(existing[GrassLayerIndex]);
+                    ConfigureWaterGroundLayer(existing[IndexOfLayer(GroundState.Water)]);
                     ConfigureSnowLayer(existing[IndexOfLayer(GroundState.Snow)]);
                     ConfigureSwampLayer(existing[IndexOfLayer(GroundState.Swamp)]);
                     ConfigureForestFloorLayer(existing[ForestFloorLayerIndex]);
+                    ConfigureCliffLayer(existing[CliffLayerIndex]);
                     return existing;
                 }
             }
@@ -292,11 +300,13 @@ namespace WarSimulation.Combat.Map
             {
                 layers[i] = CreateSolidColorLayer(s_layerOrder[i]);
             }
+            ConfigureWaterGroundLayer(layers[IndexOfLayer(GroundState.Water)]);
             ConfigureSnowLayer(layers[IndexOfLayer(GroundState.Snow)]);
             ConfigureSwampLayer(layers[IndexOfLayer(GroundState.Swamp)]);
             layers[ForestFloorLayerIndex] = CreateSolidColorLayer("ForestFloor", new Color(0.14f, 0.42f, 0.17f));
             ConfigureForestFloorLayer(layers[ForestFloorLayerIndex]);
             layers[CliffLayerIndex] = CreateSolidColorLayer("Cliff", new Color(0.30f, 0.18f, 0.10f));
+            ConfigureCliffLayer(layers[CliffLayerIndex]);
             layers[GrassLayerIndex] = CreateGrassLayer();
             return layers;
         }
@@ -339,6 +349,16 @@ namespace WarSimulation.Combat.Map
             layer.tileOffset = Vector2.zero;
         }
 
+        private void ConfigureWaterGroundLayer(TerrainLayer layer)
+        {
+            if (_waterGroundTexture != null)
+            {
+                layer.diffuseTexture = _waterGroundTexture;
+            }
+            layer.tileSize = Vector2.one * _waterGroundTileSize;
+            layer.tileOffset = Vector2.zero;
+        }
+
         private void ConfigureForestFloorLayer(TerrainLayer layer)
         {
             if (_forestFloorTexture != null)
@@ -346,6 +366,16 @@ namespace WarSimulation.Combat.Map
                 layer.diffuseTexture = _forestFloorTexture;
             }
             layer.tileSize = Vector2.one * _forestFloorTileSize;
+            layer.tileOffset = Vector2.zero;
+        }
+
+        private void ConfigureCliffLayer(TerrainLayer layer)
+        {
+            if (_cliffTexture != null)
+            {
+                layer.diffuseTexture = _cliffTexture;
+            }
+            layer.tileSize = Vector2.one * _cliffTileSize;
             layer.tileOffset = Vector2.zero;
         }
 
@@ -394,14 +424,14 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>
         /// エディタプレビューと同じカラーパレットを採用して 2D / 3D の見た目をそろえる。
-        /// Water タグは Terrain では Normal と同じ色（青・氷色は使わない）。
+        /// Water タグは水面メッシュ下の地面として別レイヤで塗る。
         /// </summary>
         private static Color GetColorForState(GroundState state) => state switch
         {
             GroundState.Normal => new Color(0.60f, 0.80f, 0.40f),
             GroundState.Swamp => new Color(0.30f, 0.35f, 0.20f),
             GroundState.Snow => new Color(0.95f, 0.95f, 0.95f),
-            GroundState.Water => new Color(0.60f, 0.80f, 0.40f),
+            GroundState.Water => new Color(0.42f, 0.33f, 0.24f),
             _ => new Color(1f, 0f, 1f),
         };
 

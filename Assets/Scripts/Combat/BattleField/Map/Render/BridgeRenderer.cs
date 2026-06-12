@@ -19,8 +19,10 @@ namespace WarSimulation.Combat.Map
     {
         private const string BridgesRootName = "GeneratedBridges";
 
-        [Tooltip("橋に使うマテリアル。未設定なら URP Lit / Standard の茶色マテリアルを自動生成する。")]
-        [SerializeField] private Material _bridgeMaterial;
+        [Tooltip("橋の全面に貼るテクスチャ。未設定なら茶色。")]
+        [SerializeField] private Texture2D _bridgeTexture;
+
+        [SerializeField, Min(0.01f)] private float _bridgeTextureTiling = 1f;
 
         public void Render(MapData map, MapGenerationConfig config)
         {
@@ -36,7 +38,7 @@ namespace WarSimulation.Combat.Map
             var root = new GameObject(BridgesRootName);
             root.transform.SetParent(transform, worldPositionStays: false);
 
-            Material mat = _bridgeMaterial != null ? _bridgeMaterial : CreateDefaultBridgeMaterial();
+            Material mat = CreateBridgeMaterial(_bridgeTexture, _bridgeTextureTiling);
             Mesh cubeMesh = GetSharedCubeMesh();
             Mesh deckMesh = GetSharedDeckQuadMesh();
             int walkableArea = ResolveWalkableAreaIndex();
@@ -143,7 +145,7 @@ namespace WarSimulation.Combat.Map
             return _cachedDeckQuadMesh;
         }
 
-        private static Material CreateDefaultBridgeMaterial()
+        private static Material CreateBridgeMaterial(Texture2D texture, float tiling)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
@@ -156,6 +158,22 @@ namespace WarSimulation.Combat.Map
             };
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.2f);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0f);
+            if (texture != null)
+            {
+                Vector2 scale = Vector2.one * Mathf.Max(0.01f, tiling);
+                if (mat.HasProperty("_BaseMap"))
+                {
+                    mat.SetTexture("_BaseMap", texture);
+                    mat.SetTextureScale("_BaseMap", scale);
+                    mat.SetColor("_BaseColor", Color.white);
+                }
+                if (mat.HasProperty("_MainTex"))
+                {
+                    mat.SetTexture("_MainTex", texture);
+                    mat.SetTextureScale("_MainTex", scale);
+                    mat.SetColor("_Color", Color.white);
+                }
+            }
             return mat;
         }
     }

@@ -66,6 +66,24 @@ public sealed class MagicStone : MonoBehaviour
         _healthBar?.SetVisible(false);
     }
 
+    public void OnRestored()
+    {
+        MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].enabled = true;
+        }
+
+        Collider collider = GetComponent<Collider>();
+        if (collider != null) collider.enabled = true;
+
+        _healthBar?.SetVisible(true);
+        if (_healthBar != null && _healthSource != null)
+        {
+            _healthBar.Configure(_healthSource);
+        }
+    }
+
     private void EnsureHealthBar(Vector3 offset, float barWidth)
     {
         _healthBar = GetComponent<CombatWorldHealthBar>();

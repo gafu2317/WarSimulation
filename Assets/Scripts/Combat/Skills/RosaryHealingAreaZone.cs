@@ -57,6 +57,12 @@ public sealed class RosaryHealingAreaZone : MonoBehaviour
         }
     }
 
+    public void CancelImmediate()
+    {
+        enabled = false;
+        DestroyZone();
+    }
+
     private void DestroyZone()
     {
         if (Application.isPlaying)

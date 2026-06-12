@@ -3,7 +3,8 @@ using WarSimulation.Combat.Map;
 
 public enum CombatBattleState
 {
-    Running = 0,
+    WaitingToStart = 0,
+    Running,
     Victory,
     Defeat,
 }
@@ -16,11 +17,11 @@ public sealed class CombatBattleFlow : MonoBehaviour
     [SerializeField] private CombatMagicStoneSystem _magicStoneSystem;
     [SerializeField] private CombatCharacterSystem _characterSystem;
 
-    private CombatBattleState _state = CombatBattleState.Running;
+    private CombatBattleState _state = CombatBattleState.WaitingToStart;
 
     public CombatBattleState State => _state;
 
-    public static bool IsRunning => s_instance == null || s_instance._state == CombatBattleState.Running;
+    public static bool IsRunning => s_instance != null && s_instance._state == CombatBattleState.Running;
 
     private void Awake()
     {
@@ -83,7 +84,52 @@ public sealed class CombatBattleFlow : MonoBehaviour
 
     public void ResetBattle()
     {
+        _state = CombatBattleState.WaitingToStart;
+    }
+
+    [ContextMenu("Start Battle On Current Map")]
+    public void StartBattleOnCurrentMap()
+    {
+        if (!TryResolveCurrentMap(out MapData map))
+        {
+            return;
+        }
+
+        CancelTransientBattleArtifacts();
+        _characterSystem?.SnapAllCharactersToNavMesh();
+        _characterSystem?.CaptureCurrentPositionsAsInitialPositions();
+        _characterSystem?.ResetCharactersForBattle();
+        _magicStoneSystem?.Initialize(map);
         _state = CombatBattleState.Running;
+    }
+
+    [ContextMenu("Restart Battle On Current Map")]
+    public void RestartBattleOnCurrentMap()
+    {
+        if (_state == CombatBattleState.WaitingToStart)
+        {
+            StartBattleOnCurrentMap();
+            return;
+        }
+
+        if (!TryResolveCurrentMap(out MapData map))
+        {
+            return;
+        }
+
+        CancelTransientBattleArtifacts();
+        _characterSystem?.ResetCharactersForBattle();
+        _magicStoneSystem?.Initialize(map);
+        _state = CombatBattleState.Running;
+    }
+
+    private static void CancelTransientBattleArtifacts()
+    {
+        RosaryHealingAreaZone[] zones = FindObjectsByType<RosaryHealingAreaZone>(FindObjectsSortMode.None);
+        for (int i = 0; i < zones.Length; i++)
+        {
+            zones[i]?.CancelImmediate();
+        }
     }
 
     private void OnMainStoneDestroyed(FeatureType type)
@@ -148,5 +194,20 @@ public sealed class CombatBattleFlow : MonoBehaviour
             _characterSystem = context != null ? context.CharacterSystem : null;
             _characterSystem ??= FindAnyObjectByType<CombatCharacterSystem>();
         }
+    }
+
+    private bool TryResolveCurrentMap(out MapData map)
+    {
+        ResolveDependencies();
+
+        CombatMapSystem mapSystem = CombatSceneContext.Instance?.MapSystem;
+        map = mapSystem != null ? mapSystem.CurrentMap : null;
+        if (map == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatBattleFlow)}] CurrentMap is not set. Generate a map before starting the battle.");
+            return false;
+        }
+
+        return true;
     }
 }

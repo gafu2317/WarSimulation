@@ -12,6 +12,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     [SerializeField] private bool _executeSkills = true;
     [SerializeField] private bool _executeStoneAttacks = true;
     [SerializeField] private bool _showObjectiveLabel = true;
+    [SerializeField] private CombatAiWeaponWeightsProfile _weaponWeightsProfile;
 
     private Character _owner;
     private CombatAiContextCollector _contextCollector;
@@ -24,6 +25,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     public CombatSkillEvaluationResult LastSkillEvaluation { get; private set; }
     public bool HasLastSkillEvaluation { get; private set; }
     public int LastStoneDamage { get; private set; }
+    public CombatAiWeaponWeightsProfile WeaponWeightsProfile => ResolveWeaponWeightsProfile();
 
     private void Awake()
     {
@@ -46,7 +48,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (!CanRun()) return false;
 
         LastContext = _contextCollector.Collect(_owner);
-        LastPlan = CombatAiPlanner.BuildPlan(LastContext, _owner.PersonalityProfile);
+        LastPlan = CombatAiPlanner.BuildPlan(LastContext, _owner.PersonalityProfile, ResolveWeaponWeightsProfile());
         RefreshWorldLabel();
         return ExecutePlan(LastPlan);
     }
@@ -190,6 +192,17 @@ public sealed class CombatAiBrain : MonoBehaviour
                 _worldLabel = gameObject.AddComponent<CombatAiWorldLabel>();
             }
         }
+    }
+
+    private CombatAiWeaponWeightsProfile ResolveWeaponWeightsProfile()
+    {
+        if (_weaponWeightsProfile != null)
+        {
+            return _weaponWeightsProfile;
+        }
+
+        CombatSceneContext context = CombatSceneContext.Instance;
+        return context != null ? context.AiWeaponWeightsProfile : null;
     }
 
     private void RefreshWorldLabel()

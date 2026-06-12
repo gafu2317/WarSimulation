@@ -167,6 +167,7 @@ public sealed class CombatAiDecisionDebugView : MonoBehaviour
         CombatAiContextSummary summary = _snapshot.ContextSummary;
         sb.AppendLine(summary.WeaponLabel);
         sb.AppendLine(summary.PersonalityLabel);
+        sb.AppendLine(summary.WeaponWeightsLabel);
         sb.AppendLine(summary.WeatherLabel);
         sb.AppendLine("VisibleEnemies: " + summary.VisibleEnemyCount);
         sb.AppendLine("RememberedEnemies: " + summary.RememberedEnemyCount);
@@ -413,7 +414,13 @@ public sealed class CombatAiDecisionDebugView : MonoBehaviour
         }
 
         CombatAiContext context = _contextCollector.Collect(selected);
-        _snapshot = CombatAiPlanner.BuildDebugSnapshot(context, selected.PersonalityProfile);
+        CombatAiBrain brain = selected.GetComponent<CombatAiBrain>();
+        CombatAiWeaponWeightsProfile weaponWeightsProfile = brain != null
+            ? brain.WeaponWeightsProfile
+            : CombatSceneContext.Instance != null
+                ? CombatSceneContext.Instance.AiWeaponWeightsProfile
+                : null;
+        _snapshot = CombatAiPlanner.BuildDebugSnapshot(context, selected.PersonalityProfile, weaponWeightsProfile);
     }
 
     private Character GetSelectedCharacter()

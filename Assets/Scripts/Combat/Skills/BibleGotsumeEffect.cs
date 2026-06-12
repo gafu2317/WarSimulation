@@ -30,6 +30,13 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
         CleanupSubscription();
     }
 
+    public void CancelImmediate()
+    {
+        enabled = false;
+        CleanupSubscription();
+        DestroySelf();
+    }
+
     private void OnWearerDamaged(int damage, Character attacker)
     {
         if (attacker == null || attacker == _wearer) return;

@@ -101728,7 +101728,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: WarSimulation.Runtime::WarSimulation.Combat.Map.TerrainSkirtRenderer
   _skirtEnabled: 1
   _skirtDepthMeters: 8
-  _skirtMaterial: {fileID: 0}
+  _skirtTexture: {fileID: 0}
+  _skirtTextureTiling: 1
 --- !u!114 &1549073683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101811,18 +101812,23 @@ MonoBehaviour:
   _foliageRadius: 1.2
   _treeHeightScaleMin: 0.75
   _treeHeightScaleMax: 1.25
-  _trunkMaterial: {fileID: 0}
-  _foliageMaterial: {fileID: 0}
+  _trunkTexture: {fileID: 0}
+  _trunkTextureTiling: 1
+  _foliageTexture: {fileID: 0}
+  _foliageTextureTiling: 1
   _rockSize: 2.6
   _rockHeightScaleMin: 0.7
   _rockHeightScaleMax: 0.95
-  _rockMaterial: {fileID: 0}
+  _rockTexture: {fileID: 0}
+  _rockTextureTiling: 1
   _mainStoneBaseSize: 1.2
   _mainStoneHeight: 3.2
   _subStoneBaseSize: 0.8
   _subStoneHeight: 1.8
-  _ownStoneMaterial: {fileID: 0}
-  _enemyStoneMaterial: {fileID: 0}
+  _ownStoneTexture: {fileID: 0}
+  _ownStoneTextureTiling: 1
+  _enemyStoneTexture: {fileID: 0}
+  _enemyStoneTextureTiling: 1
 --- !u!114 &1549073686
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101835,7 +101841,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25f797a5962994726816b87c0731f356, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WarSimulation.Combat.Map.BridgeRenderer
-  _bridgeMaterial: {fileID: 0}
+  _bridgeTexture: {fileID: 0}
+  _bridgeTextureTiling: 1
 --- !u!114 &1549073687
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101848,8 +101855,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2528062ef1ef74637afb3c88b654f2b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WarSimulation.Combat.Map.LakeRenderer
-  _waterMaterial: {fileID: 0}
-  _iceMaterial: {fileID: 0}
+  _waterTexture: {fileID: 0}
+  _waterTextureTiling: 1
+  _iceTexture: {fileID: 0}
+  _iceTextureTiling: 1
   _iceSurfaceOffset: 0.15
   _iceSlabThickness: 0.3
   _segments: 32
@@ -101866,7 +101875,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b557d37fd390470e9d8f610a972adc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WarSimulation.Combat.Map.RiverRenderer
-  _waterMaterial: {fileID: 0}
+  _waterTexture: {fileID: 0}
+  _waterTextureTiling: 1
   _waterYOffsetRatio: 0.85
 --- !u!114 &1549073689
 MonoBehaviour:
@@ -101890,6 +101900,8 @@ MonoBehaviour:
   _swampTileSize: 4
   _forestFloorTexture: {fileID: 0}
   _forestFloorTileSize: 4
+  _cliffTexture: {fileID: 0}
+  _cliffTileSize: 4
   _terrain: {fileID: 1000105208}
 --- !u!4 &1549073690
 Transform:

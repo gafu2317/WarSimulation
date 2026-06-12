@@ -388,6 +388,39 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Planner_SwordPrefersAttackEnemyBeforeStoneWhenEnemyIsReachable()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy },
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_ShieldDefendsThreatenedOwnStone()
     {
         GameObject ownerGo = new GameObject("ShieldOwner");
@@ -417,6 +450,55 @@ public sealed class CombatAiContextCollectorTests
         finally
         {
             Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_UsesWeaponWeightsProfileOverride()
+    {
+        GameObject ownerGo = new GameObject("WeightedSwordOwner");
+        CombatAiWeaponWeightsProfile profile = ScriptableObject.CreateInstance<CombatAiWeaponWeightsProfile>();
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            profile.ApplyCurrentDefaults();
+            profile.SetObjectiveWeight(WeaponKind.Sword, CombatObjective.AttackEnemy, -100f);
+            profile.SetObjectiveWeight(WeaponKind.Sword, CombatObjective.Search, 120f);
+
+            CombatAiContext context = CreatePlannerContext(owner);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null, profile);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.Search));
+        }
+        finally
+        {
+            Object.DestroyImmediate(profile);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_RosaryPrefersRetreatWhenSelfThreatIsHigh()
+    {
+        GameObject ownerGo = new GameObject("RosaryOwner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30, 5);
+            owner.EquipWeapon(new Rosary());
+
+            CombatAiContext context = CreatePlannerContext(owner);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.Retreat));
+        }
+        finally
+        {
             Object.DestroyImmediate(ownerGo);
         }
     }

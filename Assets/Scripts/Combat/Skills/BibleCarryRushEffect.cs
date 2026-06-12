@@ -76,6 +76,13 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
         RestoreBaseSpeeds();
     }
 
+    public void CancelImmediate()
+    {
+        enabled = false;
+        RestoreBaseSpeeds();
+        DestroySelf();
+    }
+
     private void RestoreBaseSpeeds()
     {
         if (!_hasAppliedSpeedBoost) return;

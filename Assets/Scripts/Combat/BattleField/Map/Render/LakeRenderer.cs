@@ -13,11 +13,15 @@ namespace WarSimulation.Combat.Map
         private const float SurfaceYOffsetMeters = -0.3f;
         private const float SurfaceRadiusScale = 1.35f;
 
-        [Tooltip("水面に使うマテリアル。未設定なら URP Lit / Standard の青色マテリアルを自動生成する。")]
-        [SerializeField] private Material _waterMaterial;
+        [Tooltip("水面に貼るテクスチャ。未設定なら青色。")]
+        [SerializeField] private Texture2D _waterTexture;
 
-        [Tooltip("凍結湖の氷面に使うマテリアル。未設定なら白っぽい氷色マテリアルを自動生成する。")]
-        [SerializeField] private Material _iceMaterial;
+        [SerializeField, Min(0.01f)] private float _waterTextureTiling = 1f;
+
+        [Tooltip("凍結湖の全面に貼るテクスチャ。未設定なら白っぽい氷色。")]
+        [SerializeField] private Texture2D _iceTexture;
+
+        [SerializeField, Min(0.01f)] private float _iceTextureTiling = 1f;
 
         [Tooltip("凍結湖の氷面を水面より何メートル上に出すか（氷の厚みに相当）。視認性を確保するため少し厚めの既定値。")]
         [SerializeField, Min(0f)] private float _iceSurfaceOffset = 0.15f;
@@ -46,8 +50,8 @@ namespace WarSimulation.Combat.Map
             var root = new GameObject(LakesRootName);
             root.transform.SetParent(transform, worldPositionStays: false);
 
-            Material waterMat = _waterMaterial != null ? _waterMaterial : CreateDefaultWaterMaterial();
-            Material iceMat = _iceMaterial != null ? _iceMaterial : CreateDefaultIceMaterial();
+            Material waterMat = CreateWaterMaterial(_waterTexture, _waterTextureTiling);
+            Material iceMat = CreateIceMaterial(_iceTexture, _iceTextureTiling);
 
             for (int i = 0; i < map.Lakes.Count; i++)
             {
@@ -213,7 +217,7 @@ namespace WarSimulation.Combat.Map
             return mesh;
         }
 
-        private static Material CreateDefaultWaterMaterial()
+        private static Material CreateWaterMaterial(Texture2D texture, float tiling)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
@@ -226,6 +230,7 @@ namespace WarSimulation.Combat.Map
             };
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.85f);
             if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0.1f);
+            ApplyTexture(mat, texture, tiling);
             return mat;
         }
 
@@ -237,9 +242,8 @@ namespace WarSimulation.Combat.Map
         ///   → 「淡いシアン」に寄せて、雪（白）と水（濃紺）の中間で独立した色相に置く。
         /// シェーダ選定の背景：
         ///   Lit + 高 Smoothness は skybox reflection が支配的になって色が青く転ぶため Unlit を使う。
-        ///   Lit 相当の見た目にしたい場合は Inspector で _iceMaterial を手動アサインすれば置き換えられる。
         /// </summary>
-        private static Material CreateDefaultIceMaterial()
+        private static Material CreateIceMaterial(Texture2D texture, float tiling)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null) shader = Shader.Find("Unlit/Color");
@@ -254,7 +258,26 @@ namespace WarSimulation.Combat.Map
             };
             if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", mat.color);
             if (mat.HasProperty("_Color")) mat.SetColor("_Color", mat.color);
+            ApplyTexture(mat, texture, tiling);
             return mat;
+        }
+
+        private static void ApplyTexture(Material mat, Texture2D texture, float tiling)
+        {
+            if (texture == null) return;
+            Vector2 scale = Vector2.one * Mathf.Max(0.01f, tiling);
+            if (mat.HasProperty("_BaseMap"))
+            {
+                mat.SetTexture("_BaseMap", texture);
+                mat.SetTextureScale("_BaseMap", scale);
+                mat.SetColor("_BaseColor", Color.white);
+            }
+            if (mat.HasProperty("_MainTex"))
+            {
+                mat.SetTexture("_MainTex", texture);
+                mat.SetTextureScale("_MainTex", scale);
+                mat.SetColor("_Color", Color.white);
+            }
         }
     }
 }

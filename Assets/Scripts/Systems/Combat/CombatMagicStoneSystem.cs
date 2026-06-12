@@ -33,6 +33,8 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
                 GetMaxHPForType(type),
                 GetMaxHPForType(type));
         }
+
+        RebindViews();
     }
 
     public bool TryGetState(int featureIndex, out MagicStoneRuntimeState state)
@@ -106,6 +108,19 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
     {
         if (view == null) return;
         _views[featureIndex] = view;
+    }
+
+    private void RebindViews()
+    {
+        MagicStone[] views = FindObjectsByType<MagicStone>(FindObjectsSortMode.None);
+        for (int i = 0; i < views.Length; i++)
+        {
+            MagicStone view = views[i];
+            if (view == null) continue;
+
+            RegisterView(view.FeatureIndex, view);
+            view.OnRestored();
+        }
     }
 
     private int GetMaxHPForType(FeatureType type)

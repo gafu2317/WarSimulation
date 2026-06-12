@@ -16,8 +16,10 @@ namespace WarSimulation.Combat.Map
         [Tooltip("Terrain 底面（ローカル Y=0）から下方向へ垂らす深さ（メートル）。")]
         [SerializeField, Min(0.01f)] private float _skirtDepthMeters = 8f;
 
-        [Tooltip("側面マテリアル。未設定時は Cliff 色に近い茶色の Lit マテリアルを自動生成する。")]
-        [SerializeField] private Material _skirtMaterial;
+        [Tooltip("側面に貼るテクスチャ。未設定時は Cliff 色に近い茶色。")]
+        [SerializeField] private Texture2D _skirtTexture;
+
+        [SerializeField, Min(0.01f)] private float _skirtTextureTiling = 1f;
 
         public void Render(MapData map)
         {
@@ -56,7 +58,7 @@ namespace WarSimulation.Combat.Map
 
             skirtObj.GetComponent<MeshFilter>().sharedMesh = mesh;
 
-            Material mat = _skirtMaterial != null ? _skirtMaterial : CreateDefaultSkirtMaterial();
+            Material mat = CreateSkirtMaterial(_skirtTexture, _skirtTextureTiling);
             skirtObj.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
@@ -81,17 +83,34 @@ namespace WarSimulation.Combat.Map
             else DestroyImmediate(go);
         }
 
-        private static Material CreateDefaultSkirtMaterial()
+        private static Material CreateSkirtMaterial(Texture2D texture, float tiling)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
             if (shader == null) return null;
 
-            return new Material(shader)
+            var mat = new Material(shader)
             {
                 name = "DefaultTerrainSkirtMaterial",
                 color = new Color(0.30f, 0.18f, 0.10f, 1f),
             };
+            if (texture != null)
+            {
+                Vector2 scale = Vector2.one * Mathf.Max(0.01f, tiling);
+                if (mat.HasProperty("_BaseMap"))
+                {
+                    mat.SetTexture("_BaseMap", texture);
+                    mat.SetTextureScale("_BaseMap", scale);
+                    mat.SetColor("_BaseColor", Color.white);
+                }
+                if (mat.HasProperty("_MainTex"))
+                {
+                    mat.SetTexture("_MainTex", texture);
+                    mat.SetTextureScale("_MainTex", scale);
+                    mat.SetColor("_Color", Color.white);
+                }
+            }
+            return mat;
         }
     }
 }

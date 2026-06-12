@@ -7,7 +7,10 @@ public static class CombatAiAssessmentBuilder
     private const float NearbyDistance = 8f;
     private const float LowHpThreshold = 0.4f;
 
-    public static CombatAiContextSummary BuildSummary(CombatAiContext context, CombatAiPersonalityProfile personalityProfile)
+    public static CombatAiContextSummary BuildSummary(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile)
     {
         int lowHpAllies = 0;
         int knownEnemies = 0;
@@ -39,6 +42,9 @@ public static class CombatAiAssessmentBuilder
             WeatherLabel = CombatAiDebugLabels.Format(context.Weather.ToString(), context.Weather.ToString()),
             WeaponLabel = CombatAiDebugLabels.Weapon(context.Owner != null ? context.Owner.EquippedWeapon : null),
             PersonalityLabel = CombatAiDebugLabels.Personality(personalityProfile),
+            WeaponWeightsLabel = weaponWeightsProfile != null
+                ? "WeaponWeights: " + weaponWeightsProfile.name
+                : "WeaponWeights: Code Defaults",
         };
     }
 
