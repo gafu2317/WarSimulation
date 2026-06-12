@@ -25,6 +25,7 @@ public sealed class IdentifiedSkill : SkillBase
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
+        CombatSkillDebugIndicatorSystem.Show(self, _skillId, Name, context);
         _inner.Execute(self, context);
     }
 }

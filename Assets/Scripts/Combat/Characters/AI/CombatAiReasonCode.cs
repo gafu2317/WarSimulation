@@ -155,4 +155,20 @@ public static class CombatAiDebugLabels
         if (weapon == null) return Format("Unarmed", "素手");
         return Format(weapon.Kind.ToString(), weapon.Kind.ToString());
     }
+
+    public static string WeaponShort(WeaponBase weapon)
+    {
+        if (weapon == null) return "素手";
+        return weapon.Kind switch
+        {
+            WeaponKind.Sword => "剣",
+            WeaponKind.Shield => "盾",
+            WeaponKind.Wand => "杖",
+            WeaponKind.Grimoire => "魔導書",
+            WeaponKind.Bible => "聖書",
+            WeaponKind.Rosary => "ロザリオ",
+            WeaponKind.Unarmed => "素手",
+            _ => weapon.Kind.ToString(),
+        };
+    }
 }

@@ -1,3 +1,4 @@
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using WarSimulation.Combat.Map;
@@ -50,13 +51,14 @@ public sealed class CombatSkillExecutionTests
             Character owner = ownerGo.AddComponent<Character>();
             owner.SetTeam(CombatTeam.Enemy);
             owner.Health.Initialize(maxHP: 30);
+            owner.EquipWeapon(new Sword());
 
             Character target = targetGo.AddComponent<Character>();
             target.SetTeam(CombatTeam.Ally);
             target.Health.Initialize(maxHP: 30);
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward;
 
-            var skill = new AiBrainTestAttackSkill();
+            SkillBase skill = new IdentifiedSkill(new AiBrainTestAttackSkill(), SkillId.Sword_Slash);
             var plan = new CombatAiPlan(
                 CombatObjective.AttackEnemy,
                 CombatMoveTarget.None,
@@ -65,12 +67,16 @@ public sealed class CombatSkillExecutionTests
 
             CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
             bool acted = brain.ExecutePlan(plan);
+            CombatAiWorldLabel label = ownerGo.GetComponent<CombatAiWorldLabel>();
 
             Assert.That(acted, Is.True);
             Assert.That(target.Health.HP, Is.EqualTo(23));
             Assert.That(owner.SkillCooldowns.IsReady(skill), Is.False);
             Assert.That(brain.HasLastSkillEvaluation, Is.True);
             Assert.That(brain.LastSkillEvaluation.CanUse, Is.True);
+            Assert.That(label, Is.Not.Null);
+            Assert.That(label.CurrentWeaponText, Is.EqualTo("剣"));
+            Assert.That(label.CurrentSkillText, Is.EqualTo("AiBrainTestSlash"));
         }
         finally
         {
@@ -95,7 +101,7 @@ public sealed class CombatSkillExecutionTests
             target.Health.Initialize(maxHP: 30);
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 10f;
 
-            var skill = new AiBrainTestAttackSkill();
+            SkillBase skill = new IdentifiedSkill(new AiBrainTestAttackSkill(), SkillId.Sword_Slash);
             var plan = new CombatAiPlan(
                 CombatObjective.AttackEnemy,
                 CombatMoveTarget.None,
@@ -127,6 +133,7 @@ public sealed class CombatSkillExecutionTests
             Character owner = ownerGo.AddComponent<Character>();
             owner.SetTeam(CombatTeam.Enemy);
             owner.Health.Initialize(maxHP: 30);
+            owner.EquipWeapon(new Shield());
 
             CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
             var plan = new CombatAiPlan(
@@ -141,11 +148,147 @@ public sealed class CombatSkillExecutionTests
             Assert.That(label, Is.Not.Null);
             Assert.That(brain.LastPlan.Objective, Is.EqualTo(CombatObjective.SupportAlly));
             Assert.That(label.CurrentText, Is.EqualTo("味方を援護"));
+            Assert.That(label.CurrentWeaponText, Is.EqualTo("盾"));
         }
         finally
         {
             Object.DestroyImmediate(ownerGo);
         }
+    }
+
+    [Test]
+    public void IdentifiedSkill_Execute_UpdatesExistingWorldLabelSkillText()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject targetGo = new GameObject("Target");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(maxHP: 30);
+            owner.EquipWeapon(new Wand());
+
+            Character target = targetGo.AddComponent<Character>();
+            target.SetTeam(CombatTeam.Enemy);
+            target.Health.Initialize(maxHP: 30);
+            targetGo.transform.position = ownerGo.transform.position + Vector3.forward;
+
+            CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
+            SkillBase skill = new IdentifiedSkill(new SwordSlashSkill(), SkillId.Sword_Slash);
+            CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(
+                owner,
+                skill,
+                SkillExecutionContext.ForTarget(target));
+
+            Assert.That(evaluation.CanUse, Is.True);
+
+            skill.Execute(owner, evaluation.Context);
+
+            Assert.That(label.CurrentWeaponText, Is.EqualTo("杖"));
+            Assert.That(label.CurrentSkillText, Is.EqualTo("斬撃"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void WorldLabel_ShowSkill_ExpiresAfterDuration()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(maxHP: 30);
+
+            CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
+            label.ShowSkill("斬撃", 0.1f);
+            label.RefreshTransientState(Time.time + 0.2f);
+
+            Assert.That(label.CurrentSkillText, Is.Empty);
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void WorldLabel_HidesWhenBehindMainCamera()
+    {
+        GameObject cameraGo = new GameObject("Main Camera");
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Camera camera = cameraGo.AddComponent<Camera>();
+            camera.tag = "MainCamera";
+            cameraGo.transform.position = Vector3.zero;
+            cameraGo.transform.rotation = Quaternion.identity;
+
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(maxHP: 30);
+            ownerGo.transform.position = new Vector3(0f, 0f, -5f);
+
+            CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
+            label.SetObjective(CombatObjective.Search);
+
+            InvokePrivateLateUpdate(label);
+
+            var labelRootField = typeof(CombatAiWorldLabel).GetField("_labelRoot", BindingFlags.Instance | BindingFlags.NonPublic);
+            Transform labelRoot = (Transform)labelRootField.GetValue(label);
+
+            Assert.That(label.CurrentText, Is.EqualTo("索敵"));
+            Assert.That(labelRoot, Is.Not.Null);
+            Assert.That(labelRoot.gameObject.activeSelf, Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(cameraGo);
+        }
+    }
+
+    [Test]
+    public void IdentifiedSkill_Execute_WithoutWorldLabel_DoesNotThrow()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject targetGo = new GameObject("Target");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(maxHP: 30);
+
+            Character target = targetGo.AddComponent<Character>();
+            target.SetTeam(CombatTeam.Enemy);
+            target.Health.Initialize(maxHP: 30);
+            targetGo.transform.position = ownerGo.transform.position + Vector3.forward;
+
+            SkillBase skill = new IdentifiedSkill(new SwordSlashSkill(), SkillId.Sword_Slash);
+            CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(
+                owner,
+                skill,
+                SkillExecutionContext.ForTarget(target));
+
+            Assert.That(evaluation.CanUse, Is.True);
+            Assert.DoesNotThrow(() => skill.Execute(owner, evaluation.Context));
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    private static void InvokePrivateLateUpdate(CombatAiWorldLabel label)
+    {
+        MethodInfo lateUpdate = typeof(CombatAiWorldLabel).GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(lateUpdate, Is.Not.Null);
+        lateUpdate.Invoke(label, null);
     }
 
     [Test]

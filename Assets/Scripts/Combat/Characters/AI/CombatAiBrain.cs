@@ -212,6 +212,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (_showObjectiveLabel)
         {
             _worldLabel.SetObjective(LastPlan.Objective, _enabled && _owner != null && _owner.Health != null && _owner.Health.IsAlive);
+            _worldLabel.SetWeapon(_owner != null ? _owner.EquippedWeapon : null);
         }
     }
 }

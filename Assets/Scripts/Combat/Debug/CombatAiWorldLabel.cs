@@ -4,10 +4,18 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class CombatAiWorldLabel : MonoBehaviour
 {
+    private const string OverlayCanvasName = "CombatAiDebugOverlayCanvas";
+
     [SerializeField] private Vector3 _localOffset = new Vector3(0f, 2.8f, 0f);
     [SerializeField, Min(0.4f)] private float _width = 2.4f;
     [SerializeField, Min(0.12f)] private float _height = 0.42f;
+    [SerializeField, Min(0.08f)] private float _weaponHeight = 0.26f;
+    [SerializeField, Min(0.08f)] private float _skillHeight = 0.3f;
+    [SerializeField, Min(0f)] private float _stackSpacing = 0.08f;
+    [SerializeField, Min(0.01f)] private float _defaultSkillDurationSeconds = 1.2f;
     [SerializeField] private Color _backgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.82f);
+    [SerializeField] private Color _weaponBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.76f);
+    [SerializeField] private Color _skillBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.72f);
     [SerializeField] private Color _defaultTextColor = new Color(1f, 0.95f, 0.85f, 1f);
     [SerializeField] private Color _allyTextColor = new Color(0.3f, 0.7f, 1f, 1f);
     [SerializeField] private Color _enemyTextColor = new Color(1f, 0.3f, 0.25f, 1f);
@@ -18,13 +26,27 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
     [SerializeField] private Color _retreatColor = new Color(1f, 0.7f, 0.35f, 1f);
     [SerializeField] private Color _stoneColor = new Color(1f, 0.55f, 0.95f, 1f);
 
+    private static Canvas s_overlayCanvas;
+    private static RectTransform s_overlayCanvasRect;
     private Transform _labelRoot;
+    private Transform _objectiveRoot;
     private Text _labelText;
     private Image _backgroundImage;
+    private Transform _weaponRoot;
+    private Text _weaponText;
+    private Image _weaponBackgroundImage;
+    private Transform _skillRoot;
+    private Text _skillText;
+    private Image _skillBackgroundImage;
     private Transform _cameraTransform;
     private Character _character;
+    private float _skillExpiresAt = float.NegativeInfinity;
+    private bool _requestedVisible = true;
+    private bool _isInFrontOfCamera = true;
 
     public string CurrentText => _labelText != null ? _labelText.text : string.Empty;
+    public string CurrentWeaponText => _weaponText != null ? _weaponText.text : string.Empty;
+    public string CurrentSkillText => _skillText != null ? _skillText.text : string.Empty;
 
     public void SetObjective(CombatObjective objective, bool isActive = true)
     {
@@ -37,53 +59,188 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         SetVisible(isActive);
     }
 
+    public void SetWeapon(WeaponBase weapon)
+    {
+        EnsureBuilt();
+        if (_weaponText == null || _weaponBackgroundImage == null || _weaponRoot == null) return;
+
+        _weaponText.text = CombatAiDebugLabels.WeaponShort(weapon);
+        _weaponText.color = ResolveLabelTextColor();
+        _weaponBackgroundImage.color = _weaponBackgroundColor;
+        _weaponRoot.gameObject.SetActive(true);
+    }
+
+    public void ShowSkill(string skillName, float durationSeconds = -1f)
+    {
+        EnsureBuilt();
+        if (_skillText == null || _skillBackgroundImage == null || _skillRoot == null) return;
+        if (string.IsNullOrWhiteSpace(skillName))
+        {
+            HideSkill();
+            return;
+        }
+
+        _skillText.text = skillName;
+        _skillText.color = ResolveLabelTextColor();
+        _skillBackgroundImage.color = _skillBackgroundColor;
+        _skillRoot.gameObject.SetActive(true);
+
+        float lifetime = durationSeconds < 0f ? _defaultSkillDurationSeconds : durationSeconds;
+        _skillExpiresAt = Time.time + Mathf.Max(0f, lifetime);
+        RefreshTransientState(Time.time);
+    }
+
+    public void HideSkill()
+    {
+        _skillExpiresAt = float.NegativeInfinity;
+        if (_skillText != null)
+        {
+            _skillText.text = string.Empty;
+        }
+
+        if (_skillRoot != null)
+        {
+            _skillRoot.gameObject.SetActive(false);
+        }
+    }
+
     public void SetVisible(bool visible)
     {
-        if (_labelRoot != null)
-        {
-            _labelRoot.gameObject.SetActive(visible);
-        }
+        _requestedVisible = visible;
+        UpdateRootVisibleState();
     }
 
     private void LateUpdate()
     {
+        EnsureBuilt();
         if (_labelRoot == null) return;
 
-        _labelRoot.position = transform.position + _localOffset;
-
-        if (_cameraTransform == null && Camera.main != null)
+        RefreshTransientState(Time.time);
+        Camera mainCamera = Camera.main;
+        if (_cameraTransform == null && mainCamera != null)
         {
-            _cameraTransform = Camera.main.transform;
+            _cameraTransform = mainCamera.transform;
         }
 
-        if (_cameraTransform != null)
+        if (_cameraTransform == null || mainCamera == null)
         {
-            _labelRoot.rotation = Quaternion.LookRotation(_labelRoot.position - _cameraTransform.position);
+            _isInFrontOfCamera = false;
+            UpdateRootVisibleState();
+            return;
         }
+
+        Vector3 worldPosition = transform.position + _localOffset;
+        Vector3 screenPoint = mainCamera.WorldToScreenPoint(worldPosition);
+        _isInFrontOfCamera = screenPoint.z > 0f;
+        UpdateRootVisibleState();
+        if (!_isInFrontOfCamera) return;
+
+        RectTransform rootRect = (RectTransform)_labelRoot;
+        if (s_overlayCanvasRect != null &&
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                s_overlayCanvasRect,
+                screenPoint,
+                null,
+                out Vector2 localPoint))
+        {
+            rootRect.anchoredPosition = localPoint;
+        }
+    }
+
+    public void RefreshTransientState(float currentTime)
+    {
+        if (_skillRoot == null) return;
+        if (currentTime < _skillExpiresAt) return;
+        HideSkill();
     }
 
     private void EnsureBuilt()
     {
         if (_labelRoot != null) return;
 
-        var root = new GameObject("AiObjectiveLabel", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        root.transform.SetParent(transform, worldPositionStays: true);
+        EnsureOverlayCanvas();
+
+        var root = new GameObject("AiObjectiveLabel", typeof(RectTransform));
+        root.transform.SetParent(s_overlayCanvasRect, worldPositionStays: false);
         _labelRoot = root.transform;
 
-        Canvas canvas = root.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-
         RectTransform canvasRect = root.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = new Vector2(_width * 100f, _height * 100f);
-        canvasRect.localScale = Vector3.one * 0.012f;
+        canvasRect.sizeDelta = new Vector2(_width * 100f, (_height + _weaponHeight + _skillHeight + (_stackSpacing * 2f)) * 100f);
+        canvasRect.anchorMin = new Vector2(0.5f, 0.5f);
+        canvasRect.anchorMax = new Vector2(0.5f, 0.5f);
+        canvasRect.pivot = new Vector2(0.5f, 0f);
+        canvasRect.anchoredPosition = Vector2.zero;
 
-        _backgroundImage = CreateBackground(root.transform);
-        _labelText = CreateLabel(root.transform);
+        _objectiveRoot = CreateRowRoot(root.transform, "ObjectiveRoot", _height, 0f);
+        _backgroundImage = CreateBackground(_objectiveRoot, "ObjectiveBackground");
+        _labelText = CreateLabel(_objectiveRoot, "ObjectiveLabel", _height, 16, 32);
+        _weaponRoot = CreateWeaponRoot(root.transform);
+        _weaponBackgroundImage = CreateBackground(_weaponRoot, "WeaponBackground");
+        _weaponText = CreateLabel(_weaponRoot, "WeaponLabel", _weaponHeight, 13, 22);
+        _skillRoot = CreateSkillRoot(root.transform);
+        _skillBackgroundImage = CreateBackground(_skillRoot, "SkillBackground");
+        _skillText = CreateLabel(_skillRoot, "SkillLabel", _skillHeight, 14, 24);
+        SetWeapon(_character != null ? _character.EquippedWeapon : null);
+        HideSkill();
+        UpdateRootVisibleState();
     }
 
-    private Image CreateBackground(Transform parent)
+    private static void EnsureOverlayCanvas()
     {
-        var background = new GameObject("Background", typeof(RectTransform), typeof(Image));
+        if (s_overlayCanvas != null && s_overlayCanvasRect != null) return;
+
+        GameObject existing = GameObject.Find(OverlayCanvasName);
+        if (existing != null)
+        {
+            s_overlayCanvas = existing.GetComponent<Canvas>();
+            s_overlayCanvasRect = existing.GetComponent<RectTransform>();
+            if (s_overlayCanvas != null && s_overlayCanvasRect != null) return;
+        }
+
+        var canvasObject = new GameObject(OverlayCanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        s_overlayCanvas = canvasObject.GetComponent<Canvas>();
+        s_overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        s_overlayCanvas.sortingOrder = short.MaxValue;
+
+        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+        scaler.scaleFactor = 1f;
+        scaler.referencePixelsPerUnit = 100f;
+
+        s_overlayCanvasRect = canvasObject.GetComponent<RectTransform>();
+        s_overlayCanvasRect.anchorMin = Vector2.zero;
+        s_overlayCanvasRect.anchorMax = Vector2.one;
+        s_overlayCanvasRect.offsetMin = Vector2.zero;
+        s_overlayCanvasRect.offsetMax = Vector2.zero;
+    }
+
+    private Transform CreateRowRoot(Transform parent, string objectName, float height, float bottomOffset)
+    {
+        var rowRoot = new GameObject(objectName, typeof(RectTransform));
+        rowRoot.transform.SetParent(parent, false);
+
+        RectTransform rect = rowRoot.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 0.5f);
+        rect.anchorMax = new Vector2(1f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.sizeDelta = new Vector2(0f, height * 100f);
+        rect.anchoredPosition = new Vector2(0f, bottomOffset * 100f);
+        return rowRoot.transform;
+    }
+
+    private Transform CreateSkillRoot(Transform parent)
+    {
+        return CreateRowRoot(parent, "SkillRoot", _skillHeight, _height + _weaponHeight + (_stackSpacing * 2f));
+    }
+
+    private Transform CreateWeaponRoot(Transform parent)
+    {
+        return CreateRowRoot(parent, "WeaponRoot", _weaponHeight, _height + _stackSpacing);
+    }
+
+    private Image CreateBackground(Transform parent, string objectName)
+    {
+        var background = new GameObject(objectName, typeof(RectTransform), typeof(Image));
         background.transform.SetParent(parent, false);
 
         RectTransform rect = background.GetComponent<RectTransform>();
@@ -99,22 +256,22 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         return image;
     }
 
-    private static Text CreateLabel(Transform parent)
+    private static Text CreateLabel(Transform parent, string objectName, float height, int minSize, int maxSize)
     {
-        var label = new GameObject("Label", typeof(RectTransform), typeof(Text));
+        var label = new GameObject(objectName, typeof(RectTransform), typeof(Text));
         label.transform.SetParent(parent, false);
 
         RectTransform rect = label.GetComponent<RectTransform>();
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
         rect.offsetMin = new Vector2(10f, 4f);
-        rect.offsetMax = new Vector2(-10f, -4f);
+        rect.offsetMax = new Vector2(-10f, height >= 0.35f ? -4f : -2f);
 
         Text text = label.GetComponent<Text>();
         text.alignment = TextAnchor.MiddleCenter;
         text.resizeTextForBestFit = true;
-        text.resizeTextMinSize = 16;
-        text.resizeTextMaxSize = 32;
+        text.resizeTextMinSize = minSize;
+        text.resizeTextMaxSize = maxSize;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Overflow;
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -124,14 +281,10 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 
     private Color ResolveTextColor(CombatObjective objective)
     {
-        if (_character == null)
-        {
-            _character = GetComponent<Character>();
-        }
-
+        Color teamColor = ResolveLabelTextColor();
         if (_character != null)
         {
-            return _character.Team == CombatTeam.Ally ? _allyTextColor : _enemyTextColor;
+            return teamColor;
         }
 
         return objective switch
@@ -144,6 +297,44 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
             CombatObjective.Retreat => _retreatColor,
             _ => _defaultTextColor,
         };
+    }
+
+    private Color ResolveLabelTextColor()
+    {
+        if (_character == null)
+        {
+            _character = GetComponent<Character>();
+        }
+
+        if (_character != null)
+        {
+            return _character.Team == CombatTeam.Ally ? _allyTextColor : _enemyTextColor;
+        }
+
+        return _defaultTextColor;
+    }
+
+    private void UpdateRootVisibleState()
+    {
+        if (_labelRoot == null) return;
+        _labelRoot.gameObject.SetActive(_requestedVisible && _isInFrontOfCamera);
+    }
+
+    private void OnDestroy()
+    {
+        if (_labelRoot != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(_labelRoot.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(_labelRoot.gameObject);
+            }
+
+            _labelRoot = null;
+        }
     }
 
     private static Sprite s_whiteSprite;
