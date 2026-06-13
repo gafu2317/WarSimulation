@@ -194,13 +194,17 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         {
             s_overlayCanvas = existing.GetComponent<Canvas>();
             s_overlayCanvasRect = existing.GetComponent<RectTransform>();
-            if (s_overlayCanvas != null && s_overlayCanvasRect != null) return;
+            if (s_overlayCanvas != null && s_overlayCanvasRect != null)
+            {
+                s_overlayCanvas.sortingOrder = 0;
+                return;
+            }
         }
 
         var canvasObject = new GameObject(OverlayCanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         s_overlayCanvas = canvasObject.GetComponent<Canvas>();
         s_overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        s_overlayCanvas.sortingOrder = short.MaxValue;
+        s_overlayCanvas.sortingOrder = 0;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;

@@ -14,6 +14,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _weaponText;
     [SerializeField] private TextMeshProUGUI _hpText;
     [SerializeField] private TextMeshProUGUI _skillText;
+    [SerializeField] private GameObject _skillBackground;
     [SerializeField] private Image _hpFillImage;
 
     private Character _character;
@@ -74,6 +75,10 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
         _skillText.text = skillName;
         _skillText.gameObject.SetActive(true);
+        if (_skillBackground != null)
+        {
+            _skillBackground.SetActive(true);
+        }
         _skillHideAtTime = currentTime + Mathf.Max(0.1f, _skillDisplaySeconds);
     }
 
@@ -219,9 +224,20 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             }
         }
 
+        if (_skillBackground == null)
+        {
+            Transform skillBackground = transform.Find("SkillBackground");
+            if (skillBackground != null)
+            {
+                _skillBackground = skillBackground.gameObject;
+            }
+        }
+
         if (_skillText == null)
         {
-            Transform skillText = transform.Find("SkillText");
+            Transform skillText = _skillBackground != null
+                ? _skillBackground.transform.Find("SkillText")
+                : transform.Find("SkillText");
             if (skillText != null)
             {
                 _skillText = skillText.GetComponent<TextMeshProUGUI>();
@@ -258,6 +274,10 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
         _skillText.text = string.Empty;
         _skillText.gameObject.SetActive(false);
+        if (_skillBackground != null)
+        {
+            _skillBackground.SetActive(false);
+        }
         _skillHideAtTime = float.NegativeInfinity;
     }
 

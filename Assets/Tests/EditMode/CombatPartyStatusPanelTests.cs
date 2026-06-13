@@ -272,7 +272,9 @@ public sealed class CombatPartyStatusPanelTests
         CreateTmpText(root.transform, "BuffDebuffText");
         CreateTmpText(root.transform, "WeaponText");
         CreateTmpText(root.transform, "HpText");
-        GameObject skillText = CreateTmpText(root.transform, "SkillText");
+        GameObject skillBackground = CreateChild(root.transform, "SkillBackground", typeof(RectTransform), typeof(Image));
+        skillBackground.SetActive(false);
+        GameObject skillText = CreateTmpText(skillBackground.transform, "SkillText");
         skillText.SetActive(false);
 
         var hpBarBackground = CreateChild(root.transform, "HpBarBackground", typeof(RectTransform), typeof(Image));
