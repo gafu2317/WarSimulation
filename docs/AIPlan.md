@@ -968,13 +968,13 @@ AI の判断ロジックは AI 系ディレクトリへまとめる。
 * `Assets/Scripts/Combat/Characters/AI/CombatAiReasonCode.cs`
   * 候補が選ばれた理由コード
   * 英語名を内部保持し、日本語訳を対応づける
-* `Assets/Scripts/Combat/Debug/CombatAiDecisionDebugView.cs`
+* `Assets/Scripts/Development/CombatDebug/CombatAiDecisionDebugView.cs`
   * 判断フローを 2D で可視化する表示専用ビュー
   * `CombatAiContextCollector` と `CombatAiPlanner` を呼んで描画する
 
 ### 既存編集
 
-* `Assets/Scripts/Combat/Characters/Chracter.cs`
+* `Assets/Scripts/Combat/Characters/Character.cs`
   * `PersonalityBase` 依存を削除し、`SpiritData.PersonalityProfile` を保持する
   * `PlainPersonality` 自動追加を行わない
 * `Assets/Scripts/Combat/Characters/SpiritData.cs`

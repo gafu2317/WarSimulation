@@ -1,11 +1,13 @@
 {
-    "name": "WarSimulation.Editor",
+    "name": "WarSimulation.Combat",
     "references": [
-        "WarSimulation.Runtime"
+        "WarSimulation.Runtime",
+        "WarSimulation.Country",
+        "Unity.AI.Navigation",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

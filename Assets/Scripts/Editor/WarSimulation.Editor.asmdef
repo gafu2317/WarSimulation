@@ -1,7 +1,12 @@
 {
-    "name": "WarSimulation.Runtime",
-    "references": [],
-    "includePlatforms": [],
+    "name": "WarSimulation.Editor",
+    "references": [
+        "WarSimulation.Combat",
+        "GUID:d255f1b2de93e43cf9a7dfe8a79d8e5e"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
