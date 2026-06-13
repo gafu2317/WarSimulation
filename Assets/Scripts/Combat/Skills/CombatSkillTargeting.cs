@@ -17,9 +17,37 @@ public static class CombatSkillTargeting
         return CollectCharacters(owner, includeAllies: true, center, radius, includeSelf);
     }
 
-    public static IReadOnlyList<Character> GetAllEnemies(Character owner)
+    public static IReadOnlyList<Character> GetRecognizedEnemies(Character owner)
     {
-        return CollectCharacters(owner, includeAllies: false, center: default, radius: float.PositiveInfinity, includeSelf: false);
+        if (owner == null)
+        {
+            return System.Array.Empty<Character>();
+        }
+
+        CombatVision vision = owner.Vision;
+        if (vision == null)
+        {
+            return System.Array.Empty<Character>();
+        }
+
+        vision.UpdateVision();
+        CombatCharacterSystem characterSystem = ResolveCharacterSystem();
+        IReadOnlyList<Character> enemies = characterSystem != null
+            ? characterSystem.GetEnemiesOf(owner)
+            : System.Array.Empty<Character>();
+        var recognized = new List<Character>();
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Character enemy = enemies[i];
+            if (enemy == null) continue;
+            if (!IsValidCandidate(owner, enemy, includeAllies: false)) continue;
+            if (!vision.HasRecognitionOf(enemy)) continue;
+
+            recognized.Add(enemy);
+        }
+
+        return recognized;
     }
 
     public static IReadOnlyList<Character> GetAllAllies(Character owner, bool includeSelf = false)
@@ -43,9 +71,9 @@ public static class CombatSkillTargeting
         return SkillExecutionContext.ForPoint(center, targets);
     }
 
-    public static SkillExecutionContext CreateAllEnemiesContext(Character owner)
+    public static SkillExecutionContext CreateRecognizedEnemiesContext(Character owner)
     {
-        return SkillExecutionContext.ForTargets(GetAllEnemies(owner));
+        return SkillExecutionContext.ForTargets(GetRecognizedEnemies(owner));
     }
 
     public static SkillExecutionContext CreateAllAlliesContext(Character owner, bool includeSelf = false)
@@ -69,6 +97,8 @@ public static class CombatSkillTargeting
         IReadOnlyList<Character> source = includeAllies
             ? characterSystem != null ? characterSystem.GetAlliesOf(owner) : System.Array.Empty<Character>()
             : characterSystem != null ? characterSystem.GetEnemiesOf(owner) : System.Array.Empty<Character>();
+        CombatVision vision = !includeAllies ? owner.Vision : null;
+        vision?.UpdateVision();
 
         float radiusSqr = radius * radius;
         bool filterByRadius = !float.IsPositiveInfinity(radius);
@@ -84,6 +114,7 @@ public static class CombatSkillTargeting
             if (filterByRadius)
             {
                 Vector3 delta = candidate.transform.position - center;
+                delta.y = 0f;
                 if (delta.sqrMagnitude > radiusSqr) continue;
             }
 
@@ -105,6 +136,8 @@ public static class CombatSkillTargeting
         }
 
         if (candidate.Team == owner.Team) return false;
+        CombatVision vision = owner.Vision;
+        if (vision != null && !vision.HasRecognitionOf(candidate)) return false;
         return health.IsTargetable;
     }
 

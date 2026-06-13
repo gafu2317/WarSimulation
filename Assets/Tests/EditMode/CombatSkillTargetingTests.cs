@@ -10,6 +10,8 @@ public sealed class CombatSkillTargetingTests
         TargetingFixture fixture = TargetingFixture.Create();
         try
         {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
             IReadOnlyList<Character> targets = CombatSkillTargeting.GetEnemiesInRadius(
                 fixture.Owner,
                 fixture.Owner.transform.position,
@@ -62,6 +64,8 @@ public sealed class CombatSkillTargetingTests
         TargetingFixture fixture = TargetingFixture.Create();
         try
         {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
             Vector3 point = fixture.Owner.transform.position;
             SkillExecutionContext context = CombatSkillTargeting.CreateEnemyAreaContext(
                 fixture.Owner,
@@ -80,17 +84,66 @@ public sealed class CombatSkillTargetingTests
     }
 
     [Test]
-    public void CreateAllEnemiesContext_PopulatesAllEnemyTargets()
+    public void CreateRecognizedEnemiesContext_PopulatesRecognizedEnemyTargets()
     {
         TargetingFixture fixture = TargetingFixture.Create();
         try
         {
-            SkillExecutionContext context = CombatSkillTargeting.CreateAllEnemiesContext(fixture.Owner);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            SkillExecutionContext context = CombatSkillTargeting.CreateRecognizedEnemiesContext(fixture.Owner);
 
             Assert.That(context.ResolvedTargets, Has.Count.EqualTo(2));
             Assert.That(context.ResolvedTargets, Has.Member(fixture.NearEnemy));
             Assert.That(context.ResolvedTargets, Has.Member(fixture.FarEnemy));
             Assert.That(context.PrimaryTarget, Is.EqualTo(fixture.NearEnemy));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void CreateRecognizedEnemiesContext_IncludesRememberedHiddenEnemyTargets()
+    {
+        TargetingFixture fixture = TargetingFixture.Create();
+        try
+        {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            fixture.Owner.Vision.UpdateVision();
+            fixture.FarEnemy.StatusEffects.ApplyStealth(5f);
+
+            SkillExecutionContext context = CombatSkillTargeting.CreateRecognizedEnemiesContext(fixture.Owner);
+
+            Assert.That(context.ResolvedTargets, Has.Count.EqualTo(2));
+            Assert.That(context.ResolvedTargets, Has.Member(fixture.NearEnemy));
+            Assert.That(context.ResolvedTargets, Has.Member(fixture.FarEnemy));
+            Assert.That(context.PrimaryTarget, Is.EqualTo(fixture.NearEnemy));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void GetEnemiesInRadius_UsesHorizontalRadiusForElevatedTargets()
+    {
+        TargetingFixture fixture = TargetingFixture.Create();
+        try
+        {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            fixture.NearEnemyGo.transform.position = new Vector3(0f, 2.5f, 2.5f);
+
+            IReadOnlyList<Character> targets = CombatSkillTargeting.GetEnemiesInRadius(
+                fixture.Owner,
+                fixture.Owner.transform.position,
+                radius: 3f);
+
+            Assert.That(targets, Has.Member(fixture.NearEnemy));
         }
         finally
         {

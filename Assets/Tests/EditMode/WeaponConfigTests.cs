@@ -39,14 +39,14 @@ public sealed class WeaponConfigTests
             config.ApplyKindDefaults(WeaponKind.Wand);
             SetField(config, "_range", 9.5f);
             SetField(config, "_cooldownSeconds", 2.1f);
-            SetField(config, "_basePower", 15f);
+            SetField(config, "_primaryStatBonus", 15);
             SetField(config, "_hideInForestBias", 42f);
 
             WeaponBase weapon = config.CreateWeapon();
 
             Assert.That(weapon, Is.InstanceOf<Wand>());
             Assert.That(weapon.Range, Is.EqualTo(9.5f).Within(0.001f));
-            Assert.That(weapon.BasePower, Is.EqualTo(15));
+            Assert.That(weapon.PrimaryStatBonus, Is.EqualTo(15));
             Assert.That(weapon.CooldownSeconds, Is.EqualTo(2.1f).Within(0.001f));
             Assert.That(weapon.HideInForestBias, Is.EqualTo(42f).Within(0.001f));
         }
@@ -201,7 +201,7 @@ public sealed class WeaponConfigTests
     {
         Assert.That(weapon.Kind, Is.EqualTo(kind));
         Assert.That(weapon.Range, Is.EqualTo(range).Within(0.001f));
-        Assert.That(weapon.BasePower, Is.EqualTo(power));
+        Assert.That(weapon.PrimaryStatBonus, Is.EqualTo(power));
         Assert.That(weapon.CooldownSeconds, Is.EqualTo(cooldown).Within(0.001f));
         Assert.That(weapon.ScalingStat, Is.EqualTo(stat));
     }

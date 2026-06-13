@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(
     fileName = "WeaponConfig",
@@ -11,7 +12,8 @@ public sealed class WeaponConfig : ScriptableObject
     [Header("Combat")]
     [SerializeField, Min(0.1f)] private float _range = 2f;
     [SerializeField, Min(0.01f)] private float _cooldownSeconds = 1f;
-    [SerializeField, Min(0f)] private float _basePower = 12f;
+    [FormerlySerializedAs("_basePower")]
+    [SerializeField, Min(0)] private int _primaryStatBonus = 12;
 
     [Header("AI Bias")]
     [SerializeField] private float _chaseEnemyBias;
@@ -25,7 +27,7 @@ public sealed class WeaponConfig : ScriptableObject
     public WeaponKind Kind => _kind;
     public float Range => _range;
     public float CooldownSeconds => _cooldownSeconds;
-    public float BasePower => _basePower;
+    public int PrimaryStatBonus => _primaryStatBonus;
     public float ChaseEnemyBias => _chaseEnemyBias;
     public float HideInForestBias => _hideInForestBias;
     public float SeekHighGroundBias => _seekHighGroundBias;
@@ -40,7 +42,7 @@ public sealed class WeaponConfig : ScriptableObject
             WeaponKind.Sword => new Sword(
                 _range,
                 _cooldownSeconds,
-                _basePower,
+                _primaryStatBonus,
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
@@ -49,7 +51,7 @@ public sealed class WeaponConfig : ScriptableObject
             WeaponKind.Shield => new Shield(
                 _range,
                 _cooldownSeconds,
-                _basePower,
+                _primaryStatBonus,
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
@@ -58,7 +60,7 @@ public sealed class WeaponConfig : ScriptableObject
             WeaponKind.Wand => new Wand(
                 _range,
                 _cooldownSeconds,
-                _basePower,
+                _primaryStatBonus,
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
@@ -67,7 +69,7 @@ public sealed class WeaponConfig : ScriptableObject
             WeaponKind.Grimoire => new Grimoire(
                 _range,
                 _cooldownSeconds,
-                _basePower,
+                _primaryStatBonus,
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
@@ -76,7 +78,7 @@ public sealed class WeaponConfig : ScriptableObject
             WeaponKind.Bible => new Bible(
                 _range,
                 _cooldownSeconds,
-                _basePower,
+                _primaryStatBonus,
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
@@ -85,7 +87,7 @@ public sealed class WeaponConfig : ScriptableObject
             WeaponKind.Rosary => new Rosary(
                 _range,
                 _cooldownSeconds,
-                _basePower,
+                _primaryStatBonus,
                 _chaseEnemyBias,
                 _hideInForestBias,
                 _seekHighGroundBias,
@@ -100,7 +102,7 @@ public sealed class WeaponConfig : ScriptableObject
     {
         if (_range < 0.1f) _range = 0.1f;
         if (_cooldownSeconds < 0.01f) _cooldownSeconds = 0.01f;
-        if (_basePower < 0f) _basePower = 0f;
+        if (_primaryStatBonus < 0) _primaryStatBonus = 0;
     }
 
     private void Reset()
@@ -116,7 +118,7 @@ public sealed class WeaponConfig : ScriptableObject
             case WeaponKind.Sword:
                 _range = 2f;
                 _cooldownSeconds = 1f;
-                _basePower = 12f;
+                _primaryStatBonus = 12;
                 _chaseEnemyBias = 20f;
                 _hideInForestBias = 0f;
                 _seekHighGroundBias = 0f;
@@ -125,7 +127,7 @@ public sealed class WeaponConfig : ScriptableObject
             case WeaponKind.Shield:
                 _range = 1.8f;
                 _cooldownSeconds = 1.3f;
-                _basePower = 6f;
+                _primaryStatBonus = 6;
                 _chaseEnemyBias = 0f;
                 _hideInForestBias = 0f;
                 _seekHighGroundBias = 0f;
@@ -134,7 +136,7 @@ public sealed class WeaponConfig : ScriptableObject
             case WeaponKind.Wand:
                 _range = 8f;
                 _cooldownSeconds = 1.4f;
-                _basePower = 10f;
+                _primaryStatBonus = 10;
                 _chaseEnemyBias = 0f;
                 _hideInForestBias = 70f;
                 _seekHighGroundBias = 0f;
@@ -143,7 +145,7 @@ public sealed class WeaponConfig : ScriptableObject
             case WeaponKind.Grimoire:
                 _range = 7f;
                 _cooldownSeconds = 2f;
-                _basePower = 14f;
+                _primaryStatBonus = 14;
                 _chaseEnemyBias = 0f;
                 _hideInForestBias = 70f;
                 _seekHighGroundBias = 50f;
@@ -152,7 +154,7 @@ public sealed class WeaponConfig : ScriptableObject
             case WeaponKind.Bible:
                 _range = 6f;
                 _cooldownSeconds = 1.6f;
-                _basePower = 10f;
+                _primaryStatBonus = 10;
                 _chaseEnemyBias = 0f;
                 _hideInForestBias = 65f;
                 _seekHighGroundBias = 30f;
@@ -161,7 +163,7 @@ public sealed class WeaponConfig : ScriptableObject
             case WeaponKind.Rosary:
                 _range = 5f;
                 _cooldownSeconds = 1.2f;
-                _basePower = 8f;
+                _primaryStatBonus = 8;
                 _chaseEnemyBias = 0f;
                 _hideInForestBias = 60f;
                 _seekHighGroundBias = 50f;
@@ -170,7 +172,7 @@ public sealed class WeaponConfig : ScriptableObject
             default:
                 _range = 1.5f;
                 _cooldownSeconds = 1.2f;
-                _basePower = 4f;
+                _primaryStatBonus = 4;
                 _chaseEnemyBias = 0f;
                 _hideInForestBias = 0f;
                 _seekHighGroundBias = 0f;

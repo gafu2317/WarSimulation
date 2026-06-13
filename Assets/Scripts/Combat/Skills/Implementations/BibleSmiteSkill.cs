@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class BibleSmiteSkill : SkillBase
 {
-    private readonly int _baseDamage;
     private readonly float _faiScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public BibleSmiteSkill(
-        int baseDamage = 7,
         float faiScale = 0.5f,
         float maxRange = 5f,
         float cooldownSeconds = 1.5f)
     {
-        _baseDamage = baseDamage;
         _faiScale = faiScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -33,7 +30,7 @@ public sealed class BibleSmiteSkill : SkillBase
 
         float distance = ComputeHorizontalDistance(self, target);
 
-        int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.FAI * _faiScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.FAI) * _faiScale));
         damage = ComputeStealthAwareDamage(self, target, damage);
         target.Health.TakeDamage(damage, self);
         BreakStealthOnUse(self);

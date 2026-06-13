@@ -81,7 +81,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         float attackRange = Mathf.Max(0.5f, weapon.Range) + 1.2f;
         if (HorizontalDistance(_owner.transform.position, stone.transform.position) > attackRange) return false;
 
-        int damage = Mathf.Max(1, weapon.BasePower + Mathf.RoundToInt(GetEffectiveScalingStat(weapon.ScalingStat) * 0.5f));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(GetEffectiveScalingStat(weapon.ScalingStat) * 0.5f));
         LastStoneDamage = stoneSystem.TakeDamage(stone.FeatureIndex, damage);
         if (LastStoneDamage <= 0) return false;
 
@@ -105,6 +105,7 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         plan.Skill.Execute(_owner, evaluation.Context);
         _owner.SkillCooldowns?.StartCooldown(plan.Skill);
+        CombatSkillUseEvents.RaiseSkillUsed(_owner, plan.Skill.Name);
         return true;
     }
 
@@ -144,14 +145,7 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private float GetEffectiveScalingStat(CombatStat stat)
     {
-        return stat switch
-        {
-            CombatStat.STR => _owner.STR * _owner.STRBuff,
-            CombatStat.INT => _owner.INT * _owner.INTBuff,
-            CombatStat.FAI => _owner.FAI * _owner.FAIBuff,
-            CombatStat.AGI => _owner.AGI * _owner.AGIBuff,
-            _ => 0f,
-        };
+        return _owner != null ? _owner.GetEffectiveStat(stat) : 0f;
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

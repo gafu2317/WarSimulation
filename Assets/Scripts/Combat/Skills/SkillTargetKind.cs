@@ -7,6 +7,6 @@ public enum SkillTargetKind
     AllyOrSelf = 4,
     Point = 5,
     Area = 6,
-    AllEnemies = 7,
+    RecognizedEnemies = 7,
     AllAllies = 8,
 }

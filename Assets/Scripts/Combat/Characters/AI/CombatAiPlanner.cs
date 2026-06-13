@@ -841,8 +841,8 @@ public static class CombatAiPlanner
             case SkillTargetKind.Area:
                 AddAreaTargetContexts(context, owner, skill, contexts);
                 break;
-            case SkillTargetKind.AllEnemies:
-                contexts.Add(CombatSkillTargeting.CreateAllEnemiesContext(owner));
+            case SkillTargetKind.RecognizedEnemies:
+                contexts.Add(CombatSkillTargeting.CreateRecognizedEnemiesContext(owner));
                 break;
             case SkillTargetKind.AllAllies:
                 contexts.Add(CombatSkillTargeting.CreateAllAlliesContext(owner, includeSelf: true));

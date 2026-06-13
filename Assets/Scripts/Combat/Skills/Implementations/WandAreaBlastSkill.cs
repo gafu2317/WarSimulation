@@ -2,20 +2,17 @@ using UnityEngine;
 
 public sealed class WandAreaBlastSkill : SkillBase
 {
-    private readonly int _baseDamage;
     private readonly float _intScale;
     private readonly float _maxRange;
     private readonly float _radius;
     private readonly float _cooldownSeconds;
 
     public WandAreaBlastSkill(
-        int baseDamage = 6,
         float intScale = 0.3f,
         float maxRange = 10f,
         float radius = 3f,
         float cooldownSeconds = 5f)
     {
-        _baseDamage = baseDamage;
         _intScale = intScale;
         _maxRange = maxRange;
         _radius = radius;
@@ -33,7 +30,7 @@ public sealed class WandAreaBlastSkill : SkillBase
         if (self == null || !context.HasTargetPoint) return;
         if (context.ResolvedTargets == null || context.ResolvedTargets.Count == 0) return;
 
-        int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
         for (int i = 0; i < context.ResolvedTargets.Count; i++)
         {
             Character target = context.ResolvedTargets[i];

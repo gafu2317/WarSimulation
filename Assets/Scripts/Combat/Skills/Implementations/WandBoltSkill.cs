@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class WandBoltSkill : SkillBase
 {
-    private readonly int _baseDamage;
     private readonly float _intScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public WandBoltSkill(
-        int baseDamage = 10,
         float intScale = 0.6f,
         float maxRange = 8f,
         float cooldownSeconds = 1.4f)
     {
-        _baseDamage = baseDamage;
         _intScale = intScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -33,7 +30,7 @@ public sealed class WandBoltSkill : SkillBase
 
         float distance = ComputeHorizontalDistance(self, target);
 
-        int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
         damage = ComputeDistanceScaledAmount(
             damage,
             distance,

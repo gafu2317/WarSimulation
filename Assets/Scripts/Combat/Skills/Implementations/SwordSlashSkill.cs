@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class SwordSlashSkill : SkillBase
 {
-    private readonly int _baseDamage;
     private readonly float _strScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public SwordSlashSkill(
-        int baseDamage = 8,
         float strScale = 0.5f,
         float maxRange = 2f,
         float cooldownSeconds = 1f)
     {
-        _baseDamage = baseDamage;
         _strScale = strScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -33,7 +30,7 @@ public sealed class SwordSlashSkill : SkillBase
 
         float distance = ComputeHorizontalDistance(self, target);
 
-        int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.STR * _strScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.STR) * _strScale));
         damage = ComputeStealthAwareDamage(self, target, damage);
         target.Health.TakeDamage(damage, self);
         BreakStealthOnUse(self);

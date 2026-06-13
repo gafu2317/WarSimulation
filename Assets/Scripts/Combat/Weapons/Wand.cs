@@ -4,7 +4,7 @@ public class Wand : WeaponBase
 {
     private readonly float _range;
     private readonly float _cooldown;
-    private readonly int _basePower;
+    private readonly int _intBonus;
     private readonly float _chaseEnemyBias;
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
@@ -13,7 +13,7 @@ public class Wand : WeaponBase
 
     public override WeaponKind Kind => WeaponKind.Wand;
     public override float Range => _range;
-    public override int BasePower => _basePower;
+    public override int INTBonus => _intBonus;
     public override float CooldownSeconds => _cooldown;
     public override CombatStat ScalingStat => CombatStat.INT;
     public override float ChaseEnemyBias => _chaseEnemyBias;
@@ -25,7 +25,7 @@ public class Wand : WeaponBase
     public Wand(
         float range = 8f,
         float cooldown = 1.4f,
-        float basePower = 10f,
+        int intBonus = 10,
         float chaseEnemyBias = 0f,
         float hideInForestBias = 0f,
         float seekHighGroundBias = 0f,
@@ -34,7 +34,7 @@ public class Wand : WeaponBase
     {
         _range = range;
         _cooldown = cooldown;
-        _basePower = (int)basePower;
+        _intBonus = intBonus;
         _chaseEnemyBias = chaseEnemyBias;
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;

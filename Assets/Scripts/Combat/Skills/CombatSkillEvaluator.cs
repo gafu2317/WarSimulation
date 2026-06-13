@@ -42,7 +42,7 @@ public static class CombatSkillEvaluator
 
         switch (skill.TargetKind)
         {
-            case SkillTargetKind.AllEnemies:
+            case SkillTargetKind.RecognizedEnemies:
                 return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, requireEnemy: true, emptyReason: "no enemies");
             case SkillTargetKind.AllAllies:
                 return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, requireEnemy: false, emptyReason: "no allies");
@@ -219,23 +219,23 @@ public static class CombatSkillEvaluator
                     areaContext,
                     areaContext.ResolvedTargets);
 
-            case SkillTargetKind.AllEnemies:
+            case SkillTargetKind.RecognizedEnemies:
             {
-                SkillExecutionContext allEnemiesContext = CombatSkillTargeting.CreateAllEnemiesContext(owner);
-                if (allEnemiesContext.ResolvedTargets == null || allEnemiesContext.ResolvedTargets.Count == 0)
+                SkillExecutionContext recognizedEnemiesContext = CombatSkillTargeting.CreateRecognizedEnemiesContext(owner);
+                if (recognizedEnemiesContext.ResolvedTargets == null || recognizedEnemiesContext.ResolvedTargets.Count == 0)
                 {
                     return Fail(
                         new CombatSkillEvaluationResult(
                             canUse: false,
                             failureReason: "no enemies",
-                            context: allEnemiesContext,
+                            context: recognizedEnemiesContext,
                             originPoint: originPoint,
                             hasRangePreview: false,
                             rangeRadius: 0f,
                             areaCenter: default,
                             hasAreaPreview: false,
                             areaRadius: 0f,
-                            resolvedTargets: allEnemiesContext.ResolvedTargets),
+                            resolvedTargets: recognizedEnemiesContext.ResolvedTargets),
                         "no enemies");
                 }
 
@@ -243,16 +243,16 @@ public static class CombatSkillEvaluator
                     new CombatSkillEvaluationResult(
                         canUse: true,
                         failureReason: string.Empty,
-                        context: allEnemiesContext,
+                        context: recognizedEnemiesContext,
                         originPoint: originPoint,
                         hasRangePreview: false,
                         rangeRadius: 0f,
                         areaCenter: default,
                         hasAreaPreview: false,
                         areaRadius: 0f,
-                        resolvedTargets: allEnemiesContext.ResolvedTargets),
-                    allEnemiesContext,
-                    allEnemiesContext.ResolvedTargets);
+                        resolvedTargets: recognizedEnemiesContext.ResolvedTargets),
+                    recognizedEnemiesContext,
+                    recognizedEnemiesContext.ResolvedTargets);
             }
 
             case SkillTargetKind.AllAllies:
@@ -315,6 +315,13 @@ public static class CombatSkillEvaluator
         if (target.Team == owner.Team)
         {
             return Fail(baseResult, "enemy required");
+        }
+
+        CombatVision vision = owner.Vision;
+        vision?.UpdateVision();
+        if (vision != null && HasCharacterSystem() && !vision.HasRecognitionOf(target))
+        {
+            return Fail(baseResult, "enemy not recognized");
         }
 
         if (!IsInHorizontalRange(baseResult.OriginPoint, Flatten(target.transform.position), skill.MaxRange))
@@ -416,6 +423,9 @@ public static class CombatSkillEvaluator
     {
         if (target == null || target.Health == null) return false;
         if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
+        CombatVision vision = owner.Vision;
+        vision?.UpdateVision();
+        if (vision != null && HasCharacterSystem() && !vision.HasRecognitionOf(target)) return false;
         return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
     }
 
@@ -477,5 +487,16 @@ public static class CombatSkillEvaluator
     {
         value.y = 0f;
         return value;
+    }
+
+    private static bool HasCharacterSystem()
+    {
+        CombatSceneContext context = CombatSceneContext.Instance;
+        if (context != null && context.CharacterSystem != null)
+        {
+            return true;
+        }
+
+        return Object.FindAnyObjectByType<CombatCharacterSystem>() != null;
     }
 }

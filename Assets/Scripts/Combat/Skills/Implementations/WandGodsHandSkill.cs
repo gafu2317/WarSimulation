@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class WandGodsHandSkill : SkillBase
 {
-    private readonly int _baseDamage;
     private readonly float _intScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public WandGodsHandSkill(
-        int baseDamage = 42,
         float intScale = 1.2f,
         float maxRange = 12f,
         float cooldownSeconds = 10f)
     {
-        _baseDamage = baseDamage;
         _intScale = intScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -31,7 +28,7 @@ public sealed class WandGodsHandSkill : SkillBase
 
         float distance = ComputeHorizontalDistance(self, target);
 
-        int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
         damage = ComputeStealthAwareDamage(self, target, damage);
         target.Health.TakeDamage(damage, self);
         BreakStealthOnUse(self);

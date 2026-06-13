@@ -4,7 +4,7 @@ public class Bible : WeaponBase
 {
     private readonly float _range;
     private readonly float _cooldown;
-    private readonly int _basePower;
+    private readonly int _faiBonus;
     private readonly float _chaseEnemyBias;
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
@@ -13,7 +13,7 @@ public class Bible : WeaponBase
 
     public override WeaponKind Kind => WeaponKind.Bible;
     public override float Range => _range;
-    public override int BasePower => _basePower;
+    public override int FAIBonus => _faiBonus;
     public override float CooldownSeconds => _cooldown;
     public override CombatStat ScalingStat => CombatStat.FAI;
     public override float ChaseEnemyBias => _chaseEnemyBias;
@@ -25,7 +25,7 @@ public class Bible : WeaponBase
     public Bible(
         float range = 6f,
         float cooldown = 1.6f,
-        float basePower = 10f,
+        int faiBonus = 10,
         float chaseEnemyBias = 0f,
         float hideInForestBias = 0f,
         float seekHighGroundBias = 30f,
@@ -34,7 +34,7 @@ public class Bible : WeaponBase
     {
         _range = range;
         _cooldown = cooldown;
-        _basePower = (int)basePower;
+        _faiBonus = faiBonus;
         _chaseEnemyBias = chaseEnemyBias;
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;

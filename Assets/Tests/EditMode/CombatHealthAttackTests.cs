@@ -53,6 +53,31 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
+    public void Health_HealDoesNotReviveRetreatingCharacter()
+    {
+        GameObject characterGo = new GameObject("Character");
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            CombatHealth health = character.Health;
+            health.Initialize(maxHP: 20);
+            health.TakeDamage(20);
+
+            int healed = health.Heal(5);
+
+            Assert.That(healed, Is.EqualTo(0));
+            Assert.That(health.HP, Is.EqualTo(0));
+            Assert.That(health.IsAlive, Is.False);
+            Assert.That(health.LifeState, Is.EqualTo(LifeState.Retreating));
+            Assert.That(health.IsTargetable, Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
     public void Health_InvulnerablePreventsDamage()
     {
         GameObject characterGo = new GameObject("Character");
@@ -227,7 +252,7 @@ public sealed class CombatHealthAttackTests
         CombatStat stat)
     {
         Assert.That(weapon.Range, Is.EqualTo(range).Within(0.001f));
-        Assert.That(weapon.BasePower, Is.EqualTo(power));
+        Assert.That(weapon.PrimaryStatBonus, Is.EqualTo(power));
         Assert.That(weapon.CooldownSeconds, Is.EqualTo(cooldown).Within(0.001f));
         Assert.That(weapon.ScalingStat, Is.EqualTo(stat));
     }

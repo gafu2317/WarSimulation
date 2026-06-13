@@ -104,7 +104,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
     public int Heal(int amount)
     {
-        if (amount <= 0) return 0;
+        if (amount <= 0 || LifeState != LifeState.Active) return 0;
 
         int previousHP = _hp;
         _hp = Mathf.Min(_maxHP, _hp + amount);

@@ -4,7 +4,7 @@ public class Sword : WeaponBase
 {
     private readonly float _range;
     private readonly float _cooldown;
-    private readonly int _basePower;
+    private readonly int _strBonus;
     private readonly float _chaseEnemyBias;
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
@@ -13,7 +13,7 @@ public class Sword : WeaponBase
 
     public override WeaponKind Kind => WeaponKind.Sword;
     public override float Range => _range;
-    public override int BasePower => _basePower;
+    public override int STRBonus => _strBonus;
     public override float CooldownSeconds => _cooldown;
     public override CombatStat ScalingStat => CombatStat.STR;
     public override float ChaseEnemyBias => _chaseEnemyBias;
@@ -25,7 +25,7 @@ public class Sword : WeaponBase
     public Sword(
         float range = 2f,
         float cooldown = 1f,
-        float basePower = 12f,
+        int strBonus = 12,
         float chaseEnemyBias = 0f,
         float hideInForestBias = 0f,
         float seekHighGroundBias = 0f,
@@ -34,7 +34,7 @@ public class Sword : WeaponBase
     {
         _range = range;
         _cooldown = cooldown;
-        _basePower = (int)basePower;
+        _strBonus = strBonus;
         _chaseEnemyBias = chaseEnemyBias;
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;

@@ -72,12 +72,14 @@ public sealed class SkillTargetKindTests
     }
 
     [Test]
-    public void CanExecuteSkill_AllowsAllEnemiesWhenAllTargetsAreValidEnemies()
+    public void CanExecuteSkill_AllowsRecognizedEnemiesWhenAllTargetsAreValidEnemies()
     {
-        SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, withSecondEnemy: true);
+        SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, withSecondEnemy: true, registerSystem: true);
         try
         {
-            var skill = new TargetValidationSkill(SkillTargetKind.AllEnemies, maxRange: 5f);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            var skill = new TargetValidationSkill(SkillTargetKind.RecognizedEnemies, maxRange: 5f);
             SkillExecutionContext context = SkillExecutionContext.ForTargets(
                 new[] { fixture.Enemy, fixture.SecondEnemy });
 
@@ -92,14 +94,38 @@ public sealed class SkillTargetKindTests
     }
 
     [Test]
-    public void CanExecuteSkill_RejectsAllEnemiesWhenAnyTargetIsAnAlly()
+    public void CanExecuteSkill_RejectsRecognizedEnemiesWhenAnyTargetIsAnAlly()
     {
-        SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, withAlly: true);
+        SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, withAlly: true, registerSystem: true);
         try
         {
-            var skill = new TargetValidationSkill(SkillTargetKind.AllEnemies, maxRange: 5f);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            var skill = new TargetValidationSkill(SkillTargetKind.RecognizedEnemies, maxRange: 5f);
             SkillExecutionContext context = SkillExecutionContext.ForTargets(
                 new[] { fixture.Enemy, fixture.Ally });
+
+            bool canExecute = CombatSkillEvaluator.Evaluate(fixture.Owner, skill, context).CanUse;
+
+            Assert.That(canExecute, Is.False);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void CanExecuteSkill_RejectsRecognizedEnemiesWhenAnyTargetIsNotRecognized()
+    {
+        SkillTargetFixture fixture = SkillTargetFixture.Create(withEnemy: true, registerSystem: true);
+        try
+        {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            fixture.Enemy.StatusEffects.ApplyStealth(5f);
+            var skill = new TargetValidationSkill(SkillTargetKind.RecognizedEnemies, maxRange: 5f);
+            SkillExecutionContext context = SkillExecutionContext.ForTargets(new[] { fixture.Enemy });
 
             bool canExecute = CombatSkillEvaluator.Evaluate(fixture.Owner, skill, context).CanUse;
 
@@ -157,15 +183,18 @@ public sealed class SkillTargetKindTests
         public GameObject EnemyGo;
         public GameObject SecondEnemyGo;
         public GameObject AllyGo;
+        public GameObject SystemGo;
         public Character Owner;
         public Character Enemy;
         public Character SecondEnemy;
         public Character Ally;
+        public CombatCharacterSystem System;
 
         public static SkillTargetFixture Create(
             bool withEnemy = false,
             bool withSecondEnemy = false,
-            bool withAlly = false)
+            bool withAlly = false,
+            bool registerSystem = false)
         {
             var fixture = new SkillTargetFixture
             {
@@ -203,11 +232,23 @@ public sealed class SkillTargetKindTests
                 fixture.AllyGo.transform.position = fixture.OwnerGo.transform.position + Vector3.left * 2f;
             }
 
+            if (registerSystem)
+            {
+                fixture.SystemGo = new GameObject("CharacterSystem");
+                fixture.System = fixture.SystemGo.AddComponent<CombatCharacterSystem>();
+                fixture.System.AllyCharacters.Add(fixture.Owner);
+                if (fixture.Ally != null) fixture.System.AllyCharacters.Add(fixture.Ally);
+                if (fixture.Enemy != null) fixture.System.EnemyCharacters.Add(fixture.Enemy);
+                if (fixture.SecondEnemy != null) fixture.System.EnemyCharacters.Add(fixture.SecondEnemy);
+                fixture.System.AssignTeamsFromLists();
+            }
+
             return fixture;
         }
 
         public void Destroy()
         {
+            if (SystemGo != null) Object.DestroyImmediate(SystemGo);
             if (AllyGo != null) Object.DestroyImmediate(AllyGo);
             if (SecondEnemyGo != null) Object.DestroyImmediate(SecondEnemyGo);
             if (EnemyGo != null) Object.DestroyImmediate(EnemyGo);

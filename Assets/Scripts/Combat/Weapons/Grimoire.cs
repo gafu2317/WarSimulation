@@ -4,7 +4,7 @@ public class Grimoire : WeaponBase
 {
     private readonly float _range;
     private readonly float _cooldown;
-    private readonly int _basePower;
+    private readonly int _intBonus;
     private readonly float _chaseEnemyBias;
     private readonly float _hideInForestBias;
     private readonly float _seekHighGroundBias;
@@ -13,7 +13,7 @@ public class Grimoire : WeaponBase
 
     public override WeaponKind Kind => WeaponKind.Grimoire;
     public override float Range => _range;
-    public override int BasePower => _basePower;
+    public override int INTBonus => _intBonus;
     public override float CooldownSeconds => _cooldown;
     public override CombatStat ScalingStat => CombatStat.INT;
     public override float ChaseEnemyBias => _chaseEnemyBias;
@@ -25,7 +25,7 @@ public class Grimoire : WeaponBase
     public Grimoire(
         float range = 7f,
         float cooldown = 2f,
-        float basePower = 14f,
+        int intBonus = 14,
         float chaseEnemyBias = 0f,
         float hideInForestBias = 0f,
         float seekHighGroundBias = 50f,
@@ -34,7 +34,7 @@ public class Grimoire : WeaponBase
     {
         _range = range;
         _cooldown = cooldown;
-        _basePower = (int)basePower;
+        _intBonus = intBonus;
         _chaseEnemyBias = chaseEnemyBias;
         _hideInForestBias = hideInForestBias;
         _seekHighGroundBias = seekHighGroundBias;

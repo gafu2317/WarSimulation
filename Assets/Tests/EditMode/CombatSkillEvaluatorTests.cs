@@ -6,9 +6,11 @@ public sealed class CombatSkillEvaluatorTests
     [Test]
     public void Evaluate_AllowsSingleTargetSkillWhenHorizontalRangeIsInsideEvenIfVerticalOffsetIsLarge()
     {
-        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true);
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, registerSystem: true);
         try
         {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
             fixture.EnemyGo.transform.position = new Vector3(1.5f, 10f, 0f);
             var skill = new EvaluatorTestSkill(SkillTargetKind.Enemy, maxRange: 2f);
 
@@ -27,9 +29,11 @@ public sealed class CombatSkillEvaluatorTests
     [Test]
     public void Evaluate_RejectsSingleTargetSkillWhenHorizontalRangeIsOutside()
     {
-        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true);
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, registerSystem: true);
         try
         {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
             fixture.EnemyGo.transform.position = new Vector3(2.1f, 0f, 0f);
             var skill = new EvaluatorTestSkill(SkillTargetKind.Enemy, maxRange: 2f);
 
@@ -90,12 +94,14 @@ public sealed class CombatSkillEvaluatorTests
     }
 
     [Test]
-    public void Evaluate_AllEnemiesUsesResolvedTargetsAndPreviewData()
+    public void Evaluate_RecognizedEnemiesUsesResolvedTargetsAndPreviewData()
     {
         SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, withSecondEnemy: true, registerSystem: true);
         try
         {
-            var skill = new EvaluatorTestSkill(SkillTargetKind.AllEnemies, maxRange: 0f);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
+            var skill = new EvaluatorTestSkill(SkillTargetKind.RecognizedEnemies, maxRange: 0f);
 
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
@@ -112,12 +118,14 @@ public sealed class CombatSkillEvaluatorTests
     }
 
     [Test]
-    public void Evaluate_RejectsAllEnemiesWhenNoneExist()
+    public void Evaluate_RejectsRecognizedEnemiesWhenNoneExist()
     {
         SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(registerSystem: true);
         try
         {
-            var skill = new EvaluatorTestSkill(SkillTargetKind.AllEnemies, maxRange: 0f);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
+            var skill = new EvaluatorTestSkill(SkillTargetKind.RecognizedEnemies, maxRange: 0f);
 
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
@@ -125,6 +133,55 @@ public sealed class CombatSkillEvaluatorTests
 
             Assert.That(result.CanUse, Is.False);
             Assert.That(result.FailureReason, Is.EqualTo("no enemies"));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Evaluate_RosarySacrificeThunder_UsesRecognizedEnemies()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, withSecondEnemy: true, registerSystem: true);
+        try
+        {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
+            fixture.Owner.Vision.UpdateVision();
+            fixture.SecondEnemy.StatusEffects.ApplyStealth(5f);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                new RosarySacrificeThunderSkill(),
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, null));
+
+            Assert.That(result.CanUse, Is.True);
+            Assert.That(result.ResolvedTargets.Count, Is.EqualTo(2));
+            Assert.That(result.ResolvedTargets, Has.Member(fixture.Enemy));
+            Assert.That(result.ResolvedTargets, Has.Member(fixture.SecondEnemy));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Evaluate_RejectsEnemyTargetWhenNotRecognized()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, registerSystem: true);
+        try
+        {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
+            fixture.Enemy.StatusEffects.ApplyStealth(5f);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                new EvaluatorTestSkill(SkillTargetKind.Enemy, maxRange: 5f),
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, fixture.Enemy));
+
+            Assert.That(result.CanUse, Is.False);
+            Assert.That(result.FailureReason, Is.EqualTo("enemy not recognized"));
         }
         finally
         {

@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class WandArcaneBlastSkill : SkillBase
 {
-    private readonly int _baseDamage;
     private readonly float _intScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public WandArcaneBlastSkill(
-        int baseDamage = 28,
         float intScale = 1f,
         float maxRange = 15f,
         float cooldownSeconds = 8f)
     {
-        _baseDamage = baseDamage;
         _intScale = intScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -33,7 +30,7 @@ public sealed class WandArcaneBlastSkill : SkillBase
 
         float distance = ComputeHorizontalDistance(self, target);
 
-        int damage = Mathf.Max(1, _baseDamage + Mathf.RoundToInt(self.INT * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
         damage = ComputeStealthAwareDamage(self, target, damage);
         target.Health.TakeDamage(damage, self);
         BreakStealthOnUse(self);

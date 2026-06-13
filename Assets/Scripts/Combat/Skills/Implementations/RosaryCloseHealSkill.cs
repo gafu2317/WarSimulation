@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class RosaryCloseHealSkill : SkillBase
 {
-    private readonly int _baseHeal;
     private readonly float _faiScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public RosaryCloseHealSkill(
-        int baseHeal = 15,
         float faiScale = 0.8f,
         float maxRange = 2.5f,
         float cooldownSeconds = 7f)
     {
-        _baseHeal = baseHeal;
         _faiScale = faiScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -33,7 +30,7 @@ public sealed class RosaryCloseHealSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
 
-        int healAmount = Mathf.Max(1, _baseHeal + Mathf.RoundToInt(self.FAI * _faiScale));
+        int healAmount = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.FAI) * _faiScale));
         target.Health.Heal(healAmount);
     }
 }

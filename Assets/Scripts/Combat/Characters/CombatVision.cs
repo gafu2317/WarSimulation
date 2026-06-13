@@ -74,7 +74,7 @@ public sealed class CombatVision : MonoBehaviour
     [SerializeField, Range(1f, 180f)] private float _verticalFov = 90f;
     [SerializeField, Range(1f, 360f)] private float _horizontalFov = 180f;
     [SerializeField, Min(0.1f)] private float _maxSightDistance = 30f;
-    [SerializeField, Min(0f)] private float _searchTimeout = 10f;
+    [SerializeField, Min(0f)] private float _searchTimeout = 5f;
     [SerializeField] private LayerMask _obstructionLayers = ~0;
     [SerializeField] private bool _ignoreCharacterLayer = true;
     [SerializeField] private bool _drawDebugRays = false;

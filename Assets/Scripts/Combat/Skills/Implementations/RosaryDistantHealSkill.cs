@@ -2,18 +2,15 @@ using UnityEngine;
 
 public sealed class RosaryDistantHealSkill : SkillBase
 {
-    private readonly int _baseHeal;
     private readonly float _faiScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
 
     public RosaryDistantHealSkill(
-        int baseHeal = 3,
         float faiScale = 0.3f,
         float maxRange = 9f,
         float cooldownSeconds = 3.5f)
     {
-        _baseHeal = baseHeal;
         _faiScale = faiScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
@@ -34,7 +31,7 @@ public sealed class RosaryDistantHealSkill : SkillBase
         if (!target.Health.IsAlive) return;
         float distance = target == self ? 0f : ComputeHorizontalDistance(self, target);
 
-        int healAmount = Mathf.Max(1, _baseHeal + Mathf.RoundToInt(self.FAI * _faiScale));
+        int healAmount = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.FAI) * _faiScale));
         healAmount = ComputeDistanceScaledAmount(
             healAmount,
             distance,

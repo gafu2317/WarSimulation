@@ -56,9 +56,13 @@ public abstract class SkillBase
 
         float multiplier = 1f;
         CombatVision targetVision = target.Vision;
-        if (targetVision != null && !targetVision.HasRecognitionOf(self))
+        if (targetVision != null)
         {
-            multiplier *= 1.5f;
+            targetVision.UpdateVision();
+            if (!targetVision.HasRecognitionOf(self))
+            {
+                multiplier *= 1.5f;
+            }
         }
 
         return Mathf.Max(1, Mathf.RoundToInt(baseDamage * multiplier));

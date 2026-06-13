@@ -26,7 +26,7 @@ public sealed class CombatRosaryHealSkillTests
             Assert.That(result.CanUse, Is.True);
             skill.Execute(owner, result.Context);
 
-            Assert.That(ally.Health.HP, Is.EqualTo(15));
+            Assert.That(ally.Health.HP, Is.EqualTo(13));
         }
         finally
         {
@@ -86,7 +86,7 @@ public sealed class CombatRosaryHealSkillTests
             Assert.That(result.CanUse, Is.True);
             skill.Execute(owner, result.Context);
 
-            Assert.That(ally.Health.HP, Is.EqualTo(30));
+            Assert.That(ally.Health.HP, Is.EqualTo(18));
         }
         finally
         {
@@ -150,7 +150,7 @@ public sealed class CombatRosaryHealSkillTests
             skill.Execute(owner, result.Context);
 
             Assert.That(ally.Health.CanAct, Is.False);
-            Assert.That(ally.Health.HP, Is.EqualTo(18));
+            Assert.That(ally.Health.HP, Is.EqualTo(14));
         }
         finally
         {

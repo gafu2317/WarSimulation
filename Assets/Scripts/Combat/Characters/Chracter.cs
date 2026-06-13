@@ -184,6 +184,19 @@ public class Character : MonoBehaviour
         RebuildCombatSkills();
     }
 
+    public float GetEffectiveStat(CombatStat stat)
+    {
+        WeaponBase weapon = EquippedWeapon ?? WeaponBase.Unarmed;
+        return stat switch
+        {
+            CombatStat.STR => (STR + weapon.STRBonus) * STRBuff,
+            CombatStat.INT => (INT + weapon.INTBonus) * INTBuff,
+            CombatStat.FAI => (FAI + weapon.FAIBonus) * FAIBuff,
+            CombatStat.AGI => (AGI + weapon.AGIBonus) * AGIBuff,
+            _ => 0f,
+        };
+    }
+
     public void SetLearnedSkillIds(IEnumerable<SkillId> skillIds)
     {
         _learnedSkillIds.Clear();

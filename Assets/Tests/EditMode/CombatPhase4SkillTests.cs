@@ -360,13 +360,17 @@ public sealed class CombatPhase4SkillTests
     }
 
     [Test]
-    public void RosarySacrificeThunderSkill_DamagesAllEnemiesAndCostsSelfHp()
+    public void RosarySacrificeThunderSkill_DamagesRecognizedEnemiesAndCostsSelfHp()
     {
         TargetAreaFixture fixture = TargetAreaFixture.Create();
         try
         {
             typeof(Character).GetProperty("FAI").SetValue(fixture.Owner, 10);
-            SkillExecutionContext context = CombatSkillTargeting.CreateAllEnemiesContext(fixture.Owner);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            fixture.Owner.Vision.UpdateVision();
+            fixture.FarEnemy.StatusEffects.ApplyStealth(5f);
+            SkillExecutionContext context = CombatSkillTargeting.CreateRecognizedEnemiesContext(fixture.Owner);
 
             new RosarySacrificeThunderSkill().Execute(fixture.Owner, context);
 
@@ -377,6 +381,79 @@ public sealed class CombatPhase4SkillTests
         finally
         {
             fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void RosarySacrificeThunderSkill_BreaksStealthOnUse()
+    {
+        TargetAreaFixture fixture = TargetAreaFixture.Create();
+        try
+        {
+            typeof(Character).GetProperty("FAI").SetValue(fixture.Owner, 10);
+            fixture.Owner.StatusEffects.ApplyStealth(5f);
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.System);
+            fixture.Owner.Vision.Initialize();
+            SkillExecutionContext context = CombatSkillTargeting.CreateRecognizedEnemiesContext(fixture.Owner);
+
+            new RosarySacrificeThunderSkill().Execute(fixture.Owner, context);
+
+            Assert.That(fixture.Owner.StatusEffects.IsStealthed, Is.False);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void SwordSlashSkill_RefreshesTargetRecognitionBeforeStealthBonusCheck()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character owner = ownerGo.AddComponent<Character>();
+            Character enemy = enemyGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            enemy.SetTeam(CombatTeam.Enemy);
+            owner.Health.Initialize(30);
+            enemy.Health.Initialize(30);
+            system.AllyCharacters.Add(owner);
+            system.EnemyCharacters.Add(enemy);
+            system.AssignTeamsFromLists();
+            CombatEditModeTestUtil.WireVision(owner.Vision, system);
+            CombatEditModeTestUtil.WireVision(enemy.Vision, system);
+
+            var ownerCollider = ownerGo.AddComponent<CapsuleCollider>();
+            ownerCollider.center = new Vector3(0f, 1f, 0f);
+            ownerCollider.height = 2f;
+            var enemyCollider = enemyGo.AddComponent<CapsuleCollider>();
+            enemyCollider.center = new Vector3(0f, 1f, 0f);
+            enemyCollider.height = 2f;
+
+            ownerGo.transform.position = new Vector3(0f, 0f, -5f);
+            enemyGo.transform.position = Vector3.zero;
+            Physics.SyncTransforms();
+
+            enemy.Vision.Initialize();
+            enemy.Vision.UpdateVision();
+
+            ownerGo.transform.position = new Vector3(0f, 0f, 1.5f);
+            Physics.SyncTransforms();
+            typeof(Character).GetProperty("STR").SetValue(owner, 10);
+
+            new SwordSlashSkill().Execute(owner, SkillExecutionContext.ForTarget(enemy));
+
+            Assert.That(enemy.Health.HP, Is.EqualTo(25));
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(enemyGo);
         }
     }
 
