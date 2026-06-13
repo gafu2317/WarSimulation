@@ -7,7 +7,7 @@ public sealed class ShieldSlashSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public ShieldSlashSkill(
-        float strScale = 0.45f,
+        float strScale = 0.8f,
         float maxRange = 2f,
         float cooldownSeconds = 1.1f)
     {

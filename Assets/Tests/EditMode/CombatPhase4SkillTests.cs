@@ -270,7 +270,7 @@ public sealed class CombatPhase4SkillTests
             ForceAllPeriodicEffectsReadyNow(ally.StatusEffects);
             ally.StatusEffects.GetActiveEffectSnapshots();
 
-            Assert.That(ally.Health.HP, Is.EqualTo(14));
+            Assert.That(ally.Health.HP, Is.EqualTo(15));
         }
         finally
         {
@@ -300,7 +300,7 @@ public sealed class CombatPhase4SkillTests
             ForceAreaZoneReadyNow(zone);
             InvokePrivateUpdate(zone);
 
-            Assert.That(fixture.Ally.Health.HP, Is.EqualTo(14));
+            Assert.That(fixture.Ally.Health.HP, Is.EqualTo(13));
         }
         finally
         {

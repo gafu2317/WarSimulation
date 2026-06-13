@@ -7,9 +7,9 @@ public sealed class WandGodsHandSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public WandGodsHandSkill(
-        float intScale = 1.2f,
-        float maxRange = 12f,
-        float cooldownSeconds = 10f)
+        float intScale = 1.6f,
+        float maxRange = 10f,
+        float cooldownSeconds = 9f)
     {
         _intScale = intScale;
         _maxRange = maxRange;

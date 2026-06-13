@@ -7,7 +7,7 @@ public sealed class RosaryDistantHealSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public RosaryDistantHealSkill(
-        float faiScale = 0.3f,
+        float faiScale = 0.45f,
         float maxRange = 9f,
         float cooldownSeconds = 3.5f)
     {

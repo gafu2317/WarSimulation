@@ -8,8 +8,8 @@ public sealed class WandAreaBlastSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public WandAreaBlastSkill(
-        float intScale = 0.3f,
-        float maxRange = 10f,
+        float intScale = 0.5f,
+        float maxRange = 9f,
         float radius = 3f,
         float cooldownSeconds = 5f)
     {

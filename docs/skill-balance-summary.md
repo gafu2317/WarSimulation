@@ -25,27 +25,27 @@
 
 | 武器 | 実装スキル | 日本語名 | 射程 | 主ステ | スキル係数 | CT |
 |---|---|---|---:|---|---:|---:|
-| Sword | `Sword_Slash` | 斬撃 | 2.0 | `STR` | 0.5 | 1.0 |
-| Shield | `Shield_Slash` | 盾撃 | 2.0 | `STR` | 0.45 | 1.1 |
-| Wand | `Wand_Bolt` | 魔弾 | 8.0 | `INT` | 0.6 | 1.4 |
-| Grimoire | `Grimoire_Bolt` | 呪弾 | 6.0 | `INT` | 0.55 | 1.3 |
-| Bible | `Bible_Smite` | 裁制 | 5.0 | `FAI` | 0.5 | 1.5 |
-| Rosary | `Rosary_Strike` | 聖撃 | 4.0 | `FAI` | 0.45 | 1.3 |
+| Sword | `Sword_Slash` | 斬撃 | 2.0 | `STR` | 1.0 | 1.0 |
+| Shield | `Shield_Slash` | 盾撃 | 2.0 | `STR` | 0.8 | 1.1 |
+| Wand | `Wand_Bolt` | 魔弾 | 8.0 | `INT` | 0.8 | 1.4 |
+| Grimoire | `Grimoire_Bolt` | 呪弾 | 6.0 | `INT` | 0.7 | 1.3 |
+| Bible | `Bible_Smite` | 裁制 | 6.0 | `FAI` | 0.7 | 1.5 |
+| Rosary | `Rosary_Strike` | 聖撃 | 4.0 | `FAI` | 0.6 | 1.3 |
 
 ## 杖
 
 | スキル | 日本語名 | 射程 | 範囲 | 主ステ | 係数 | CT | 備考 |
 |---|---|---:|---:|---|---:|---:|---|
-| `Wand_Bolt` | 魔弾 | 8.0 | - | `INT` | 0.6 | 1.4 | 遠いほど高威力 |
-| `Wand_ArcaneBlast` | 極大魔弾 | 15.0 | - | `INT` | 1.0 | 8.0 | 単体高火力 |
-| `Wand_AreaBlast` | 範囲魔法 | 10.0 | 半径3.0 | `INT` | 0.3 | 5.0 | 範囲攻撃 |
-| `Wand_GodsHand` | 神の手 | 12.0 | - | `INT` | 1.2 | 10.0 | 単体超高火力 |
+| `Wand_Bolt` | 魔弾 | 8.0 | - | `INT` | 0.8 | 1.4 | 遠いほど高威力 |
+| `Wand_ArcaneBlast` | 極大魔弾 | 12.0 | - | `INT` | 1.2 | 7.0 | 単体高火力 |
+| `Wand_AreaBlast` | 範囲魔法 | 9.0 | 半径3.0 | `INT` | 0.5 | 5.0 | 範囲攻撃 |
+| `Wand_GodsHand` | 神の手 | 10.0 | - | `INT` | 1.6 | 9.0 | 単体超高火力 |
 
 ## 魔導書
 
 | スキル | 日本語名 | 射程 | 効果 | CT | 備考 |
 |---|---|---:|---|---:|---|
-| `Grimoire_Bolt` | 呪弾 | 6.0 | `INT x0.55` | 1.3 | 単体攻撃 |
+| `Grimoire_Bolt` | 呪弾 | 6.0 | `INT x0.7` | 1.3 | 単体攻撃 |
 | `Grimoire_StrDebuff` | STRデバフ | 7.0 | `STR x0.7` に低下 | 5.0 | 5秒 |
 | `StatDebuff_INT` | INTデバフ | 7.0 | `INT x0.7` に低下 | 5.0 | 5秒 |
 | `StatDebuff_FAI` | FAIデバフ | 7.0 | `FAI x0.7` に低下 | 5.0 | 5秒 |
@@ -58,7 +58,7 @@
 
 | スキル | 日本語名 | 射程 | 効果 | CT | 備考 |
 |---|---|---:|---|---:|---|
-| `Bible_Smite` | 裁制 | 5.0 | `FAI x0.5` | 1.5 | 単体攻撃 |
+| `Bible_Smite` | 裁制 | 6.0 | `FAI x0.7` | 1.5 | 単体攻撃 |
 | `Bible_StrBuff` | 守護 | 味方/自己 | `STR x1.25` | 5.0 | 5秒 |
 | `Bible_IntBuff` | INTバフ | 味方/自己 | `INT x1.25` | 5.0 | 5秒 |
 | `Bible_FaiBuff` | 信仰バフ | 味方/自己 | `FAI x1.2` | 6.0 | 6秒 |
@@ -71,12 +71,12 @@
 
 | スキル | 日本語名 | 射程 | 範囲 | 効果 | CT | 備考 |
 |---|---|---:|---:|---|---:|---|
-| `Rosary_Strike` | 聖撃 | 4.0 | - | `FAI x0.45` | 1.3 | 単体攻撃 |
-| `Rosary_DistantHeal` | 遠隔癒し | 9.0 | - | `FAI x0.3` | 3.5 | 近いほど高回復 |
-| `Rosary_CloseHeal` | 大回復 | 2.5 | - | `FAI x0.8` | 7.0 | 単体大回復 |
-| `Rosary_Regeneration` | 継続回復 | 5.0 | - | 4 heal/tick | 6.0 | 5秒、1秒ごと |
-| `Rosary_HealingArea` | 回復エリア | 8.0 | 半径3.0 | 4 heal/tick | 7.0 | 5秒、1秒ごと |
-| `Rosary_SacrificeThunder` | 神の雷 | 認識敵全員 | 全体 | `FAI x0.6` | 9.0 | 自傷8 |
+| `Rosary_Strike` | 聖撃 | 4.0 | - | `FAI x0.6` | 1.3 | 単体攻撃 |
+| `Rosary_DistantHeal` | 遠隔癒し | 9.0 | - | `FAI x0.45` | 3.5 | 近いほど高回復 |
+| `Rosary_CloseHeal` | 大回復 | 3.0 | - | `FAI x1.1` | 6.0 | 単体大回復 |
+| `Rosary_Regeneration` | 継続回復 | 5.0 | - | 5 heal/tick | 6.0 | 5秒、1秒ごと |
+| `Rosary_HealingArea` | 回復エリア | 7.0 | 半径3.0 | 3 heal/tick | 7.0 | 5秒、1秒ごと |
+| `Rosary_SacrificeThunder` | 神の雷 | 認識敵全員 | 全体 | `FAI x0.9` | 9.0 | 自傷8 |
 
 ## 直接いじる場所
 

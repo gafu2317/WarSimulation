@@ -7,9 +7,9 @@ public sealed class RosaryCloseHealSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public RosaryCloseHealSkill(
-        float faiScale = 0.8f,
-        float maxRange = 2.5f,
-        float cooldownSeconds = 7f)
+        float faiScale = 1.1f,
+        float maxRange = 3f,
+        float cooldownSeconds = 6f)
     {
         _faiScale = faiScale;
         _maxRange = maxRange;
