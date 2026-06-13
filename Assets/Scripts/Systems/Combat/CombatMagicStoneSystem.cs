@@ -112,7 +112,7 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
 
     private void RebindViews()
     {
-        MagicStone[] views = FindObjectsByType<MagicStone>(FindObjectsSortMode.None);
+        MagicStone[] views = FindObjectsByType<MagicStone>();
         for (int i = 0; i < views.Length; i++)
         {
             MagicStone view = views[i];

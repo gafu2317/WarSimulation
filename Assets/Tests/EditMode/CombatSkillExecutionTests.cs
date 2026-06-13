@@ -312,7 +312,7 @@ public sealed class CombatSkillExecutionTests
             Character owner = ownerGo.AddComponent<Character>();
             owner.SetTeam(CombatTeam.Ally);
             owner.Health.Initialize(maxHP: 30);
-            owner.EquipWeapon(new Sword(range: 2f, basePower: 12f));
+            owner.EquipWeapon(new Sword(range: 2f, strBonus: 12));
 
             CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
             var plan = new CombatAiPlan(

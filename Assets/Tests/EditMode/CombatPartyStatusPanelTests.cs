@@ -1,6 +1,8 @@
 using NUnit.Framework;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 
 public sealed class CombatPartyStatusPanelTests
 {
@@ -16,6 +18,8 @@ public sealed class CombatPartyStatusPanelTests
         system.EnemyCharacters.Add(CreateCharacter("EnemyC", CombatTeam.Enemy));
 
         var panelObject = new GameObject("Panel", typeof(RectTransform), typeof(CombatPartyStatusPanel));
+        CreateColumnWithTemplate(panelObject.transform, "AlliesColumn");
+        CreateColumnWithTemplate(panelObject.transform, "EnemiesColumn");
         var panel = panelObject.GetComponent<CombatPartyStatusPanel>();
         panel.Initialize(system);
         panel.ForceSyncNow();
@@ -39,6 +43,8 @@ public sealed class CombatPartyStatusPanelTests
         system.EnemyCharacters.Add(enemy);
 
         var panelObject = new GameObject("Panel", typeof(RectTransform), typeof(CombatPartyStatusPanel));
+        CreateColumnWithTemplate(panelObject.transform, "AlliesColumn");
+        CreateColumnWithTemplate(panelObject.transform, "EnemiesColumn");
         var panel = panelObject.GetComponent<CombatPartyStatusPanel>();
         panel.Initialize(system);
         panel.ForceSyncNow();
@@ -67,7 +73,7 @@ public sealed class CombatPartyStatusPanelTests
         CombatHealth health = character.Health;
         health.Initialize(12, 12);
 
-        var viewObject = new GameObject("MemberView", typeof(RectTransform), typeof(CombatPartyMemberView));
+        var viewObject = CreateMemberViewObject("MemberView");
         var view = viewObject.GetComponent<CombatPartyMemberView>();
         view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
 
@@ -75,6 +81,40 @@ public sealed class CombatPartyStatusPanelTests
 
         Assert.That(view.CurrentHpRatio, Is.EqualTo(0f).Within(0.001f));
         Assert.That(view.BoundCharacter, Is.EqualTo(character));
+
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(character.gameObject);
+    }
+
+    [Test]
+    public void CombatPartyMemberView_ShowsCharacterDisplayName()
+    {
+        Character character = CreateCharacter("TargetName", CombatTeam.Ally);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+
+        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
+
+        Assert.That(view.CurrentNameText, Is.EqualTo("TargetName"));
+
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(character.gameObject);
+    }
+
+    [Test]
+    public void CombatPartyMemberView_ShowsBuffDebuffText()
+    {
+        Character character = CreateCharacter("Target", CombatTeam.Ally);
+        character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.25f, 5f);
+        character.StatusEffects.ApplyPoison(2, 5f, 1f);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+
+        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
+        view.Tick(0f);
+
+        Assert.That(view.CurrentBuffDebuffText, Does.Contain("STRバフ"));
+        Assert.That(view.CurrentBuffDebuffText, Does.Contain("毒"));
 
         Object.DestroyImmediate(viewObject);
         Object.DestroyImmediate(character.gameObject);
@@ -106,6 +146,8 @@ public sealed class CombatPartyStatusPanelTests
         system.AllyCharacters.Add(ally);
 
         var panelObject = new GameObject("Panel", typeof(RectTransform), typeof(CombatPartyStatusPanel));
+        CreateColumnWithTemplate(panelObject.transform, "AlliesColumn");
+        CreateColumnWithTemplate(panelObject.transform, "EnemiesColumn");
         var panel = panelObject.GetComponent<CombatPartyStatusPanel>();
         panel.Initialize(system);
         panel.ForceSyncNow();
@@ -208,5 +250,56 @@ public sealed class CombatPartyStatusPanelTests
                 Object.DestroyImmediate(system.EnemyCharacters[i].gameObject);
             }
         }
+    }
+
+    private static void CreateColumnWithTemplate(Transform parent, string name)
+    {
+        var column = new GameObject(name, typeof(RectTransform));
+        column.transform.SetParent(parent, false);
+        CreateMemberViewObject($"{name}_Template").transform.SetParent(column.transform, false);
+    }
+
+    private static GameObject CreateMemberViewObject(string name)
+    {
+        var root = new GameObject(name, typeof(RectTransform), typeof(CombatPartyMemberView));
+        CreateChild(root.transform, "Background", typeof(RectTransform), typeof(Image));
+
+        var appearance = CreateChild(root.transform, "Appearance", typeof(RectTransform), typeof(CombatCharacterAppearanceView));
+        CreateChild(appearance.transform, "Content", typeof(RectTransform));
+
+        CreateTmpText(root.transform, "NameText");
+        CreateTmpText(root.transform, "ObjectiveText");
+        CreateTmpText(root.transform, "BuffDebuffText");
+        CreateTmpText(root.transform, "WeaponText");
+        CreateTmpText(root.transform, "HpText");
+        GameObject skillText = CreateTmpText(root.transform, "SkillText");
+        skillText.SetActive(false);
+
+        var hpBarBackground = CreateChild(root.transform, "HpBarBackground", typeof(RectTransform), typeof(Image));
+        GameObject hpBarFill = CreateChild(hpBarBackground.transform, "HpBarFill", typeof(RectTransform), typeof(Image));
+        Image hpFillImage = hpBarFill.GetComponent<Image>();
+        hpFillImage.type = Image.Type.Filled;
+        hpFillImage.fillMethod = Image.FillMethod.Horizontal;
+        hpFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+        return root;
+    }
+
+    private static GameObject CreateTmpText(Transform parent, string name)
+    {
+        GameObject child = CreateChild(parent, name, typeof(RectTransform), typeof(TextMeshProUGUI));
+        TextMeshProUGUI text = child.GetComponent<TextMeshProUGUI>();
+        if (TMP_Settings.defaultFontAsset != null)
+        {
+            text.font = TMP_Settings.defaultFontAsset;
+        }
+
+        return child;
+    }
+
+    private static GameObject CreateChild(Transform parent, string name, params System.Type[] components)
+    {
+        var child = new GameObject(name, components);
+        child.transform.SetParent(parent, false);
+        return child;
     }
 }

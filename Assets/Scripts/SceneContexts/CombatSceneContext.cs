@@ -33,13 +33,5 @@ public class CombatSceneContext : SceneContextBase<CombatSceneContext>
         }
 
         BattleFlow.SetMagicStoneSystem(MagicStoneSystem);
-
-        CombatPartyStatusPanel statusPanel = GetComponent<CombatPartyStatusPanel>();
-        if (statusPanel == null)
-        {
-            statusPanel = gameObject.AddComponent<CombatPartyStatusPanel>();
-        }
-
-        statusPanel.Initialize(CharacterSystem);
     }
 }

@@ -1,23 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 [DefaultExecutionOrder(-80)]
 public sealed class CombatPartyStatusPanel : MonoBehaviour
 {
-    private const string CanvasName = "CombatPartyStatusCanvas";
-
     [SerializeField, Min(0.05f)] private float _syncIntervalSeconds = 0.2f;
+    [SerializeField] private RectTransform _allyColumn;
+    [SerializeField] private RectTransform _enemyColumn;
+    [SerializeField] private CombatPartyMemberView _allyTemplate;
+    [SerializeField] private CombatPartyMemberView _enemyTemplate;
 
     private readonly List<CombatPartyMemberView> _allyViews = new();
     private readonly List<CombatPartyMemberView> _enemyViews = new();
     private CombatCharacterSystem _characterSystem;
-    private Canvas _canvas;
-    private RectTransform _canvasRect;
-    private RectTransform _allyColumn;
-    private RectTransform _enemyColumn;
     private float _nextSyncTime;
-    private bool _ownsCanvas;
 
     public int AllyViewCount => _allyViews.Count;
     public int EnemyViewCount => _enemyViews.Count;
@@ -55,23 +51,6 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         CombatSkillUseEvents.SkillUsed -= OnSkillUsed;
     }
 
-    private void OnDestroy()
-    {
-        if (!_ownsCanvas || _canvas == null)
-        {
-            return;
-        }
-
-        if (Application.isPlaying)
-        {
-            Destroy(_canvas.gameObject);
-        }
-        else
-        {
-            DestroyImmediate(_canvas.gameObject);
-        }
-    }
-
     public void Initialize(CombatCharacterSystem characterSystem)
     {
         _characterSystem = characterSystem;
@@ -82,13 +61,15 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
     {
         EnsureBuilt();
         TryResolveCharacterSystem();
-        if (_characterSystem == null)
+        List<Character> allies = CollectTeamCharacters(CombatTeam.Ally);
+        List<Character> enemies = CollectTeamCharacters(CombatTeam.Enemy);
+        if (allies == null && enemies == null)
         {
             return;
         }
 
-        SyncTeam(_characterSystem.AllyCharacters, _allyViews, _allyColumn, isAlly: true);
-        SyncTeam(_characterSystem.EnemyCharacters, _enemyViews, _enemyColumn, isAlly: false);
+        SyncTeam(allies, _allyViews, isAlly: true);
+        SyncTeam(enemies, _enemyViews, isAlly: false);
     }
 
     public void TickNow(float currentTime)
@@ -105,77 +86,19 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
 
     private void EnsureBuilt()
     {
-        if (_canvas != null && _canvasRect != null && _allyColumn != null && _enemyColumn != null)
+        if (_allyColumn == null)
         {
-            return;
+            _allyColumn = transform.Find("AlliesColumn") as RectTransform;
         }
 
-        GameObject existingCanvas = GameObject.Find(CanvasName);
-        if (existingCanvas != null)
+        if (_enemyColumn == null)
         {
-            _canvas = existingCanvas.GetComponent<Canvas>();
-            _canvasRect = existingCanvas.GetComponent<RectTransform>();
+            _enemyColumn = transform.Find("EnemiesColumn") as RectTransform;
         }
 
-        if (_canvas == null || _canvasRect == null)
-        {
-            var canvasObject = new GameObject(CanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            _canvas = canvasObject.GetComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = short.MaxValue - 1;
-            _ownsCanvas = true;
-
-            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
-
-            _canvasRect = canvasObject.GetComponent<RectTransform>();
-            _canvasRect.anchorMin = Vector2.zero;
-            _canvasRect.anchorMax = Vector2.one;
-            _canvasRect.offsetMin = Vector2.zero;
-            _canvasRect.offsetMax = Vector2.zero;
-        }
-
-        _allyColumn = EnsureColumn("AlliesColumn", new Vector2(0f, 0.5f), new Vector2(16f, 0f));
-        _enemyColumn = EnsureColumn("EnemiesColumn", new Vector2(1f, 0.5f), new Vector2(-16f, 0f));
-    }
-
-    private RectTransform EnsureColumn(string name, Vector2 anchor, Vector2 anchoredPosition)
-    {
-        Transform existing = _canvasRect.Find(name);
-        RectTransform columnRect;
-        if (existing != null)
-        {
-            columnRect = existing.GetComponent<RectTransform>();
-        }
-        else
-        {
-            var columnObject = new GameObject(name, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-            columnObject.transform.SetParent(_canvasRect, false);
-            columnRect = columnObject.GetComponent<RectTransform>();
-
-            VerticalLayoutGroup layout = columnObject.GetComponent<VerticalLayoutGroup>();
-            layout.childAlignment = anchor.x < 0.5f ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight;
-            layout.childControlWidth = false;
-            layout.childControlHeight = false;
-            layout.childForceExpandHeight = false;
-            layout.childForceExpandWidth = false;
-            layout.spacing = 8f;
-            layout.padding = new RectOffset(0, 0, 12, 12);
-
-            ContentSizeFitter fitter = columnObject.GetComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        }
-
-        columnRect.anchorMin = anchor;
-        columnRect.anchorMax = anchor;
-        columnRect.pivot = new Vector2(anchor.x, 0.5f);
-        columnRect.anchoredPosition = anchoredPosition;
-        columnRect.sizeDelta = new Vector2(0f, 0f);
-        return columnRect;
+        EnsureTemplates();
+        RehydrateExistingViews(_allyColumn, _allyTemplate, _allyViews);
+        RehydrateExistingViews(_enemyColumn, _enemyTemplate, _enemyViews);
     }
 
     private void TryResolveCharacterSystem()
@@ -195,40 +118,95 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         _characterSystem = FindAnyObjectByType<CombatCharacterSystem>();
     }
 
-    private void SyncTeam(
-        List<Character> characters,
-        List<CombatPartyMemberView> views,
-        RectTransform column,
-        bool isAlly)
+    private List<Character> CollectTeamCharacters(CombatTeam team)
     {
-        int targetCount = characters != null ? characters.Count : 0;
-        while (views.Count > targetCount)
+        if (_characterSystem != null)
         {
-            int lastIndex = views.Count - 1;
-            DestroyView(views[lastIndex]);
-            views.RemoveAt(lastIndex);
+            List<Character> configured = team == CombatTeam.Ally
+                ? _characterSystem.AllyCharacters
+                : _characterSystem.EnemyCharacters;
+            List<Character> filtered = FilterCharacters(configured, team);
+            if (filtered.Count > 0)
+            {
+                return filtered;
+            }
         }
 
-        for (int i = 0; i < targetCount; i++)
+        Character[] allCharacters = FindObjectsByType<Character>(FindObjectsInactive.Exclude);
+        if (allCharacters == null || allCharacters.Length == 0)
         {
-            Character character = characters[i];
-            if (character == null)
+            return null;
+        }
+
+        var discovered = new List<Character>();
+        for (int i = 0; i < allCharacters.Length; i++)
+        {
+            Character character = allCharacters[i];
+            if (character == null || character.Team != team)
             {
                 continue;
             }
 
-            CombatPartyMemberView view = i < views.Count ? views[i] : null;
+            discovered.Add(character);
+        }
+
+        return discovered;
+    }
+
+    private static List<Character> FilterCharacters(List<Character> source, CombatTeam team)
+    {
+        var filtered = new List<Character>();
+        if (source == null)
+        {
+            return filtered;
+        }
+
+        for (int i = 0; i < source.Count; i++)
+        {
+            Character character = source[i];
+            if (character == null || character.Team != team)
+            {
+                continue;
+            }
+
+            filtered.Add(character);
+        }
+
+        return filtered;
+    }
+
+    private void SyncTeam(
+        List<Character> characters,
+        List<CombatPartyMemberView> views,
+        bool isAlly)
+    {
+        int targetCount = characters != null ? characters.Count : 0;
+        EnsureViewCapacity(
+            isAlly ? _allyColumn : _enemyColumn,
+            isAlly ? _allyTemplate : _enemyTemplate,
+            views,
+            targetCount,
+            isAlly);
+
+        for (int i = 0; i < views.Count; i++)
+        {
+            CombatPartyMemberView view = views[i];
             if (view == null)
             {
-                view = CreateView(column, isAlly);
-                if (i < views.Count)
-                {
-                    views[i] = view;
-                }
-                else
-                {
-                    views.Add(view);
-                }
+                continue;
+            }
+
+            if (i >= targetCount)
+            {
+                view.gameObject.SetActive(false);
+                continue;
+            }
+
+            Character character = characters[i];
+            if (character == null)
+            {
+                view.gameObject.SetActive(false);
+                continue;
             }
 
             if (view.BoundCharacter != character)
@@ -236,22 +214,94 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
                 view.Bind(character, isAlly ? CombatCharacterAppearanceView.Facing.FrontLeft : CombatCharacterAppearanceView.Facing.FrontRight);
             }
 
+            view.gameObject.SetActive(true);
             view.transform.SetSiblingIndex(i);
         }
     }
 
-    private CombatPartyMemberView CreateView(Transform parent, bool isAlly)
+    private void EnsureTemplates()
     {
-        var rowObject = new GameObject(isAlly ? "AllyMemberView" : "EnemyMemberView", typeof(RectTransform), typeof(LayoutElement), typeof(CombatPartyMemberView));
-        rowObject.transform.SetParent(parent, false);
-        RectTransform rect = rowObject.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(280f, 132f);
+        if (_allyTemplate == null && _allyColumn != null)
+        {
+            _allyTemplate = FindDirectChildTemplate(_allyColumn);
+        }
 
-        LayoutElement layout = rowObject.GetComponent<LayoutElement>();
-        layout.preferredWidth = 280f;
-        layout.preferredHeight = 132f;
+        if (_enemyTemplate == null && _enemyColumn != null)
+        {
+            _enemyTemplate = FindDirectChildTemplate(_enemyColumn);
+        }
 
-        return rowObject.GetComponent<CombatPartyMemberView>();
+        if (_allyTemplate != null)
+        {
+            _allyTemplate.gameObject.SetActive(false);
+        }
+
+        if (_enemyTemplate != null)
+        {
+            _enemyTemplate.gameObject.SetActive(false);
+        }
+    }
+
+    private static CombatPartyMemberView FindDirectChildTemplate(RectTransform column)
+    {
+        if (column == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < column.childCount; i++)
+        {
+            CombatPartyMemberView view = column.GetChild(i).GetComponent<CombatPartyMemberView>();
+            if (view != null)
+            {
+                return view;
+            }
+        }
+
+        return null;
+    }
+
+    private static void RehydrateExistingViews(
+        RectTransform column,
+        CombatPartyMemberView template,
+        List<CombatPartyMemberView> views)
+    {
+        views.Clear();
+        if (column == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < column.childCount; i++)
+        {
+            CombatPartyMemberView view = column.GetChild(i).GetComponent<CombatPartyMemberView>();
+            if (view != null && view != template)
+            {
+                views.Add(view);
+            }
+        }
+    }
+
+    private static void EnsureViewCapacity(
+        RectTransform column,
+        CombatPartyMemberView template,
+        List<CombatPartyMemberView> views,
+        int targetCount,
+        bool isAlly)
+    {
+        if (column == null || template == null)
+        {
+            return;
+        }
+
+        while (views.Count < targetCount)
+        {
+            GameObject cloneObject = Object.Instantiate(template.gameObject, column, false);
+            cloneObject.name = isAlly ? $"AllyMemberView_{views.Count}" : $"EnemyMemberView_{views.Count}";
+            cloneObject.SetActive(true);
+            CombatPartyMemberView cloneView = cloneObject.GetComponent<CombatPartyMemberView>();
+            views.Add(cloneView);
+        }
     }
 
     private void OnSkillUsed(Character user, string skillName)
@@ -283,22 +333,5 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         }
 
         return null;
-    }
-
-    private static void DestroyView(CombatPartyMemberView view)
-    {
-        if (view == null)
-        {
-            return;
-        }
-
-        if (Application.isPlaying)
-        {
-            Destroy(view.gameObject);
-        }
-        else
-        {
-            DestroyImmediate(view.gameObject);
-        }
     }
 }

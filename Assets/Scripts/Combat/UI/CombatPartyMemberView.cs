@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,25 +7,31 @@ using UnityEngine.UI;
 public sealed class CombatPartyMemberView : MonoBehaviour
 {
     [SerializeField, Min(0.1f)] private float _skillDisplaySeconds = 2.2f;
+    [SerializeField] private CombatCharacterAppearanceView _appearanceView;
+    [SerializeField] private TextMeshProUGUI _nameText;
+    [SerializeField] private TextMeshProUGUI _objectiveText;
+    [SerializeField] private TextMeshProUGUI _buffDebuffText;
+    [SerializeField] private TextMeshProUGUI _weaponText;
+    [SerializeField] private TextMeshProUGUI _hpText;
+    [SerializeField] private TextMeshProUGUI _skillText;
+    [SerializeField] private Image _hpFillImage;
 
     private Character _character;
     private CombatHealth _health;
-    private RectTransform _rectTransform;
-    private CombatCharacterAppearanceView _appearanceView;
-    private Text _weaponText;
-    private Text _hpText;
-    private Text _skillText;
-    private Image _hpFillImage;
+    private CombatAiBrain _aiBrain;
     private float _skillHideAtTime = float.NegativeInfinity;
 
     public Character BoundCharacter => _character;
+    public string CurrentNameText => _nameText != null ? _nameText.text : string.Empty;
+    public string CurrentObjectiveText => _objectiveText != null ? _objectiveText.text : string.Empty;
+    public string CurrentBuffDebuffText => _buffDebuffText != null ? _buffDebuffText.text : string.Empty;
     public string CurrentSkillText => _skillText != null ? _skillText.text : string.Empty;
     public string CurrentWeaponText => _weaponText != null ? _weaponText.text : string.Empty;
     public float CurrentHpRatio => _hpFillImage != null ? _hpFillImage.fillAmount : 0f;
 
     private void Awake()
     {
-        EnsureBuilt();
+        ResolveReferences();
     }
 
     private void OnDestroy()
@@ -34,17 +41,24 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     public void Bind(Character character, CombatCharacterAppearanceView.Facing facing)
     {
-        EnsureBuilt();
+        ResolveReferences();
         UnbindHealth();
 
         _character = character;
         _health = character != null ? character.Health : null;
+        _aiBrain = character != null ? character.GetComponent<CombatAiBrain>() : null;
         if (_health != null)
         {
             _health.HealthChanged += RefreshHealth;
         }
 
-        _appearanceView.Bind(character, facing);
+        if (_appearanceView != null)
+        {
+            _appearanceView.Bind(character, facing);
+        }
+        RefreshName();
+        RefreshObjective();
+        RefreshBuffDebuff();
         RefreshWeapon();
         RefreshHealth();
         ClearSkill();
@@ -52,7 +66,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     public void ShowSkill(string skillName, float currentTime)
     {
-        EnsureBuilt();
+        ResolveReferences();
         if (_skillText == null || string.IsNullOrWhiteSpace(skillName))
         {
             return;
@@ -65,6 +79,9 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     public void Tick(float currentTime)
     {
+        RefreshObjective();
+        RefreshBuffDebuff();
+
         if (_skillText == null || !_skillText.gameObject.activeSelf)
         {
             return;
@@ -89,6 +106,50 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         _weaponText.text = kind.ToString();
     }
 
+    public void RefreshName()
+    {
+        if (_nameText == null)
+        {
+            return;
+        }
+
+        _nameText.text = _character != null ? _character.DisplayName : string.Empty;
+    }
+
+    public void RefreshObjective()
+    {
+        if (_objectiveText == null)
+        {
+            return;
+        }
+
+        CombatObjective objective = _aiBrain != null ? _aiBrain.LastPlan.Objective : CombatObjective.Search;
+        _objectiveText.text = CombatAiDebugLabels.ObjectiveShort(objective);
+    }
+
+    public void RefreshBuffDebuff()
+    {
+        if (_buffDebuffText == null)
+        {
+            return;
+        }
+
+        if (_character == null || _character.StatusEffects == null)
+        {
+            _buffDebuffText.text = string.Empty;
+            return;
+        }
+
+        var effects = _character.StatusEffects.GetActiveEffectSnapshots();
+        if (effects == null || effects.Count == 0)
+        {
+            _buffDebuffText.text = string.Empty;
+            return;
+        }
+
+        _buffDebuffText.text = FormatEffects(effects);
+    }
+
     public void RefreshHealth()
     {
         if (_hpText == null || _hpFillImage == null)
@@ -102,58 +163,79 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         _hpFillImage.fillAmount = Mathf.Clamp01(hp / (float)maxHp);
     }
 
-    private void EnsureBuilt()
+    private void ResolveReferences()
     {
-        if (_rectTransform != null)
+        if (_appearanceView == null)
         {
-            return;
+            Transform appearance = transform.Find("Appearance");
+            if (appearance != null)
+            {
+                _appearanceView = appearance.GetComponent<CombatCharacterAppearanceView>();
+            }
         }
 
-        _rectTransform = GetComponent<RectTransform>();
-        _rectTransform.sizeDelta = new Vector2(280f, 132f);
+        if (_weaponText == null)
+        {
+            Transform weaponText = transform.Find("WeaponText");
+            if (weaponText != null)
+            {
+                _weaponText = weaponText.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        GameObject background = CreateImageObject(transform, "Background", new Color(0.06f, 0.08f, 0.12f, 0.86f));
-        RectTransform backgroundRect = background.GetComponent<RectTransform>();
-        backgroundRect.anchorMin = Vector2.zero;
-        backgroundRect.anchorMax = Vector2.one;
-        backgroundRect.offsetMin = Vector2.zero;
-        backgroundRect.offsetMax = Vector2.zero;
+        if (_objectiveText == null)
+        {
+            Transform objectiveText = transform.Find("ObjectiveText");
+            if (objectiveText != null)
+            {
+                _objectiveText = objectiveText.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        GameObject appearanceObject = new GameObject("Appearance", typeof(RectTransform), typeof(CombatCharacterAppearanceView));
-        appearanceObject.transform.SetParent(transform, false);
-        RectTransform appearanceRect = appearanceObject.GetComponent<RectTransform>();
-        appearanceRect.anchorMin = new Vector2(0f, 0.5f);
-        appearanceRect.anchorMax = new Vector2(0f, 0.5f);
-        appearanceRect.pivot = new Vector2(0f, 0.5f);
-        appearanceRect.sizeDelta = new Vector2(108f, 108f);
-        appearanceRect.anchoredPosition = new Vector2(12f, 0f);
-        _appearanceView = appearanceObject.GetComponent<CombatCharacterAppearanceView>();
+        if (_buffDebuffText == null)
+        {
+            Transform buffDebuffText = transform.Find("BuffDebuffText");
+            if (buffDebuffText != null)
+            {
+                _buffDebuffText = buffDebuffText.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        _weaponText = CreateText(transform, "WeaponText", new Vector2(132f, -24f), new Vector2(136f, 28f), 16, TextAnchor.MiddleLeft);
-        _hpText = CreateText(transform, "HpText", new Vector2(132f, -58f), new Vector2(136f, 24f), 14, TextAnchor.MiddleLeft);
-        _skillText = CreateText(transform, "SkillText", new Vector2(132f, 28f), new Vector2(136f, 44f), 14, TextAnchor.MiddleLeft);
-        _skillText.color = new Color(1f, 0.93f, 0.52f, 1f);
-        _skillText.gameObject.SetActive(false);
+        if (_nameText == null)
+        {
+            Transform nameText = transform.Find("NameText");
+            if (nameText != null)
+            {
+                _nameText = nameText.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        GameObject hpBackground = CreateImageObject(transform, "HpBarBackground", new Color(0.1f, 0.1f, 0.1f, 0.9f));
-        RectTransform hpBackgroundRect = hpBackground.GetComponent<RectTransform>();
-        hpBackgroundRect.anchorMin = new Vector2(0f, 0.5f);
-        hpBackgroundRect.anchorMax = new Vector2(0f, 0.5f);
-        hpBackgroundRect.pivot = new Vector2(0f, 0.5f);
-        hpBackgroundRect.sizeDelta = new Vector2(132f, 14f);
-        hpBackgroundRect.anchoredPosition = new Vector2(136f, -84f);
+        if (_hpText == null)
+        {
+            Transform hpText = transform.Find("HpText");
+            if (hpText != null)
+            {
+                _hpText = hpText.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        GameObject hpFill = CreateImageObject(hpBackground.transform, "HpBarFill", new Color(0.28f, 0.84f, 0.34f, 1f));
-        RectTransform hpFillRect = hpFill.GetComponent<RectTransform>();
-        hpFillRect.anchorMin = Vector2.zero;
-        hpFillRect.anchorMax = Vector2.one;
-        hpFillRect.offsetMin = Vector2.zero;
-        hpFillRect.offsetMax = Vector2.zero;
+        if (_skillText == null)
+        {
+            Transform skillText = transform.Find("SkillText");
+            if (skillText != null)
+            {
+                _skillText = skillText.GetComponent<TextMeshProUGUI>();
+            }
+        }
 
-        _hpFillImage = hpFill.GetComponent<Image>();
-        _hpFillImage.type = Image.Type.Filled;
-        _hpFillImage.fillMethod = Image.FillMethod.Horizontal;
-        _hpFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+        if (_hpFillImage == null)
+        {
+            Transform hpFill = transform.Find("HpBarBackground/HpBarFill");
+            if (hpFill != null)
+            {
+                _hpFillImage = hpFill.GetComponent<Image>();
+            }
+        }
     }
 
     private void UnbindHealth()
@@ -164,6 +246,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         }
 
         _health = null;
+        _aiBrain = null;
     }
 
     private void ClearSkill()
@@ -178,58 +261,51 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         _skillHideAtTime = float.NegativeInfinity;
     }
 
-    private static GameObject CreateImageObject(Transform parent, string objectName, Color color)
+    private static string FormatEffects(System.Collections.Generic.IReadOnlyList<CombatStatusEffectSnapshot> effects)
     {
-        var imageObject = new GameObject(objectName, typeof(RectTransform), typeof(Image));
-        imageObject.transform.SetParent(parent, false);
-        Image image = imageObject.GetComponent<Image>();
-        image.sprite = GetWhiteSprite();
-        image.color = color;
-        image.raycastTarget = false;
-        return imageObject;
-    }
-
-    private static Text CreateText(
-        Transform parent,
-        string objectName,
-        Vector2 anchoredPosition,
-        Vector2 size,
-        int fontSize,
-        TextAnchor alignment)
-    {
-        var textObject = new GameObject(objectName, typeof(RectTransform), typeof(Text));
-        textObject.transform.SetParent(parent, false);
-        RectTransform rect = textObject.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0f, 0.5f);
-        rect.anchorMax = new Vector2(0f, 0.5f);
-        rect.pivot = new Vector2(0f, 0.5f);
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = size;
-
-        Text text = textObject.GetComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        text.fontSize = fontSize;
-        text.alignment = alignment;
-        text.color = Color.white;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        text.raycastTarget = false;
-        return text;
-    }
-
-    private static Sprite s_whiteSprite;
-
-    private static Sprite GetWhiteSprite()
-    {
-        if (s_whiteSprite != null)
+        System.Text.StringBuilder builder = new();
+        for (int i = 0; i < effects.Count; i++)
         {
-            return s_whiteSprite;
+            if (i > 0)
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(FormatEffectLabel(effects[i]));
         }
 
-        var texture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
-        texture.SetPixel(0, 0, Color.white);
-        texture.Apply();
-        s_whiteSprite = Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 100f);
-        return s_whiteSprite;
+        return builder.ToString();
     }
+
+    private static string FormatEffectLabel(CombatStatusEffectSnapshot effect)
+    {
+        return effect.Type switch
+        {
+            CombatStatusEffects.EffectType.StatModifier => FormatStatModifierLabel(effect),
+            CombatStatusEffects.EffectType.Invulnerable => "無敵",
+            CombatStatusEffects.EffectType.Root => "移動不能",
+            CombatStatusEffects.EffectType.Bind => "金縛り",
+            CombatStatusEffects.EffectType.Poison => "毒",
+            CombatStatusEffects.EffectType.HealOverTime => "継続回復",
+            CombatStatusEffects.EffectType.Stealth => "不可視",
+            _ => effect.Type.ToString(),
+        };
+    }
+
+    private static string FormatStatModifierLabel(CombatStatusEffectSnapshot effect)
+    {
+        string statName = effect.Stat switch
+        {
+            CombatStatusEffects.StatKind.STR => "STR",
+            CombatStatusEffects.StatKind.INT => "INT",
+            CombatStatusEffects.StatKind.FAI => "FAI",
+            CombatStatusEffects.StatKind.AGI => "AGI",
+            _ => effect.Stat.ToString(),
+        };
+
+        if (effect.IsBuff) return statName + "バフ";
+        if (effect.IsDebuff) return statName + "デバフ";
+        return statName + "補正";
+    }
+
 }

@@ -125,7 +125,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
 
     private static void CancelTransientBattleArtifacts()
     {
-        RosaryHealingAreaZone[] zones = FindObjectsByType<RosaryHealingAreaZone>(FindObjectsSortMode.None);
+        RosaryHealingAreaZone[] zones = FindObjectsByType<RosaryHealingAreaZone>();
         for (int i = 0; i < zones.Length; i++)
         {
             zones[i]?.CancelImmediate();

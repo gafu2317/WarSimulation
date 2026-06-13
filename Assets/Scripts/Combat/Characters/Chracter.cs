@@ -19,6 +19,10 @@ public class Character : MonoBehaviour
 
     // キャラクターの基礎データ
     public CharacterData CharacterData { private set; get; }
+    public string DisplayName =>
+        CharacterData != null && !string.IsNullOrWhiteSpace(CharacterData.CharacterName)
+            ? CharacterData.CharacterName
+            : gameObject.name;
     public CombatTeam Team => _team;
     public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
     public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
