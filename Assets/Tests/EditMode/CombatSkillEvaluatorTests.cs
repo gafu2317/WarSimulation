@@ -105,7 +105,7 @@ public sealed class CombatSkillEvaluatorTests
 
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
-                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, null));
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, (Character)null));
 
             Assert.That(result.CanUse, Is.True);
             Assert.That(result.ResolvedTargets.Count, Is.EqualTo(2));
@@ -129,7 +129,7 @@ public sealed class CombatSkillEvaluatorTests
 
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
-                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, null));
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, (Character)null));
 
             Assert.That(result.CanUse, Is.False);
             Assert.That(result.FailureReason, Is.EqualTo("no enemies"));
@@ -153,7 +153,7 @@ public sealed class CombatSkillEvaluatorTests
 
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 new RosarySacrificeThunderSkill(),
-                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, null));
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, (Character)null));
 
             Assert.That(result.CanUse, Is.True);
             Assert.That(result.ResolvedTargets.Count, Is.EqualTo(2));

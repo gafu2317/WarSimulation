@@ -45,6 +45,10 @@ public static class CombatSkillDebugIndicatorSystem
                 {
                     SpawnCharacterMarker(context.PrimaryTarget, context.PrimaryTarget.transform.position, spec);
                 }
+                else if (context.PrimaryStone != null)
+                {
+                    SpawnMarker(context.PrimaryStone.transform.position, spec, CombatSkillDebugMarkerShape.Cylinder);
+                }
                 break;
             case CombatSkillDebugMarkerTarget.ResolvedTargets:
                 for (int i = 0; i < context.ResolvedTargets.Count; i++)
@@ -52,6 +56,12 @@ public static class CombatSkillDebugIndicatorSystem
                     Character target = context.ResolvedTargets[i];
                     if (target == null) continue;
                     SpawnCharacterMarker(target, target.transform.position, spec);
+                }
+                for (int i = 0; i < context.ResolvedStones.Count; i++)
+                {
+                    MagicStone target = context.ResolvedStones[i];
+                    if (target == null) continue;
+                    SpawnMarker(target.transform.position, spec, CombatSkillDebugMarkerShape.Cylinder);
                 }
                 break;
             case CombatSkillDebugMarkerTarget.TargetPoint:

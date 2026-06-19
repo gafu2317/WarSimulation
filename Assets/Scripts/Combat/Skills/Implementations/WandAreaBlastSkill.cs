@@ -9,7 +9,7 @@ public sealed class WandAreaBlastSkill : SkillBase
 
     public WandAreaBlastSkill(
         float intScale = 0.5f,
-        float maxRange = 9f,
+        float maxRange = 18f,
         float radius = 3f,
         float cooldownSeconds = 5f)
     {
@@ -24,20 +24,29 @@ public sealed class WandAreaBlastSkill : SkillBase
     public override SkillTargetKind TargetKind => SkillTargetKind.Area;
     public override float MaxRange => _maxRange;
     public override float AreaRadius => _radius;
+    public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasTargetPoint) return;
-        if (context.ResolvedTargets == null || context.ResolvedTargets.Count == 0) return;
+        if (!context.HasAnyResolvedTarget) return;
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
+        bool dealtDamage = false;
         for (int i = 0; i < context.ResolvedTargets.Count; i++)
         {
             Character target = context.ResolvedTargets[i];
-            if (target == null || target.Health == null || !target.Health.IsTargetable) continue;
-
-            target.Health.TakeDamage(ComputeStealthAwareDamage(self, target, damage), self);
+            dealtDamage |= TakeDamage(self, target, damage) > 0;
         }
-        BreakStealthOnUse(self);
+
+        for (int i = 0; i < context.ResolvedStones.Count; i++)
+        {
+            dealtDamage |= TakeDamage(context.ResolvedStones[i], damage) > 0;
+        }
+
+        if (dealtDamage)
+        {
+            BreakStealthOnUse(self);
+        }
     }
 }

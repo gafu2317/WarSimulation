@@ -13,7 +13,8 @@ public readonly struct CombatSkillEvaluationResult
         Vector3 areaCenter,
         bool hasAreaPreview,
         float areaRadius,
-        IReadOnlyList<Character> resolvedTargets)
+        IReadOnlyList<Character> resolvedTargets,
+        IReadOnlyList<MagicStone> resolvedStones = null)
     {
         CanUse = canUse;
         FailureReason = failureReason ?? string.Empty;
@@ -25,6 +26,7 @@ public readonly struct CombatSkillEvaluationResult
         HasAreaPreview = hasAreaPreview;
         AreaRadius = areaRadius;
         ResolvedTargets = resolvedTargets ?? System.Array.Empty<Character>();
+        ResolvedStones = resolvedStones ?? System.Array.Empty<MagicStone>();
     }
 
     public bool CanUse { get; }
@@ -37,4 +39,6 @@ public readonly struct CombatSkillEvaluationResult
     public bool HasAreaPreview { get; }
     public float AreaRadius { get; }
     public IReadOnlyList<Character> ResolvedTargets { get; }
+    public IReadOnlyList<MagicStone> ResolvedStones { get; }
+    public int ResolvedTargetCount => ResolvedTargets.Count + ResolvedStones.Count;
 }

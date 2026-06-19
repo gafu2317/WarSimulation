@@ -6,6 +6,8 @@ using WarSimulation.Combat.Map;
 [RequireComponent(typeof(CombatAiContextCollector))]
 public sealed class CombatAiBrain : MonoBehaviour
 {
+    private const float SwordFocusCommitmentSeconds = 2.5f;
+
     [SerializeField] private bool _enabled = true;
     [SerializeField, Min(0.05f)] private float _decisionIntervalSeconds = 0.5f;
     [SerializeField] private bool _executeMovement = true;
@@ -19,6 +21,8 @@ public sealed class CombatAiBrain : MonoBehaviour
     private CombatAiWorldLabel _worldLabel;
     private float _nextDecisionTime;
     private float _nextStoneAttackTime;
+    private Character _focusedEnemy;
+    private float _focusedEnemyLockedUntilTime;
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
     public CombatAiContext LastContext { get; private set; }
@@ -48,7 +52,14 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (!CanRun()) return false;
 
         LastContext = _contextCollector.Collect(_owner);
-        LastPlan = CombatAiPlanner.BuildPlan(LastContext, _owner.PersonalityProfile, ResolveWeaponWeightsProfile());
+        PruneFocusedEnemy(LastContext);
+        LastPlan = CombatAiPlanner.BuildPlan(
+            LastContext,
+            _owner.PersonalityProfile,
+            ResolveWeaponWeightsProfile(),
+            _focusedEnemy,
+            GetFocusCommitmentRemainingSeconds(),
+            LastPlan.Objective);
         RefreshWorldLabel();
         return ExecutePlan(LastPlan);
     }
@@ -60,9 +71,10 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         LastPlan = plan;
         RefreshWorldLabel();
-        bool attackedStone = TryExecuteStoneAttack(plan);
-        bool usedSkill = !attackedStone && TryExecuteSkill(plan);
-        bool moved = !attackedStone && TryExecuteMovement(plan);
+        bool usedSkill = TryExecuteSkill(plan);
+        bool attackedStone = !usedSkill && TryExecuteStoneAttack(plan);
+        bool moved = !usedSkill && !attackedStone && TryExecuteMovement(plan);
+        UpdateFocusedEnemy(plan);
         return attackedStone || usedSkill || moved;
     }
 
@@ -76,6 +88,10 @@ public sealed class CombatAiBrain : MonoBehaviour
         CombatMagicStoneSystem stoneSystem = CombatMagicStoneSystemResolver.Resolve();
         if (stone == null || stoneSystem == null || stone.FeatureIndex < 0) return false;
         if (!stoneSystem.TryGetState(stone.FeatureIndex, out MagicStoneRuntimeState state) || state.HP <= 0) return false;
+
+        CombatVision vision = _owner.Vision;
+        vision?.UpdateVision();
+        if (vision != null && !vision.HasLineOfSight(stone.transform)) return false;
 
         WeaponBase weapon = _owner.EquippedWeapon ?? WeaponBase.Unarmed;
         float attackRange = Mathf.Max(0.5f, weapon.Range) + 1.2f;
@@ -146,6 +162,67 @@ public sealed class CombatAiBrain : MonoBehaviour
     private float GetEffectiveScalingStat(CombatStat stat)
     {
         return _owner != null ? _owner.GetEffectiveStat(stat) : 0f;
+    }
+
+    private float GetFocusCommitmentRemainingSeconds()
+    {
+        return Mathf.Max(0f, _focusedEnemyLockedUntilTime - Time.time);
+    }
+
+    private void UpdateFocusedEnemy(CombatAiPlan plan)
+    {
+        if (_owner == null || _owner.EquippedWeapon == null || _owner.EquippedWeapon.Kind != WeaponKind.Sword)
+        {
+            _focusedEnemy = null;
+            _focusedEnemyLockedUntilTime = 0f;
+            return;
+        }
+
+        Character nextFocus = null;
+        if (plan.SkillContext.PrimaryTarget != null && plan.SkillContext.PrimaryTarget.Team != _owner.Team)
+        {
+            nextFocus = plan.SkillContext.PrimaryTarget;
+        }
+        else if (plan.MoveTarget.Kind == CombatMoveTargetKind.Character &&
+                 plan.MoveTarget.TargetCharacter != null &&
+                 plan.MoveTarget.TargetCharacter.Team != _owner.Team)
+        {
+            nextFocus = plan.MoveTarget.TargetCharacter;
+        }
+
+        if (nextFocus != null)
+        {
+            _focusedEnemy = nextFocus;
+            _focusedEnemyLockedUntilTime = Time.time + SwordFocusCommitmentSeconds;
+        }
+        else if (GetFocusCommitmentRemainingSeconds() <= 0f)
+        {
+            _focusedEnemy = null;
+        }
+    }
+
+    private void PruneFocusedEnemy(CombatAiContext context)
+    {
+        if (_focusedEnemy == null || context == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.Character != _focusedEnemy) continue;
+
+            if (enemy.HP > 0 && enemy.CanAct && enemy.HasKnownPosition)
+            {
+                return;
+            }
+
+            break;
+        }
+
+        _focusedEnemy = null;
+        _focusedEnemyLockedUntilTime = 0f;
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

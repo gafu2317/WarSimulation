@@ -11,7 +11,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _nameText;
     [SerializeField] private TextMeshProUGUI _objectiveText;
     [SerializeField] private TextMeshProUGUI _buffDebuffText;
-    [SerializeField] private TextMeshProUGUI _weaponText;
+    [SerializeField] private TextMeshProUGUI _personalityText;
     [SerializeField] private TextMeshProUGUI _hpText;
     [SerializeField] private TextMeshProUGUI _skillText;
     [SerializeField] private GameObject _skillBackground;
@@ -27,7 +27,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     public string CurrentObjectiveText => _objectiveText != null ? _objectiveText.text : string.Empty;
     public string CurrentBuffDebuffText => _buffDebuffText != null ? _buffDebuffText.text : string.Empty;
     public string CurrentSkillText => _skillText != null ? _skillText.text : string.Empty;
-    public string CurrentWeaponText => _weaponText != null ? _weaponText.text : string.Empty;
+    public string CurrentPersonalityText => _personalityText != null ? _personalityText.text : string.Empty;
     public float CurrentHpRatio => _hpFillImage != null ? _hpFillImage.fillAmount : 0f;
 
     private void Awake()
@@ -60,7 +60,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         RefreshName();
         RefreshObjective();
         RefreshBuffDebuff();
-        RefreshWeapon();
+        RefreshPersonality();
         RefreshHealth();
         ClearSkill();
     }
@@ -98,17 +98,16 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         }
     }
 
-    public void RefreshWeapon()
+    public void RefreshPersonality()
     {
-        if (_weaponText == null)
+        if (_personalityText == null)
         {
             return;
         }
 
-        WeaponKind kind = _character != null && _character.EquippedWeapon != null
-            ? _character.EquippedWeapon.Kind
-            : WeaponKind.Unarmed;
-        _weaponText.text = kind.ToString();
+        _personalityText.text = _character != null && _character.PersonalityProfile != null
+            ? _character.PersonalityProfile.DisplayNameJapanese
+            : string.Empty;
     }
 
     public void RefreshName()
@@ -179,12 +178,12 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             }
         }
 
-        if (_weaponText == null)
+        if (_personalityText == null)
         {
-            Transform weaponText = transform.Find("WeaponText");
-            if (weaponText != null)
+            Transform personalityText = transform.Find("PersonalityText");
+            if (personalityText != null)
             {
-                _weaponText = weaponText.GetComponent<TextMeshProUGUI>();
+                _personalityText = personalityText.GetComponent<TextMeshProUGUI>();
             }
         }
 

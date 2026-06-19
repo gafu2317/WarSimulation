@@ -19,6 +19,7 @@ public sealed class RosarySacrificeThunderSkill : SkillBase
     public override string Name => "神の雷";
     public override float CooldownSeconds => _cooldownSeconds;
     public override SkillTargetKind TargetKind => SkillTargetKind.RecognizedEnemies;
+    public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
@@ -26,17 +27,24 @@ public sealed class RosarySacrificeThunderSkill : SkillBase
 
         self.Health.TakeDamage(_hpCost, self);
         if (!self.Health.IsAlive) return;
-        if (context.ResolvedTargets == null || context.ResolvedTargets.Count == 0) return;
+        if (!context.HasAnyResolvedTarget) return;
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.FAI) * _faiScale));
+        bool dealtDamage = false;
         for (int i = 0; i < context.ResolvedTargets.Count; i++)
         {
             Character target = context.ResolvedTargets[i];
-            if (target == null || target.Health == null || !target.Health.IsTargetable) continue;
-
-            target.Health.TakeDamage(damage, self);
+            dealtDamage |= TakeDamage(self, target, damage) > 0;
         }
 
-        BreakStealthOnUse(self);
+        for (int i = 0; i < context.ResolvedStones.Count; i++)
+        {
+            dealtDamage |= TakeDamage(context.ResolvedStones[i], damage) > 0;
+        }
+
+        if (dealtDamage)
+        {
+            BreakStealthOnUse(self);
+        }
     }
 }

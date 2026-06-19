@@ -10,6 +10,7 @@ public static class CombatSkillEvaluator
             var request = new CombatSkillEvaluationRequest(
                 owner,
                 context.PrimaryTarget,
+                context.PrimaryStone,
                 context.HasTargetPoint,
                 context.TargetPoint);
             return Evaluate(skill, request);
@@ -28,7 +29,8 @@ public static class CombatSkillEvaluator
             hasAreaPreview: skill.AreaRadius > 0f &&
                 (skill.TargetKind == SkillTargetKind.Point || skill.TargetKind == SkillTargetKind.Area),
             areaRadius: skill.AreaRadius,
-            resolvedTargets: context.ResolvedTargets);
+            resolvedTargets: context.ResolvedTargets,
+            resolvedStones: context.ResolvedStones);
 
         if (owner.Health == null || !owner.Health.CanAct)
         {
@@ -43,9 +45,9 @@ public static class CombatSkillEvaluator
         switch (skill.TargetKind)
         {
             case SkillTargetKind.RecognizedEnemies:
-                return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, requireEnemy: true, emptyReason: "no enemies");
+                return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, context.ResolvedStones, requireEnemy: true, emptyReason: "no enemies");
             case SkillTargetKind.AllAllies:
-                return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, requireEnemy: false, emptyReason: "no allies");
+                return EvaluateProvidedTargets(baseResult, owner, skill, context.ResolvedTargets, context.ResolvedStones, requireEnemy: false, emptyReason: "no allies");
             case SkillTargetKind.Area:
                 if (!context.HasTargetPoint)
                 {
@@ -62,22 +64,23 @@ public static class CombatSkillEvaluator
                     return Fail(baseResult, "area radius missing");
                 }
 
-                if (context.ResolvedTargets == null || context.ResolvedTargets.Count == 0)
+                if (!context.HasAnyResolvedTarget)
                 {
                     return Fail(baseResult, "no targets in area");
                 }
 
-                if (!AreValidTargets(owner, skill, context.ResolvedTargets, requireEnemy: true))
+                if (!AreValidTargets(owner, skill, context.ResolvedTargets, context.ResolvedStones, requireEnemy: true))
                 {
                     return Fail(baseResult, "invalid targets");
                 }
 
-                return Success(baseResult, context, context.ResolvedTargets);
+                return Success(baseResult, context, context.ResolvedTargets, context.ResolvedStones);
             default:
             {
                 var request = new CombatSkillEvaluationRequest(
                     owner,
                     context.PrimaryTarget,
+                    context.PrimaryStone,
                     context.HasTargetPoint,
                     context.TargetPoint);
                 return Evaluate(skill, request);
@@ -137,7 +140,7 @@ public static class CombatSkillEvaluator
                     resolvedTargets: new[] { owner });
 
             case SkillTargetKind.Enemy:
-                return EvaluateEnemyTarget(baseResult, owner, skill, request.PrimaryTarget);
+                return EvaluateEnemyTarget(baseResult, owner, skill, request.PrimaryTarget, request.PrimaryStone);
 
             case SkillTargetKind.Ally:
                 return EvaluateAllyTarget(baseResult, owner, skill, request.PrimaryTarget, allowSelf: false);
@@ -187,7 +190,7 @@ public static class CombatSkillEvaluator
                 }
 
                 SkillExecutionContext areaContext = CombatSkillTargeting.CreateEnemyAreaContext(owner, request.TargetPoint, skill.AreaRadius);
-                if (areaContext.ResolvedTargets == null || areaContext.ResolvedTargets.Count == 0)
+                if (!areaContext.HasAnyResolvedTarget)
                 {
                     return Fail(
                         new CombatSkillEvaluationResult(
@@ -200,7 +203,8 @@ public static class CombatSkillEvaluator
                             areaCenter: requestedPoint,
                             hasAreaPreview: true,
                             areaRadius: skill.AreaRadius,
-                            resolvedTargets: areaContext.ResolvedTargets),
+                            resolvedTargets: areaContext.ResolvedTargets,
+                            resolvedStones: areaContext.ResolvedStones),
                         "no targets in area");
                 }
 
@@ -215,14 +219,16 @@ public static class CombatSkillEvaluator
                         areaCenter: requestedPoint,
                         hasAreaPreview: true,
                         areaRadius: skill.AreaRadius,
-                        resolvedTargets: areaContext.ResolvedTargets),
+                        resolvedTargets: areaContext.ResolvedTargets,
+                        resolvedStones: areaContext.ResolvedStones),
                     areaContext,
-                    areaContext.ResolvedTargets);
+                    areaContext.ResolvedTargets,
+                    areaContext.ResolvedStones);
 
             case SkillTargetKind.RecognizedEnemies:
             {
                 SkillExecutionContext recognizedEnemiesContext = CombatSkillTargeting.CreateRecognizedEnemiesContext(owner);
-                if (recognizedEnemiesContext.ResolvedTargets == null || recognizedEnemiesContext.ResolvedTargets.Count == 0)
+                if (!recognizedEnemiesContext.HasAnyResolvedTarget)
                 {
                     return Fail(
                         new CombatSkillEvaluationResult(
@@ -235,7 +241,8 @@ public static class CombatSkillEvaluator
                             areaCenter: default,
                             hasAreaPreview: false,
                             areaRadius: 0f,
-                            resolvedTargets: recognizedEnemiesContext.ResolvedTargets),
+                            resolvedTargets: recognizedEnemiesContext.ResolvedTargets,
+                            resolvedStones: recognizedEnemiesContext.ResolvedStones),
                         "no enemies");
                 }
 
@@ -250,9 +257,11 @@ public static class CombatSkillEvaluator
                         areaCenter: default,
                         hasAreaPreview: false,
                         areaRadius: 0f,
-                        resolvedTargets: recognizedEnemiesContext.ResolvedTargets),
+                        resolvedTargets: recognizedEnemiesContext.ResolvedTargets,
+                        resolvedStones: recognizedEnemiesContext.ResolvedStones),
                     recognizedEnemiesContext,
-                    recognizedEnemiesContext.ResolvedTargets);
+                    recognizedEnemiesContext.ResolvedTargets,
+                    recognizedEnemiesContext.ResolvedStones);
             }
 
             case SkillTargetKind.AllAllies:
@@ -300,11 +309,23 @@ public static class CombatSkillEvaluator
         CombatSkillEvaluationResult baseResult,
         Character owner,
         SkillBase skill,
-        Character target)
+        Character target,
+        MagicStone stone)
     {
-        if (target == null)
+        if (target == null && stone == null)
         {
             return Fail(baseResult, "target missing");
+        }
+
+        if (stone != null)
+        {
+            if (!IsValidEnemyTarget(owner, skill, stone))
+            {
+                return Fail(baseResult, "stone not targetable");
+            }
+
+            SkillExecutionContext stoneContext = SkillExecutionContext.ForTarget(stone);
+            return Success(baseResult, stoneContext, stoneContext.ResolvedTargets, stoneContext.ResolvedStones);
         }
 
         if (target.Health == null || !target.Health.IsTargetable)
@@ -330,7 +351,7 @@ public static class CombatSkillEvaluator
         }
 
         SkillExecutionContext context = SkillExecutionContext.ForTarget(target);
-        return Success(baseResult, context, context.ResolvedTargets);
+        return Success(baseResult, context, context.ResolvedTargets, context.ResolvedStones);
     }
 
     private static CombatSkillEvaluationResult EvaluateAllyTarget(
@@ -385,34 +406,52 @@ public static class CombatSkillEvaluator
         Character owner,
         SkillBase skill,
         IReadOnlyList<Character> targets,
+        IReadOnlyList<MagicStone> stones,
         bool requireEnemy,
         string emptyReason)
     {
-        if (targets == null || targets.Count == 0)
+        if ((targets == null || targets.Count == 0) && (stones == null || stones.Count == 0))
         {
             return Fail(baseResult, emptyReason);
         }
 
-        if (!AreValidTargets(owner, skill, targets, requireEnemy))
+        if (!AreValidTargets(owner, skill, targets, stones, requireEnemy))
         {
             return Fail(baseResult, "invalid targets");
         }
 
-        SkillExecutionContext context = SkillExecutionContext.ForTargets(targets);
-        return Success(baseResult, context, targets);
+        SkillExecutionContext context = SkillExecutionContext.ForTargets(targets, stones);
+        return Success(baseResult, context, targets, stones);
     }
 
-    private static bool AreValidTargets(Character owner, SkillBase skill, IReadOnlyList<Character> targets, bool requireEnemy)
+    private static bool AreValidTargets(
+        Character owner,
+        SkillBase skill,
+        IReadOnlyList<Character> targets,
+        IReadOnlyList<MagicStone> stones,
+        bool requireEnemy)
     {
-        for (int i = 0; i < targets.Count; i++)
+        if (targets != null)
         {
-            Character target = targets[i];
-            bool isValid = requireEnemy
-                ? IsValidEnemyTarget(owner, skill, target)
-                : IsValidAllyTarget(owner, skill, target, allowSelf: true);
-            if (!isValid)
+            for (int i = 0; i < targets.Count; i++)
             {
-                return false;
+                Character target = targets[i];
+                bool isValid = requireEnemy
+                    ? IsValidEnemyTarget(owner, skill, target)
+                    : IsValidAllyTarget(owner, skill, target, allowSelf: true);
+                if (!isValid)
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (stones != null && stones.Count > 0)
+        {
+            if (!requireEnemy) return false;
+            for (int i = 0; i < stones.Count; i++)
+            {
+                if (!IsValidEnemyTarget(owner, skill, stones[i])) return false;
             }
         }
 
@@ -427,6 +466,13 @@ public static class CombatSkillEvaluator
         vision?.UpdateVision();
         if (vision != null && HasCharacterSystem() && !vision.HasRecognitionOf(target)) return false;
         return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
+    }
+
+    private static bool IsValidEnemyTarget(Character owner, SkillBase skill, MagicStone stone)
+    {
+        if (skill == null || !skill.CanTargetMagicStone) return false;
+        if (!CombatSkillTargeting.IsValidEnemyStone(owner, stone)) return false;
+        return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(stone.transform.position), skill.MaxRange);
     }
 
     private static bool IsValidAllyTarget(Character owner, SkillBase skill, Character target, bool allowSelf)
@@ -453,13 +499,15 @@ public static class CombatSkillEvaluator
             areaCenter: baseResult.AreaCenter,
             hasAreaPreview: baseResult.HasAreaPreview,
             areaRadius: baseResult.AreaRadius,
-            resolvedTargets: baseResult.ResolvedTargets);
+            resolvedTargets: baseResult.ResolvedTargets,
+            resolvedStones: baseResult.ResolvedStones);
     }
 
     private static CombatSkillEvaluationResult Success(
         CombatSkillEvaluationResult baseResult,
         SkillExecutionContext context,
-        IReadOnlyList<Character> resolvedTargets = null)
+        IReadOnlyList<Character> resolvedTargets = null,
+        IReadOnlyList<MagicStone> resolvedStones = null)
     {
         return new CombatSkillEvaluationResult(
             canUse: true,
@@ -471,7 +519,8 @@ public static class CombatSkillEvaluator
             areaCenter: baseResult.AreaCenter,
             hasAreaPreview: baseResult.HasAreaPreview,
             areaRadius: baseResult.AreaRadius,
-            resolvedTargets: resolvedTargets ?? context.ResolvedTargets);
+            resolvedTargets: resolvedTargets ?? context.ResolvedTargets,
+            resolvedStones: resolvedStones ?? context.ResolvedStones);
     }
 
     private static bool IsInHorizontalRange(Vector3 from, Vector3 to, float maxRange)

@@ -6,6 +6,14 @@ using UnityEngine;
     menuName = "WarSimulation/Combat/AI Weapon Weights Profile")]
 public sealed class CombatAiWeaponWeightsProfile : ScriptableObject
 {
+    private static readonly CombatAiWeaponWeightsEntry DefaultSword = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Sword);
+    private static readonly CombatAiWeaponWeightsEntry DefaultShield = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Shield);
+    private static readonly CombatAiWeaponWeightsEntry DefaultWand = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Wand);
+    private static readonly CombatAiWeaponWeightsEntry DefaultGrimoire = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Grimoire);
+    private static readonly CombatAiWeaponWeightsEntry DefaultBible = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Bible);
+    private static readonly CombatAiWeaponWeightsEntry DefaultRosary = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Rosary);
+    private static readonly CombatAiWeaponWeightsEntry DefaultUnarmed = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Unarmed);
+
     [SerializeField] private CombatAiWeaponWeightsEntry _sword = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Sword);
     [SerializeField] private CombatAiWeaponWeightsEntry _shield = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Shield);
     [SerializeField] private CombatAiWeaponWeightsEntry _wand = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Wand);
@@ -24,34 +32,24 @@ public sealed class CombatAiWeaponWeightsProfile : ScriptableObject
         return GetEntry(kind).GetMoveWeight(moveCode);
     }
 
-    public float GetDamageSkillWeight(WeaponKind kind)
+    public float GetSkillWeight(WeaponKind kind, SkillBase skill)
     {
-        return GetEntry(kind).DamageSkillWeight;
+        return GetEntry(kind).GetSkillWeight(skill);
     }
 
-    public float GetProtectSkillWeight(WeaponKind kind)
+    public static float GetDefaultObjectiveWeight(WeaponKind kind, CombatObjective objective)
     {
-        return GetEntry(kind).ProtectSkillWeight;
+        return GetDefaultEntry(kind).GetObjectiveWeight(objective);
     }
 
-    public float GetHealSkillWeight(WeaponKind kind)
+    public static float GetDefaultMoveWeight(WeaponKind kind, string moveCode)
     {
-        return GetEntry(kind).HealSkillWeight;
+        return GetDefaultEntry(kind).GetMoveWeight(moveCode);
     }
 
-    public float GetBuffSkillWeight(WeaponKind kind)
+    public static float GetDefaultSkillWeight(WeaponKind kind, SkillBase skill)
     {
-        return GetEntry(kind).BuffSkillWeight;
-    }
-
-    public float GetDebuffSkillWeight(WeaponKind kind)
-    {
-        return GetEntry(kind).DebuffSkillWeight;
-    }
-
-    public float GetStealthSkillWeight(WeaponKind kind)
-    {
-        return GetEntry(kind).StealthSkillWeight;
+        return GetDefaultEntry(kind).GetSkillWeight(skill);
     }
 
     public void SetObjectiveWeight(WeaponKind kind, CombatObjective objective, float value)
@@ -100,6 +98,20 @@ public sealed class CombatAiWeaponWeightsProfile : ScriptableObject
             _ => _unarmed,
         };
     }
+
+    private static CombatAiWeaponWeightsEntry GetDefaultEntry(WeaponKind kind)
+    {
+        return kind switch
+        {
+            WeaponKind.Sword => DefaultSword,
+            WeaponKind.Shield => DefaultShield,
+            WeaponKind.Wand => DefaultWand,
+            WeaponKind.Grimoire => DefaultGrimoire,
+            WeaponKind.Bible => DefaultBible,
+            WeaponKind.Rosary => DefaultRosary,
+            _ => DefaultUnarmed,
+        };
+    }
 }
 
 [Serializable]
@@ -141,16 +153,27 @@ public sealed class CombatAiWeaponWeightsEntry
     {
         return moveCode switch
         {
-            "AdvanceEnemyStone" => _moves.AdvanceEnemyStone,
-            "ReturnOwnStone" => _moves.ReturnOwnStone,
-            "PursueEnemy" => _moves.PursueEnemy,
-            "SupportAlly" => _moves.SupportAlly,
-            "TakeHighGround" => _moves.TakeHighGround,
-            "MoveForest" => _moves.MoveForest,
-            "SearchLastKnown" => _moves.SearchLastKnown,
-            "HoldPosition" => _moves.HoldPosition,
+            CombatAiMoveCode.AdvanceEnemyStone => _moves.AdvanceEnemyStone,
+            CombatAiMoveCode.ReturnOwnStone => _moves.ReturnOwnStone,
+            CombatAiMoveCode.PursueEnemy => _moves.PursueEnemy,
+            CombatAiMoveCode.SupportAlly => _moves.SupportAlly,
+            CombatAiMoveCode.TakeHighGround => _moves.TakeHighGround,
+            CombatAiMoveCode.MoveForest => _moves.MoveForest,
+            CombatAiMoveCode.SearchLastKnown => _moves.SearchLastKnown,
+            CombatAiMoveCode.HoldPosition => _moves.HoldPosition,
             _ => 0f,
         };
+    }
+
+    public float GetSkillWeight(SkillBase skill)
+    {
+        if (CombatAiSkillClassifier.IsDamage(skill)) return DamageSkillWeight;
+        if (CombatAiSkillClassifier.IsProtect(skill)) return ProtectSkillWeight;
+        if (CombatAiSkillClassifier.IsHeal(skill)) return HealSkillWeight;
+        if (CombatAiSkillClassifier.IsBuff(skill)) return BuffSkillWeight;
+        if (CombatAiSkillClassifier.IsDebuff(skill)) return DebuffSkillWeight;
+        if (CombatAiSkillClassifier.IsStealth(skill)) return StealthSkillWeight;
+        return 0f;
     }
 
     public void SetObjectiveWeight(CombatObjective objective, float value)

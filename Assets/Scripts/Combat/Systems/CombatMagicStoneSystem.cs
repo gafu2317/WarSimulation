@@ -35,11 +35,26 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
         }
 
         RebindViews();
+        NotifyAllStatesChanged();
     }
 
     public bool TryGetState(int featureIndex, out MagicStoneRuntimeState state)
     {
         return _states.TryGetValue(featureIndex, out state);
+    }
+
+    public bool TryGetState(FeatureType type, out MagicStoneRuntimeState state)
+    {
+        foreach (KeyValuePair<int, MagicStoneRuntimeState> pair in _states)
+        {
+            if (pair.Value.Type != type) continue;
+
+            state = pair.Value;
+            return true;
+        }
+
+        state = null;
+        return false;
     }
 
     public bool TryGetHP(int featureIndex, out int hp)
@@ -120,6 +135,14 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
 
             RegisterView(view.FeatureIndex, view);
             view.OnRestored();
+        }
+    }
+
+    private void NotifyAllStatesChanged()
+    {
+        foreach (KeyValuePair<int, MagicStoneRuntimeState> pair in _states)
+        {
+            StateChanged?.Invoke(pair.Key);
         }
     }
 

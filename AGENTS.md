@@ -3,6 +3,12 @@
 docsにゲームの内容についてが書いてあるよ
 ./docs
 
+## Code Style
+
+- Prefer short, simple code, but do not sacrifice readability, correctness, or consistency with existing project patterns.
+- Avoid unnecessary abstractions, wrapper methods, temporary variables, comments, and branching when the same behavior can be expressed clearly with less code.
+- Do not compress code in ways that make intent harder to understand, hide important state changes, or make Unity Inspector usage less clear.
+
 ## Verification Notes
 
 - Avoid launching Unity in batchmode for routine verification because it can hang during licensing initialization and force the running Unity Editor to close.

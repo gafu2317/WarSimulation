@@ -8,7 +8,7 @@ public sealed class WandGodsHandSkill : SkillBase
 
     public WandGodsHandSkill(
         float intScale = 1.6f,
-        float maxRange = 10f,
+        float maxRange = 20f,
         float cooldownSeconds = 9f)
     {
         _intScale = intScale;
@@ -19,18 +19,16 @@ public sealed class WandGodsHandSkill : SkillBase
     public override string Name => "神の手";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float MaxRange => _maxRange;
+    public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
-        Character target = context.PrimaryTarget;
-        if (self == null || target == null || target.Health == null) return;
-        if (!target.Health.IsTargetable) return;
-
-        float distance = ComputeHorizontalDistance(self, target);
+        if (self == null || !context.HasAnyResolvedTarget) return;
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
-        damage = ComputeStealthAwareDamage(self, target, damage);
-        target.Health.TakeDamage(damage, self);
-        BreakStealthOnUse(self);
+        if (TakeDamage(self, context, damage) > 0)
+        {
+            BreakStealthOnUse(self);
+        }
     }
 }

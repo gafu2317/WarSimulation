@@ -23,6 +23,8 @@ public sealed class IdentifiedSkill : SkillBase
 
     public override float AreaRadius => _inner.AreaRadius;
 
+    public override bool CanTargetMagicStone => _inner.CanTargetMagicStone;
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         CombatSkillDebugIndicatorSystem.Show(self, _skillId, Name, context);

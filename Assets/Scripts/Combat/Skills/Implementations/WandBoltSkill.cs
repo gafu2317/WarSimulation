@@ -8,7 +8,7 @@ public sealed class WandBoltSkill : SkillBase
 
     public WandBoltSkill(
         float intScale = 0.8f,
-        float maxRange = 8f,
+        float maxRange = 16f,
         float cooldownSeconds = 1.4f)
     {
         _intScale = intScale;
@@ -21,14 +21,15 @@ public sealed class WandBoltSkill : SkillBase
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float MaxRange => _maxRange;
+    public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
-        Character target = context.PrimaryTarget;
-        if (self == null || target == null || target.Health == null) return;
-        if (!target.Health.IsTargetable) return;
+        if (self == null || !context.HasAnyResolvedTarget) return;
 
-        float distance = ComputeHorizontalDistance(self, target);
+        float distance = context.PrimaryTarget != null
+            ? ComputeHorizontalDistance(self, context.PrimaryTarget)
+            : ComputeHorizontalDistance(self, context.PrimaryStone);
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
         damage = ComputeDistanceScaledAmount(
@@ -37,8 +38,9 @@ public sealed class WandBoltSkill : SkillBase
             _maxRange,
             nearMultiplier: 0.8f,
             farMultiplier: 1.5f);
-        damage = ComputeStealthAwareDamage(self, target, damage);
-        target.Health.TakeDamage(damage, self);
-        BreakStealthOnUse(self);
+        if (TakeDamage(self, context, damage) > 0)
+        {
+            BreakStealthOnUse(self);
+        }
     }
 }

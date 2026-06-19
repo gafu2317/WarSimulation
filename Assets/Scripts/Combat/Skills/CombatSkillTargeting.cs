@@ -1,11 +1,22 @@
 using System.Collections.Generic;
 using UnityEngine;
+using WarSimulation.Combat.Map;
 
 public static class CombatSkillTargeting
 {
     public static IReadOnlyList<Character> GetEnemiesInRadius(Character owner, Vector3 center, float radius)
     {
         return CollectCharacters(owner, includeAllies: false, center, radius, includeSelf: false);
+    }
+
+    public static IReadOnlyList<MagicStone> GetEnemyStones(Character owner)
+    {
+        return CollectEnemyStones(owner, center: default, radius: float.PositiveInfinity);
+    }
+
+    public static IReadOnlyList<MagicStone> GetEnemyStonesInRadius(Character owner, Vector3 center, float radius)
+    {
+        return CollectEnemyStones(owner, center, radius);
     }
 
     public static IReadOnlyList<Character> GetAlliesInRadius(
@@ -55,10 +66,17 @@ public static class CombatSkillTargeting
         return CollectCharacters(owner, includeAllies: true, center: default, radius: float.PositiveInfinity, includeSelf);
     }
 
-    public static SkillExecutionContext CreateEnemyAreaContext(Character owner, Vector3 center, float radius)
+    public static SkillExecutionContext CreateEnemyAreaContext(
+        Character owner,
+        Vector3 center,
+        float radius,
+        bool includeMagicStones = true)
     {
         IReadOnlyList<Character> targets = GetEnemiesInRadius(owner, center, radius);
-        return SkillExecutionContext.ForPoint(center, targets);
+        IReadOnlyList<MagicStone> stones = includeMagicStones
+            ? GetEnemyStonesInRadius(owner, center, radius)
+            : System.Array.Empty<MagicStone>();
+        return SkillExecutionContext.ForPoint(center, targets, stones);
     }
 
     public static SkillExecutionContext CreateAllyAreaContext(
@@ -73,7 +91,7 @@ public static class CombatSkillTargeting
 
     public static SkillExecutionContext CreateRecognizedEnemiesContext(Character owner)
     {
-        return SkillExecutionContext.ForTargets(GetRecognizedEnemies(owner));
+        return SkillExecutionContext.ForTargets(GetRecognizedEnemies(owner), GetEnemyStones(owner));
     }
 
     public static SkillExecutionContext CreateAllAlliesContext(Character owner, bool includeSelf = false)
@@ -122,6 +140,57 @@ public static class CombatSkillTargeting
         }
 
         return results;
+    }
+
+    private static IReadOnlyList<MagicStone> CollectEnemyStones(Character owner, Vector3 center, float radius)
+    {
+        if (owner == null)
+        {
+            return System.Array.Empty<MagicStone>();
+        }
+
+        float radiusSqr = radius * radius;
+        bool filterByRadius = !float.IsPositiveInfinity(radius);
+        var results = new List<MagicStone>();
+        MagicStone[] stones = Object.FindObjectsByType<MagicStone>(FindObjectsInactive.Exclude);
+        for (int i = 0; i < stones.Length; i++)
+        {
+            MagicStone stone = stones[i];
+            if (!IsValidEnemyStone(owner, stone)) continue;
+
+            if (filterByRadius)
+            {
+                Vector3 delta = stone.transform.position - center;
+                delta.y = 0f;
+                if (delta.sqrMagnitude > radiusSqr) continue;
+            }
+
+            results.Add(stone);
+        }
+
+        return results;
+    }
+
+    public static bool IsValidEnemyStone(Character owner, MagicStone stone)
+    {
+        if (owner == null || stone == null || stone.FeatureIndex < 0) return false;
+        if (!IsEnemyStoneType(owner.Team, stone.FeatureType)) return false;
+
+        CombatVision vision = owner.Vision;
+        vision?.UpdateVision();
+        if (vision != null && !vision.HasLineOfSight(stone.transform)) return false;
+
+        CombatMagicStoneSystem system = CombatMagicStoneSystemResolver.Resolve();
+        return system == null ||
+            !system.TryGetState(stone.FeatureIndex, out MagicStoneRuntimeState state) ||
+            state.HP > 0;
+    }
+
+    private static bool IsEnemyStoneType(CombatTeam ownerTeam, FeatureType featureType)
+    {
+        return ownerTeam == CombatTeam.Ally
+            ? featureType == FeatureType.EnemyMainStone || featureType == FeatureType.EnemySubStone
+            : featureType == FeatureType.OwnMainStone || featureType == FeatureType.OwnSubStone;
     }
 
     private static bool IsValidCandidate(Character owner, Character candidate, bool includeAllies)

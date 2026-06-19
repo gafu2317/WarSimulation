@@ -39,14 +39,14 @@ public sealed class CombatAiWeaponWeightsProfileEditor : Editor
 
     private static readonly string[] MoveNames =
     {
-        "AdvanceEnemyStone",
-        "ReturnOwnStone",
-        "PursueEnemy",
-        "SupportAlly",
-        "TakeHighGround",
-        "MoveForest",
-        "SearchLastKnown",
-        "HoldPosition",
+        CombatAiMoveCode.AdvanceEnemyStone,
+        CombatAiMoveCode.ReturnOwnStone,
+        CombatAiMoveCode.PursueEnemy,
+        CombatAiMoveCode.SupportAlly,
+        CombatAiMoveCode.TakeHighGround,
+        CombatAiMoveCode.MoveForest,
+        CombatAiMoveCode.SearchLastKnown,
+        CombatAiMoveCode.HoldPosition,
     };
 
     private static readonly string[] SkillNames =

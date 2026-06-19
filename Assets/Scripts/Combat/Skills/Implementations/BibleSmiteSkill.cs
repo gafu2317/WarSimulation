@@ -21,18 +21,16 @@ public sealed class BibleSmiteSkill : SkillBase
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float MaxRange => _maxRange;
+    public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
-        Character target = context.PrimaryTarget;
-        if (self == null || target == null || target.Health == null) return;
-        if (!target.Health.IsTargetable) return;
-
-        float distance = ComputeHorizontalDistance(self, target);
+        if (self == null || !context.HasAnyResolvedTarget) return;
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.FAI) * _faiScale));
-        damage = ComputeStealthAwareDamage(self, target, damage);
-        target.Health.TakeDamage(damage, self);
-        BreakStealthOnUse(self);
+        if (TakeDamage(self, context, damage) > 0)
+        {
+            BreakStealthOnUse(self);
+        }
     }
 }

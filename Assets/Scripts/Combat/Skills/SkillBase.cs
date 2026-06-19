@@ -14,9 +14,17 @@ public abstract class SkillBase
 
     public virtual float AreaRadius => 0f;
 
+    public virtual bool CanTargetMagicStone => false;
+
     public abstract void Execute(Character self, SkillExecutionContext context);
 
     protected static float ComputeHorizontalDistance(Character self, Character target)
+    {
+        if (self == null || target == null) return 0f;
+        return ComputeHorizontalDistance(self.transform.position, target.transform.position);
+    }
+
+    protected static float ComputeHorizontalDistance(Character self, MagicStone target)
     {
         if (self == null || target == null) return 0f;
         return ComputeHorizontalDistance(self.transform.position, target.transform.position);
@@ -66,6 +74,32 @@ public abstract class SkillBase
         }
 
         return Mathf.Max(1, Mathf.RoundToInt(baseDamage * multiplier));
+    }
+
+    protected static int TakeDamage(Character self, SkillExecutionContext context, int amount)
+    {
+        if (context.PrimaryTarget != null)
+        {
+            return TakeDamage(self, context.PrimaryTarget, amount);
+        }
+
+        return TakeDamage(context.PrimaryStone, amount);
+    }
+
+    protected static int TakeDamage(Character self, Character target, int amount)
+    {
+        if (target == null || target.Health == null || !target.Health.IsTargetable) return 0;
+
+        int damage = ComputeStealthAwareDamage(self, target, amount);
+        return target.Health.TakeDamage(damage, self);
+    }
+
+    protected static int TakeDamage(MagicStone target, int amount)
+    {
+        if (target == null || target.FeatureIndex < 0 || amount <= 0) return 0;
+
+        CombatMagicStoneSystem system = CombatMagicStoneSystemResolver.Resolve();
+        return system != null ? system.TakeDamage(target.FeatureIndex, amount) : 0;
     }
 
     protected static void BreakStealthOnUse(Character self)
