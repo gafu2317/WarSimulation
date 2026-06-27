@@ -20,6 +20,8 @@ public sealed class RosaryCloseHealSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
+    public override float CastTimeSeconds => 1.3f;
+
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
 
     public override float MaxRange => _maxRange;
@@ -29,8 +31,9 @@ public sealed class RosaryCloseHealSkill : SkillBase
         Character target = context.PrimaryTarget;
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
+        context = context.Capture(self);
 
-        int healAmount = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.FAI) * _faiScale));
+        int healAmount = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.FAI) * _faiScale));
         target.Health.Heal(healAmount);
     }
 }

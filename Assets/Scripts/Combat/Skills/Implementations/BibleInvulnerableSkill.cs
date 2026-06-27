@@ -13,6 +13,7 @@ public sealed class BibleInvulnerableSkill : SkillBase
 
     public override string Name => "無敵";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1.2f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Self;
 
     public override void Execute(Character self, SkillExecutionContext context)

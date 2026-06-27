@@ -50,6 +50,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         ResolveDependencies();
         if (!CanRun()) return false;
+        if (_owner.SkillCaster.IsCasting) return false;
 
         LastContext = _contextCollector.Collect(_owner);
         PruneFocusedEnemy(LastContext);
@@ -68,6 +69,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         ResolveDependencies();
         if (!CanRun()) return false;
+        if (_owner.SkillCaster.IsCasting) return false;
 
         LastPlan = plan;
         RefreshWorldLabel();
@@ -119,10 +121,7 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         if (!evaluation.CanUse) return false;
 
-        plan.Skill.Execute(_owner, evaluation.Context);
-        _owner.SkillCooldowns?.StartCooldown(plan.Skill);
-        CombatSkillUseEvents.RaiseSkillUsed(_owner, plan.Skill.Name);
-        return true;
+        return _owner.SkillCaster.TryStartCast(plan.Skill, evaluation.Context);
     }
 
     private bool TryExecuteMovement(CombatAiPlan plan)
@@ -236,7 +235,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         if (_owner == null || _contextCollector == null) return false;
         if (_owner.Health == null || !_owner.Health.CanAct) return false;
-        return CombatBattleFlow.IsRunning;
+        return CombatBattleFlow.AllowsCombatActions;
     }
 
     private void ResolveDependencies()

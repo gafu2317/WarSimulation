@@ -7,6 +7,35 @@
 
 `Assets/Data/Combat/Skills/*.asset` の `SkillDefinition` は表示名と必要武器種の管理が中心で、射程や威力は持っていない。
 
+## 詠唱時間
+
+詠唱時間は各スキル実装の `CastTimeSeconds` にある。魔法系4武器は以下の初期値を使用し、クールダウンは詠唱完了後に開始する。
+
+| 武器 | スキル | 詠唱秒 |
+|---|---|---:|
+| Wand | `Wand_Bolt` | 0.6 |
+| Wand | `Wand_ArcaneBlast` | 1.5 |
+| Wand | `Wand_AreaBlast` | 1.5 |
+| Wand | `Wand_GodsHand` | 2.5 |
+| Grimoire | `Grimoire_Bolt` | 0.7 |
+| Grimoire | STR/INT/FAI/AGIデバフ | 1.0 |
+| Grimoire | `Grimoire_Bind` | 1.4 |
+| Grimoire | `Grimoire_Poison` | 1.1 |
+| Grimoire | `Grimoire_Stealth` | 0.8 |
+| Bible | `Bible_Smite` | 0.7 |
+| Bible | STR/INT/FAI/AGIバフ | 0.9 |
+| Bible | `Bible_Invulnerable` | 1.2 |
+| Bible | `Bible_Gotsume` | 1.0 |
+| Bible | `Bible_CarryRush` | 1.2 |
+| Rosary | `Rosary_Strike` | 0.6 |
+| Rosary | `Rosary_DistantHeal` | 0.9 |
+| Rosary | `Rosary_CloseHeal` | 1.3 |
+| Rosary | `Rosary_Regeneration` | 1.0 |
+| Rosary | `Rosary_HealingArea` | 1.5 |
+| Rosary | `Rosary_SacrificeThunder` | 2.5 |
+
+`Sword` と `Shield` のスキルは0秒で即時実行する。
+
 ## 現在の計算式
 
 - 攻撃/回復の基本式: `最終値 = 実効ステータス × スキル係数`

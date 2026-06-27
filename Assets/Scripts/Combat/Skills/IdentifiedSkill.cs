@@ -15,6 +15,8 @@ public sealed class IdentifiedSkill : SkillBase
 
     public override float CooldownSeconds => _inner.CooldownSeconds;
 
+    public override float CastTimeSeconds => _inner.CastTimeSeconds;
+
     public override string CooldownKey => _skillId.ToString();
 
     public override SkillTargetKind TargetKind => _inner.TargetKind;
@@ -30,4 +32,5 @@ public sealed class IdentifiedSkill : SkillBase
         CombatSkillDebugIndicatorSystem.Show(self, _skillId, Name, context);
         _inner.Execute(self, context);
     }
+
 }

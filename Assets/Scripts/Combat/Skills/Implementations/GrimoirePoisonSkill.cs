@@ -24,6 +24,7 @@ public sealed class GrimoirePoisonSkill : SkillBase
 
     public override string Name => "毒";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1.1f;
     public override float MaxRange => _maxRange;
 
     public override void Execute(Character self, SkillExecutionContext context)

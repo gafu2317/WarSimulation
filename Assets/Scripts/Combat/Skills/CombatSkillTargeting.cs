@@ -6,7 +6,7 @@ public static class CombatSkillTargeting
 {
     public static IReadOnlyList<Character> GetEnemiesInRadius(Character owner, Vector3 center, float radius)
     {
-        return CollectCharacters(owner, includeAllies: false, center, radius, includeSelf: false);
+        return CollectCharacters(owner, includeAllies: false, center, radius, includeSelf: false, requireRecognition: false);
     }
 
     public static IReadOnlyList<MagicStone> GetEnemyStones(Character owner)
@@ -25,7 +25,7 @@ public static class CombatSkillTargeting
         float radius,
         bool includeSelf = false)
     {
-        return CollectCharacters(owner, includeAllies: true, center, radius, includeSelf);
+        return CollectCharacters(owner, includeAllies: true, center, radius, includeSelf, requireRecognition: false);
     }
 
     public static IReadOnlyList<Character> GetRecognizedEnemies(Character owner)
@@ -42,10 +42,7 @@ public static class CombatSkillTargeting
         }
 
         vision.UpdateVision();
-        CombatCharacterSystem characterSystem = ResolveCharacterSystem();
-        IReadOnlyList<Character> enemies = characterSystem != null
-            ? characterSystem.GetEnemiesOf(owner)
-            : System.Array.Empty<Character>();
+        IReadOnlyList<Character> enemies = GetCharactersForTeam(owner, includeAllies: false);
         var recognized = new List<Character>();
 
         for (int i = 0; i < enemies.Count; i++)
@@ -63,7 +60,13 @@ public static class CombatSkillTargeting
 
     public static IReadOnlyList<Character> GetAllAllies(Character owner, bool includeSelf = false)
     {
-        return CollectCharacters(owner, includeAllies: true, center: default, radius: float.PositiveInfinity, includeSelf);
+        return CollectCharacters(
+            owner,
+            includeAllies: true,
+            center: default,
+            radius: float.PositiveInfinity,
+            includeSelf,
+            requireRecognition: false);
     }
 
     public static SkillExecutionContext CreateEnemyAreaContext(
@@ -104,17 +107,15 @@ public static class CombatSkillTargeting
         bool includeAllies,
         Vector3 center,
         float radius,
-        bool includeSelf)
+        bool includeSelf,
+        bool requireRecognition)
     {
         if (owner == null)
         {
             return System.Array.Empty<Character>();
         }
 
-        CombatCharacterSystem characterSystem = ResolveCharacterSystem();
-        IReadOnlyList<Character> source = includeAllies
-            ? characterSystem != null ? characterSystem.GetAlliesOf(owner) : System.Array.Empty<Character>()
-            : characterSystem != null ? characterSystem.GetEnemiesOf(owner) : System.Array.Empty<Character>();
+        IReadOnlyList<Character> source = GetCharactersForTeam(owner, includeAllies);
         CombatVision vision = !includeAllies ? owner.Vision : null;
         vision?.UpdateVision();
 
@@ -122,12 +123,42 @@ public static class CombatSkillTargeting
         bool filterByRadius = !float.IsPositiveInfinity(radius);
         var results = new List<Character>();
 
+        bool sourceContainsOwner = false;
+        for (int i = 0; i < source.Count; i++)
+        {
+            if (source[i] == owner)
+            {
+                sourceContainsOwner = true;
+                break;
+            }
+        }
+
+        if (includeAllies &&
+            includeSelf &&
+            !sourceContainsOwner &&
+            IsValidCandidate(owner, owner, includeAllies: true, requireRecognition: false))
+        {
+            if (!filterByRadius)
+            {
+                results.Add(owner);
+            }
+            else
+            {
+                Vector3 delta = owner.transform.position - center;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSqr)
+                {
+                    results.Add(owner);
+                }
+            }
+        }
+
         for (int i = 0; i < source.Count; i++)
         {
             Character candidate = source[i];
             if (candidate == null) continue;
             if (candidate == owner && !includeSelf) continue;
-            if (!IsValidCandidate(owner, candidate, includeAllies)) continue;
+            if (!IsValidCandidate(owner, candidate, includeAllies, requireRecognition)) continue;
 
             if (filterByRadius)
             {
@@ -195,6 +226,15 @@ public static class CombatSkillTargeting
 
     private static bool IsValidCandidate(Character owner, Character candidate, bool includeAllies)
     {
+        return IsValidCandidate(owner, candidate, includeAllies, requireRecognition: true);
+    }
+
+    private static bool IsValidCandidate(
+        Character owner,
+        Character candidate,
+        bool includeAllies,
+        bool requireRecognition)
+    {
         CombatHealth health = candidate.Health;
         if (health == null) return false;
 
@@ -206,18 +246,78 @@ public static class CombatSkillTargeting
 
         if (candidate.Team == owner.Team) return false;
         CombatVision vision = owner.Vision;
-        if (vision != null && !vision.HasRecognitionOf(candidate)) return false;
+        if (requireRecognition && vision != null && !vision.HasRecognitionOf(candidate)) return false;
         return health.IsTargetable;
     }
 
-    private static CombatCharacterSystem ResolveCharacterSystem()
+    private static IReadOnlyList<Character> GetCharactersForTeam(Character owner, bool includeAllies)
+    {
+        CombatCharacterSystem characterSystem = ResolveCharacterSystem(owner);
+        if (characterSystem != null && ContainsCharacter(characterSystem, owner))
+        {
+            return includeAllies
+                ? characterSystem.GetAlliesOf(owner)
+                : characterSystem.GetEnemiesOf(owner);
+        }
+
+        return FindCharactersByTeam(owner, includeAllies);
+    }
+
+    private static IReadOnlyList<Character> FindCharactersByTeam(Character owner, bool includeAllies)
+    {
+        Character[] allCharacters = Object.FindObjectsByType<Character>(FindObjectsInactive.Exclude);
+        if (allCharacters == null || allCharacters.Length == 0)
+        {
+            return System.Array.Empty<Character>();
+        }
+
+        var results = new List<Character>();
+        for (int i = 0; i < allCharacters.Length; i++)
+        {
+            Character candidate = allCharacters[i];
+            if (candidate == null || candidate == owner) continue;
+
+            bool sameTeam = candidate.Team == owner.Team;
+            if (includeAllies ? sameTeam : !sameTeam)
+            {
+                results.Add(candidate);
+            }
+        }
+
+        return results;
+    }
+
+    private static bool ContainsCharacter(CombatCharacterSystem system, Character character)
+    {
+        if (system == null || character == null) return false;
+        return system.AllyCharacters.Contains(character) || system.EnemyCharacters.Contains(character);
+    }
+
+    private static CombatCharacterSystem ResolveCharacterSystem(Character owner)
     {
         CombatSceneContext context = CombatSceneContext.Instance;
         if (context != null && context.CharacterSystem != null)
         {
-            return context.CharacterSystem;
+            if (owner == null || ContainsCharacter(context.CharacterSystem, owner))
+            {
+                return context.CharacterSystem;
+            }
         }
 
-        return Object.FindAnyObjectByType<CombatCharacterSystem>();
+        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (systems != null)
+        {
+            for (int i = systems.Length - 1; i >= 0; i--)
+            {
+                if (owner == null || ContainsCharacter(systems[i], owner))
+                {
+                    return systems[i];
+                }
+            }
+
+            return systems.Length > 0 ? systems[systems.Length - 1] : null;
+        }
+
+        return null;
     }
 }

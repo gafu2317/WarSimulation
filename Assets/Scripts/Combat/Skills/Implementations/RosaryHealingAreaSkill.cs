@@ -27,6 +27,7 @@ public sealed class RosaryHealingAreaSkill : SkillBase
 
     public override string Name => "回復エリア";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1.5f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Point;
     public override float MaxRange => _maxRange;
     public override float AreaRadius => _radius;

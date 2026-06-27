@@ -64,6 +64,12 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         EnsureBuilt();
         if (_weaponText == null || _weaponBackgroundImage == null || _weaponRoot == null) return;
 
+        if (weapon == null)
+        {
+            _character ??= GetComponent<Character>();
+            weapon = _character != null ? _character.EquippedWeapon : null;
+        }
+
         _weaponText.text = CombatAiDebugLabels.WeaponShort(weapon);
         _weaponText.color = ResolveLabelTextColor();
         _weaponBackgroundImage.color = _weaponBackgroundColor;
@@ -116,7 +122,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         if (_labelRoot == null) return;
 
         RefreshTransientState(Time.time);
-        Camera mainCamera = Camera.main;
+        Camera mainCamera = ResolveActiveCamera();
         if (_cameraTransform == null && mainCamera != null)
         {
             _cameraTransform = mainCamera.transform;
@@ -130,11 +136,12 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         }
 
         Vector3 worldPosition = transform.position + _localOffset;
-        Vector3 screenPoint = mainCamera.WorldToScreenPoint(worldPosition);
-        _isInFrontOfCamera = screenPoint.z > 0f;
+        Vector3 toLabel = worldPosition - mainCamera.transform.position;
+        _isInFrontOfCamera = Vector3.Dot(mainCamera.transform.forward, toLabel) > 0f;
         UpdateRootVisibleState();
         if (!_isInFrontOfCamera) return;
 
+        Vector3 screenPoint = mainCamera.WorldToScreenPoint(worldPosition);
         RectTransform rootRect = (RectTransform)_labelRoot;
         if (s_overlayCanvasRect != null &&
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -147,6 +154,28 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         }
     }
 
+    private Camera ResolveActiveCamera()
+    {
+        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = cameras.Length - 1; i >= 0; i--)
+        {
+            Camera camera = cameras[i];
+            if (camera != null && camera.isActiveAndEnabled && camera.CompareTag("MainCamera"))
+            {
+                _cameraTransform = camera.transform;
+                return camera;
+            }
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            _cameraTransform = mainCamera.transform;
+        }
+
+        return mainCamera;
+    }
+
     public void RefreshTransientState(float currentTime)
     {
         if (_skillRoot == null) return;
@@ -157,6 +186,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
     private void EnsureBuilt()
     {
         if (_labelRoot != null) return;
+        _character ??= GetComponent<Character>();
 
         EnsureOverlayCanvas();
 

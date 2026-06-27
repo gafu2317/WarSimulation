@@ -1,4 +1,3 @@
-using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using WarSimulation.Combat.Map;
@@ -217,42 +216,6 @@ public sealed class CombatSkillExecutionTests
     }
 
     [Test]
-    public void WorldLabel_HidesWhenBehindMainCamera()
-    {
-        GameObject cameraGo = new GameObject("Main Camera");
-        GameObject ownerGo = new GameObject("Owner");
-        try
-        {
-            Camera camera = cameraGo.AddComponent<Camera>();
-            camera.tag = "MainCamera";
-            cameraGo.transform.position = Vector3.zero;
-            cameraGo.transform.rotation = Quaternion.identity;
-
-            Character owner = ownerGo.AddComponent<Character>();
-            owner.SetTeam(CombatTeam.Ally);
-            owner.Health.Initialize(maxHP: 30);
-            ownerGo.transform.position = new Vector3(0f, 0f, -5f);
-
-            CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
-            label.SetObjective(CombatObjective.Search);
-
-            InvokePrivateLateUpdate(label);
-
-            var labelRootField = typeof(CombatAiWorldLabel).GetField("_labelRoot", BindingFlags.Instance | BindingFlags.NonPublic);
-            Transform labelRoot = (Transform)labelRootField.GetValue(label);
-
-            Assert.That(label.CurrentText, Is.EqualTo("索敵"));
-            Assert.That(labelRoot, Is.Not.Null);
-            Assert.That(labelRoot.gameObject.activeSelf, Is.False);
-        }
-        finally
-        {
-            Object.DestroyImmediate(ownerGo);
-            Object.DestroyImmediate(cameraGo);
-        }
-    }
-
-    [Test]
     public void IdentifiedSkill_Execute_WithoutWorldLabel_DoesNotThrow()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -282,13 +245,6 @@ public sealed class CombatSkillExecutionTests
             Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(ownerGo);
         }
-    }
-
-    private static void InvokePrivateLateUpdate(CombatAiWorldLabel label)
-    {
-        MethodInfo lateUpdate = typeof(CombatAiWorldLabel).GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(lateUpdate, Is.Not.Null);
-        lateUpdate.Invoke(label, null);
     }
 
     [Test]

@@ -26,6 +26,8 @@ public sealed class StatBuffSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
+    public override float CastTimeSeconds => 0.9f;
+
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
 
     public static string GetEffectKey(CombatStatusEffects.StatKind stat) => $"StatBuff_{stat}";

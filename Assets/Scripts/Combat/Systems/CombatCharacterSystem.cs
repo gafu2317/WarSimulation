@@ -305,6 +305,7 @@ public class CombatCharacterSystem : MonoBehaviour
         character.GetComponent<BibleGotsumeEffect>()?.CancelImmediate();
         character.GetComponent<ShieldShoulderGuardEffect>()?.CancelImmediate();
         character.GetComponent<BibleCarryRushEffect>()?.CancelImmediate();
+        character.SkillCaster.ClearCast();
     }
 
     private void Awake()

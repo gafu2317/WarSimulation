@@ -20,18 +20,21 @@ public sealed class WandBoltSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
+    public override float CastTimeSeconds => 0.6f;
+
     public override float MaxRange => _maxRange;
     public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasAnyResolvedTarget) return;
+        context = context.Capture(self);
 
         float distance = context.PrimaryTarget != null
-            ? ComputeHorizontalDistance(self, context.PrimaryTarget)
-            : ComputeHorizontalDistance(self, context.PrimaryStone);
+            ? context.GetDistance(context.PrimaryTarget)
+            : context.GetDistance(context.PrimaryStone);
 
-        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.INT) * _intScale));
         damage = ComputeDistanceScaledAmount(
             damage,
             distance,

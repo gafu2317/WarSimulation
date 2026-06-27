@@ -76,11 +76,13 @@ public static class CombatAiObjectiveScorer
             CombatObjective.DestroyEnemyStone => assessment.GetValue("EnemyStoneReachability") * 0.85f
                 - assessment.GetValue("OwnStoneThreat") * 0.35f
                 - assessment.GetValue("SelfThreat") * 0.2f
-                + (context.HasEnemyStonePosition ? 24f : 0f)
-                + UnityEngine.Mathf.Max(0f, 20f - assessment.GetValue("AllyFragility") * 0.2f),
+                + (context.HasEnemyStonePosition ? 4f : 0f)
+                + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue("AllyFragility") * 0.1f)
+                - (context.VisibleEnemies.Count > 0 ? 28f : 0f),
             CombatObjective.Search => (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.55f
                 + assessment.GetValue("TerrainAdvantage") * 0.2f
-                - (context.HasEnemyStonePosition ? 28f : 0f),
+                - (context.HasEnemyStonePosition ? 14f : 0f)
+                + (context.VisibleEnemies.Count == 0 && context.HighGroundCandidates.Count > 0 ? 14f : 0f),
             CombatObjective.Retreat => assessment.GetValue("SelfThreat") * 0.9f
                 + assessment.GetValue("RetreatRouteSafety") * 0.3f
                 + assessment.GetValue("AllyFragility") * 0.1f,

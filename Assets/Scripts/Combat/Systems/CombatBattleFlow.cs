@@ -22,6 +22,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
     public CombatBattleState State => _state;
 
     public static bool IsRunning => s_instance != null && s_instance._state == CombatBattleState.Running;
+    public static bool AllowsCombatActions => s_instance == null || s_instance._state == CombatBattleState.Running;
 
     private void Awake()
     {

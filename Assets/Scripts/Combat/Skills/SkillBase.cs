@@ -6,6 +6,8 @@ public abstract class SkillBase
 
     public virtual float CooldownSeconds => 0f;
 
+    public virtual float CastTimeSeconds => 0f;
+
     public virtual string CooldownKey => GetType().FullName;
 
     public virtual SkillTargetKind TargetKind => SkillTargetKind.Enemy;
@@ -66,7 +68,11 @@ public abstract class SkillBase
         CombatVision targetVision = target.Vision;
         if (targetVision != null)
         {
-            targetVision.UpdateVision();
+            if (ShouldRefreshRecognition(self, target))
+            {
+                targetVision.UpdateVision();
+            }
+
             if (!targetVision.HasRecognitionOf(self))
             {
                 multiplier *= 1.5f;
@@ -80,17 +86,23 @@ public abstract class SkillBase
     {
         if (context.PrimaryTarget != null)
         {
-            return TakeDamage(self, context.PrimaryTarget, amount);
+            return TakeDamage(self, context, context.PrimaryTarget, amount);
         }
 
         return TakeDamage(context.PrimaryStone, amount);
     }
 
-    protected static int TakeDamage(Character self, Character target, int amount)
+    protected static int TakeDamage(
+        Character self,
+        SkillExecutionContext context,
+        Character target,
+        int amount)
     {
         if (target == null || target.Health == null || !target.Health.IsTargetable) return 0;
 
-        int damage = ComputeStealthAwareDamage(self, target, amount);
+        int damage = context.IsCaptured
+            ? Mathf.Max(1, Mathf.RoundToInt(amount * context.GetDamageMultiplier(target)))
+            : ComputeStealthAwareDamage(self, target, amount);
         return target.Health.TakeDamage(damage, self);
     }
 
@@ -107,5 +119,24 @@ public abstract class SkillBase
         if (self == null || self.StatusEffects == null || !self.StatusEffects.IsStealthed) return;
 
         self.StatusEffects.ClearEffect(CombatStatusEffects.EffectType.Stealth);
+    }
+
+    private static bool ShouldRefreshRecognition(Character self, Character target)
+    {
+        if (self == null || target == null) return false;
+
+        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = 0; i < systems.Length; i++)
+        {
+            CombatCharacterSystem system = systems[i];
+            bool hasSelf = system.AllyCharacters.Contains(self) || system.EnemyCharacters.Contains(self);
+            bool hasTarget = system.AllyCharacters.Contains(target) || system.EnemyCharacters.Contains(target);
+            if (hasSelf && hasTarget)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

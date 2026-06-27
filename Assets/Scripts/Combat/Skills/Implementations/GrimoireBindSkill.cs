@@ -18,6 +18,7 @@ public sealed class GrimoireBindSkill : SkillBase
 
     public override string Name => "金縛り";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1.4f;
     public override float MaxRange => _maxRange;
 
     public override void Execute(Character self, SkillExecutionContext context)

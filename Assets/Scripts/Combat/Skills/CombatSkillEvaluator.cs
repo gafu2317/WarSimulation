@@ -189,7 +189,11 @@ public static class CombatSkillEvaluator
                     return Fail(baseResult, "area radius missing");
                 }
 
-                SkillExecutionContext areaContext = CombatSkillTargeting.CreateEnemyAreaContext(owner, request.TargetPoint, skill.AreaRadius);
+                SkillExecutionContext areaContext = CombatSkillTargeting.CreateEnemyAreaContext(
+                    owner,
+                    request.TargetPoint,
+                    skill.AreaRadius,
+                    includeMagicStones: skill.CanTargetMagicStone);
                 if (!areaContext.HasAnyResolvedTarget)
                 {
                     return Fail(
@@ -339,8 +343,7 @@ public static class CombatSkillEvaluator
         }
 
         CombatVision vision = owner.Vision;
-        vision?.UpdateVision();
-        if (vision != null && HasCharacterSystem() && !vision.HasRecognitionOf(target))
+        if (ShouldRequireRecognition(owner, target) && !vision.HasRecognitionOf(target))
         {
             return Fail(baseResult, "enemy not recognized");
         }
@@ -463,8 +466,7 @@ public static class CombatSkillEvaluator
         if (target == null || target.Health == null) return false;
         if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
         CombatVision vision = owner.Vision;
-        vision?.UpdateVision();
-        if (vision != null && HasCharacterSystem() && !vision.HasRecognitionOf(target)) return false;
+        if (ShouldRequireRecognition(owner, target) && !vision.HasRecognitionOf(target)) return false;
         return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
     }
 
@@ -538,14 +540,33 @@ public static class CombatSkillEvaluator
         return value;
     }
 
-    private static bool HasCharacterSystem()
+    private static bool ShouldRequireRecognition(Character owner, Character target)
     {
+        if (owner == null || target == null || owner.Vision == null) return false;
+
         CombatSceneContext context = CombatSceneContext.Instance;
         if (context != null && context.CharacterSystem != null)
         {
-            return true;
+            return ContainsCharacter(context.CharacterSystem, owner) &&
+                ContainsCharacter(context.CharacterSystem, target);
         }
 
-        return Object.FindAnyObjectByType<CombatCharacterSystem>() != null;
+        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = 0; i < systems.Length; i++)
+        {
+            CombatCharacterSystem system = systems[i];
+            if (ContainsCharacter(system, owner) && ContainsCharacter(system, target))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsCharacter(CombatCharacterSystem system, Character character)
+    {
+        if (system == null || character == null) return false;
+        return system.AllyCharacters.Contains(character) || system.EnemyCharacters.Contains(character);
     }
 }

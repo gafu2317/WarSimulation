@@ -6,11 +6,9 @@ public sealed class CombatSkillEvaluatorTests
     [Test]
     public void Evaluate_AllowsSingleTargetSkillWhenHorizontalRangeIsInsideEvenIfVerticalOffsetIsLarge()
     {
-        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, registerSystem: true);
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true);
         try
         {
-            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
-            fixture.Owner.Vision.Initialize();
             fixture.EnemyGo.transform.position = new Vector3(1.5f, 10f, 0f);
             var skill = new EvaluatorTestSkill(SkillTargetKind.Enemy, maxRange: 2f);
 
@@ -29,11 +27,9 @@ public sealed class CombatSkillEvaluatorTests
     [Test]
     public void Evaluate_RejectsSingleTargetSkillWhenHorizontalRangeIsOutside()
     {
-        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, registerSystem: true);
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true);
         try
         {
-            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
-            fixture.Owner.Vision.Initialize();
             fixture.EnemyGo.transform.position = new Vector3(2.1f, 0f, 0f);
             var skill = new EvaluatorTestSkill(SkillTargetKind.Enemy, maxRange: 2f);
 
@@ -73,6 +69,74 @@ public sealed class CombatSkillEvaluatorTests
     }
 
     [Test]
+    public void Evaluate_AllowsSelfSkillWithoutExplicitTarget()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create();
+        try
+        {
+            var skill = new EvaluatorTestSkill(SkillTargetKind.Self, maxRange: 0f);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.ForSelf(fixture.Owner));
+
+            Assert.That(result.CanUse, Is.True);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Evaluate_RequiresPointForPointSkill()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create();
+        try
+        {
+            var skill = new EvaluatorTestSkill(SkillTargetKind.Point, maxRange: 5f);
+
+            CombatSkillEvaluationResult missingPoint = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.None);
+            CombatSkillEvaluationResult validPoint = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.ForPoint(fixture.OwnerGo.transform.position + Vector3.forward * 3f));
+
+            Assert.That(missingPoint.CanUse, Is.False);
+            Assert.That(validPoint.CanUse, Is.True);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Evaluate_RejectsOutOfRangePointSkill()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create();
+        try
+        {
+            var skill = new EvaluatorTestSkill(SkillTargetKind.Point, maxRange: 5f);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.ForPoint(fixture.OwnerGo.transform.position + Vector3.forward * 7f));
+
+            Assert.That(result.CanUse, Is.False);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
     public void Evaluate_RejectsAreaSkillWithoutResolvedTargets()
     {
         SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create();
@@ -81,8 +145,9 @@ public sealed class CombatSkillEvaluatorTests
             var skill = new EvaluatorTestSkill(SkillTargetKind.Area, maxRange: 5f, areaRadius: 2f);
 
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
                 skill,
-                CombatSkillEvaluationRequest.ForPoint(fixture.Owner, new Vector3(2f, 0f, 0f)));
+                SkillExecutionContext.ForPoint(new Vector3(2f, 0f, 0f)));
 
             Assert.That(result.CanUse, Is.False);
             Assert.That(result.FailureReason, Is.EqualTo("no targets in area"));
@@ -133,6 +198,29 @@ public sealed class CombatSkillEvaluatorTests
 
             Assert.That(result.CanUse, Is.False);
             Assert.That(result.FailureReason, Is.EqualTo("no enemies"));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Evaluate_RejectsRecognizedEnemiesContextWithInvalidTargets()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, withAlly: true, registerSystem: true);
+        try
+        {
+            CombatEditModeTestUtil.WireVision(fixture.Owner.Vision, fixture.CharacterSystem);
+            fixture.Owner.Vision.Initialize();
+            var skill = new EvaluatorTestSkill(SkillTargetKind.RecognizedEnemies, maxRange: 5f);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                fixture.Owner,
+                skill,
+                SkillExecutionContext.ForTargets(new[] { fixture.Enemy, fixture.Ally }));
+
+            Assert.That(result.CanUse, Is.False);
         }
         finally
         {

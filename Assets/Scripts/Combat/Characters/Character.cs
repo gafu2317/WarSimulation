@@ -9,10 +9,12 @@ using UnityEngine.AI;
 [RequireComponent(typeof(CombatHealth))]
 [RequireComponent(typeof(CombatStatusEffects))]
 [RequireComponent(typeof(CombatSkillCooldowns))]
+[RequireComponent(typeof(CombatSkillCaster))]
 public class Character : MonoBehaviour
 {
     [SerializeField] private CombatTeam _team = CombatTeam.Ally;
     [SerializeField] private WeaponConfig _initialWeaponConfig;
+    [SerializeField] private CombatAiPersonalityProfile _personalityProfile;
     [SerializeField] private CombatSkillCatalog _skillCatalogOverride;
     [SerializeField] private List<SkillId> _learnedSkillIds = new();
     [SerializeField] private bool _unlockAllCatalogSkillsForKindWhenLearnedEmpty = true;
@@ -28,6 +30,7 @@ public class Character : MonoBehaviour
     public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
     public CombatStatusEffects StatusEffects => ResolveStatusEffects();
     public CombatSkillCooldowns SkillCooldowns => ResolveSkillCooldowns();
+    public CombatSkillCaster SkillCaster => _skillCaster != null ? _skillCaster : GetComponent<CombatSkillCaster>();
 
     // パラメータ
     public int MaxHP => Health != null ? Health.MaxHP : 0;
@@ -44,7 +47,9 @@ public class Character : MonoBehaviour
     public float FAIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.FAI);
     public float AGIBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.AGI);
 
-    public CombatAiPersonalityProfile PersonalityProfile { get; private set; }
+    public CombatAiPersonalityProfile PersonalityProfile => _runtimePersonalityProfile != null
+        ? _runtimePersonalityProfile
+        : _personalityProfile;
 
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
@@ -59,6 +64,8 @@ public class Character : MonoBehaviour
     private CombatHealth _health;
     private CombatStatusEffects _statusEffects;
     private CombatSkillCooldowns _skillCooldowns;
+    private CombatSkillCaster _skillCaster;
+    private CombatAiPersonalityProfile _runtimePersonalityProfile;
 
     private void Awake()
     {
@@ -92,6 +99,8 @@ public class Character : MonoBehaviour
         {
             _skillCooldowns = gameObject.AddComponent<CombatSkillCooldowns>();
         }
+
+        _skillCaster = GetComponent<CombatSkillCaster>();
 
         ApplyInitialWeaponFromConfig();
     }
@@ -158,7 +167,7 @@ public class Character : MonoBehaviour
         INT = characterData.INT;
         FAI = characterData.FAI;
         AGI = characterData.AGI;
-        PersonalityProfile = spirit != null ? spirit.PersonalityProfile : null;
+        _runtimePersonalityProfile = spirit != null ? spirit.PersonalityProfile : null;
         _health ??= GetComponent<CombatHealth>();
         _health?.Initialize(characterData.MaxHP);
 

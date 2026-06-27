@@ -17,10 +17,12 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     [SerializeField] private GameObject _skillBackground;
     [SerializeField] private Image _hpFillImage;
 
+    private Transform _weaponIconRoot;
     private Character _character;
     private CombatHealth _health;
     private CombatAiBrain _aiBrain;
     private float _skillHideAtTime = float.NegativeInfinity;
+    private bool _showingCastSkill;
 
     public Character BoundCharacter => _character;
     public string CurrentNameText => _nameText != null ? _nameText.text : string.Empty;
@@ -62,6 +64,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         RefreshBuffDebuff();
         RefreshPersonality();
         RefreshHealth();
+        RefreshWeaponIcon();
         ClearSkill();
     }
 
@@ -80,12 +83,20 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             _skillBackground.SetActive(true);
         }
         _skillHideAtTime = currentTime + Mathf.Max(0.1f, _skillDisplaySeconds);
+        _showingCastSkill = false;
     }
 
     public void Tick(float currentTime)
     {
         RefreshObjective();
         RefreshBuffDebuff();
+        RefreshPersonality();
+        RefreshWeaponIcon();
+
+        if (RefreshCastingSkill())
+        {
+            return;
+        }
 
         if (_skillText == null || !_skillText.gameObject.activeSelf)
         {
@@ -96,6 +107,34 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         {
             ClearSkill();
         }
+    }
+
+    private bool RefreshCastingSkill()
+    {
+        CombatSkillCaster caster = _character != null ? _character.SkillCaster : null;
+        SkillBase skill = caster != null && caster.IsCasting ? caster.CastingSkill : null;
+        if (skill != null && !string.IsNullOrWhiteSpace(skill.Name))
+        {
+            ResolveReferences();
+            if (_skillText == null) return true;
+
+            _skillText.text = $"{skill.Name}詠唱中";
+            _skillText.gameObject.SetActive(true);
+            if (_skillBackground != null)
+            {
+                _skillBackground.SetActive(true);
+            }
+            _skillHideAtTime = float.PositiveInfinity;
+            _showingCastSkill = true;
+            return true;
+        }
+
+        if (_showingCastSkill)
+        {
+            ClearSkill();
+        }
+
+        return false;
     }
 
     public void RefreshPersonality()
@@ -165,6 +204,26 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         int maxHp = _health != null ? Mathf.Max(1, _health.MaxHP) : 1;
         _hpText.text = $"HP {hp}/{maxHp}";
         _hpFillImage.fillAmount = Mathf.Clamp01(hp / (float)maxHp);
+    }
+
+    public void RefreshWeaponIcon()
+    {
+        if (_weaponIconRoot == null)
+        {
+            return;
+        }
+
+        WeaponKind kind = _character != null && _character.EquippedWeapon != null
+            ? _character.EquippedWeapon.Kind
+            : WeaponKind.Unarmed;
+        string iconName = GetWeaponIconName(kind);
+        bool hasIcon = !string.IsNullOrEmpty(iconName);
+        _weaponIconRoot.gameObject.SetActive(hasIcon);
+        for (int i = 0; i < _weaponIconRoot.childCount; i++)
+        {
+            Transform child = _weaponIconRoot.GetChild(i);
+            child.gameObject.SetActive(hasIcon && child.name == iconName);
+        }
     }
 
     private void ResolveReferences()
@@ -243,6 +302,11 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             }
         }
 
+        if (_weaponIconRoot == null)
+        {
+            _weaponIconRoot = transform.Find("WeaponIconRoot");
+        }
+
         if (_hpFillImage == null)
         {
             Transform hpFill = transform.Find("HpBarBackground/HpBarFill");
@@ -278,6 +342,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             _skillBackground.SetActive(false);
         }
         _skillHideAtTime = float.NegativeInfinity;
+        _showingCastSkill = false;
     }
 
     private static string FormatEffects(System.Collections.Generic.IReadOnlyList<CombatStatusEffectSnapshot> effects)
@@ -308,6 +373,20 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             CombatStatusEffects.EffectType.HealOverTime => "継続回復",
             CombatStatusEffects.EffectType.Stealth => "不可視",
             _ => effect.Type.ToString(),
+        };
+    }
+
+    private static string GetWeaponIconName(WeaponKind kind)
+    {
+        return kind switch
+        {
+            WeaponKind.Sword => "SwordIcon",
+            WeaponKind.Shield => "ShieldIcon",
+            WeaponKind.Wand => "WandIcon",
+            WeaponKind.Grimoire => "GrimoireIcon",
+            WeaponKind.Bible => "BibleIcon",
+            WeaponKind.Rosary => "RosaryIcon",
+            _ => string.Empty,
         };
     }
 

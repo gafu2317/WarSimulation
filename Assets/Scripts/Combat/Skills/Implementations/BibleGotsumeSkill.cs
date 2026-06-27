@@ -21,6 +21,7 @@ public sealed class BibleGotsumeSkill : SkillBase
 
     public override string Name => "ゴツメ";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1f;
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
     public override float MaxRange => _maxRange;
 

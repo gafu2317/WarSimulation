@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public sealed class StatDebuffSkill : SkillBase
 {
     private readonly CombatStatusEffects.StatKind _stat;
@@ -31,6 +29,8 @@ public sealed class StatDebuffSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
+    public override float CastTimeSeconds => 1f;
+
     public override float MaxRange => _maxRange;
 
     public static string GetEffectKey(CombatStatusEffects.StatKind stat) => $"StatDebuff_{stat}";
@@ -38,9 +38,7 @@ public sealed class StatDebuffSkill : SkillBase
     public override void Execute(Character self, SkillExecutionContext context)
     {
         Character target = context.PrimaryTarget;
-        if (self == null || target == null) return;
-
-        float distance = ComputeHorizontalDistance(self, target);
+        if (self == null || target == null || target.Health == null || !target.Health.IsTargetable) return;
 
         target.StatusEffects?.Apply(
             _stat,

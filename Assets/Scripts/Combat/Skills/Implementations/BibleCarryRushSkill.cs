@@ -21,6 +21,7 @@ public sealed class BibleCarryRushSkill : SkillBase
 
     public override string Name => "高速移動";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1.2f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Ally;
     public override float MaxRange => _maxRange;
 

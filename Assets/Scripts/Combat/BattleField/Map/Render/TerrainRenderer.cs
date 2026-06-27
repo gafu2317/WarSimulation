@@ -211,12 +211,14 @@ namespace WarSimulation.Combat.Map
             CliffFaceGrid cliffs = map.Height.CliffFaces;
             for (int z = 0; z < res; z++)
             {
-                float worldZ = (z + 0.5f) / res * worldSize;
+                int cellZ = Mathf.Clamp(Mathf.FloorToInt((z + 0.5f) * g.Height / (float)res), 0, g.Height - 1);
+                float worldZ = (cellZ + 0.5f) * g.CellSize;
                 for (int x = 0; x < res; x++)
                 {
-                    float worldX = (x + 0.5f) / res * worldSize;
+                    int cellX = Mathf.Clamp(Mathf.FloorToInt((x + 0.5f) * g.Width / (float)res), 0, g.Width - 1);
+                    float worldX = (cellX + 0.5f) * g.CellSize;
                     Vector3 worldPos = new Vector3(worldX, 0f, worldZ);
-                    GroundState sampledState = g.SampleAt(worldPos);
+                    GroundState sampledState = g.GetCell(cellX, cellZ);
                     GroundState s = sampledState;
 
                     // Water / Swamp / Snow は地面状態を優先。
@@ -240,8 +242,7 @@ namespace WarSimulation.Combat.Map
                         continue;
                     }
 
-                    Vector2Int cell = g.WorldToCell(worldPos);
-                    bool hasNoBiome = map.GetBiomeId(cell.x, cell.y) == MapData.UnsetBiomeId;
+                    bool hasNoBiome = map.GetBiomeId(cellX, cellZ) == MapData.UnsetBiomeId;
                     if (sampledState == GroundState.Normal && hasNoBiome && _grassTexture != null)
                     {
                         alphas[z, x, GrassLayerIndex] = 1f;

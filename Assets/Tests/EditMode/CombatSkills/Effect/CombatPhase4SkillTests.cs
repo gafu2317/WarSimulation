@@ -447,7 +447,7 @@ public sealed class CombatPhase4SkillTests
 
             new SwordSlashSkill().Execute(owner, SkillExecutionContext.ForTarget(enemy));
 
-            Assert.That(enemy.Health.HP, Is.EqualTo(25));
+            Assert.That(enemy.Health.HP, Is.EqualTo(20));
         }
         finally
         {

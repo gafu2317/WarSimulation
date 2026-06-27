@@ -443,7 +443,23 @@ public sealed class CombatVision : MonoBehaviour
             return _characterSystem;
         }
 
-        _characterSystem = FindAnyObjectByType<CombatCharacterSystem>();
+        CombatCharacterSystem[] systems = FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (systems != null)
+        {
+            for (int i = systems.Length - 1; i >= 0; i--)
+            {
+                CombatCharacterSystem system = systems[i];
+                if (_owner != null &&
+                    (system.AllyCharacters.Contains(_owner) || system.EnemyCharacters.Contains(_owner)))
+                {
+                    _characterSystem = system;
+                    return _characterSystem;
+                }
+            }
+
+            _characterSystem = systems.Length > 0 ? systems[systems.Length - 1] : null;
+        }
+
         return _characterSystem;
     }
 

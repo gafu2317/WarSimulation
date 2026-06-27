@@ -15,8 +15,8 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
     private CombatCharacterSystem _characterSystem;
     private float _nextSyncTime;
 
-    public int AllyViewCount => _allyViews.Count;
-    public int EnemyViewCount => _enemyViews.Count;
+    public int AllyViewCount => CountActiveViews(_allyViews);
+    public int EnemyViewCount => CountActiveViews(_enemyViews);
 
     private void Awake()
     {
@@ -51,8 +51,15 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         CombatSkillUseEvents.SkillUsed -= OnSkillUsed;
     }
 
+    private void OnDestroy()
+    {
+        CombatSkillUseEvents.SkillUsed -= OnSkillUsed;
+    }
+
     public void Initialize(CombatCharacterSystem characterSystem)
     {
+        CombatSkillUseEvents.SkillUsed -= OnSkillUsed;
+        CombatSkillUseEvents.SkillUsed += OnSkillUsed;
         _characterSystem = characterSystem;
         ForceSyncNow();
     }
@@ -307,10 +314,31 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
     private void OnSkillUsed(Character user, string skillName)
     {
         CombatPartyMemberView view = FindView(user);
+        if (view == null)
+        {
+            ForceSyncNow();
+            view = FindView(user);
+        }
+
         if (view != null)
         {
             view.ShowSkill(skillName, Time.unscaledTime);
         }
+    }
+
+    private static int CountActiveViews(List<CombatPartyMemberView> views)
+    {
+        int count = 0;
+        for (int i = 0; i < views.Count; i++)
+        {
+            CombatPartyMemberView view = views[i];
+            if (view != null && view.gameObject.activeSelf)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static void TickList(List<CombatPartyMemberView> views, float currentTime)

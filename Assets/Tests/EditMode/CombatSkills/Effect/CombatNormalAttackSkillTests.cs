@@ -146,7 +146,7 @@ public sealed class CombatNormalAttackSkillTests
             target.SetTeam(CombatTeam.Enemy);
             target.Health.Initialize(maxHP: 30);
             typeof(Character).GetProperty("INT").SetValue(owner, 10);
-            targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 13f;
+            targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 19f;
 
             var skill = new WandArcaneBlastSkill();
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(

@@ -99,7 +99,14 @@ public static class CombatSkillDebugIndicatorSystem
         Collider collider = marker.GetComponent<Collider>();
         if (collider != null)
         {
-            Object.Destroy(collider);
+            if (Application.isPlaying)
+            {
+                Object.Destroy(collider);
+            }
+            else
+            {
+                Object.DestroyImmediate(collider);
+            }
         }
 
         Renderer renderer = marker.GetComponent<Renderer>();
@@ -110,7 +117,10 @@ public static class CombatSkillDebugIndicatorSystem
             renderer.sharedMaterial = GetOrCreateMaterial(spec.Color);
         }
 
-        Object.Destroy(marker, Mathf.Max(0.01f, spec.DurationSeconds));
+        if (Application.isPlaying)
+        {
+            Object.Destroy(marker, Mathf.Max(0.01f, spec.DurationSeconds));
+        }
     }
 
     private static Vector3 ResolveScale(CombatSkillDebugMarkerSpec spec)

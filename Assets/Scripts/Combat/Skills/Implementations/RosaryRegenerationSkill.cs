@@ -24,6 +24,7 @@ public sealed class RosaryRegenerationSkill : SkillBase
 
     public override string Name => "継続回復";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1f;
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
     public override float MaxRange => _maxRange;
 

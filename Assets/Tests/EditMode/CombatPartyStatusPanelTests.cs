@@ -102,6 +102,26 @@ public sealed class CombatPartyStatusPanelTests
     }
 
     [Test]
+    public void CombatPartyMemberView_RefreshesPersonalityAfterBind()
+    {
+        Character character = CreateCharacter("Target", CombatTeam.Ally);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+        var profile = ScriptableObject.CreateInstance<CombatAiPersonalityProfile>();
+        CombatEditModeTestUtil.SetPrivateField(profile, "_displayNameJapanese", "慎重");
+
+        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
+        CombatEditModeTestUtil.SetPrivateField(character, "_personalityProfile", profile);
+        view.Tick(0f);
+
+        Assert.That(view.CurrentPersonalityText, Is.EqualTo("慎重"));
+
+        Object.DestroyImmediate(profile);
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(character.gameObject);
+    }
+
+    [Test]
     public void CombatPartyMemberView_ShowsBuffDebuffText()
     {
         Character character = CreateCharacter("Target", CombatTeam.Ally);
@@ -138,33 +158,39 @@ public sealed class CombatPartyStatusPanelTests
     }
 
     [Test]
-    public void SkillUsed_ShowsAndExpiresOnMatchingView()
+    public void CombatPartyMemberView_ShowSkillDisplaysAndExpires()
     {
-        var systemObject = new GameObject("CharacterSystem");
-        var system = systemObject.AddComponent<CombatCharacterSystem>();
         Character ally = CreateCharacter("Ally", CombatTeam.Ally);
-        system.AllyCharacters.Add(ally);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+        view.Bind(ally, CombatCharacterAppearanceView.Facing.FrontLeft);
+        view.ShowSkill("Slash", 0f);
 
-        var panelObject = new GameObject("Panel", typeof(RectTransform), typeof(CombatPartyStatusPanel));
-        CreateColumnWithTemplate(panelObject.transform, "AlliesColumn");
-        CreateColumnWithTemplate(panelObject.transform, "EnemiesColumn");
-        var panel = panelObject.GetComponent<CombatPartyStatusPanel>();
-        panel.Initialize(system);
-        panel.ForceSyncNow();
-
-        CombatSkillUseEvents.RaiseSkillUsed(ally, "Slash");
-        CombatPartyMemberView view = panel.FindView(ally);
-
-        Assert.That(view, Is.Not.Null);
         Assert.That(view.CurrentSkillText, Is.EqualTo("Slash"));
 
-        view.ShowSkill("Slash", 0f);
-        panel.TickNow(3f);
+        view.Tick(3f);
         Assert.That(view.CurrentSkillText, Is.Empty);
 
-        Object.DestroyImmediate(panelObject);
-        DestroyCharacters(system);
-        Object.DestroyImmediate(systemObject);
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(ally.gameObject);
+    }
+
+    [Test]
+    public void CombatPartyMemberView_ShowsCastingSkill()
+    {
+        Character ally = CreateCharacter("Ally", CombatTeam.Ally);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+        var skill = new PartyViewCastTestSkill();
+        view.Bind(ally, CombatCharacterAppearanceView.Facing.FrontLeft);
+
+        ally.SkillCaster.TryStartCast(skill, SkillExecutionContext.None);
+        view.Tick(0f);
+
+        Assert.That(view.CurrentSkillText, Is.EqualTo("Bolt詠唱中"));
+
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(ally.gameObject);
     }
 
     private static Character CreateCharacter(string name, CombatTeam team, bool withAppearance = true)
@@ -271,6 +297,14 @@ public sealed class CombatPartyStatusPanelTests
         CreateTmpText(root.transform, "ObjectiveText");
         CreateTmpText(root.transform, "BuffDebuffText");
         CreateTmpText(root.transform, "WeaponText");
+        GameObject weaponIconRoot = CreateChild(root.transform, "WeaponIconRoot", typeof(RectTransform));
+        weaponIconRoot.SetActive(false);
+        CreateChild(weaponIconRoot.transform, "SwordIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponIconRoot.transform, "ShieldIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponIconRoot.transform, "WandIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponIconRoot.transform, "GrimoireIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponIconRoot.transform, "BibleIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponIconRoot.transform, "RosaryIcon", typeof(RectTransform), typeof(Image));
         CreateTmpText(root.transform, "HpText");
         GameObject skillBackground = CreateChild(root.transform, "SkillBackground", typeof(RectTransform), typeof(Image));
         skillBackground.SetActive(false);
@@ -303,5 +337,15 @@ public sealed class CombatPartyStatusPanelTests
         var child = new GameObject(name, components);
         child.transform.SetParent(parent, false);
         return child;
+    }
+
+    private sealed class PartyViewCastTestSkill : SkillBase
+    {
+        public override string Name => "Bolt";
+        public override float CastTimeSeconds => 1f;
+
+        public override void Execute(Character self, SkillExecutionContext context)
+        {
+        }
     }
 }

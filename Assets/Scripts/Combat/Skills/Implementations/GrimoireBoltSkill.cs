@@ -20,14 +20,17 @@ public sealed class GrimoireBoltSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
+    public override float CastTimeSeconds => 0.7f;
+
     public override float MaxRange => _maxRange;
     public override bool CanTargetMagicStone => true;
 
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasAnyResolvedTarget) return;
+        context = context.Capture(self);
 
-        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.INT) * _intScale));
         if (TakeDamage(self, context, damage) > 0)
         {
             BreakStealthOnUse(self);

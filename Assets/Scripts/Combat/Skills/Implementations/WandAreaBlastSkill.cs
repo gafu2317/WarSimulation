@@ -21,6 +21,7 @@ public sealed class WandAreaBlastSkill : SkillBase
 
     public override string Name => "範囲魔法";
     public override float CooldownSeconds => _cooldownSeconds;
+    public override float CastTimeSeconds => 1.5f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Area;
     public override float MaxRange => _maxRange;
     public override float AreaRadius => _radius;
@@ -30,13 +31,14 @@ public sealed class WandAreaBlastSkill : SkillBase
     {
         if (self == null || !context.HasTargetPoint) return;
         if (!context.HasAnyResolvedTarget) return;
+        context = context.Capture(self);
 
-        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.INT) * _intScale));
+        int damage = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.INT) * _intScale));
         bool dealtDamage = false;
         for (int i = 0; i < context.ResolvedTargets.Count; i++)
         {
             Character target = context.ResolvedTargets[i];
-            dealtDamage |= TakeDamage(self, target, damage) > 0;
+            dealtDamage |= TakeDamage(self, context, target, damage) > 0;
         }
 
         for (int i = 0; i < context.ResolvedStones.Count; i++)
