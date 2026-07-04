@@ -20,8 +20,9 @@ public class DateManager : ManagerBase<DateManager>
     public int CurrentMonth => _currentMonth;
     public int CurrentDay => _currentDay;
 
-    // 日付が変更されたときに通知するイベント
-    public Action<int, int> OnDateChanged;
+    // イベント通知
+    public Action<int, int> OnDateChanged;  // 日付が変更されたとき（引数: 月, 日）
+    public Action<int> OnMonthChanged;      // 月が変更されたとき（引数: 新しい月）
 
     // 各月の日数（インデックス0はダミー、1〜12月を使用。閏年は考慮しない）
     private readonly int[] _daysInMonth = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
