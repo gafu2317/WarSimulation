@@ -97,3 +97,13 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# TextMeshPro SDF font assets (auto-generated from TTF, too large for GitHub)
+*SDF.asset
+*SDF.asset.meta
+
+# Local recovery, OS metadata, and transient test artifacts
+.DS_Store
+/Assets/_Recovery/
+/TestResults_*.xml
+/WarSimulation1.slnx

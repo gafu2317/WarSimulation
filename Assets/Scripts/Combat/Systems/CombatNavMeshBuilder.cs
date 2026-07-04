@@ -1,0 +1,259 @@
+using Unity.AI.Navigation;
+using UnityEngine;
+using UnityEngine.AI;
+using WarSimulation.Combat.Map;
+
+[DisallowMultipleComponent]
+public sealed class CombatNavMeshBuilder : MonoBehaviour
+{
+    private const float MinAreaCost = 0.01f;
+    private const string AreaVolumeRootName = "GeneratedNavAreaVolumes";
+    private const string WalkableAreaName = CombatNavMeshAreaGridBuilder.WalkableAreaName;
+    private const string RiverAreaName = CombatNavMeshAreaGridBuilder.RiverAreaName;
+    private const string ForestAreaName = CombatNavMeshAreaGridBuilder.ForestAreaName;
+    private const string SnowAreaName = CombatNavMeshAreaGridBuilder.SnowAreaName;
+    private const string SwampAreaName = CombatNavMeshAreaGridBuilder.SwampAreaName;
+    private const string LakeAreaName = CombatNavMeshAreaGridBuilder.LakeAreaName;
+    private const string FrozenLakeAreaName = CombatNavMeshAreaGridBuilder.FrozenLakeAreaName;
+
+    [System.Serializable]
+    public sealed class NavMeshAreaCost
+    {
+        [SerializeField] private string _areaName = "Walkable";
+        [SerializeField, Min(MinAreaCost)] private float _cost = 1f;
+
+        public string AreaName => _areaName;
+        public float Cost => _cost;
+
+        public NavMeshAreaCost() { }
+
+        public NavMeshAreaCost(string areaName, float cost)
+        {
+            _areaName = areaName;
+            _cost = cost;
+        }
+    }
+
+    [SerializeField] private NavMeshSurface _surface;
+    [SerializeField] private LayerMask _layerMask = ~0;
+    [SerializeField] private NavMeshCollectGeometry _geometry = NavMeshCollectGeometry.RenderMeshes;
+    [SerializeField] private bool _buildHeightMesh = false;
+
+    [Header("Area Costs")]
+    [SerializeField] private NavMeshAreaCost[] _areaCosts =
+    {
+        new(WalkableAreaName, 1f),
+        new(RiverAreaName, 20f),
+        new(ForestAreaName, 1f),
+        new(SnowAreaName, 1.3f),
+        new(SwampAreaName, 1.5f),
+        new(LakeAreaName, 20f),
+        new(FrozenLakeAreaName, 1f),
+    };
+
+    public NavMeshSurface Surface => _surface;
+
+    public bool Build(MapData map)
+    {
+        if (map == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatNavMeshBuilder)}] Build called with null MapData.");
+            return false;
+        }
+
+        EnsureSurface();
+        _surface.collectObjects = CollectObjects.Children;
+        _surface.layerMask = _layerMask;
+        _surface.useGeometry = _geometry;
+        _surface.buildHeightMesh = _buildHeightMesh;
+        _surface.ignoreNavMeshAgent = true;
+        _surface.ignoreNavMeshObstacle = true;
+        RebuildAreaVolumes(map);
+        _surface.BuildNavMesh();
+        ApplyAreaCosts();
+
+        return _surface.navMeshData != null;
+    }
+
+    public void Clear()
+    {
+        if (_surface == null) return;
+        _surface.RemoveData();
+        _surface.navMeshData = null;
+        ClearAreaVolumes();
+    }
+
+    private void EnsureSurface()
+    {
+        if (_surface != null) return;
+
+        _surface = GetComponent<NavMeshSurface>();
+        if (_surface == null)
+        {
+            _surface = gameObject.AddComponent<NavMeshSurface>();
+        }
+    }
+
+    private void RebuildAreaVolumes(MapData map)
+    {
+        ClearAreaVolumes();
+
+        Transform root = CreateAreaVolumeRoot();
+        CombatNavAreaKind[,] areaGrid = CombatNavMeshAreaGridBuilder.Build(map);
+        EmitAreaVolumesFromGrid(map, root, areaGrid);
+    }
+
+    private Transform CreateAreaVolumeRoot()
+    {
+        var root = new GameObject(AreaVolumeRootName);
+        root.transform.SetParent(transform, worldPositionStays: false);
+        return root.transform;
+    }
+
+    private void ClearAreaVolumes()
+    {
+        Transform existing = transform.Find(AreaVolumeRootName);
+        if (existing == null) return;
+
+        GameObject existingGameObject = existing.gameObject;
+        if (Application.isPlaying)
+        {
+            existingGameObject.SetActive(false);
+            Destroy(existingGameObject);
+        }
+        else
+        {
+            DestroyImmediate(existingGameObject);
+        }
+    }
+
+    private void EmitAreaVolumesFromGrid(MapData map, Transform root, CombatNavAreaKind[,] areaGrid)
+    {
+        GroundStateGrid grid = map.GroundStates;
+        GetVolumeHeight(map, out float centerY, out float height);
+
+        for (int z = 0; z < grid.Height; z++)
+        {
+            int runStart = -1;
+            CombatNavAreaKind runArea = CombatNavAreaKind.Walkable;
+
+            for (int x = 0; x <= grid.Width; x++)
+            {
+                CombatNavAreaKind area = x < grid.Width ? areaGrid[x, z] : CombatNavAreaKind.Walkable;
+
+                if (runStart < 0)
+                {
+                    if (area == CombatNavAreaKind.Walkable) continue;
+                    runStart = x;
+                    runArea = area;
+                    continue;
+                }
+
+                if (x < grid.Width && area == runArea) continue;
+
+                AddCellRunVolume(
+                    root,
+                    grid,
+                    runStart,
+                    x - 1,
+                    z,
+                    centerY,
+                    height,
+                    ResolveAreaIndex(CombatNavMeshAreaGridBuilder.GetAreaName(runArea)),
+                    CombatNavMeshAreaGridBuilder.GetAreaName(runArea));
+
+                runStart = -1;
+
+                if (area != CombatNavAreaKind.Walkable)
+                {
+                    runStart = x;
+                    runArea = area;
+                }
+            }
+        }
+    }
+
+    private void AddCellRunVolume(
+        Transform root,
+        GroundStateGrid grid,
+        int startX,
+        int endX,
+        int z,
+        float centerY,
+        float height,
+        int area,
+        string label)
+    {
+        float cellSize = grid.CellSize;
+        float width = (endX - startX + 1) * cellSize;
+        Vector3 center = new Vector3(
+            (startX + endX + 1) * 0.5f * cellSize,
+            centerY,
+            (z + 0.5f) * cellSize);
+        Vector3 size = new Vector3(width, height, cellSize);
+        AddVolume(root, $"{label}_{startX}_{z}_{endX}", center, size, area);
+    }
+
+    private static void AddVolume(Transform root, string name, Vector3 center, Vector3 size, int area)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(root, worldPositionStays: false);
+        var volume = go.AddComponent<NavMeshModifierVolume>();
+        volume.center = center;
+        volume.size = size;
+        volume.area = area;
+    }
+
+    private int ResolveAreaIndex(string areaName)
+    {
+        int area = NavMesh.GetAreaFromName(areaName);
+        if (area >= 0) return area;
+
+        int fallback = NavMesh.GetAreaFromName(WalkableAreaName);
+        if (fallback < 0) fallback = 0;
+        Debug.LogWarning(
+            $"[{nameof(CombatNavMeshBuilder)}] NavMesh area '{areaName}' is not defined.",
+            this);
+        return fallback;
+    }
+
+    private void ApplyAreaCosts()
+    {
+        if (_areaCosts == null) return;
+
+        for (int i = 0; i < _areaCosts.Length; i++)
+        {
+            NavMeshAreaCost areaCost = _areaCosts[i];
+            if (areaCost == null) continue;
+
+            int area = ResolveAreaIndex(areaCost.AreaName);
+            NavMesh.SetAreaCost(area, Mathf.Max(MinAreaCost, areaCost.Cost));
+        }
+    }
+
+    private static void GetVolumeHeight(MapData map, out float centerY, out float height)
+    {
+        HeightMap heightMap = map.Height;
+        float min = float.PositiveInfinity;
+        float max = float.NegativeInfinity;
+
+        for (int z = 0; z < heightMap.Height; z++)
+        {
+            for (int x = 0; x < heightMap.Width; x++)
+            {
+                float h = heightMap.GetHeight(x, z);
+                if (h < min) min = h;
+                if (h > max) max = h;
+            }
+        }
+
+        if (float.IsInfinity(min) || float.IsInfinity(max))
+        {
+            min = 0f;
+            max = 0f;
+        }
+
+        height = Mathf.Max(4f, max - min + 4f);
+        centerY = (min + max) * 0.5f;
+    }
+}

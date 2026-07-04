@@ -1,0 +1,94 @@
+using UnityEngine;
+
+[DisallowMultipleComponent]
+[RequireComponent(typeof(Character))]
+public sealed class CombatSkillCaster : MonoBehaviour
+{
+    private Character _owner;
+    private SkillExecutionContext _context;
+    private float _startedAt;
+    private float _completeAt;
+
+    public bool IsCasting => CastingSkill != null;
+    public SkillBase CastingSkill { get; private set; }
+    public SkillExecutionContext CastingContext => IsCasting ? _context : SkillExecutionContext.None;
+    public float RemainingSeconds => IsCasting ? Mathf.Max(0f, _completeAt - Time.time) : 0f;
+    public float NormalizedProgress => !IsCasting
+        ? 0f
+        : Mathf.Clamp01((Time.time - _startedAt) / Mathf.Max(CastingSkill.CastTimeSeconds, Mathf.Epsilon));
+
+    private void Awake()
+    {
+        _owner = GetComponent<Character>();
+    }
+
+    private void Update()
+    {
+        Tick(Time.time);
+    }
+
+    public bool TryStartCast(SkillBase skill, SkillExecutionContext context)
+    {
+        _owner ??= GetComponent<Character>();
+        if (skill == null || IsCasting) return false;
+        if (_owner == null || _owner.Health == null) return false;
+        if (!CombatBattleFlow.AllowsCombatActions || !_owner.Health.CanAct) return false;
+
+        context = context.Capture(_owner);
+        if (skill.CastTimeSeconds <= 0f)
+        {
+            Execute(skill, context, raiseCastCompleted: false);
+            return true;
+        }
+
+        CastingSkill = skill;
+        _context = context;
+        _startedAt = Time.time;
+        _completeAt = _startedAt + skill.CastTimeSeconds;
+        _owner.StopMoving();
+        CombatSkillCastEvents.RaiseCastStarted(_owner, skill, skill.CastTimeSeconds);
+        return true;
+    }
+
+    public void Tick(float now)
+    {
+        _owner ??= GetComponent<Character>();
+        if (!IsCasting) return;
+        if (_owner == null || _owner.Health == null)
+        {
+            ClearCast();
+            return;
+        }
+
+        if (!CombatBattleFlow.AllowsCombatActions || !_owner.Health.IsTargetable)
+        {
+            ClearCast();
+            return;
+        }
+
+        if (now < _completeAt) return;
+
+        SkillBase skill = CastingSkill;
+        SkillExecutionContext context = _context;
+        ClearCast();
+        Execute(skill, context, raiseCastCompleted: true);
+    }
+
+    public void ClearCast()
+    {
+        CastingSkill = null;
+        _context = SkillExecutionContext.None;
+    }
+
+    private void Execute(SkillBase skill, SkillExecutionContext context, bool raiseCastCompleted)
+    {
+        if (_owner == null || skill == null) return;
+        skill.Execute(_owner, context);
+        _owner.SkillCooldowns.StartCooldown(skill);
+        CombatSkillUseEvents.RaiseSkillUsed(_owner, skill.Name);
+        if (raiseCastCompleted)
+        {
+            CombatSkillCastEvents.RaiseCastCompleted(_owner, skill);
+        }
+    }
+}
