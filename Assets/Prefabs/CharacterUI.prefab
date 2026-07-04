@@ -3331,9 +3331,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4893893967529949320}
   - component: {fileID: 5820416227964091556}
-  - component: {fileID: 4543620574683093953}
   m_Layer: 0
-  m_Name: Character
+  m_Name: CharacterUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3377,25 +3376,8 @@ MonoBehaviour:
   - {fileID: 2238232062617295909}
   - {fileID: 6357479583789360205}
   - {fileID: 1746389471801198978}
-  _agent: {fileID: 0}
   _billboardLimitAngle: 15
   _flipSpeed: 720
-  _stopSpeedThreshold: 0.05
-  _currentSpeed: 0
-  _logCurrentSpeed: 0
---- !u!210 &4543620574683093953
-SortingGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3384401619709022162}
-  m_Enabled: 1
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_SortAtRoot: 0
-  m_Sort3DAs2D: 0
 --- !u!1 &3425818042936860792
 GameObject:
   m_ObjectHideFlags: 0
