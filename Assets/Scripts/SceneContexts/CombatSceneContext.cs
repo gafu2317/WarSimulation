@@ -10,11 +10,8 @@ public class CombatSceneContext : SceneContextBase<CombatSceneContext>
     [field: SerializeField] public CombatSkillCatalog SkillCatalog { get; private set; }
     [field: SerializeField] public CombatAiWeaponWeightsProfile AiWeaponWeightsProfile { get; private set; }
 
-    protected override void Awake()
+    protected override void OnAwakeInitialize()
     {
-        base.Awake();
-        if (Instance != this) return;
-
         EnsureBattleSystems();
     }
 
