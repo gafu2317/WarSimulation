@@ -15,6 +15,7 @@ public static class CombatAiMoveScorer
         float distance = target.HasDestination
             ? HorizontalDistance(snapshot.Owner.transform.position, target.Destination)
             : 0f;
+        WeaponKind weaponKind = snapshot.Owner.EquippedWeapon != null ? snapshot.Owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
         var breakdown = new CombatAiScoreBreakdown
         {
             BaseScore = target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f,
@@ -25,29 +26,71 @@ public static class CombatAiMoveScorer
                     code,
                     target,
                     focusEnemy,
-                    focusCommitmentRemainingSeconds),
+                    focusCommitmentRemainingSeconds)
+                + GetCoverBonus(weaponKind, snapshot.Assessment, code),
             WeaponScore = GetWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, code),
             PersonalityScore = GetPersonalityScore(personalityProfile, code, objective),
         };
         AddReasons(code, breakdown);
         if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
         if (breakdown.PersonalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
+        if (GetCoverBonus(weaponKind, snapshot.Assessment, code) > 0f) AddReason(breakdown, CombatAiReasonCode.SelfExposedByEnemy);
         return breakdown;
+    }
+
+    public static float ScoreDirect(
+        Character owner,
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        string code,
+        CombatMoveTarget target,
+        CombatObjective objective,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds)
+    {
+        float distance = target.HasDestination
+            ? HorizontalDistance(owner.transform.position, target.Destination)
+            : 0f;
+        WeaponKind weaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+        return (target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f)
+            + GetSituationScore(assessment, code, objective)
+            + CombatAiFocusTargeting.GetMoveScore(context, owner.EquippedWeapon, code, target, focusEnemy, focusCommitmentRemainingSeconds)
+            + GetWeaponScore(weaponWeightsProfile, owner.EquippedWeapon, code)
+            + GetPersonalityScore(personalityProfile, code, objective)
+            + GetCoverBonus(weaponKind, assessment, code);
+    }
+
+    private static float GetCoverBonus(WeaponKind weaponKind, CombatAiAssessment assessment, string code)
+    {
+        if (code != CombatAiMoveCode.MoveForest) return 0f;
+
+        switch (weaponKind)
+        {
+            case WeaponKind.Wand:
+            case WeaponKind.Grimoire:
+            case WeaponKind.Bible:
+            case WeaponKind.Rosary:
+                return assessment.GetValue(CombatAiMetricIndex.SelfExposure) * 0.6f;
+            default:
+                return 0f;
+        }
     }
 
     private static float GetSituationScore(CombatAiAssessment assessment, string code, CombatObjective objective)
     {
         return code switch
         {
-            CombatAiMoveCode.AdvanceEnemyStone => assessment.GetValue("EnemyStoneReachability") * 0.6f
-                - assessment.GetValue("OwnStoneThreat") * 0.2f
+            CombatAiMoveCode.AdvanceEnemyStone => assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) * 0.6f
+                - assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.2f
                 + GetSearchAdvanceBonus(assessment, objective),
-            CombatAiMoveCode.ReturnOwnStone => assessment.GetValue("OwnStoneThreat") * 0.65f + assessment.GetValue("RetreatRouteSafety") * 0.2f,
-            CombatAiMoveCode.PursueEnemy => assessment.GetValue("ReachableEnemyValue") * 0.65f + assessment.GetValue("EnemyLocationConfidence") * 0.1f,
-            CombatAiMoveCode.SupportAlly => assessment.GetValue("AllyFragility") * 0.65f,
+            CombatAiMoveCode.ReturnOwnStone => assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.65f + assessment.GetValue(CombatAiMetricIndex.RetreatRouteSafety) * 0.2f,
+            CombatAiMoveCode.PursueEnemy => assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) * 0.65f + assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) * 0.1f,
+            CombatAiMoveCode.SupportAlly => assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.65f,
             CombatAiMoveCode.TakeHighGround => GetHighGroundSituationScore(assessment, objective),
-            CombatAiMoveCode.MoveForest => assessment.GetValue("RetreatRouteSafety") * 0.3f + assessment.GetValue("TerrainAdvantage") * 0.3f,
-            CombatAiMoveCode.SearchLastKnown => (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.45f,
+            CombatAiMoveCode.MoveForest => assessment.GetValue(CombatAiMetricIndex.RetreatRouteSafety) * 0.3f + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.3f,
+            CombatAiMoveCode.SearchLastKnown => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.45f,
             CombatAiMoveCode.HoldPosition => objective == CombatObjective.DefendOwnStone ? 12f : 2f,
             _ => 0f,
         } + GetObjectiveAlignmentScore(code, objective);
@@ -115,18 +158,18 @@ public static class CombatAiMoveScorer
             return 0f;
         }
 
-        return (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.3f;
+        return (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.3f;
     }
 
     private static float GetHighGroundSituationScore(CombatAiAssessment assessment, CombatObjective objective)
     {
-        float terrainAdvantage = assessment.GetValue("TerrainAdvantage");
+        float terrainAdvantage = assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage);
         if (objective != CombatObjective.Search)
         {
             return terrainAdvantage * 0.8f;
         }
 
-        float confidence = assessment.GetValue("EnemyLocationConfidence");
+        float confidence = assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence);
         if (confidence <= 0f)
         {
             return terrainAdvantage * 0.15f;

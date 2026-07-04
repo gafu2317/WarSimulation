@@ -294,6 +294,7 @@ public sealed class CombatPartyStatusPanelTests
         CreateChild(appearance.transform, "Content", typeof(RectTransform));
 
         CreateTmpText(root.transform, "NameText");
+        CreateTmpText(root.transform, "PersonalityText");
         CreateTmpText(root.transform, "ObjectiveText");
         CreateTmpText(root.transform, "BuffDebuffText");
         CreateTmpText(root.transform, "WeaponText");

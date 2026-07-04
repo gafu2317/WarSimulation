@@ -23,6 +23,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     private float _nextStoneAttackTime;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
+    private MagicStone _cachedEnemyMainStone;
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
     public CombatAiContext LastContext { get; private set; }
@@ -138,6 +139,11 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private MagicStone FindEnemyMainStone()
     {
+        if (_cachedEnemyMainStone != null && _cachedEnemyMainStone.gameObject.activeInHierarchy)
+        {
+            return _cachedEnemyMainStone;
+        }
+
         FeatureType targetType = _owner.Team == CombatTeam.Ally
             ? FeatureType.EnemyMainStone
             : FeatureType.OwnMainStone;
@@ -155,6 +161,7 @@ public sealed class CombatAiBrain : MonoBehaviour
             best = stone;
         }
 
+        _cachedEnemyMainStone = best;
         return best;
     }
 

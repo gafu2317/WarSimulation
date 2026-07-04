@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class CombatAiPlanner
+public static partial class CombatAiPlanner
 {
     private const float UnselectableScore = -100000f;
     private const float RosaryPreferredSupportDistance = 5.5f;
@@ -11,6 +11,8 @@ public static class CombatAiPlanner
     private const float WandEnemyClearanceDistance = 7f;
     private const float SwordRetargetThreshold = 20f;
 
+    private static readonly List<SkillExecutionContext> s_skillContextsBuffer = new List<SkillExecutionContext>();
+
     public static CombatAiPlan BuildPlan(
         CombatAiContext context,
         CombatAiPersonalityProfile personalityProfile,
@@ -19,14 +21,139 @@ public static class CombatAiPlanner
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search)
     {
-        CombatAiDebugSnapshot snapshot = BuildDebugSnapshot(
-            context,
-            personalityProfile,
-            weaponWeightsProfile,
-            focusEnemy,
-            focusCommitmentRemainingSeconds,
-            previousObjective);
-        return snapshot != null ? snapshot.FinalPlan : CombatAiPlan.None;
+        if (context == null || context.Owner == null) return CombatAiPlan.None;
+        return BuildPlanDirect(context, personalityProfile, weaponWeightsProfile, focusEnemy, focusCommitmentRemainingSeconds, previousObjective);
+    }
+
+    private static CombatAiPlan BuildPlanDirect(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        CombatObjective previousObjective)
+    {
+        CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context, captureDebug: false);
+
+        CombatObjective objective = CombatAiObjectiveScorer.SelectBestObjective(
+            context, assessment, personalityProfile, weaponWeightsProfile,
+            focusEnemy, focusCommitmentRemainingSeconds, previousObjective);
+
+        CombatMoveTarget moveTarget = SelectBestMoveDirect(
+            context, assessment, personalityProfile, weaponWeightsProfile,
+            objective, focusEnemy, focusCommitmentRemainingSeconds);
+
+        SelectBestSkillDirect(
+            context, assessment, personalityProfile, weaponWeightsProfile,
+            objective, focusEnemy, focusCommitmentRemainingSeconds,
+            out SkillBase bestSkill, out SkillExecutionContext bestSkillContext);
+
+        return new CombatAiPlan(objective, moveTarget, bestSkill, bestSkillContext);
+    }
+
+    private static CombatMoveTarget SelectBestMoveDirect(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        CombatObjective objective,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds)
+    {
+        Character owner = context.Owner;
+        CombatMoveTarget bestTarget = CombatMoveTarget.None;
+        float bestScore = float.NegativeInfinity;
+
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.AdvanceEnemyStone, CreateEnemyStoneTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.ReturnOwnStone, CreateOwnStoneTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.PursueEnemy, CreateBestEnemyTarget(context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.SupportAlly, CreateBestAllyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.TakeHighGround, CreateNearestPositionTarget(owner, context.HighGroundCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        {
+            WeaponKind ownerWeaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+            CombatMoveTarget forestTarget = IsRangedOrSupportWeapon(ownerWeaponKind)
+                ? CreateCoverPositionTarget(context, owner)
+                : CreateNearestPositionTarget(owner, context.ForestCandidates);
+            TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+                CombatAiMoveCode.MoveForest, forestTarget, objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        }
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.SearchLastKnown, CreateLastKnownEnemyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.HoldPosition, CombatMoveTarget.None, objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+
+        return bestTarget;
+    }
+
+    private static void TryScoreMoveDirectCandidate(
+        Character owner,
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        string code,
+        CombatMoveTarget target,
+        CombatObjective objective,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        ref float bestScore,
+        ref CombatMoveTarget bestTarget)
+    {
+        if (code != CombatAiMoveCode.HoldPosition && !target.HasDestination) return;
+        float score = CombatAiMoveScorer.ScoreDirect(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            code, target, objective, focusEnemy, focusCommitmentRemainingSeconds);
+        if (score > bestScore)
+        {
+            bestScore = score;
+            bestTarget = target;
+        }
+    }
+
+    private static void SelectBestSkillDirect(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        CombatObjective objective,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        out SkillBase bestSkill,
+        out SkillExecutionContext bestSkillContext)
+    {
+        bestSkill = null;
+        bestSkillContext = SkillExecutionContext.None;
+        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
+        float waitBaseScore = skills.Count == 0 ? 12f : 3f;
+        float waitSituationScore = objective == CombatObjective.Retreat ? 8f : 0f;
+        float bestScore = waitBaseScore + waitSituationScore;
+
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null) continue;
+
+            CombatAiSkillContextBuilder.Build(context, context.Owner, skill, s_skillContextsBuffer);
+            for (int j = 0; j < s_skillContextsBuffer.Count; j++)
+            {
+                CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, s_skillContextsBuffer[j]);
+                float score = GetSkillBaseScore(skill, objective)
+                    + GetSkillWeaponScore(weaponWeightsProfile, context.Owner.EquippedWeapon, skill)
+                    + GetSkillPersonalityScore(personalityProfile, skill, objective)
+                    + GetSkillSituationScore(context, assessment, skill, evaluation, objective)
+                    + CombatAiFocusTargeting.GetSkillScore(context, context.Owner.EquippedWeapon, skill, evaluation, focusEnemy, focusCommitmentRemainingSeconds);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestSkill = skill;
+                    bestSkillContext = evaluation.Context;
+                }
+            }
+        }
     }
 
     public static CombatAiDebugSnapshot BuildDebugSnapshot(
@@ -47,7 +174,7 @@ public static class CombatAiPlanner
             Owner = context.Owner,
             Context = context,
             ContextSummary = CombatAiAssessmentBuilder.BuildSummary(context, personalityProfile, weaponWeightsProfile),
-            Assessment = CombatAiAssessmentBuilder.Build(context),
+            Assessment = CombatAiAssessmentBuilder.Build(context, captureDebug: true),
         };
 
         CombatAiObjectiveScorer.BuildEntries(
@@ -95,7 +222,13 @@ public static class CombatAiPlanner
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.PursueEnemy, "敵へ接近", CreateBestEnemyTarget(snapshot.Context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SupportAlly, "味方へ接近", CreateBestAllyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.TakeHighGround, "高所へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.HighGroundCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.MoveForest, "森へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.ForestCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds);
+        {
+            WeaponKind ownerWeaponKind = snapshot.Owner.EquippedWeapon != null ? snapshot.Owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+            CombatMoveTarget forestTarget = IsRangedOrSupportWeapon(ownerWeaponKind)
+                ? CreateCoverPositionTarget(snapshot.Context, snapshot.Owner)
+                : CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.ForestCandidates);
+            AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.MoveForest, "森へ移動", forestTarget, objective, focusEnemy, focusCommitmentRemainingSeconds);
+        }
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SearchLastKnown, "最終既知地点へ移動", CreateLastKnownEnemyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.HoldPosition, "待機", CombatMoveTarget.None, objective, focusEnemy, focusCommitmentRemainingSeconds);
     }
@@ -282,12 +415,12 @@ public static class CombatAiPlanner
         float score = evaluation.CanUse ? 16f : -20f;
         if (CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsProtect(skill))
         {
-            score += assessment.GetValue("AllyFragility") * 0.25f;
+            score += assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.25f;
         }
 
         if (CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill))
         {
-            score += assessment.GetValue("ReachableEnemyValue") * 0.25f;
+            score += assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) * 0.25f;
         }
 
         score += GetObjectiveSkillAlignmentScore(skill, evaluation, assessment, context, objective);
@@ -464,409 +597,6 @@ public static class CombatAiPlanner
         }
     }
 
-    private static CombatMoveTarget CreateEnemyStoneTarget(CombatAiContext context)
-    {
-        return context.HasEnemyStonePosition ? CombatMoveTarget.ForPosition(context.EnemyStonePosition) : CombatMoveTarget.None;
-    }
-
-    private static CombatMoveTarget CreateOwnStoneTarget(CombatAiContext context)
-    {
-        return context.HasOwnStonePosition ? CombatMoveTarget.ForPosition(context.OwnStonePosition) : CombatMoveTarget.None;
-    }
-
-    private static CombatMoveTarget CreateBestEnemyTarget(CombatAiContext context, Character focusEnemy, float focusCommitmentRemainingSeconds)
-    {
-        Character enemy = FindBestEnemyCharacter(context, focusEnemy, focusCommitmentRemainingSeconds);
-        if (enemy == null)
-        {
-            return CombatMoveTarget.None;
-        }
-
-        Character owner = context != null ? context.Owner : null;
-        WeaponBase weapon = owner != null ? owner.EquippedWeapon : null;
-        if (owner != null && weapon != null && weapon.Kind == WeaponKind.Wand)
-        {
-            return CreateWandAttackTarget(context, owner, enemy);
-        }
-
-        return CombatMoveTarget.ForCharacter(enemy);
-    }
-
-    private static CombatMoveTarget CreateBestAllyTarget(CombatAiContext context)
-    {
-        Character ally = FindBestAllyCharacter(context);
-        if (ally == null)
-        {
-            return CombatMoveTarget.None;
-        }
-
-        Character owner = context != null ? context.Owner : null;
-        WeaponBase weapon = owner != null ? owner.EquippedWeapon : null;
-        if (owner != null && weapon != null && weapon.Kind == WeaponKind.Rosary)
-        {
-            return CreateRosarySupportTarget(context, owner, ally);
-        }
-
-        return CombatMoveTarget.ForCharacter(ally);
-    }
-
-    private static CombatMoveTarget CreateRosarySupportTarget(CombatAiContext context, Character owner, Character ally)
-    {
-        if (context == null || owner == null || ally == null)
-        {
-            return CombatMoveTarget.None;
-        }
-
-        CombatCharacterIntel allyIntel = FindAllyIntel(context, ally);
-        if (allyIntel.Character == null || allyIntel.MaxHP <= 0)
-        {
-            return CombatMoveTarget.ForCharacter(ally);
-        }
-
-        int missingHp = Mathf.Max(0, allyIntel.MaxHP - allyIntel.HP);
-        float currentDistance = HorizontalDistance(owner.transform.position, ally.transform.position);
-        int currentHealAmount = EstimateCurrentRosaryHealAmount(owner, ally, currentDistance);
-        float desiredDistance = missingHp > currentHealAmount
-            ? RosaryCloseHealDistance
-            : RosaryPreferredSupportDistance;
-        CombatCharacterIntel nearestThreat = FindNearestKnownEnemyIntel(context, owner.transform.position);
-        bool threatTooClose = nearestThreat.Character != null &&
-            HorizontalDistance(owner.transform.position, nearestThreat.KnownPosition) < RosaryEnemyClearanceDistance;
-
-        if (Mathf.Abs(currentDistance - desiredDistance) <= 0.75f && !threatTooClose)
-        {
-            return CombatMoveTarget.None;
-        }
-
-        Vector3 destination = ResolveSupportStandoffPosition(context, owner, ally, desiredDistance);
-        return CombatMoveTarget.ForPosition(destination);
-    }
-
-    private static CombatMoveTarget CreateWandAttackTarget(CombatAiContext context, Character owner, Character enemy)
-    {
-        if (owner == null || enemy == null)
-        {
-            return CombatMoveTarget.None;
-        }
-
-        float desiredDistance = EstimatePreferredWandAttackDistance(owner);
-        if (desiredDistance <= 0f)
-        {
-            return CombatMoveTarget.ForCharacter(enemy);
-        }
-
-        float currentDistance = HorizontalDistance(owner.transform.position, enemy.transform.position);
-        float minimumHoldDistance = Mathf.Max(0f, desiredDistance - WandRangeSlack);
-        float maximumHoldDistance = desiredDistance + WandRangeSlack;
-        CombatCharacterIntel nearestThreat = FindNearestKnownEnemyIntel(context, owner.transform.position);
-        bool threatTooClose = nearestThreat.Character != null &&
-            HorizontalDistance(owner.transform.position, nearestThreat.KnownPosition) < WandEnemyClearanceDistance;
-        if (currentDistance >= minimumHoldDistance && currentDistance <= maximumHoldDistance && !threatTooClose)
-        {
-            return CombatMoveTarget.None;
-        }
-
-        Character standoffEnemy = threatTooClose && nearestThreat.Character != null ? nearestThreat.Character : enemy;
-        Vector3 destination = ResolveEnemyStandoffPosition(owner, standoffEnemy, desiredDistance);
-        return CombatMoveTarget.ForPosition(destination);
-    }
-
-    private static CombatMoveTarget CreateLastKnownEnemyTarget(CombatAiContext context)
-    {
-        float bestScore = float.NegativeInfinity;
-        Vector3 bestPosition = default;
-        bool found = false;
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition) continue;
-
-            float score = enemy.HasDirectSight ? 1000f : 0f;
-            score -= enemy.HasMemory ? enemy.MemoryAgeSeconds : 0f;
-            score += enemy.MaxHP > 0 ? (1f - enemy.HP / (float)enemy.MaxHP) * 10f : 0f;
-            score -= HorizontalDistance(context.Owner.transform.position, enemy.KnownPosition) * 0.05f;
-            if (score <= bestScore) continue;
-
-            bestScore = score;
-            bestPosition = enemy.KnownPosition;
-            found = true;
-        }
-
-        return found ? CombatMoveTarget.ForPosition(bestPosition) : CombatMoveTarget.None;
-    }
-
-    private static CombatMoveTarget CreateNearestPositionTarget(Character owner, IReadOnlyList<Vector3> positions)
-    {
-        if (owner == null || positions == null || positions.Count == 0) return CombatMoveTarget.None;
-
-        const float minimumMeaningfulDistance = 2f;
-        float bestDistance = float.PositiveInfinity;
-        Vector3 best = default;
-        bool found = false;
-        for (int i = 0; i < positions.Count; i++)
-        {
-            float distance = HorizontalDistance(owner.transform.position, positions[i]);
-            if (distance <= minimumMeaningfulDistance) continue;
-            if (distance >= bestDistance) continue;
-            bestDistance = distance;
-            best = positions[i];
-            found = true;
-        }
-
-        return found ? CombatMoveTarget.ForPosition(best) : CombatMoveTarget.None;
-    }
-
-    private static Character FindBestEnemyCharacter(CombatAiContext context, Character focusEnemy, float focusCommitmentRemainingSeconds)
-    {
-        Character focusCandidate = CombatAiFocusTargeting.IsValid(context, focusEnemy) ? focusEnemy : null;
-        Character best = focusCandidate;
-        float bestScore = focusCandidate != null
-            ? ScoreEnemyTarget(context, focusCandidate) + CombatAiFocusTargeting.GetSelectionBonus(context, focusCandidate, focusCommitmentRemainingSeconds)
-            : float.NegativeInfinity;
-
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character == null || !enemy.HasKnownPosition) continue;
-            float score = ScoreEnemyTarget(context, enemy.Character);
-            if (enemy.Character == focusCandidate)
-            {
-                score += CombatAiFocusTargeting.GetSelectionBonus(context, enemy.Character, focusCommitmentRemainingSeconds);
-            }
-
-            float requiredScore = bestScore;
-            if (focusCandidate != null && enemy.Character != focusCandidate && focusCommitmentRemainingSeconds > 0f)
-            {
-                requiredScore += SwordRetargetThreshold;
-            }
-
-            if (score <= requiredScore) continue;
-            bestScore = score;
-            best = enemy.Character;
-        }
-
-        return best;
-    }
-
-    private static float ScoreEnemyTarget(CombatAiContext context, Character enemyCharacter)
-    {
-        CombatCharacterIntel enemy = FindEnemyIntel(context, enemyCharacter);
-        if (enemy.Character == null || !enemy.HasKnownPosition) return float.NegativeInfinity;
-
-        float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
-        return (1f - hpRatio) * 60f + (enemy.HasDirectSight ? 25f : enemy.HasMemory ? 10f : 0f);
-    }
-
-    private static Character FindBestAllyCharacter(CombatAiContext context)
-    {
-        Character best = null;
-        float bestScore = float.NegativeInfinity;
-        for (int i = 0; i < context.AllyIntel.Count; i++)
-        {
-            CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null) continue;
-            float hpRatio = ally.MaxHP > 0 ? (float)ally.HP / ally.MaxHP : 1f;
-            float score = (1f - hpRatio) * 60f + (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f) ? 20f : 0f);
-            if (score <= bestScore) continue;
-            bestScore = score;
-            best = ally.Character;
-        }
-
-        return best;
-    }
-
-    private static CombatCharacterIntel FindNearestKnownEnemyIntel(CombatAiContext context, Vector3 position)
-    {
-        if (context == null)
-        {
-            return default;
-        }
-
-        CombatCharacterIntel best = default;
-        float bestDistance = float.PositiveInfinity;
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character == null || !enemy.HasKnownPosition || enemy.HP <= 0)
-            {
-                continue;
-            }
-
-            float distance = HorizontalDistance(position, enemy.KnownPosition);
-            if (distance >= bestDistance)
-            {
-                continue;
-            }
-
-            bestDistance = distance;
-            best = enemy;
-        }
-
-        return best;
-    }
-
-    private static int EstimateCurrentRosaryHealAmount(Character owner, Character ally, float distance)
-    {
-        if (owner == null || ally == null)
-        {
-            return 0;
-        }
-
-        IReadOnlyList<SkillBase> skills = owner.AvailableCombatSkills;
-        CombatSkillCooldowns cooldowns = owner.SkillCooldowns;
-        int bestHeal = 0;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            SkillBase skill = skills[i];
-            if (skill == null || !CombatAiSkillClassifier.IsHeal(skill))
-            {
-                continue;
-            }
-
-            if (cooldowns != null && !cooldowns.IsReady(skill))
-            {
-                continue;
-            }
-
-            int estimate = EstimateRosaryHealAmount(owner, skill, distance);
-            if (estimate > bestHeal)
-            {
-                bestHeal = estimate;
-            }
-        }
-
-        return bestHeal;
-    }
-
-    private static float EstimatePreferredWandAttackDistance(Character owner)
-    {
-        if (owner == null)
-        {
-            return 0f;
-        }
-
-        IReadOnlyList<SkillBase> skills = owner.AvailableCombatSkills;
-        CombatSkillCooldowns cooldowns = owner.SkillCooldowns;
-        float bestRange = 0f;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            SkillBase skill = skills[i];
-            if (skill == null || !CombatAiSkillClassifier.IsDamage(skill))
-            {
-                continue;
-            }
-
-            if (cooldowns != null && !cooldowns.IsReady(skill))
-            {
-                continue;
-            }
-
-            bestRange = Mathf.Max(bestRange, skill.MaxRange);
-        }
-
-        if (bestRange <= 0f)
-        {
-            WeaponBase weapon = owner.EquippedWeapon;
-            bestRange = weapon != null ? weapon.Range : 0f;
-        }
-
-        return Mathf.Max(0f, bestRange - 1f);
-    }
-
-    private static int EstimateRosaryHealAmount(Character owner, SkillBase skill, float distance)
-    {
-        if (owner == null || skill == null)
-        {
-            return 0;
-        }
-
-        float fai = owner.GetEffectiveStat(CombatStat.FAI);
-        if (skill is IdentifiedSkill identified)
-        {
-            switch (identified.SkillId)
-            {
-                case SkillId.Rosary_DistantHeal:
-                {
-                    if (distance > 9f)
-                    {
-                        return 0;
-                    }
-
-                    int baseHeal = Mathf.Max(1, Mathf.RoundToInt(fai * 0.45f));
-                    return ComputeDistanceScaledAmount(baseHeal, distance, 9f, 1.5f, 0.8f);
-                }
-                case SkillId.Rosary_CloseHeal:
-                    return distance <= 3f ? Mathf.Max(1, Mathf.RoundToInt(fai * 1.1f)) : 0;
-                case SkillId.Rosary_Regeneration:
-                    return distance <= 5f ? 25 : 0;
-                case SkillId.Rosary_HealingArea:
-                    return distance <= 7f ? 15 : 0;
-                default:
-                    return 0;
-            }
-        }
-
-        return 0;
-    }
-
-    private static Vector3 ResolveSupportStandoffPosition(
-        CombatAiContext context,
-        Character owner,
-        Character ally,
-        float desiredDistance)
-    {
-        Vector3 allyPosition = ally.transform.position;
-        Vector3 direction = Vector3.zero;
-        float nearestEnemyDistance = float.PositiveInfinity;
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition)
-            {
-                continue;
-            }
-
-            float distance = HorizontalDistance(enemy.KnownPosition, allyPosition);
-            if (distance >= nearestEnemyDistance)
-            {
-                continue;
-            }
-
-            nearestEnemyDistance = distance;
-            direction = Flatten(allyPosition - enemy.KnownPosition);
-        }
-
-        if (direction.sqrMagnitude <= 0.01f)
-        {
-            direction = Flatten(owner.transform.position - allyPosition);
-        }
-
-        if (direction.sqrMagnitude <= 0.01f)
-        {
-            direction = Vector3.back;
-        }
-
-        direction.Normalize();
-        Vector3 destination = allyPosition + direction * desiredDistance;
-        destination.y = owner.transform.position.y;
-        return destination;
-    }
-
-    private static Vector3 ResolveEnemyStandoffPosition(Character owner, Character enemy, float desiredDistance)
-    {
-        Vector3 enemyPosition = enemy.transform.position;
-        Vector3 direction = Flatten(owner.transform.position - enemyPosition);
-        if (direction.sqrMagnitude <= 0.01f)
-        {
-            direction = Vector3.back;
-        }
-
-        direction.Normalize();
-        Vector3 destination = enemyPosition + direction * desiredDistance;
-        destination.y = owner.transform.position.y;
-        return destination;
-    }
-
     private static CombatCharacterIntel FindAllyIntel(CombatAiContext context, Character character)
     {
         for (int i = 0; i < context.AllyIntel.Count; i++)
@@ -974,10 +704,10 @@ public static class CombatAiPlanner
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsHeal(skill) => 24f,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsProtect(skill) => 18f,
             CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsProtect(skill) => 20f,
-            CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsDamage(skill) => assessment.GetValue("OwnStoneThreat") * 0.2f,
+            CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsDamage(skill) => assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.2f,
             CombatObjective.Retreat when CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill) => 20f,
             CombatObjective.Search when CombatAiSkillClassifier.IsStealth(skill) || CombatAiSkillClassifier.IsMobility(skill) => 16f,
-            CombatObjective.DestroyEnemyStone when CombatAiSkillClassifier.IsSupport(skill) && assessment.GetValue("AllyFragility") < 20f => -20f,
+            CombatObjective.DestroyEnemyStone when CombatAiSkillClassifier.IsSupport(skill) && assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 20f => -20f,
             CombatObjective.DestroyEnemyStone when CombatAiSkillClassifier.IsDamage(skill) && context.VisibleEnemies.Count > 0 => 6f,
             _ => 0f,
         };
@@ -1052,74 +782,4 @@ public static class CombatAiPlanner
         };
     }
 
-}
-
-public static class CombatAiSkillClassifier
-{
-    public static bool IsBasicAttack(SkillBase skill)
-    {
-        return skill != null && skill.Name == "通常攻撃";
-    }
-
-    public static bool IsDamage(SkillBase skill)
-    {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return IsBasicAttack(skill)
-            || code.Contains("Bolt")
-            || code.Contains("Blast")
-            || code.Contains("Slash")
-            || code.Contains("Smite")
-            || code.Contains("Strike")
-            || code.Contains("Thunder");
-    }
-
-    public static bool IsBuff(SkillBase skill)
-    {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Buff") || code.Contains("Invulnerable") || code.Contains("Gotsume");
-    }
-
-    public static bool IsDebuff(SkillBase skill)
-    {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Debuff") || code.Contains("Poison") || code.Contains("Bind");
-    }
-
-    public static bool IsHeal(SkillBase skill)
-    {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Heal") || code.Contains("Regeneration") || code.Contains("HealingArea");
-    }
-
-    public static bool IsProtect(SkillBase skill)
-    {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Invulnerable") || code.Contains("Gotsume") || code.Contains("ShoulderGuard");
-    }
-
-    public static bool IsMobility(SkillBase skill)
-    {
-        return GetCode(skill).Contains("CarryRush");
-    }
-
-    public static bool IsStealth(SkillBase skill)
-    {
-        return GetCode(skill).Contains("Stealth");
-    }
-
-    public static bool IsSupport(SkillBase skill)
-    {
-        return IsBuff(skill) || IsHeal(skill) || IsProtect(skill);
-    }
-
-    private static string GetCode(SkillBase skill)
-    {
-        if (skill == null) return string.Empty;
-        return skill is IdentifiedSkill identified ? identified.SkillId.ToString() : skill.GetType().Name;
-    }
 }

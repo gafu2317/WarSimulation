@@ -1,6 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public static class CombatAiMetricIndex
+{
+    public const int OwnStoneThreat = 0;
+    public const int SelfThreat = 1;
+    public const int AllyFragility = 2;
+    public const int ReachableEnemyValue = 3;
+    public const int EnemyStoneReachability = 4;
+    public const int TerrainAdvantage = 5;
+    public const int EnemyLocationConfidence = 6;
+    public const int RetreatRouteSafety = 7;
+    public const int SelfExposure = 8;
+    public const int Count = 9;
+}
+
 public sealed class CombatAiContextSummary
 {
     public int VisibleEnemyCount { get; set; }
@@ -19,22 +33,31 @@ public sealed class CombatAiMetric
     public string Code { get; set; }
     public string Label { get; set; }
     public float Value { get; set; }
-    public List<CombatAiReasonCode> ReasonCodes { get; } = new();
+    private List<CombatAiReasonCode> _reasonCodes;
+    public List<CombatAiReasonCode> ReasonCodes => _reasonCodes ??= new List<CombatAiReasonCode>();
 }
 
 public sealed class CombatAiAssessment
 {
-    public List<CombatAiMetric> Metrics { get; } = new();
+    private readonly float[] _values = new float[CombatAiMetricIndex.Count];
+    private List<CombatAiMetric> _metrics;
+
+    public List<CombatAiMetric> Metrics => _metrics ??= new List<CombatAiMetric>();
+
+    public float GetValue(int index) => _values[index];
 
     public float GetValue(string code)
     {
-        for (int i = 0; i < Metrics.Count; i++)
+        if (_metrics == null) return 0f;
+        for (int i = 0; i < _metrics.Count; i++)
         {
-            if (Metrics[i].Code == code) return Metrics[i].Value;
+            if (_metrics[i].Code == code) return _metrics[i].Value;
         }
 
         return 0f;
     }
+
+    internal void SetValue(int index, float value) => _values[index] = value;
 }
 
 public sealed class CombatAiScoreBreakdown
@@ -43,7 +66,8 @@ public sealed class CombatAiScoreBreakdown
     public float WeaponScore { get; set; }
     public float PersonalityScore { get; set; }
     public float SituationScore { get; set; }
-    public List<CombatAiReasonCode> ReasonCodes { get; } = new();
+    private List<CombatAiReasonCode> _reasonCodes;
+    public List<CombatAiReasonCode> ReasonCodes => _reasonCodes ??= new List<CombatAiReasonCode>();
     public float Total => BaseScore + WeaponScore + PersonalityScore + SituationScore;
 }
 

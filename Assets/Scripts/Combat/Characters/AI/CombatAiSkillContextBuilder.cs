@@ -6,10 +6,17 @@ public static class CombatAiSkillContextBuilder
     public static List<SkillExecutionContext> Build(CombatAiContext context, Character owner, SkillBase skill)
     {
         var contexts = new List<SkillExecutionContext>();
+        Build(context, owner, skill, contexts);
+        return contexts;
+    }
+
+    public static void Build(CombatAiContext context, Character owner, SkillBase skill, List<SkillExecutionContext> contexts)
+    {
+        contexts.Clear();
         if (owner == null || skill == null)
         {
             contexts.Add(SkillExecutionContext.None);
-            return contexts;
+            return;
         }
 
         switch (skill.TargetKind)
@@ -50,8 +57,6 @@ public static class CombatAiSkillContextBuilder
         {
             contexts.Add(SkillExecutionContext.None);
         }
-
-        return contexts;
     }
 
     private static void AddEnemyTargets(CombatAiContext context, SkillBase skill, List<SkillExecutionContext> contexts)

@@ -1,5 +1,7 @@
 public static class CombatAiObjectiveScorer
 {
+    private static readonly CombatObjective[] AllObjectives = (CombatObjective[])System.Enum.GetValues(typeof(CombatObjective));
+
     public static void BuildEntries(
         CombatAiDebugSnapshot snapshot,
         CombatAiPersonalityProfile personalityProfile,
@@ -9,8 +11,9 @@ public static class CombatAiObjectiveScorer
         CombatObjective previousObjective)
     {
         snapshot.ObjectiveEntries.Clear();
-        foreach (CombatObjective objective in System.Enum.GetValues(typeof(CombatObjective)))
+        for (int i = 0; i < AllObjectives.Length; i++)
         {
+            CombatObjective objective = AllObjectives[i];
             var breakdown = new CombatAiScoreBreakdown
             {
                 BaseScore = GetBaseScore(objective),
@@ -43,6 +46,36 @@ public static class CombatAiObjectiveScorer
         }
     }
 
+    public static CombatObjective SelectBestObjective(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiWeaponWeightsProfile weaponWeightsProfile,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        CombatObjective previousObjective)
+    {
+        WeaponBase weapon = context.Owner != null ? context.Owner.EquippedWeapon : null;
+        CombatObjective best = default;
+        float bestScore = float.NegativeInfinity;
+        for (int i = 0; i < AllObjectives.Length; i++)
+        {
+            CombatObjective objective = AllObjectives[i];
+            float score = GetBaseScore(objective)
+                + GetSituationScore(context, assessment, weapon, objective)
+                + CombatAiFocusTargeting.GetObjectiveScore(context, weapon, objective, focusEnemy, focusCommitmentRemainingSeconds, previousObjective)
+                + GetWeaponScore(weaponWeightsProfile, weapon, objective)
+                + GetPersonalityScore(personalityProfile, objective);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = objective;
+            }
+        }
+
+        return best;
+    }
+
     private static float GetBaseScore(CombatObjective objective)
     {
         return objective switch
@@ -65,27 +98,27 @@ public static class CombatAiObjectiveScorer
     {
         float score = objective switch
         {
-            CombatObjective.AttackEnemy => assessment.GetValue("ReachableEnemyValue") * 0.9f
-                + assessment.GetValue("TerrainAdvantage") * 0.15f
-                - assessment.GetValue("SelfThreat") * 0.35f,
-            CombatObjective.DefendOwnStone => assessment.GetValue("OwnStoneThreat") * 0.95f
-                + assessment.GetValue("AllyFragility") * 0.2f
-                + assessment.GetValue("EnemyLocationConfidence") * 0.1f,
-            CombatObjective.SupportAlly => assessment.GetValue("AllyFragility") * 0.95f
-                + assessment.GetValue("TerrainAdvantage") * 0.1f,
-            CombatObjective.DestroyEnemyStone => assessment.GetValue("EnemyStoneReachability") * 0.85f
-                - assessment.GetValue("OwnStoneThreat") * 0.35f
-                - assessment.GetValue("SelfThreat") * 0.2f
+            CombatObjective.AttackEnemy => assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) * 0.9f
+                + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.15f
+                - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.35f,
+            CombatObjective.DefendOwnStone => assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.95f
+                + assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.2f
+                + assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) * 0.1f,
+            CombatObjective.SupportAlly => assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.95f
+                + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.1f,
+            CombatObjective.DestroyEnemyStone => assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) * 0.85f
+                - assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.35f
+                - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.2f
                 + (context.HasEnemyStonePosition ? 4f : 0f)
-                + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue("AllyFragility") * 0.1f)
+                + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f)
                 - (context.VisibleEnemies.Count > 0 ? 28f : 0f),
-            CombatObjective.Search => (100f - assessment.GetValue("EnemyLocationConfidence")) * 0.55f
-                + assessment.GetValue("TerrainAdvantage") * 0.2f
+            CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
+                + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.2f
                 - (context.HasEnemyStonePosition ? 14f : 0f)
                 + (context.VisibleEnemies.Count == 0 && context.HighGroundCandidates.Count > 0 ? 14f : 0f),
-            CombatObjective.Retreat => assessment.GetValue("SelfThreat") * 0.9f
-                + assessment.GetValue("RetreatRouteSafety") * 0.3f
-                + assessment.GetValue("AllyFragility") * 0.1f,
+            CombatObjective.Retreat => assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.9f
+                + assessment.GetValue(CombatAiMetricIndex.RetreatRouteSafety) * 0.3f
+                + assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f,
             _ => 0f,
         };
 
@@ -118,12 +151,12 @@ public static class CombatAiObjectiveScorer
     {
         return objective switch
         {
-            CombatObjective.AttackEnemy when assessment.GetValue("ReachableEnemyValue") > 30f
-                && assessment.GetValue("SelfThreat") < 35f => 16f,
+            CombatObjective.AttackEnemy when assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 30f
+                && assessment.GetValue(CombatAiMetricIndex.SelfThreat) < 35f => 16f,
             CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
-                && assessment.GetValue("EnemyStoneReachability") > 28f
-                && assessment.GetValue("OwnStoneThreat") < 24f => 14f,
-            CombatObjective.DefendOwnStone when assessment.GetValue("OwnStoneThreat") > 28f => 12f,
+                && assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 28f
+                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 24f => 14f,
+            CombatObjective.DefendOwnStone when assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 28f => 12f,
             _ => 0f,
         };
     }
@@ -136,13 +169,13 @@ public static class CombatAiObjectiveScorer
         return objective switch
         {
             CombatObjective.DefendOwnStone when context.HasOwnStonePosition
-                && (assessment.GetValue("OwnStoneThreat") > 18f || assessment.GetValue("AllyFragility") > 22f) => 18f,
-            CombatObjective.AttackEnemy when assessment.GetValue("OwnStoneThreat") < 16f
-                && assessment.GetValue("ReachableEnemyValue") > 24f => 10f,
+                && (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 18f || assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 22f) => 18f,
+            CombatObjective.AttackEnemy when assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 16f
+                && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 24f => 10f,
             CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
-                && assessment.GetValue("EnemyStoneReachability") > 30f
-                && assessment.GetValue("OwnStoneThreat") < 12f
-                && assessment.GetValue("AllyFragility") < 18f => 8f,
+                && assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 30f
+                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 12f
+                && assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 18f => 8f,
             _ => 0f,
         };
     }
@@ -152,16 +185,16 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        bool lacksReliableShot = assessment.GetValue("ReachableEnemyValue") < 24f;
+        bool lacksReliableShot = assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) < 24f;
         return objective switch
         {
-            CombatObjective.Search when assessment.GetValue("EnemyLocationConfidence") < 45f
+            CombatObjective.Search when assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 45f
                 || (context.VisibleEnemies.Count == 0 && context.HighGroundCandidates.Count > 0)
                 || lacksReliableShot => 16f,
-            CombatObjective.AttackEnemy when assessment.GetValue("ReachableEnemyValue") > 28f
-                && assessment.GetValue("EnemyLocationConfidence") > 35f => 14f,
+            CombatObjective.AttackEnemy when assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 28f
+                && assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) > 35f => 14f,
             CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
-                && assessment.GetValue("EnemyStoneReachability") > 34f
+                && assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 34f
                 && lacksReliableShot => 4f,
             _ => 0f,
         };
@@ -176,12 +209,12 @@ public static class CombatAiObjectiveScorer
         return objective switch
         {
             CombatObjective.AttackEnemy when multipleEnemiesVisible
-                || assessment.GetValue("ReachableEnemyValue") > 28f => 16f,
+                || assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 28f => 16f,
             CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
-                && assessment.GetValue("EnemyStoneReachability") > 30f
-                && assessment.GetValue("OwnStoneThreat") < 18f => 10f,
-            CombatObjective.Search when assessment.GetValue("EnemyLocationConfidence") < 35f
-                && assessment.GetValue("ReachableEnemyValue") < 18f => 10f,
+                && assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 30f
+                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 18f => 10f,
+            CombatObjective.Search when assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 35f
+                && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) < 18f => 10f,
             _ => 0f,
         };
     }
@@ -191,18 +224,18 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        bool stableFrontline = assessment.GetValue("AllyFragility") < 18f && assessment.GetValue("OwnStoneThreat") < 16f;
+        bool stableFrontline = assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 18f && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 16f;
         return objective switch
         {
             CombatObjective.SupportAlly when context.AllyIntel.Count > 0
-                && assessment.GetValue("AllyFragility") > 12f => 18f,
+                && assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 12f => 18f,
             CombatObjective.DefendOwnStone when context.HasOwnStonePosition
-                && (assessment.GetValue("OwnStoneThreat") > 18f || assessment.GetValue("AllyFragility") > 20f) => 14f,
+                && (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 18f || assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 20f) => 14f,
             CombatObjective.AttackEnemy when stableFrontline
-                && assessment.GetValue("ReachableEnemyValue") > 26f => 6f,
+                && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 26f => 6f,
             CombatObjective.DestroyEnemyStone when stableFrontline
                 && context.HasEnemyStonePosition
-                && assessment.GetValue("EnemyStoneReachability") > 30f => 6f,
+                && assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 30f => 6f,
             _ => 0f,
         };
     }
@@ -212,17 +245,17 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        bool stableLine = assessment.GetValue("AllyFragility") < 16f && assessment.GetValue("SelfThreat") < 20f;
+        bool stableLine = assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 16f && assessment.GetValue(CombatAiMetricIndex.SelfThreat) < 20f;
         return objective switch
         {
             CombatObjective.SupportAlly when context.AllyIntel.Count > 0
-                && assessment.GetValue("AllyFragility") > 10f => 20f,
-            CombatObjective.Retreat when assessment.GetValue("SelfThreat") > 18f
-                || assessment.GetValue("AllyFragility") > 28f => 16f,
+                && assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 10f => 20f,
+            CombatObjective.Retreat when assessment.GetValue(CombatAiMetricIndex.SelfThreat) > 18f
+                || assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 28f => 16f,
             CombatObjective.DefendOwnStone when stableLine
-                && assessment.GetValue("OwnStoneThreat") > 18f => 8f,
+                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 18f => 8f,
             CombatObjective.Search when stableLine
-                && assessment.GetValue("EnemyLocationConfidence") < 35f => 6f,
+                && assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 35f => 6f,
             _ => 0f,
         };
     }
@@ -259,24 +292,24 @@ public static class CombatAiObjectiveScorer
         switch (objective)
         {
             case CombatObjective.AttackEnemy:
-                if (assessment.GetValue("ReachableEnemyValue") > 35f) AddReason(breakdown, CombatAiReasonCode.ReachableEnemyHigh);
-                if (assessment.GetValue("TerrainAdvantage") > 20f) AddReason(breakdown, CombatAiReasonCode.TerrainAdvantageHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 35f) AddReason(breakdown, CombatAiReasonCode.ReachableEnemyHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) > 20f) AddReason(breakdown, CombatAiReasonCode.TerrainAdvantageHigh);
                 break;
             case CombatObjective.DefendOwnStone:
-                if (assessment.GetValue("OwnStoneThreat") > 25f) AddReason(breakdown, CombatAiReasonCode.OwnStoneThreatHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 25f) AddReason(breakdown, CombatAiReasonCode.OwnStoneThreatHigh);
                 break;
             case CombatObjective.SupportAlly:
-                if (assessment.GetValue("AllyFragility") > 25f) AddReason(breakdown, CombatAiReasonCode.AllyFragilityHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 25f) AddReason(breakdown, CombatAiReasonCode.AllyFragilityHigh);
                 break;
             case CombatObjective.DestroyEnemyStone:
-                if (assessment.GetValue("EnemyStoneReachability") > 25f) AddReason(breakdown, CombatAiReasonCode.EnemyStoneReachable);
+                if (assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 25f) AddReason(breakdown, CombatAiReasonCode.EnemyStoneReachable);
                 break;
             case CombatObjective.Search:
-                if (assessment.GetValue("EnemyLocationConfidence") < 30f) AddReason(breakdown, CombatAiReasonCode.EnemyLocationUncertain);
+                if (assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 30f) AddReason(breakdown, CombatAiReasonCode.EnemyLocationUncertain);
                 break;
             case CombatObjective.Retreat:
-                if (assessment.GetValue("SelfThreat") > 30f) AddReason(breakdown, CombatAiReasonCode.SelfThreatHigh);
-                if (assessment.GetValue("RetreatRouteSafety") > 20f) AddReason(breakdown, CombatAiReasonCode.RetreatRouteSafe);
+                if (assessment.GetValue(CombatAiMetricIndex.SelfThreat) > 30f) AddReason(breakdown, CombatAiReasonCode.SelfThreatHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.RetreatRouteSafety) > 20f) AddReason(breakdown, CombatAiReasonCode.RetreatRouteSafe);
                 break;
         }
     }

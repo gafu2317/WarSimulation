@@ -48,26 +48,56 @@ public static class CombatAiAssessmentBuilder
         };
     }
 
-    public static CombatAiAssessment Build(CombatAiContext context)
+    public static CombatAiAssessment Build(CombatAiContext context, bool captureDebug = true)
     {
         var assessment = new CombatAiAssessment();
-        assessment.Metrics.Add(EvaluateOwnStoneThreat(context));
-        assessment.Metrics.Add(EvaluateSelfThreat(context));
-        assessment.Metrics.Add(EvaluateAllyFragility(context));
-        assessment.Metrics.Add(EvaluateReachableEnemyValue(context));
-        assessment.Metrics.Add(EvaluateEnemyStoneReachability(context));
-        assessment.Metrics.Add(EvaluateTerrainAdvantage(context));
-        assessment.Metrics.Add(EvaluateEnemyLocationConfidence(context));
-        assessment.Metrics.Add(EvaluateRetreatRouteSafety(context));
+
+        var m0 = EvaluateOwnStoneThreat(context, captureDebug, out float v0);
+        assessment.SetValue(CombatAiMetricIndex.OwnStoneThreat, v0);
+        if (captureDebug) assessment.Metrics.Add(m0);
+
+        var m1 = EvaluateSelfThreat(context, captureDebug, out float v1);
+        assessment.SetValue(CombatAiMetricIndex.SelfThreat, v1);
+        if (captureDebug) assessment.Metrics.Add(m1);
+
+        var m2 = EvaluateAllyFragility(context, captureDebug, out float v2);
+        assessment.SetValue(CombatAiMetricIndex.AllyFragility, v2);
+        if (captureDebug) assessment.Metrics.Add(m2);
+
+        var m3 = EvaluateReachableEnemyValue(context, captureDebug, out float v3);
+        assessment.SetValue(CombatAiMetricIndex.ReachableEnemyValue, v3);
+        if (captureDebug) assessment.Metrics.Add(m3);
+
+        var m4 = EvaluateEnemyStoneReachability(context, captureDebug, out float v4);
+        assessment.SetValue(CombatAiMetricIndex.EnemyStoneReachability, v4);
+        if (captureDebug) assessment.Metrics.Add(m4);
+
+        var m5 = EvaluateTerrainAdvantage(context, captureDebug, out float v5);
+        assessment.SetValue(CombatAiMetricIndex.TerrainAdvantage, v5);
+        if (captureDebug) assessment.Metrics.Add(m5);
+
+        var m6 = EvaluateEnemyLocationConfidence(context, captureDebug, out float v6);
+        assessment.SetValue(CombatAiMetricIndex.EnemyLocationConfidence, v6);
+        if (captureDebug) assessment.Metrics.Add(m6);
+
+        var m7 = EvaluateRetreatRouteSafety(context, captureDebug, out float v7);
+        assessment.SetValue(CombatAiMetricIndex.RetreatRouteSafety, v7);
+        if (captureDebug) assessment.Metrics.Add(m7);
+
+        var m8 = EvaluateSelfExposure(context, captureDebug, out float v8);
+        assessment.SetValue(CombatAiMetricIndex.SelfExposure, v8);
+        if (captureDebug) assessment.Metrics.Add(m8);
+
         return assessment;
     }
 
-    private static CombatAiMetric EvaluateOwnStoneThreat(CombatAiContext context)
+    private static CombatAiMetric EvaluateOwnStoneThreat(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("OwnStoneThreat");
+        CombatAiMetric metric = captureDebug ? CreateMetric("OwnStoneThreat") : null;
         if (!context.HasOwnStonePosition)
         {
-            metric.ReasonCodes.Add(CombatAiReasonCode.EnemyLocationUncertain);
+            AddReason(metric, CombatAiReasonCode.EnemyLocationUncertain);
+            value = 0f;
             return metric;
         }
 
@@ -99,16 +129,18 @@ public static class CombatAiAssessmentBuilder
         }
 
         AddReason(metric, CombatAiReasonCode.OwnStoneKnown);
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateSelfThreat(CombatAiContext context)
+    private static CombatAiMetric EvaluateSelfThreat(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("SelfThreat");
+        CombatAiMetric metric = captureDebug ? CreateMetric("SelfThreat") : null;
         Character owner = context.Owner;
         if (owner == null || owner.Health == null || owner.Health.MaxHP <= 0)
         {
+            value = 0f;
             return metric;
         }
 
@@ -143,13 +175,14 @@ public static class CombatAiAssessmentBuilder
             AddReason(metric, CombatAiReasonCode.SelfThreatHigh);
         }
 
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateAllyFragility(CombatAiContext context)
+    private static CombatAiMetric EvaluateAllyFragility(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("AllyFragility");
+        CombatAiMetric metric = captureDebug ? CreateMetric("AllyFragility") : null;
         float score = 0f;
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
@@ -175,15 +208,20 @@ public static class CombatAiAssessmentBuilder
             AddReason(metric, CombatAiReasonCode.AllyFragilityHigh);
         }
 
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateReachableEnemyValue(CombatAiContext context)
+    private static CombatAiMetric EvaluateReachableEnemyValue(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("ReachableEnemyValue");
+        CombatAiMetric metric = captureDebug ? CreateMetric("ReachableEnemyValue") : null;
         Character owner = context.Owner;
-        if (owner == null) return metric;
+        if (owner == null)
+        {
+            value = 0f;
+            return metric;
+        }
 
         float best = 0f;
         for (int i = 0; i < context.EnemyIntel.Count; i++)
@@ -228,15 +266,17 @@ public static class CombatAiAssessmentBuilder
             AddReason(metric, CombatAiReasonCode.ReachableEnemyHigh);
         }
 
-        metric.Value = ClampMetric(best);
+        value = ClampMetric(best);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateEnemyStoneReachability(CombatAiContext context)
+    private static CombatAiMetric EvaluateEnemyStoneReachability(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("EnemyStoneReachability");
+        CombatAiMetric metric = captureDebug ? CreateMetric("EnemyStoneReachability") : null;
         if (!context.HasEnemyStonePosition || context.Owner == null)
         {
+            value = 0f;
             return metric;
         }
 
@@ -248,15 +288,20 @@ public static class CombatAiAssessmentBuilder
             AddReason(metric, CombatAiReasonCode.EnemyStoneReachable);
         }
 
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateTerrainAdvantage(CombatAiContext context)
+    private static CombatAiMetric EvaluateTerrainAdvantage(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("TerrainAdvantage");
+        CombatAiMetric metric = captureDebug ? CreateMetric("TerrainAdvantage") : null;
         Character owner = context.Owner;
-        if (owner == null) return metric;
+        if (owner == null)
+        {
+            value = 0f;
+            return metric;
+        }
 
         float score = 0f;
         if (NearestDistance(owner.transform.position, context.HighGroundCandidates) <= 12f)
@@ -287,13 +332,14 @@ public static class CombatAiAssessmentBuilder
             AddReason(metric, CombatAiReasonCode.TerrainAdvantageHigh);
         }
 
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateEnemyLocationConfidence(CombatAiContext context)
+    private static CombatAiMetric EvaluateEnemyLocationConfidence(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("EnemyLocationConfidence");
+        CombatAiMetric metric = captureDebug ? CreateMetric("EnemyLocationConfidence") : null;
         float score = context.VisibleEnemies.Count * 30f + context.RememberedEnemies.Count * 10f;
         if (context.VisibleEnemies.Count > 0)
         {
@@ -308,15 +354,20 @@ public static class CombatAiAssessmentBuilder
             AddReason(metric, CombatAiReasonCode.EnemyLocationUncertain);
         }
 
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
-    private static CombatAiMetric EvaluateRetreatRouteSafety(CombatAiContext context)
+    private static CombatAiMetric EvaluateRetreatRouteSafety(CombatAiContext context, bool captureDebug, out float value)
     {
-        var metric = CreateMetric("RetreatRouteSafety");
+        CombatAiMetric metric = captureDebug ? CreateMetric("RetreatRouteSafety") : null;
         Character owner = context.Owner;
-        if (owner == null) return metric;
+        if (owner == null)
+        {
+            value = 0f;
+            return metric;
+        }
 
         float score = 0f;
         if (context.HasOwnStonePosition)
@@ -334,7 +385,43 @@ public static class CombatAiAssessmentBuilder
         int nearbyEnemies = CountEnemiesNear(context.EnemyIntel, owner.transform.position, 12f);
         score -= nearbyEnemies * 8f;
         AddReason(metric, nearbyEnemies <= 1 ? CombatAiReasonCode.RetreatRouteSafe : CombatAiReasonCode.RetreatRouteUnsafe);
-        metric.Value = ClampMetric(score);
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
+        return metric;
+    }
+
+    private static CombatAiMetric EvaluateSelfExposure(CombatAiContext context, bool captureDebug, out float value)
+    {
+        CombatAiMetric metric = captureDebug ? CreateMetric("SelfExposure") : null;
+        Character owner = context.Owner;
+        if (owner == null)
+        {
+            value = 0f;
+            return metric;
+        }
+
+        float score = 0f;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel intel = context.EnemyIntel[i];
+            if (!intel.RecognizesOwner || !intel.HasKnownPosition) continue;
+
+            float distance = HorizontalDistance(owner.transform.position, intel.KnownPosition);
+            score += Mathf.Lerp(30f, 8f, Mathf.Clamp01(distance / 20f));
+            if (intel.HasDirectSight)
+            {
+                score += 8f;
+                AddReason(metric, CombatAiReasonCode.EnemyLineOfSight);
+            }
+        }
+
+        if (score > 20f)
+        {
+            AddReason(metric, CombatAiReasonCode.SelfExposedByEnemy);
+        }
+
+        value = ClampMetric(score);
+        if (metric != null) metric.Value = value;
         return metric;
     }
 
@@ -350,6 +437,7 @@ public static class CombatAiAssessmentBuilder
 
     private static void AddReason(CombatAiMetric metric, CombatAiReasonCode reason)
     {
+        if (metric == null) return;
         if (!metric.ReasonCodes.Contains(reason))
         {
             metric.ReasonCodes.Add(reason);

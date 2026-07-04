@@ -1,0 +1,580 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public static partial class CombatAiPlanner
+{
+    private static CombatMoveTarget CreateEnemyStoneTarget(CombatAiContext context)
+    {
+        return context.HasEnemyStonePosition ? CombatMoveTarget.ForPosition(context.EnemyStonePosition) : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateOwnStoneTarget(CombatAiContext context)
+    {
+        return context.HasOwnStonePosition ? CombatMoveTarget.ForPosition(context.OwnStonePosition) : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateBestEnemyTarget(CombatAiContext context, Character focusEnemy, float focusCommitmentRemainingSeconds)
+    {
+        Character enemy = FindBestEnemyCharacter(context, focusEnemy, focusCommitmentRemainingSeconds);
+        if (enemy == null)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        Character owner = context != null ? context.Owner : null;
+        WeaponBase weapon = owner != null ? owner.EquippedWeapon : null;
+        if (owner != null && weapon != null && (weapon.Kind == WeaponKind.Wand || weapon.Kind == WeaponKind.Grimoire))
+        {
+            return CreateRangedAttackTarget(context, owner, enemy);
+        }
+
+        return CombatMoveTarget.ForCharacter(enemy);
+    }
+
+    private static CombatMoveTarget CreateBestAllyTarget(CombatAiContext context)
+    {
+        Character owner = context != null ? context.Owner : null;
+        WeaponBase weapon = owner != null ? owner.EquippedWeapon : null;
+        if (owner != null && weapon != null && weapon.Kind == WeaponKind.Shield)
+        {
+            return CreateShieldProtectTarget(context, owner);
+        }
+
+        Character ally = FindBestAllyCharacter(context);
+        if (ally == null)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        if (owner != null && weapon != null && weapon.Kind == WeaponKind.Rosary)
+        {
+            return CreateRosarySupportTarget(context, owner, ally);
+        }
+
+        if (owner != null && weapon != null && weapon.Kind == WeaponKind.Bible)
+        {
+            return CreateBibleSupportTarget(context, owner, ally);
+        }
+
+        return CombatMoveTarget.ForCharacter(ally);
+    }
+
+    private static CombatMoveTarget CreateRosarySupportTarget(CombatAiContext context, Character owner, Character ally)
+    {
+        if (context == null || owner == null || ally == null)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        CombatCharacterIntel allyIntel = FindAllyIntel(context, ally);
+        if (allyIntel.Character == null || allyIntel.MaxHP <= 0)
+        {
+            return CombatMoveTarget.ForCharacter(ally);
+        }
+
+        int missingHp = Mathf.Max(0, allyIntel.MaxHP - allyIntel.HP);
+        float currentDistance = HorizontalDistance(owner.transform.position, ally.transform.position);
+        int currentHealAmount = EstimateCurrentRosaryHealAmount(owner, ally, currentDistance);
+        float desiredDistance = missingHp > currentHealAmount
+            ? RosaryCloseHealDistance
+            : RosaryPreferredSupportDistance;
+        CombatCharacterIntel nearestThreat = FindNearestKnownEnemyIntel(context, owner.transform.position);
+        bool threatTooClose = nearestThreat.Character != null &&
+            HorizontalDistance(owner.transform.position, nearestThreat.KnownPosition) < RosaryEnemyClearanceDistance;
+
+        if (Mathf.Abs(currentDistance - desiredDistance) <= 0.75f && !threatTooClose)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        Vector3 destination = ResolveSupportStandoffPositionWithCoverBias(context, owner, ally, desiredDistance);
+        return CombatMoveTarget.ForPosition(destination);
+    }
+
+    private static CombatMoveTarget CreateRangedAttackTarget(CombatAiContext context, Character owner, Character enemy)
+    {
+        if (owner == null || enemy == null)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        float desiredDistance = EstimatePreferredWandAttackDistance(owner);
+        if (desiredDistance <= 0f)
+        {
+            return CombatMoveTarget.ForCharacter(enemy);
+        }
+
+        float currentDistance = HorizontalDistance(owner.transform.position, enemy.transform.position);
+        float minimumHoldDistance = Mathf.Max(0f, desiredDistance - WandRangeSlack);
+        float maximumHoldDistance = desiredDistance + WandRangeSlack;
+        CombatCharacterIntel nearestThreat = FindNearestKnownEnemyIntel(context, owner.transform.position);
+        bool threatTooClose = nearestThreat.Character != null &&
+            HorizontalDistance(owner.transform.position, nearestThreat.KnownPosition) < WandEnemyClearanceDistance;
+        if (currentDistance >= minimumHoldDistance && currentDistance <= maximumHoldDistance && !threatTooClose)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        Character standoffEnemy = threatTooClose && nearestThreat.Character != null ? nearestThreat.Character : enemy;
+        Vector3 destination = ResolveEnemyStandoffPositionWithCoverBias(context, owner, standoffEnemy, desiredDistance);
+        return CombatMoveTarget.ForPosition(destination);
+    }
+
+    private static CombatMoveTarget CreateShieldProtectTarget(CombatAiContext context, Character owner)
+    {
+        if (context == null || owner == null) return CombatMoveTarget.None;
+
+        Character ally = FindBestAllyCharacter(context);
+        if (ally == null) return CombatMoveTarget.None;
+
+        Vector3 allyPos = ally.transform.position;
+        Vector3 enemyDirection = Vector3.zero;
+        float nearestEnemyDist = float.PositiveInfinity;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition) continue;
+            float d = HorizontalDistance(allyPos, enemy.KnownPosition);
+            if (d >= nearestEnemyDist) continue;
+            nearestEnemyDist = d;
+            enemyDirection = Flatten(enemy.KnownPosition - allyPos);
+        }
+
+        if (enemyDirection.sqrMagnitude <= 0.01f)
+        {
+            return HorizontalDistance(owner.transform.position, allyPos) > 2f
+                ? CombatMoveTarget.ForCharacter(ally)
+                : CombatMoveTarget.None;
+        }
+
+        enemyDirection.Normalize();
+        const float protectOffset = 1.5f;
+        Vector3 destination = allyPos + enemyDirection * protectOffset;
+        destination.y = owner.transform.position.y;
+
+        if (HorizontalDistance(owner.transform.position, destination) < 1.5f) return CombatMoveTarget.None;
+        return CombatMoveTarget.ForPosition(destination);
+    }
+
+    private static CombatMoveTarget CreateBibleSupportTarget(CombatAiContext context, Character owner, Character ally)
+    {
+        if (context == null || owner == null || ally == null) return CombatMoveTarget.None;
+
+        const float bibleDesiredDistance = 2.5f;
+        float currentDistance = HorizontalDistance(owner.transform.position, ally.transform.position);
+        if (currentDistance <= bibleDesiredDistance + 0.75f) return CombatMoveTarget.None;
+
+        Vector3 destination = ResolveSupportStandoffPositionWithCoverBias(context, owner, ally, bibleDesiredDistance);
+        return CombatMoveTarget.ForPosition(destination);
+    }
+
+    private static CombatMoveTarget CreateLastKnownEnemyTarget(CombatAiContext context)
+    {
+        float bestScore = float.NegativeInfinity;
+        Vector3 bestPosition = default;
+        bool found = false;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition) continue;
+
+            float score = enemy.HasDirectSight ? 1000f : 0f;
+            score -= enemy.HasMemory ? enemy.MemoryAgeSeconds : 0f;
+            score += enemy.MaxHP > 0 ? (1f - enemy.HP / (float)enemy.MaxHP) * 10f : 0f;
+            score -= HorizontalDistance(context.Owner.transform.position, enemy.KnownPosition) * 0.05f;
+            if (score <= bestScore) continue;
+
+            bestScore = score;
+            bestPosition = enemy.KnownPosition;
+            found = true;
+        }
+
+        return found ? CombatMoveTarget.ForPosition(bestPosition) : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateNearestPositionTarget(Character owner, IReadOnlyList<Vector3> positions)
+    {
+        if (owner == null || positions == null || positions.Count == 0) return CombatMoveTarget.None;
+
+        const float minimumMeaningfulDistance = 2f;
+        float bestDistance = float.PositiveInfinity;
+        Vector3 best = default;
+        bool found = false;
+        for (int i = 0; i < positions.Count; i++)
+        {
+            float distance = HorizontalDistance(owner.transform.position, positions[i]);
+            if (distance <= minimumMeaningfulDistance) continue;
+            if (distance >= bestDistance) continue;
+            bestDistance = distance;
+            best = positions[i];
+            found = true;
+        }
+
+        return found ? CombatMoveTarget.ForPosition(best) : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateCoverPositionTarget(CombatAiContext context, Character owner)
+    {
+        if (owner == null || context == null || context.ForestCandidates.Count == 0) return CombatMoveTarget.None;
+
+        const float minMeaningfulDistance = 2f;
+        Vector3 ownerPos = owner.transform.position;
+        float bestScore = float.NegativeInfinity;
+        Vector3 best = default;
+        bool found = false;
+
+        for (int i = 0; i < context.ForestCandidates.Count; i++)
+        {
+            Vector3 candidate = context.ForestCandidates[i];
+            float ownerDist = HorizontalDistance(ownerPos, candidate);
+            if (ownerDist <= minMeaningfulDistance) continue;
+
+            float nearestEnemyDist = float.PositiveInfinity;
+            for (int j = 0; j < context.EnemyIntel.Count; j++)
+            {
+                CombatCharacterIntel enemy = context.EnemyIntel[j];
+                if (!enemy.HasKnownPosition) continue;
+                float d = HorizontalDistance(candidate, enemy.KnownPosition);
+                if (d < nearestEnemyDist) nearestEnemyDist = d;
+            }
+
+            if (nearestEnemyDist == float.PositiveInfinity) nearestEnemyDist = 0f;
+
+            float score = -ownerDist * 0.5f + Mathf.Min(nearestEnemyDist, 20f) * 0.8f;
+            if (score <= bestScore) continue;
+            bestScore = score;
+            best = candidate;
+            found = true;
+        }
+
+        return found ? CombatMoveTarget.ForPosition(best) : CombatMoveTarget.None;
+    }
+
+    private static bool IsRangedOrSupportWeapon(WeaponKind kind)
+    {
+        return kind == WeaponKind.Wand || kind == WeaponKind.Grimoire
+            || kind == WeaponKind.Bible || kind == WeaponKind.Rosary;
+    }
+
+    private static Character FindBestEnemyCharacter(CombatAiContext context, Character focusEnemy, float focusCommitmentRemainingSeconds)
+    {
+        Character focusCandidate = CombatAiFocusTargeting.IsValid(context, focusEnemy) ? focusEnemy : null;
+        Character best = focusCandidate;
+        float bestScore = focusCandidate != null
+            ? ScoreEnemyTarget(context, focusCandidate) + CombatAiFocusTargeting.GetSelectionBonus(context, focusCandidate, focusCommitmentRemainingSeconds)
+            : float.NegativeInfinity;
+
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.Character == null || !enemy.HasKnownPosition) continue;
+            float score = ScoreEnemyTarget(context, enemy.Character);
+            if (enemy.Character == focusCandidate)
+            {
+                score += CombatAiFocusTargeting.GetSelectionBonus(context, enemy.Character, focusCommitmentRemainingSeconds);
+            }
+
+            float requiredScore = bestScore;
+            if (focusCandidate != null && enemy.Character != focusCandidate && focusCommitmentRemainingSeconds > 0f)
+            {
+                requiredScore += SwordRetargetThreshold;
+            }
+
+            if (score <= requiredScore) continue;
+            bestScore = score;
+            best = enemy.Character;
+        }
+
+        return best;
+    }
+
+    private static float ScoreEnemyTarget(CombatAiContext context, Character enemyCharacter)
+    {
+        CombatCharacterIntel enemy = FindEnemyIntel(context, enemyCharacter);
+        if (enemy.Character == null || !enemy.HasKnownPosition) return float.NegativeInfinity;
+
+        float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
+        return (1f - hpRatio) * 60f + (enemy.HasDirectSight ? 25f : enemy.HasMemory ? 10f : 0f);
+    }
+
+    private static Character FindBestAllyCharacter(CombatAiContext context)
+    {
+        Character best = null;
+        float bestScore = float.NegativeInfinity;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null) continue;
+            float hpRatio = ally.MaxHP > 0 ? (float)ally.HP / ally.MaxHP : 1f;
+            float score = (1f - hpRatio) * 60f + (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f) ? 20f : 0f);
+            if (score <= bestScore) continue;
+            bestScore = score;
+            best = ally.Character;
+        }
+
+        return best;
+    }
+
+    private static CombatCharacterIntel FindNearestKnownEnemyIntel(CombatAiContext context, Vector3 position)
+    {
+        if (context == null)
+        {
+            return default;
+        }
+
+        CombatCharacterIntel best = default;
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.Character == null || !enemy.HasKnownPosition || enemy.HP <= 0)
+            {
+                continue;
+            }
+
+            float distance = HorizontalDistance(position, enemy.KnownPosition);
+            if (distance >= bestDistance)
+            {
+                continue;
+            }
+
+            bestDistance = distance;
+            best = enemy;
+        }
+
+        return best;
+    }
+
+    private static int EstimateCurrentRosaryHealAmount(Character owner, Character ally, float distance)
+    {
+        if (owner == null || ally == null)
+        {
+            return 0;
+        }
+
+        IReadOnlyList<SkillBase> skills = owner.AvailableCombatSkills;
+        CombatSkillCooldowns cooldowns = owner.SkillCooldowns;
+        int bestHeal = 0;
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null || !CombatAiSkillClassifier.IsHeal(skill))
+            {
+                continue;
+            }
+
+            if (cooldowns != null && !cooldowns.IsReady(skill))
+            {
+                continue;
+            }
+
+            int estimate = EstimateRosaryHealAmount(owner, skill, distance);
+            if (estimate > bestHeal)
+            {
+                bestHeal = estimate;
+            }
+        }
+
+        return bestHeal;
+    }
+
+    private static float EstimatePreferredWandAttackDistance(Character owner)
+    {
+        if (owner == null)
+        {
+            return 0f;
+        }
+
+        IReadOnlyList<SkillBase> skills = owner.AvailableCombatSkills;
+        CombatSkillCooldowns cooldowns = owner.SkillCooldowns;
+        float bestRange = 0f;
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null || !CombatAiSkillClassifier.IsDamage(skill))
+            {
+                continue;
+            }
+
+            if (cooldowns != null && !cooldowns.IsReady(skill))
+            {
+                continue;
+            }
+
+            bestRange = Mathf.Max(bestRange, skill.MaxRange);
+        }
+
+        if (bestRange <= 0f)
+        {
+            WeaponBase weapon = owner.EquippedWeapon;
+            bestRange = weapon != null ? weapon.Range : 0f;
+        }
+
+        return Mathf.Max(0f, bestRange - 1f);
+    }
+
+    private static int EstimateRosaryHealAmount(Character owner, SkillBase skill, float distance)
+    {
+        if (owner == null || skill == null)
+        {
+            return 0;
+        }
+
+        float fai = owner.GetEffectiveStat(CombatStat.FAI);
+        if (skill is IdentifiedSkill identified)
+        {
+            switch (identified.SkillId)
+            {
+                case SkillId.Rosary_DistantHeal:
+                {
+                    if (distance > 9f)
+                    {
+                        return 0;
+                    }
+
+                    int baseHeal = Mathf.Max(1, Mathf.RoundToInt(fai * 0.45f));
+                    return ComputeDistanceScaledAmount(baseHeal, distance, 9f, 1.5f, 0.8f);
+                }
+                case SkillId.Rosary_CloseHeal:
+                    return distance <= 3f ? Mathf.Max(1, Mathf.RoundToInt(fai * 1.1f)) : 0;
+                case SkillId.Rosary_Regeneration:
+                    return distance <= 5f ? 25 : 0;
+                case SkillId.Rosary_HealingArea:
+                    return distance <= 7f ? 15 : 0;
+                default:
+                    return 0;
+            }
+        }
+
+        return 0;
+    }
+
+    private static Vector3 ResolveSupportStandoffPosition(
+        CombatAiContext context,
+        Character owner,
+        Character ally,
+        float desiredDistance)
+    {
+        Vector3 allyPosition = ally.transform.position;
+        Vector3 direction = Vector3.zero;
+        float nearestEnemyDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition)
+            {
+                continue;
+            }
+
+            float distance = HorizontalDistance(enemy.KnownPosition, allyPosition);
+            if (distance >= nearestEnemyDistance)
+            {
+                continue;
+            }
+
+            nearestEnemyDistance = distance;
+            direction = Flatten(allyPosition - enemy.KnownPosition);
+        }
+
+        if (direction.sqrMagnitude <= 0.01f)
+        {
+            direction = Flatten(owner.transform.position - allyPosition);
+        }
+
+        if (direction.sqrMagnitude <= 0.01f)
+        {
+            direction = Vector3.back;
+        }
+
+        direction.Normalize();
+        Vector3 destination = allyPosition + direction * desiredDistance;
+        destination.y = owner.transform.position.y;
+        return destination;
+    }
+
+    private static Vector3 ResolveEnemyStandoffPosition(Character owner, Character enemy, float desiredDistance)
+    {
+        Vector3 enemyPosition = enemy.transform.position;
+        Vector3 direction = Flatten(owner.transform.position - enemyPosition);
+        if (direction.sqrMagnitude <= 0.01f)
+        {
+            direction = Vector3.back;
+        }
+
+        direction.Normalize();
+        Vector3 destination = enemyPosition + direction * desiredDistance;
+        destination.y = owner.transform.position.y;
+        return destination;
+    }
+
+    private static Vector3 ResolveEnemyStandoffPositionWithCoverBias(
+        CombatAiContext context, Character owner, Character enemy, float desiredDistance)
+    {
+        Vector3 basePosition = ResolveEnemyStandoffPosition(owner, enemy, desiredDistance);
+        if (context == null || context.ForestCandidates.Count == 0) return basePosition;
+
+        float slack = desiredDistance * 0.35f;
+        float minDist = Mathf.Max(1f, desiredDistance - slack);
+        float maxDist = desiredDistance + slack;
+        Vector3 enemyPos = enemy.transform.position;
+        float bestScore = float.NegativeInfinity;
+        Vector3 best = basePosition;
+
+        for (int i = 0; i < context.ForestCandidates.Count; i++)
+        {
+            Vector3 candidate = context.ForestCandidates[i];
+            float distToEnemy = HorizontalDistance(candidate, enemyPos);
+            if (distToEnemy < minDist || distToEnemy > maxDist) continue;
+
+            float distToOwner = HorizontalDistance(candidate, owner.transform.position);
+            if (distToOwner > desiredDistance * 2.5f) continue;
+
+            float score = -distToOwner;
+            if (score <= bestScore) continue;
+            bestScore = score;
+            best = candidate;
+        }
+
+        best.y = owner.transform.position.y;
+        return best;
+    }
+
+    private static Vector3 ResolveSupportStandoffPositionWithCoverBias(
+        CombatAiContext context, Character owner, Character ally, float desiredDistance)
+    {
+        Vector3 basePosition = ResolveSupportStandoffPosition(context, owner, ally, desiredDistance);
+        if (context == null || context.ForestCandidates.Count == 0) return basePosition;
+
+        float slack = desiredDistance * 0.5f + 2f;
+        float maxDistFromAlly = desiredDistance + slack;
+        Vector3 allyPos = ally.transform.position;
+        float bestScore = float.NegativeInfinity;
+        Vector3 best = basePosition;
+
+        for (int i = 0; i < context.ForestCandidates.Count; i++)
+        {
+            Vector3 candidate = context.ForestCandidates[i];
+            float distToAlly = HorizontalDistance(candidate, allyPos);
+            if (distToAlly > maxDistFromAlly) continue;
+
+            float nearestEnemyDist = float.PositiveInfinity;
+            for (int j = 0; j < context.EnemyIntel.Count; j++)
+            {
+                CombatCharacterIntel enemy = context.EnemyIntel[j];
+                if (!enemy.HasKnownPosition) continue;
+                float d = HorizontalDistance(candidate, enemy.KnownPosition);
+                if (d < nearestEnemyDist) nearestEnemyDist = d;
+            }
+
+            if (nearestEnemyDist == float.PositiveInfinity) nearestEnemyDist = 0f;
+            float distToOwner = HorizontalDistance(candidate, owner.transform.position);
+            float score = -distToOwner * 0.5f + Mathf.Min(nearestEnemyDist, 15f) * 0.6f;
+            if (score <= bestScore) continue;
+            bestScore = score;
+            best = candidate;
+        }
+
+        best.y = owner.transform.position.y;
+        return best;
+    }
+}

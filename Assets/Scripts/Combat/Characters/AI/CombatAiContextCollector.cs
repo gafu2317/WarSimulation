@@ -79,21 +79,21 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
         return new CombatAiContext(
             owner,
-            _visibleEnemies.ToArray(),
-            _rememberedEnemies.ToArray(),
-            _allies.ToArray(),
-            _enemyIntel.ToArray(),
-            _allyIntel.ToArray(),
+            _visibleEnemies,
+            _rememberedEnemies,
+            _allies,
+            _enemyIntel,
+            _allyIntel,
             mapSystem != null ? mapSystem.CurrentWeather : default,
             mapSystem != null ? mapSystem.WindVector : Vector3.zero,
             hasOwnStonePosition,
             ownStonePosition,
             hasEnemyStonePosition,
             enemyStonePosition,
-            _rockPositions.ToArray(),
-            _bridgePositions.ToArray(),
-            _highGroundCandidates.ToArray(),
-            _forestCandidates.ToArray());
+            _rockPositions,
+            _bridgePositions,
+            _highGroundCandidates,
+            _forestCandidates);
     }
 
     private void ClearBuffers()
