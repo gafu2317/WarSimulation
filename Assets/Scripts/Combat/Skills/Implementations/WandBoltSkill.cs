@@ -7,8 +7,8 @@ public sealed class WandBoltSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public WandBoltSkill(
-        float intScale = 0.8f,
-        float maxRange = 16f,
+        float intScale = 0.4f,
+        float maxRange = 10f,
         float cooldownSeconds = 1.4f)
     {
         _intScale = intScale;
@@ -39,8 +39,8 @@ public sealed class WandBoltSkill : SkillBase
             damage,
             distance,
             _maxRange,
-            nearMultiplier: 0.8f,
-            farMultiplier: 1.5f);
+            nearMultiplier: 0.7f,
+            farMultiplier: 1.3f);
         if (TakeDamage(self, context, damage) > 0)
         {
             BreakStealthOnUse(self);

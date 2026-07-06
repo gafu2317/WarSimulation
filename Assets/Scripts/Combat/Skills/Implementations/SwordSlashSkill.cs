@@ -7,7 +7,7 @@ public sealed class SwordSlashSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public SwordSlashSkill(
-        float strScale = 1f,
+        float strScale = 0.4f,
         float maxRange = 2f,
         float cooldownSeconds = 1f)
     {

@@ -67,7 +67,7 @@ public static class CombatSkillFactory
         CombatStatusEffects.StatKind stat,
         float debuffMultiplier = 0.7f,
         float durationSeconds = 5f,
-        float maxRange = 7f,
+        float maxRange = 8f,
         float cooldownSeconds = 5f,
         string name = null)
     {

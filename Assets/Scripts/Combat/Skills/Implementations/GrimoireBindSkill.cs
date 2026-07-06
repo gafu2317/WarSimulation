@@ -7,7 +7,7 @@ public sealed class GrimoireBindSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public GrimoireBindSkill(
-        float maxRange = 4f,
+        float maxRange = 6f,
         float durationSeconds = 3f,
         float cooldownSeconds = 7f)
     {

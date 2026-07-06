@@ -7,8 +7,8 @@ public sealed class RosarySacrificeThunderSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public RosarySacrificeThunderSkill(
-        int hpCost = 8,
-        float faiScale = 0.9f,
+        int hpCost = 12,
+        float faiScale = 0.7f,
         float cooldownSeconds = 9f)
     {
         _hpCost = hpCost;

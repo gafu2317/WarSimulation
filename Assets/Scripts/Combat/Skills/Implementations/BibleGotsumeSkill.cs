@@ -9,7 +9,7 @@ public sealed class BibleGotsumeSkill : SkillBase
 
     public BibleGotsumeSkill(
         float maxRange = 6f,
-        int reflectDamage = 4,
+        int reflectDamage = 8,
         float durationSeconds = 5f,
         float cooldownSeconds = 7f)
     {

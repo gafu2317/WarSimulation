@@ -7,8 +7,8 @@ public sealed class GrimoireBoltSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public GrimoireBoltSkill(
-        float intScale = 0.7f,
-        float maxRange = 6f,
+        float intScale = 0.35f,
+        float maxRange = 8f,
         float cooldownSeconds = 1.3f)
     {
         _intScale = intScale;

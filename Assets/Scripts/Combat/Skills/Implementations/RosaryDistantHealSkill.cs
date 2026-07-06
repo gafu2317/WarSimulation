@@ -7,8 +7,8 @@ public sealed class RosaryDistantHealSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public RosaryDistantHealSkill(
-        float faiScale = 0.45f,
-        float maxRange = 9f,
+        float faiScale = 0.4f,
+        float maxRange = 10f,
         float cooldownSeconds = 3.5f)
     {
         _faiScale = faiScale;
@@ -36,7 +36,7 @@ public sealed class RosaryDistantHealSkill : SkillBase
 
         float baseAmount = Mathf.Max(1f, context.GetEffectiveStat(CombatStat.FAI) * _faiScale);
         float t = _maxRange <= 0f ? 0f : Mathf.Clamp01(distance / _maxRange);
-        float multiplier = Mathf.Lerp(1.5f, 0.8f, t);
+        float multiplier = Mathf.Lerp(1.4f, 0.8f, t);
         int healAmount = Mathf.Max(1, Mathf.RoundToInt(baseAmount * multiplier));
         target.Health.Heal(healAmount);
     }

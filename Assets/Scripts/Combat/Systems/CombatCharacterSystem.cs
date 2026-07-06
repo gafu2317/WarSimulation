@@ -310,12 +310,28 @@ public class CombatCharacterSystem : MonoBehaviour
 
     private void Awake()
     {
+        CollectCharactersFromScene();
         AssignTeamsFromLists();
     }
 
+#if UNITY_EDITOR
     private void OnValidate()
     {
+        CollectCharactersFromScene();
         AssignTeamsFromLists();
+    }
+#endif
+
+    private void CollectCharactersFromScene()
+    {
+        AllyCharacters.Clear();
+        EnemyCharacters.Clear();
+        Character[] all = FindObjectsByType<Character>(FindObjectsSortMode.None);
+        foreach (Character c in all)
+        {
+            if (c.Team == CombatTeam.Ally) AllyCharacters.Add(c);
+            else EnemyCharacters.Add(c);
+        }
     }
 
     private void AssignTeam(List<Character> characters, CombatTeam team)

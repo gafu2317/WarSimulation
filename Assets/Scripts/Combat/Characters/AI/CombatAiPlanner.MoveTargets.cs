@@ -427,20 +427,20 @@ public static partial class CombatAiPlanner
             {
                 case SkillId.Rosary_DistantHeal:
                 {
-                    if (distance > 9f)
+                    if (distance > 10f)
                     {
                         return 0;
                     }
 
-                    int baseHeal = Mathf.Max(1, Mathf.RoundToInt(fai * 0.45f));
-                    return ComputeDistanceScaledAmount(baseHeal, distance, 9f, 1.5f, 0.8f);
+                    int baseHeal = Mathf.Max(1, Mathf.RoundToInt(fai * 0.4f));
+                    return ComputeDistanceScaledAmount(baseHeal, distance, 10f, 1.4f, 0.8f);
                 }
                 case SkillId.Rosary_CloseHeal:
-                    return distance <= 3f ? Mathf.Max(1, Mathf.RoundToInt(fai * 1.1f)) : 0;
+                    return distance <= 3f ? Mathf.Max(1, Mathf.RoundToInt(fai * 0.9f)) : 0;
                 case SkillId.Rosary_Regeneration:
-                    return distance <= 5f ? 25 : 0;
+                    return distance <= 5f ? 35 : 0;
                 case SkillId.Rosary_HealingArea:
-                    return distance <= 7f ? 15 : 0;
+                    return distance <= 7f ? 20 : 0;
                 default:
                     return 0;
             }
