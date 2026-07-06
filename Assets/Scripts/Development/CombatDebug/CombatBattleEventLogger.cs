@@ -293,19 +293,21 @@ public sealed class CombatBattleEventLogger : MonoBehaviour
         enemyAlive = 0;
 
         ResolveDependencies();
+        MagicStoneRuntimeState ownState = null;
+        MagicStoneRuntimeState enemyState = null;
         bool hasOwn = _magicStoneSystem != null &&
-            _magicStoneSystem.TryGetState(FeatureType.OwnMainStone, out MagicStoneRuntimeState ownState);
+            _magicStoneSystem.TryGetState(FeatureType.OwnMainStone, out ownState);
         bool hasEnemy = _magicStoneSystem != null &&
-            _magicStoneSystem.TryGetState(FeatureType.EnemyMainStone, out MagicStoneRuntimeState enemyState);
+            _magicStoneSystem.TryGetState(FeatureType.EnemyMainStone, out enemyState);
         if (!hasOwn && !hasEnemy && _characterSystem == null) return false;
 
-        if (hasOwn)
+        if (hasOwn && ownState != null)
         {
             ownStoneHp = ownState.HP;
             ownStoneMaxHp = ownState.MaxHP;
         }
 
-        if (hasEnemy)
+        if (hasEnemy && enemyState != null)
         {
             enemyStoneHp = enemyState.HP;
             enemyStoneMaxHp = enemyState.MaxHP;
