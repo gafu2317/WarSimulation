@@ -55,13 +55,18 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         LastContext = _contextCollector.Collect(_owner);
         PruneFocusedEnemy(LastContext);
+        CombatObjective previousObjective = LastPlan.Objective;
         LastPlan = CombatAiPlanner.BuildPlan(
             LastContext,
             _owner.PersonalityProfile,
             ResolveWeaponWeightsProfile(),
             _focusedEnemy,
             GetFocusCommitmentRemainingSeconds(),
-            LastPlan.Objective);
+            previousObjective);
+        if (LastPlan.Objective != previousObjective)
+        {
+            CombatAiDecisionEvents.RaiseObjectiveChanged(_owner, previousObjective, LastPlan.Objective);
+        }
         RefreshWorldLabel();
         return ExecutePlan(LastPlan);
     }

@@ -46,6 +46,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     public event Action HealthChanged;
     public event Action<IncomingDamageContext> IncomingDamage;
     public event Action<int, Character> Damaged;
+    public event Action<Character, Character> Defeated;
 
     private void Awake()
     {
@@ -93,6 +94,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         if (_hp == 0)
         {
             EnterRetreat();
+            Defeated?.Invoke(ResolveOwner(), attacker);
         }
 
         if (appliedDamage > 0)
