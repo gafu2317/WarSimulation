@@ -27,6 +27,13 @@ public sealed class IdentifiedSkill : SkillBase
 
     public override bool CanTargetMagicStone => _inner.CanTargetMagicStone;
 
+    public override int SelfHpCost => _inner.SelfHpCost;
+
+    public override int EstimateDamage(Character self, SkillExecutionContext context, Character target)
+    {
+        return _inner.EstimateDamage(self, context, target);
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         CombatSkillDebugIndicatorSystem.Show(self, _skillId, Name, context);

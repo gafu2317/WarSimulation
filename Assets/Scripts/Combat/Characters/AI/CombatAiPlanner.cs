@@ -423,6 +423,11 @@ public static partial class CombatAiPlanner
             score += assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) * 0.25f;
         }
 
+        if (CombatAiSkillClassifier.IsDamage(skill))
+        {
+            score += assessment.GetValue(CombatAiMetricIndex.KillableTargetValue) * 0.15f;
+        }
+
         score += GetObjectiveSkillAlignmentScore(skill, evaluation, assessment, context, objective);
 
         if (evaluation.HasAreaPreview && evaluation.ResolvedTargetCount >= 2)
@@ -470,9 +475,13 @@ public static partial class CombatAiPlanner
 
         if (CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill))
         {
+            if (CombatAiSkillClassifier.IsDamage(skill))
+            {
+                return GetDamageSkillTargetScore(context, skill, skillContext);
+            }
+
             CombatCharacterIntel enemy = FindEnemyIntel(context, skillContext.PrimaryTarget);
             if (enemy.Character == null) return 0f;
-
             float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
             float score = (1f - hpRatio) * 18f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
             score += GetDebuffTargetAffinityScore(skill, enemy);
@@ -485,6 +494,98 @@ public static partial class CombatAiPlanner
         }
 
         return 0f;
+    }
+
+    private static float GetDamageSkillTargetScore(CombatAiContext context, SkillBase skill, SkillExecutionContext skillContext)
+    {
+        if (context == null || context.Owner == null || skill == null)
+        {
+            return 0f;
+        }
+
+        SkillExecutionContext capturedContext = skillContext.Capture(context.Owner);
+        float score = 0f;
+        bool foundCharacterTarget = false;
+        for (int i = 0; i < capturedContext.ResolvedTargets.Count; i++)
+        {
+            CombatCharacterIntel enemy = FindEnemyIntel(context, capturedContext.ResolvedTargets[i]);
+            if (enemy.Character == null || enemy.HP <= 0) continue;
+
+            int predictedDamage = skill.EstimateDamage(context.Owner, capturedContext, enemy.Character);
+            if (predictedDamage <= 0) continue;
+
+            foundCharacterTarget = true;
+            score += GetDamageAgainstEnemyScore(skill, enemy, predictedDamage);
+        }
+
+        if (!foundCharacterTarget && capturedContext.PrimaryStone != null)
+        {
+            score += 24f;
+        }
+
+        if (skill.SelfHpCost > 0)
+        {
+            score -= GetSelfHpCostPenalty(context.Owner, skill.SelfHpCost);
+        }
+
+        score -= Mathf.Clamp(skill.CooldownSeconds, 0f, 10f) * 0.7f;
+        if (skill.CastTimeSeconds > 0f)
+        {
+            score -= Mathf.Clamp(skill.CastTimeSeconds, 0f, 3f) * 1.5f;
+        }
+
+        if (capturedContext.ResolvedTargets.Count >= 2)
+        {
+            score += Mathf.Min(18f, (capturedContext.ResolvedTargets.Count - 1) * 6f);
+        }
+
+        return score;
+    }
+
+    private static float GetDamageAgainstEnemyScore(SkillBase skill, CombatCharacterIntel enemy, int predictedDamage)
+    {
+        int hp = Mathf.Max(1, enemy.HP);
+        int maxHp = Mathf.Max(hp, enemy.MaxHP);
+        int effectiveDamage = Mathf.Min(predictedDamage, hp);
+        int overkillDamage = Mathf.Max(0, predictedDamage - hp);
+        float hpRatio = maxHp > 0 ? hp / (float)maxHp : 1f;
+        float effectiveDamageRatio = maxHp > 0 ? effectiveDamage / (float)maxHp : 0f;
+        float targetValue = (1f - hpRatio) * 14f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
+
+        float score = targetValue + effectiveDamageRatio * 44f;
+        if (predictedDamage >= hp)
+        {
+            score += 28f;
+            if (CombatAiSkillClassifier.IsBasicAttack(skill))
+            {
+                score += 8f;
+            }
+        }
+
+        score -= Mathf.Clamp01(overkillDamage / (float)maxHp) * 18f;
+        return score;
+    }
+
+    private static float GetSelfHpCostPenalty(Character owner, int hpCost)
+    {
+        if (owner == null || owner.Health == null || owner.MaxHP <= 0)
+        {
+            return hpCost;
+        }
+
+        float costRatio = hpCost / (float)owner.MaxHP;
+        float remainingRatio = (owner.Health.HP - hpCost) / (float)owner.MaxHP;
+        float penalty = costRatio * 45f;
+        if (remainingRatio <= 0f)
+        {
+            penalty += 100f;
+        }
+        else if (remainingRatio < 0.25f)
+        {
+            penalty += (0.25f - remainingRatio) * 80f;
+        }
+
+        return penalty;
     }
 
     private static void AddSkillReasons(CombatSkillEvaluationResult evaluation, CombatAiScoreBreakdown breakdown)

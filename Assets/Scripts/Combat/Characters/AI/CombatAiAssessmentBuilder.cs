@@ -88,6 +88,14 @@ public static class CombatAiAssessmentBuilder
         assessment.SetValue(CombatAiMetricIndex.SelfExposure, v8);
         if (captureDebug) assessment.Metrics.Add(m8);
 
+        var m9 = EvaluateEnemyThreatLevel(context, captureDebug, out float v9);
+        assessment.SetValue(CombatAiMetricIndex.EnemyThreatLevel, v9);
+        if (captureDebug) assessment.Metrics.Add(m9);
+
+        var m10 = EvaluateKillableTargetValue(context, captureDebug, out float v10);
+        assessment.SetValue(CombatAiMetricIndex.KillableTargetValue, v10);
+        if (captureDebug) assessment.Metrics.Add(m10);
+
         return assessment;
     }
 
@@ -425,6 +433,109 @@ public static class CombatAiAssessmentBuilder
         return metric;
     }
 
+    private static CombatAiMetric EvaluateEnemyThreatLevel(CombatAiContext context, bool captureDebug, out float value)
+    {
+        CombatAiMetric metric = captureDebug ? CreateMetric("EnemyThreatLevel") : null;
+        Character owner = context.Owner;
+        if (owner == null)
+        {
+            value = 0f;
+            return metric;
+        }
+
+        float highestThreat = 0f;
+        float otherThreatTotal = 0f;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition || enemy.HP <= 0) continue;
+
+            float threat = GetRoleThreat(enemy.WeaponKind)
+                * GetEngagementFactor(owner, enemy)
+                * GetActionFactor(enemy);
+
+            if (threat <= 0f) continue;
+
+            if (threat > highestThreat)
+            {
+                otherThreatTotal += highestThreat;
+                highestThreat = threat;
+            }
+            else
+            {
+                otherThreatTotal += threat;
+            }
+
+            if (enemy.HasDirectSight)
+            {
+                AddReason(metric, CombatAiReasonCode.VisibleEnemy);
+            }
+            else if (enemy.HasMemory)
+            {
+                AddReason(metric, CombatAiReasonCode.RememberedEnemy);
+            }
+
+            if (threat >= 0.5f)
+            {
+                AddReason(metric, CombatAiReasonCode.EnemyThreatHigh);
+            }
+        }
+
+        float combinedThreat = Mathf.Clamp01(highestThreat + otherThreatTotal * 0.3f);
+        value = combinedThreat * MaxMetricValue;
+        if (metric != null) metric.Value = value;
+        return metric;
+    }
+
+    private static CombatAiMetric EvaluateKillableTargetValue(CombatAiContext context, bool captureDebug, out float value)
+    {
+        CombatAiMetric metric = captureDebug ? CreateMetric("KillableTargetValue") : null;
+        Character owner = context.Owner;
+        if (owner == null)
+        {
+            value = 0f;
+            return metric;
+        }
+
+        float best = 0f;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition || enemy.HP <= 0) continue;
+
+            float targetValue = Mathf.Lerp(0.45f, 1f, GetRoleThreat(enemy.WeaponKind));
+            float finishEase = GetFinishEase(enemy);
+            float reachFactor = GetOwnerReachFactor(owner, enemy);
+            float recognitionFactor = enemy.HasDirectSight ? 1f : enemy.HasMemory ? 0.7f : 0f;
+            float actionOpportunity = enemy.CanAct ? 1f : 1.15f;
+            float score = Mathf.Clamp01(targetValue * finishEase * reachFactor * recognitionFactor * actionOpportunity);
+
+            if (score > best)
+            {
+                best = score;
+            }
+
+            if (finishEase >= 0.7f)
+            {
+                AddReason(metric, CombatAiReasonCode.EnemyLowHp);
+            }
+
+            if (!enemy.CanAct)
+            {
+                AddReason(metric, CombatAiReasonCode.EnemyUnableToAct);
+            }
+        }
+
+        value = best * MaxMetricValue;
+        if (value > 35f)
+        {
+            AddReason(metric, CombatAiReasonCode.KillableTargetHigh);
+        }
+
+        if (metric != null) metric.Value = value;
+        return metric;
+    }
+
     private static CombatAiMetric CreateMetric(string code)
     {
         return new CombatAiMetric
@@ -447,6 +558,60 @@ public static class CombatAiAssessmentBuilder
     private static float ClampMetric(float value)
     {
         return Mathf.Clamp(value, 0f, MaxMetricValue);
+    }
+
+    private static float GetRoleThreat(WeaponKind kind)
+    {
+        return kind switch
+        {
+            WeaponKind.Sword => 0.9f,
+            WeaponKind.Wand => 0.9f,
+            WeaponKind.Grimoire => 0.7f,
+            WeaponKind.Shield => 0.55f,
+            WeaponKind.Bible => 0.35f,
+            WeaponKind.Rosary => 0.25f,
+            _ => 0.2f,
+        };
+    }
+
+    private static float GetEngagementFactor(Character owner, CombatCharacterIntel enemy)
+    {
+        float distance = HorizontalDistance(owner.transform.position, enemy.KnownPosition);
+        float enemyRange = Mathf.Max(enemy.WeaponRange, 2f);
+        if (distance <= enemyRange + 1f) return 1f;
+        if (distance <= enemyRange + 6f) return 0.7f;
+        if (distance <= 24f) return 0.25f;
+        return 0f;
+    }
+
+    private static float GetActionFactor(CombatCharacterIntel enemy)
+    {
+        if (enemy.HP <= 0) return 0f;
+
+        float hpRatio = enemy.MaxHP > 0 ? enemy.HP / (float)enemy.MaxHP : 1f;
+        if (!enemy.CanAct && hpRatio <= 0.3f) return 0.25f;
+        if (!enemy.CanAct) return 0.35f;
+        if (hpRatio <= 0.3f) return 0.6f;
+        return 1f;
+    }
+
+    private static float GetFinishEase(CombatCharacterIntel enemy)
+    {
+        float hpRatio = enemy.MaxHP > 0 ? enemy.HP / (float)enemy.MaxHP : 1f;
+        if (hpRatio <= 0.3f) return 1f;
+        if (hpRatio <= 0.5f) return 0.7f;
+        if (hpRatio <= 0.7f) return 0.35f;
+        return 0.1f;
+    }
+
+    private static float GetOwnerReachFactor(Character owner, CombatCharacterIntel enemy)
+    {
+        float ownerRange = owner.EquippedWeapon != null ? owner.EquippedWeapon.Range : 2f;
+        float distance = HorizontalDistance(owner.transform.position, enemy.KnownPosition);
+        if (distance <= ownerRange + 1f) return 1f;
+        if (distance <= ownerRange + 6f) return 0.6f;
+        if (distance <= 16f) return 0.2f;
+        return 0f;
     }
 
     private static bool HasEnemyNearby(IReadOnlyList<CombatCharacterIntel> enemies, Vector3 position, float radius)

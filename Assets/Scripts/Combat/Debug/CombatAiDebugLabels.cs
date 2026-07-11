@@ -51,6 +51,8 @@ public static class CombatAiDebugLabels
             "EnemyLocationConfidence" => Format("EnemyLocationConfidence", "敵位置確信度"),
             "RetreatRouteSafety" => Format("RetreatRouteSafety", "撤退路安全性"),
             "SelfExposure" => Format("SelfExposure", "自己露出度"),
+            "EnemyThreatLevel" => Format("EnemyThreatLevel", "敵脅威度"),
+            "KillableTargetValue" => Format("KillableTargetValue", "倒し切り価値"),
             _ => code,
         };
     }
@@ -92,6 +94,9 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.TerrainAdvantageHigh => Format(nameof(CombatAiReasonCode.TerrainAdvantageHigh), "地形有利高い"),
             CombatAiReasonCode.RetreatRouteUnsafe => Format(nameof(CombatAiReasonCode.RetreatRouteUnsafe), "撤退路不安"),
             CombatAiReasonCode.SelfExposedByEnemy => Format(nameof(CombatAiReasonCode.SelfExposedByEnemy), "敵に露出中"),
+            CombatAiReasonCode.EnemyThreatHigh => Format(nameof(CombatAiReasonCode.EnemyThreatHigh), "敵脅威高い"),
+            CombatAiReasonCode.KillableTargetHigh => Format(nameof(CombatAiReasonCode.KillableTargetHigh), "倒し切れる敵あり"),
+            CombatAiReasonCode.EnemyUnableToAct => Format(nameof(CombatAiReasonCode.EnemyUnableToAct), "敵が行動不能"),
             _ => reason.ToString(),
         };
     }

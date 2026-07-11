@@ -18,6 +18,13 @@ public abstract class SkillBase
 
     public virtual bool CanTargetMagicStone => false;
 
+    public virtual int SelfHpCost => 0;
+
+    public virtual int EstimateDamage(Character self, SkillExecutionContext context, Character target)
+    {
+        return 0;
+    }
+
     public abstract void Execute(Character self, SkillExecutionContext context);
 
     protected static float ComputeHorizontalDistance(Character self, Character target)
@@ -112,6 +119,14 @@ public abstract class SkillBase
 
         CombatMagicStoneSystem system = CombatMagicStoneSystemResolver.Resolve();
         return system != null ? system.TakeDamage(target.FeatureIndex, amount) : 0;
+    }
+
+    protected static int ApplyDamageModifiers(Character self, SkillExecutionContext context, Character target, int amount)
+    {
+        if (target == null || amount <= 0) return 0;
+        return context.IsCaptured
+            ? Mathf.Max(1, Mathf.RoundToInt(amount * context.GetDamageMultiplier(target)))
+            : ComputeStealthAwareDamage(self, target, amount);
     }
 
     protected static void BreakStealthOnUse(Character self)

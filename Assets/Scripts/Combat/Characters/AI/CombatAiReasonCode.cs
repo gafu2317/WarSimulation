@@ -34,4 +34,7 @@ public enum CombatAiReasonCode
     TerrainAdvantageHigh = 31,
     RetreatRouteUnsafe = 32,
     SelfExposedByEnemy = 33,
+    EnemyThreatHigh = 34,
+    KillableTargetHigh = 35,
+    EnemyUnableToAct = 36,
 }

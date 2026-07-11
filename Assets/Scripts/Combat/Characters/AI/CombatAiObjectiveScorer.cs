@@ -99,6 +99,8 @@ public static class CombatAiObjectiveScorer
         float score = objective switch
         {
             CombatObjective.AttackEnemy => assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) * 0.9f
+                + assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) * 0.25f
+                + assessment.GetValue(CombatAiMetricIndex.KillableTargetValue) * 0.35f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.15f
                 - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.35f,
             CombatObjective.DefendOwnStone => assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.95f
@@ -109,9 +111,9 @@ public static class CombatAiObjectiveScorer
             CombatObjective.DestroyEnemyStone => assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) * 0.85f
                 - assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.35f
                 - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.2f
+                - assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) * 0.28f
                 + (context.HasEnemyStonePosition ? 4f : 0f)
-                + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f)
-                - (context.VisibleEnemies.Count > 0 ? 28f : 0f),
+                + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f),
             CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.2f
                 - (context.HasEnemyStonePosition ? 14f : 0f)
@@ -293,6 +295,8 @@ public static class CombatAiObjectiveScorer
         {
             case CombatObjective.AttackEnemy:
                 if (assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 35f) AddReason(breakdown, CombatAiReasonCode.ReachableEnemyHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) > 45f) AddReason(breakdown, CombatAiReasonCode.EnemyThreatHigh);
+                if (assessment.GetValue(CombatAiMetricIndex.KillableTargetValue) > 35f) AddReason(breakdown, CombatAiReasonCode.KillableTargetHigh);
                 if (assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) > 20f) AddReason(breakdown, CombatAiReasonCode.TerrainAdvantageHigh);
                 break;
             case CombatObjective.DefendOwnStone:
@@ -303,6 +307,7 @@ public static class CombatAiObjectiveScorer
                 break;
             case CombatObjective.DestroyEnemyStone:
                 if (assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 25f) AddReason(breakdown, CombatAiReasonCode.EnemyStoneReachable);
+                if (assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) > 45f) AddReason(breakdown, CombatAiReasonCode.EnemyThreatHigh);
                 break;
             case CombatObjective.Search:
                 if (assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 30f) AddReason(breakdown, CombatAiReasonCode.EnemyLocationUncertain);

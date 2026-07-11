@@ -27,6 +27,14 @@ public sealed class WandAreaBlastSkill : SkillBase
     public override float AreaRadius => _radius;
     public override bool CanTargetMagicStone => true;
 
+    public override int EstimateDamage(Character self, SkillExecutionContext context, Character target)
+    {
+        if (self == null || target == null) return 0;
+        context = context.Capture(self);
+        int damage = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.INT) * _intScale));
+        return ApplyDamageModifiers(self, context, target, damage);
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasTargetPoint) return;

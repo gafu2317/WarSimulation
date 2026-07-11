@@ -23,6 +23,13 @@ public sealed class ShieldSlashSkill : SkillBase
     public override float MaxRange => _maxRange;
     public override bool CanTargetMagicStone => true;
 
+    public override int EstimateDamage(Character self, SkillExecutionContext context, Character target)
+    {
+        if (self == null || target == null) return 0;
+        int damage = Mathf.Max(1, Mathf.RoundToInt(self.GetEffectiveStat(CombatStat.STR) * _strScale));
+        return ApplyDamageModifiers(self, context, target, damage);
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || !context.HasAnyResolvedTarget) return;

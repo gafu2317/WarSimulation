@@ -12,7 +12,9 @@ public static class CombatAiMetricIndex
     public const int EnemyLocationConfidence = 6;
     public const int RetreatRouteSafety = 7;
     public const int SelfExposure = 8;
-    public const int Count = 9;
+    public const int EnemyThreatLevel = 9;
+    public const int KillableTargetValue = 10;
+    public const int Count = 11;
 }
 
 public sealed class CombatAiContextSummary

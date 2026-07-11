@@ -22,6 +22,16 @@ public sealed class RosarySacrificeThunderSkill : SkillBase
     public override SkillTargetKind TargetKind => SkillTargetKind.RecognizedEnemies;
     public override bool CanTargetMagicStone => true;
 
+    public override int SelfHpCost => _hpCost;
+
+    public override int EstimateDamage(Character self, SkillExecutionContext context, Character target)
+    {
+        if (self == null || target == null) return 0;
+        context = context.Capture(self);
+        int damage = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.FAI) * _faiScale));
+        return ApplyDamageModifiers(self, context, target, damage);
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null || self.Health == null) return;
