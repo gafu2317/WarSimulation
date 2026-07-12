@@ -19,7 +19,7 @@ Logs/CombatBattles/battle_yyyyMMdd_HHmmss.log
 ## 有効化
 
 - Unity Editor または Development Build のみ
-- シーンに [`CombatBattleEventLogger`](../Assets/Scripts/Development/CombatDebug/CombatBattleEventLogger.cs) を配置
+- シーンに [`CombatBattleEventLogger`](../Assets/Scripts/Combat/Debug/CombatBattleEventLogger.cs) を配置
 - Inspector の `Enabled` をオン（デフォルトオン）
 - `CombatBattleFlow` が `Running` になったタイミングで自動的に新規ログファイルを作成
 
