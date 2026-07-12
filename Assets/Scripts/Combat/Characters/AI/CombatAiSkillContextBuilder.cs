@@ -37,7 +37,7 @@ public static class CombatAiSkillContextBuilder
                 AddAllyTargets(context, contexts, owner, includeSelf: true);
                 break;
             case SkillTargetKind.Point:
-                AddPointTargets(context, owner, contexts);
+                AddPointTargets(context, owner, skill, contexts);
                 break;
             case SkillTargetKind.Area:
                 AddAreaTargets(context, owner, skill, contexts);
@@ -103,17 +103,36 @@ public static class CombatAiSkillContextBuilder
     private static void AddPointTargets(
         CombatAiContext context,
         Character owner,
+        SkillBase skill,
         List<SkillExecutionContext> contexts)
     {
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        bool support = CombatAiSkillClassifier.IsSupport(skill);
+        IReadOnlyList<CombatCharacterIntel> targets = support
+            ? context.AllyIntel
+            : context.EnemyIntel;
+        for (int i = 0; i < targets.Count; i++)
         {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition) continue;
+            CombatCharacterIntel target = targets[i];
+            if (!support && !target.HasKnownPosition) continue;
+            Vector3 targetPosition = support ? target.CurrentPosition : target.KnownPosition;
 
-            AddUniquePoint(contexts, enemy.KnownPosition);
+            AddUniquePoint(contexts, targetPosition);
+            for (int j = i + 1; j < targets.Count; j++)
+            {
+                CombatCharacterIntel other = targets[j];
+                if (!support && !other.HasKnownPosition) continue;
+                Vector3 otherPosition = support ? other.CurrentPosition : other.KnownPosition;
+                if (HorizontalDistance(targetPosition, otherPosition) > skill.AreaRadius * 2f) continue;
+                AddUniquePoint(contexts, (targetPosition + otherPosition) * 0.5f);
+            }
         }
 
-        if (context.HasEnemyStonePosition)
+        if (support && owner != null)
+        {
+            AddUniquePoint(contexts, owner.transform.position);
+        }
+
+        if (!support && context.HasEnemyStonePosition)
         {
             AddUniquePoint(contexts, context.EnemyStonePosition);
         }
@@ -141,6 +160,15 @@ public static class CombatAiSkillContextBuilder
             if (!enemy.HasKnownPosition) continue;
 
             AddUniqueArea(contexts, owner, enemy.KnownPosition, skill.AreaRadius, skill);
+            for (int j = i + 1; j < context.EnemyIntel.Count; j++)
+            {
+                CombatCharacterIntel other = context.EnemyIntel[j];
+                if (!other.HasKnownPosition) continue;
+                if (HorizontalDistance(enemy.KnownPosition, other.KnownPosition) > skill.AreaRadius * 2f) continue;
+
+                Vector3 center = (enemy.KnownPosition + other.KnownPosition) * 0.5f;
+                AddUniqueArea(contexts, owner, center, skill.AreaRadius, skill);
+            }
         }
 
         if (context.HasEnemyStonePosition)

@@ -16,10 +16,15 @@ public sealed class CombatAiContext
     public Vector3 OwnStonePosition { get; }
     public bool HasEnemyStonePosition { get; }
     public Vector3 EnemyStonePosition { get; }
+    public bool HasEnemyStoneHealth { get; }
+    public int EnemyStoneHP { get; }
+    public int EnemyStoneMaxHP { get; }
     public IReadOnlyList<Vector3> RockPositions { get; }
     public IReadOnlyList<Vector3> BridgePositions { get; }
     public IReadOnlyList<Vector3> HighGroundCandidates { get; }
     public IReadOnlyList<Vector3> ForestCandidates { get; }
+    public IReadOnlyList<CombatAiPendingDamage> AllyPendingDamage { get; }
+    public IReadOnlyList<CombatAiPendingDamage> EnemyPendingDamage { get; }
 
     public CombatAiContext(
         Character owner,
@@ -37,7 +42,12 @@ public sealed class CombatAiContext
         IReadOnlyList<Vector3> rockPositions,
         IReadOnlyList<Vector3> bridgePositions,
         IReadOnlyList<Vector3> highGroundCandidates,
-        IReadOnlyList<Vector3> forestCandidates)
+        IReadOnlyList<Vector3> forestCandidates,
+        bool hasEnemyStoneHealth = false,
+        int enemyStoneHP = 0,
+        int enemyStoneMaxHP = 0,
+        IReadOnlyList<CombatAiPendingDamage> allyPendingDamage = null,
+        IReadOnlyList<CombatAiPendingDamage> enemyPendingDamage = null)
     {
         Owner = owner;
         VisibleEnemies = visibleEnemies ?? Array.Empty<Character>();
@@ -51,10 +61,29 @@ public sealed class CombatAiContext
         OwnStonePosition = ownStonePosition;
         HasEnemyStonePosition = hasEnemyStonePosition;
         EnemyStonePosition = enemyStonePosition;
+        HasEnemyStoneHealth = hasEnemyStoneHealth;
+        EnemyStoneHP = enemyStoneHP;
+        EnemyStoneMaxHP = enemyStoneMaxHP;
         RockPositions = rockPositions ?? Array.Empty<Vector3>();
         BridgePositions = bridgePositions ?? Array.Empty<Vector3>();
         HighGroundCandidates = highGroundCandidates ?? Array.Empty<Vector3>();
         ForestCandidates = forestCandidates ?? Array.Empty<Vector3>();
+        AllyPendingDamage = allyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();
+        EnemyPendingDamage = enemyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();
+    }
+}
+
+public readonly struct CombatAiPendingDamage
+{
+    public Character Source { get; }
+    public Character Target { get; }
+    public int Damage { get; }
+
+    public CombatAiPendingDamage(Character source, Character target, int damage)
+    {
+        Source = source;
+        Target = target;
+        Damage = Mathf.Max(0, damage);
     }
 }
 
@@ -76,9 +105,13 @@ public readonly struct CombatCharacterIntel
     public bool CanAct { get; }
     public WeaponKind WeaponKind { get; }
     public float WeaponRange { get; }
+    public float MoveSpeed { get; }
     public IReadOnlyList<CombatStatusEffectSnapshot> StatusEffects { get; }
     public bool HasObjective { get; }
     public CombatObjective Objective { get; }
+    public Character IntendedTarget { get; }
+    public bool HasIntendedDestination { get; }
+    public Vector3 IntendedDestination { get; }
 
     public CombatCharacterIntel(
         Character character,
@@ -99,7 +132,11 @@ public readonly struct CombatCharacterIntel
         float weaponRange,
         IReadOnlyList<CombatStatusEffectSnapshot> statusEffects,
         bool hasObjective,
-        CombatObjective objective)
+        CombatObjective objective,
+        float moveSpeed = 3.5f,
+        Character intendedTarget = null,
+        bool hasIntendedDestination = false,
+        Vector3 intendedDestination = default)
     {
         Character = character;
         Team = team;
@@ -117,8 +154,12 @@ public readonly struct CombatCharacterIntel
         CanAct = canAct;
         WeaponKind = weaponKind;
         WeaponRange = weaponRange;
+        MoveSpeed = Mathf.Max(0.1f, moveSpeed);
         StatusEffects = statusEffects ?? Array.Empty<CombatStatusEffectSnapshot>();
         HasObjective = hasObjective;
         Objective = objective;
+        IntendedTarget = intendedTarget;
+        HasIntendedDestination = hasIntendedDestination;
+        IntendedDestination = intendedDestination;
     }
 }

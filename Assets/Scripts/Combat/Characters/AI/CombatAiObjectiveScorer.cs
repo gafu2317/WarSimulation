@@ -109,6 +109,7 @@ public static class CombatAiObjectiveScorer
             CombatObjective.SupportAlly => assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.95f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.1f,
             CombatObjective.DestroyEnemyStone => assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) * 0.85f
+                + assessment.GetValue(CombatAiMetricIndex.WinProximity) * 0.45f
                 - assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.35f
                 - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.2f
                 - assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) * 0.28f
@@ -124,7 +125,53 @@ public static class CombatAiObjectiveScorer
             _ => 0f,
         };
 
+        if (objective == CombatObjective.DestroyEnemyStone &&
+            IsDamageWeapon(weapon) &&
+            HasStableAllyFrontline(context))
+        {
+            score += 14f;
+        }
+
         return score + GetWeaponSituationAdjustment(context, assessment, weapon, objective);
+    }
+
+    private static bool IsDamageWeapon(WeaponBase weapon)
+    {
+        if (weapon == null) return false;
+        return weapon.Kind == WeaponKind.Sword ||
+            weapon.Kind == WeaponKind.Wand ||
+            weapon.Kind == WeaponKind.Grimoire;
+    }
+
+    private static bool HasStableAllyFrontline(CombatAiContext context)
+    {
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.CanAct || ally.MaxHP <= 0 || ally.HP / (float)ally.MaxHP < 0.5f) continue;
+            if (!ally.HasObjective ||
+                (ally.Objective != CombatObjective.AttackEnemy && ally.Objective != CombatObjective.DefendOwnStone))
+            {
+                continue;
+            }
+
+            if (ally.IntendedTarget != null && ally.IntendedTarget.Team != ally.Team)
+            {
+                return true;
+            }
+
+            for (int j = 0; j < context.EnemyIntel.Count; j++)
+            {
+                CombatCharacterIntel enemy = context.EnemyIntel[j];
+                if (!enemy.HasKnownPosition) continue;
+                if (HorizontalDistance(ally.CurrentPosition, enemy.KnownPosition) <= 8f)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static float GetWeaponSituationAdjustment(
@@ -325,5 +372,12 @@ public static class CombatAiObjectiveScorer
         {
             breakdown.ReasonCodes.Add(reason);
         }
+    }
+
+    private static float HorizontalDistance(UnityEngine.Vector3 a, UnityEngine.Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return UnityEngine.Vector3.Distance(a, b);
     }
 }

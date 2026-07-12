@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using WarSimulation.Combat.Map;
 
 [DisallowMultipleComponent]
@@ -18,6 +19,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     private readonly List<Vector3> _bridgePositions = new();
     private readonly List<Vector3> _highGroundCandidates = new();
     private readonly List<Vector3> _forestCandidates = new();
+    private readonly List<CombatAiPendingDamage> _allyPendingDamage = new();
+    private readonly List<CombatAiPendingDamage> _enemyPendingDamage = new();
 
     public CombatAiContext Collect()
     {
@@ -46,6 +49,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         CopyAllies(owner, allies, _allies);
         BuildIntel(owner, enemies, vision, _enemyIntel);
         BuildIntel(owner, _allies, vision, _allyIntel);
+        CollectPendingDamage(_allies, _allyPendingDamage);
+        CollectPendingDamage(enemies, _enemyPendingDamage);
 
         Vector3 ownStonePosition = default;
         Vector3 enemyStonePosition = default;
@@ -76,6 +81,10 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         }
 
         CollectTerrainCandidates(mapSystem);
+        bool hasEnemyStoneHealth = TryGetEnemyStoneHealth(
+            owner,
+            out int enemyStoneHP,
+            out int enemyStoneMaxHP);
 
         return new CombatAiContext(
             owner,
@@ -93,7 +102,32 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             _rockPositions,
             _bridgePositions,
             _highGroundCandidates,
-            _forestCandidates);
+            _forestCandidates,
+            hasEnemyStoneHealth,
+            enemyStoneHP,
+            enemyStoneMaxHP,
+            _allyPendingDamage,
+            _enemyPendingDamage);
+    }
+
+    private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)
+    {
+        hp = 0;
+        maxHp = 0;
+        CombatMagicStoneSystem stoneSystem = CombatMagicStoneSystemResolver.Resolve();
+        FeatureType enemyStoneType = owner != null && owner.Team == CombatTeam.Enemy
+            ? FeatureType.OwnMainStone
+            : FeatureType.EnemyMainStone;
+        if (stoneSystem == null ||
+            !stoneSystem.TryGetState(enemyStoneType, out MagicStoneRuntimeState state) ||
+            state.MaxHP <= 0)
+        {
+            return false;
+        }
+
+        hp = state.HP;
+        maxHp = state.MaxHP;
+        return true;
     }
 
     private void ClearBuffers()
@@ -107,6 +141,34 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         _bridgePositions.Clear();
         _highGroundCandidates.Clear();
         _forestCandidates.Clear();
+        _allyPendingDamage.Clear();
+        _enemyPendingDamage.Clear();
+    }
+
+    private static void CollectPendingDamage(
+        IReadOnlyList<Character> characters,
+        List<CombatAiPendingDamage> destination)
+    {
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character source = characters[i];
+            CombatSkillCaster caster = source != null ? source.SkillCaster : null;
+            SkillBase skill = caster != null ? caster.CastingSkill : null;
+            if (skill == null || !CombatAiSkillClassifier.IsDamage(skill)) continue;
+
+            SkillExecutionContext castingContext = caster.CastingContext.Capture(source);
+            for (int j = 0; j < castingContext.ResolvedTargets.Count; j++)
+            {
+                Character target = castingContext.ResolvedTargets[j];
+                if (target == null || target.Team == source.Team || !target.Health.IsAlive) continue;
+
+                int damage = skill.EstimateDamage(source, castingContext, target);
+                if (damage > 0)
+                {
+                    destination.Add(new CombatAiPendingDamage(source, target, damage));
+                }
+            }
+        }
     }
 
     private static void CopyCharacters(IReadOnlyList<Character> source, List<Character> destination)
@@ -161,14 +223,21 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                     : default;
             float memoryAgeSeconds = vision != null ? vision.GetMemoryAgeSeconds(character) : float.PositiveInfinity;
             WeaponBase weapon = character.EquippedWeapon ?? WeaponBase.Unarmed;
+            NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
             CombatHealth health = character.Health;
             CombatStatusEffects statusEffectsComponent = character.GetComponent<CombatStatusEffects>();
             CombatVision targetVision = character.Vision;
             IReadOnlyList<CombatStatusEffectSnapshot> statusEffects = statusEffectsComponent != null
                 ? statusEffectsComponent.GetActiveEffectSnapshots()
                 : Array.Empty<CombatStatusEffectSnapshot>();
-            bool hasObjective = false;
-            CombatObjective objective = default;
+            CombatAiBrain brain = character.GetComponent<CombatAiBrain>();
+            bool hasObjective = brain != null && brain.LastContext != null;
+            CombatAiPlan plan = hasObjective ? brain.LastPlan : CombatAiPlan.None;
+            CombatObjective objective = plan.Objective;
+            Character intendedTarget = plan.SkillTarget != null
+                ? plan.SkillTarget
+                : plan.MoveTarget.TargetCharacter;
+            bool hasIntendedDestination = hasObjective && plan.MoveTarget.HasDestination;
             bool recognizesOwner = targetVision != null && owner != null && targetVision.HasRecognitionOf(owner);
 
             destination.Add(new CombatCharacterIntel(
@@ -190,7 +259,11 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 weapon.Range,
                 CopyStatusEffects(statusEffects),
                 hasObjective,
-                objective));
+                objective,
+                agent != null ? agent.speed : 3.5f,
+                intendedTarget,
+                hasIntendedDestination,
+                hasIntendedDestination ? plan.MoveTarget.Destination : default));
         }
     }
 

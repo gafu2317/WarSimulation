@@ -37,4 +37,8 @@ public enum CombatAiReasonCode
     EnemyThreatHigh = 34,
     KillableTargetHigh = 35,
     EnemyUnableToAct = 36,
+    WinProximityHigh = 37,
+    RouteRiskHigh = 38,
+    BodyBlockValuable = 39,
+    IncomingEnemyCast = 40,
 }

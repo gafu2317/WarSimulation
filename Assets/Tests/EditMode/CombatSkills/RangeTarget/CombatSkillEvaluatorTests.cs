@@ -380,6 +380,8 @@ public sealed class CombatSkillEvaluatorTests
             {
                 fixture.CharacterSystemGo = new GameObject("CharacterSystem");
                 fixture.CharacterSystem = fixture.CharacterSystemGo.AddComponent<CombatCharacterSystem>();
+                fixture.CharacterSystem.AllyCharacters.Clear();
+                fixture.CharacterSystem.EnemyCharacters.Clear();
                 fixture.CharacterSystem.AllyCharacters.Add(fixture.Owner);
                 if (fixture.Ally != null) fixture.CharacterSystem.AllyCharacters.Add(fixture.Ally);
                 if (fixture.Enemy != null) fixture.CharacterSystem.EnemyCharacters.Add(fixture.Enemy);

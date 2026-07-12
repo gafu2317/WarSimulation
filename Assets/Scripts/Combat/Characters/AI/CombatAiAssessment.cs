@@ -14,7 +14,8 @@ public static class CombatAiMetricIndex
     public const int SelfExposure = 8;
     public const int EnemyThreatLevel = 9;
     public const int KillableTargetValue = 10;
-    public const int Count = 11;
+    public const int WinProximity = 11;
+    public const int Count = 12;
 }
 
 public sealed class CombatAiContextSummary

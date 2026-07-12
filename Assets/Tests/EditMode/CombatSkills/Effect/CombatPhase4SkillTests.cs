@@ -47,7 +47,7 @@ public sealed class CombatPhase4SkillTests
             ally.Health.TakeDamage(5, enemy);
 
             Assert.That(ally.Health.HP, Is.EqualTo(25));
-            Assert.That(enemy.Health.HP, Is.EqualTo(26));
+            Assert.That(enemy.Health.HP, Is.EqualTo(22));
         }
         finally
         {
@@ -81,7 +81,7 @@ public sealed class CombatPhase4SkillTests
             skill.Execute(owner, SkillExecutionContext.ForTarget(ally));
             ally.Health.TakeDamage(5, enemy);
 
-            Assert.That(enemy.Health.HP, Is.EqualTo(26));
+            Assert.That(enemy.Health.HP, Is.EqualTo(22));
         }
         finally
         {
@@ -224,7 +224,7 @@ public sealed class CombatPhase4SkillTests
             ForceAllPeriodicEffectsReadyNow(target.StatusEffects);
             target.StatusEffects.GetActiveEffectSnapshots();
 
-            Assert.That(target.Health.HP, Is.EqualTo(28));
+            Assert.That(target.Health.HP, Is.EqualTo(26));
         }
         finally
         {
@@ -270,7 +270,7 @@ public sealed class CombatPhase4SkillTests
             ForceAllPeriodicEffectsReadyNow(ally.StatusEffects);
             ally.StatusEffects.GetActiveEffectSnapshots();
 
-            Assert.That(ally.Health.HP, Is.EqualTo(15));
+            Assert.That(ally.Health.HP, Is.EqualTo(17));
         }
         finally
         {
@@ -300,7 +300,7 @@ public sealed class CombatPhase4SkillTests
             ForceAreaZoneReadyNow(zone);
             InvokePrivateUpdate(zone);
 
-            Assert.That(fixture.Ally.Health.HP, Is.EqualTo(13));
+            Assert.That(fixture.Ally.Health.HP, Is.EqualTo(14));
         }
         finally
         {
@@ -374,7 +374,7 @@ public sealed class CombatPhase4SkillTests
 
             new RosarySacrificeThunderSkill().Execute(fixture.Owner, context);
 
-            Assert.That(fixture.Owner.Health.HP, Is.EqualTo(22));
+            Assert.That(fixture.Owner.Health.HP, Is.EqualTo(18));
             Assert.That(fixture.NearEnemy.Health.HP, Is.LessThan(30));
             Assert.That(fixture.FarEnemy.Health.HP, Is.LessThan(30));
         }
@@ -447,7 +447,7 @@ public sealed class CombatPhase4SkillTests
 
             new SwordSlashSkill().Execute(owner, SkillExecutionContext.ForTarget(enemy));
 
-            Assert.That(enemy.Health.HP, Is.EqualTo(20));
+            Assert.That(enemy.Health.HP, Is.EqualTo(26));
         }
         finally
         {

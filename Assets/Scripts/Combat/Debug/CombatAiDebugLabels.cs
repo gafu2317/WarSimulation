@@ -53,6 +53,7 @@ public static class CombatAiDebugLabels
             "SelfExposure" => Format("SelfExposure", "自己露出度"),
             "EnemyThreatLevel" => Format("EnemyThreatLevel", "敵脅威度"),
             "KillableTargetValue" => Format("KillableTargetValue", "倒し切り価値"),
+            "WinProximity" => Format("WinProximity", "勝利接近度"),
             _ => code,
         };
     }
@@ -97,6 +98,10 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.EnemyThreatHigh => Format(nameof(CombatAiReasonCode.EnemyThreatHigh), "敵脅威高い"),
             CombatAiReasonCode.KillableTargetHigh => Format(nameof(CombatAiReasonCode.KillableTargetHigh), "倒し切れる敵あり"),
             CombatAiReasonCode.EnemyUnableToAct => Format(nameof(CombatAiReasonCode.EnemyUnableToAct), "敵が行動不能"),
+            CombatAiReasonCode.WinProximityHigh => Format(nameof(CombatAiReasonCode.WinProximityHigh), "敵魔石の残りHPが少ない"),
+            CombatAiReasonCode.RouteRiskHigh => Format(nameof(CombatAiReasonCode.RouteRiskHigh), "移動経路の危険度が高い"),
+            CombatAiReasonCode.BodyBlockValuable => Format(nameof(CombatAiReasonCode.BodyBlockValuable), "遮断で味方や魔石を守れる"),
+            CombatAiReasonCode.IncomingEnemyCast => Format(nameof(CombatAiReasonCode.IncomingEnemyCast), "敵の詠唱攻撃を受ける見込み"),
             _ => reason.ToString(),
         };
     }

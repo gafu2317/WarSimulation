@@ -25,6 +25,11 @@ public abstract class SkillBase
         return 0;
     }
 
+    public virtual int EstimateHealing(Character self, SkillExecutionContext context, Character target)
+    {
+        return 0;
+    }
+
     public abstract void Execute(Character self, SkillExecutionContext context);
 
     protected static float ComputeHorizontalDistance(Character self, Character target)

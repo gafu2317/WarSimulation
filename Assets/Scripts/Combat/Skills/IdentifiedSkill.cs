@@ -34,6 +34,11 @@ public sealed class IdentifiedSkill : SkillBase
         return _inner.EstimateDamage(self, context, target);
     }
 
+    public override int EstimateHealing(Character self, SkillExecutionContext context, Character target)
+    {
+        return _inner.EstimateHealing(self, context, target);
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         CombatSkillDebugIndicatorSystem.Show(self, _skillId, Name, context);

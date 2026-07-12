@@ -66,12 +66,20 @@ public static partial class CombatAiPlanner
 
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.AdvanceEnemyStone, CreateEnemyStoneTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        for (int i = 0; i < context.BridgePositions.Count; i++)
+        {
+            TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+                CombatAiMoveCode.AdvanceViaBridge, CreateBridgeWaypointTarget(context, context.BridgePositions[i]), objective,
+                focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        }
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.ReturnOwnStone, CreateOwnStoneTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.PursueEnemy, CreateBestEnemyTarget(context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.SupportAlly, CreateBestAllyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.InterceptThreat, CreateBestBodyBlockTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.TakeHighGround, CreateNearestPositionTarget(owner, context.HighGroundCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
         {
@@ -218,9 +226,23 @@ public static partial class CombatAiPlanner
         snapshot.MoveEntries.Clear();
         CombatObjective objective = snapshot.SelectedObjective != null ? snapshot.SelectedObjective.Objective : CombatObjective.Search;
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.AdvanceEnemyStone, "敵魔石へ前進", CreateEnemyStoneTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
+        for (int i = 0; i < snapshot.Context.BridgePositions.Count; i++)
+        {
+            AddMoveCandidate(
+                snapshot,
+                personalityProfile,
+                weaponWeightsProfile,
+                CombatAiMoveCode.AdvanceViaBridge,
+                "橋を経由して敵魔石へ前進",
+                CreateBridgeWaypointTarget(snapshot.Context, snapshot.Context.BridgePositions[i]),
+                objective,
+                focusEnemy,
+                focusCommitmentRemainingSeconds);
+        }
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.ReturnOwnStone, "自軍魔石へ戻る", CreateOwnStoneTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.PursueEnemy, "敵へ接近", CreateBestEnemyTarget(snapshot.Context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SupportAlly, "味方へ接近", CreateBestAllyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.InterceptThreat, "敵の進路を遮断", CreateBestBodyBlockTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.TakeHighGround, "高所へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.HighGroundCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds);
         {
             WeaponKind ownerWeaponKind = snapshot.Owner.EquippedWeapon != null ? snapshot.Owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
@@ -429,6 +451,7 @@ public static partial class CombatAiPlanner
         }
 
         score += GetObjectiveSkillAlignmentScore(skill, evaluation, assessment, context, objective);
+        score -= GetCastRiskPenalty(context, skill.CastTimeSeconds);
 
         if (evaluation.HasAreaPreview && evaluation.ResolvedTargetCount >= 2)
         {
@@ -443,6 +466,11 @@ public static partial class CombatAiPlanner
     {
         if (skillContext.PrimaryTarget == null)
         {
+            if (CombatAiSkillClassifier.IsSupport(skill) && skillContext.HasTargetPoint && skill.AreaRadius > 0f)
+            {
+                return GetAreaSupportTargetScore(context, skill, skillContext);
+            }
+
             return skillContext.PrimaryStone != null && CombatAiSkillClassifier.IsDamage(skill) ? 24f : 0f;
         }
 
@@ -459,16 +487,20 @@ public static partial class CombatAiPlanner
             }
 
             float score = missingHpRatio * (CombatAiSkillClassifier.IsHeal(skill) ? 50f : 18f);
+            if (CombatAiSkillClassifier.IsHeal(skill))
+            {
+                int missingHp = Mathf.Max(0, ally.MaxHP - ally.HP);
+                int healing = skill.EstimateHealing(context.Owner, skillContext, ally.Character);
+                score += ally.MaxHP > 0 ? Mathf.Min(missingHp, healing) / (float)ally.MaxHP * 40f : 0f;
+                score += GetPostHealSurvivalScore(context, ally, healing);
+            }
             if (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f))
             {
                 score += CombatAiSkillClassifier.IsProtect(skill) ? 24f : 8f;
             }
 
             score += GetSupportTargetAffinityScore(skill, ally);
-            if (HasEquivalentEffect(skill, ally.StatusEffects))
-            {
-                score -= 70f;
-            }
+            score -= GetStatusRedundancyPenalty(skill, ally.StatusEffects);
 
             return score;
         }
@@ -485,15 +517,61 @@ public static partial class CombatAiPlanner
             float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
             float score = (1f - hpRatio) * 18f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
             score += GetDebuffTargetAffinityScore(skill, enemy);
-            if (HasEquivalentEffect(skill, enemy.StatusEffects))
-            {
-                score -= 70f;
-            }
+            score -= GetStatusRedundancyPenalty(skill, enemy.StatusEffects);
 
             return score;
         }
 
         return 0f;
+    }
+
+    private static float GetAreaSupportTargetScore(
+        CombatAiContext context,
+        SkillBase skill,
+        SkillExecutionContext skillContext)
+    {
+        float score = 0f;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null || ally.MaxHP <= 0) continue;
+            if (HorizontalDistance(skillContext.TargetPoint, ally.CurrentPosition) > skill.AreaRadius) continue;
+            int missingHp = Mathf.Max(0, ally.MaxHP - ally.HP);
+            int healing = skill.EstimateHealing(context.Owner, skillContext, ally.Character);
+            score += missingHp / (float)ally.MaxHP * 28f;
+            score += Mathf.Min(missingHp, healing) / (float)ally.MaxHP * 36f;
+            score += GetPostHealSurvivalScore(context, ally, healing);
+        }
+
+        Character owner = context.Owner;
+        if (owner != null && owner.Health != null && owner.MaxHP > 0 &&
+            HorizontalDistance(skillContext.TargetPoint, owner.transform.position) <= skill.AreaRadius)
+        {
+            int missingHp = Mathf.Max(0, owner.MaxHP - owner.Health.HP);
+            int healing = skill.EstimateHealing(owner, skillContext, owner);
+            score += missingHp / (float)owner.MaxHP * 28f;
+            score += Mathf.Min(missingHp, healing) / (float)owner.MaxHP * 36f;
+        }
+
+        return score;
+    }
+
+    private static float GetPostHealSurvivalScore(CombatAiContext context, CombatCharacterIntel ally, int healing)
+    {
+        int incomingDamage = 0;
+        for (int i = 0; i < context.EnemyPendingDamage.Count; i++)
+        {
+            CombatAiPendingDamage pending = context.EnemyPendingDamage[i];
+            if (pending.Target == ally.Character)
+            {
+                incomingDamage += pending.Damage;
+            }
+        }
+
+        if (incomingDamage <= 0) return 0f;
+        int projectedHp = Mathf.Min(ally.MaxHP, ally.HP + healing) - incomingDamage;
+        if (projectedHp <= 0) return -24f;
+        return projectedHp <= ally.MaxHP * 0.3f ? 8f : 20f;
     }
 
     private static float GetDamageSkillTargetScore(CombatAiContext context, SkillBase skill, SkillExecutionContext skillContext)
@@ -515,7 +593,8 @@ public static partial class CombatAiPlanner
             if (predictedDamage <= 0) continue;
 
             foundCharacterTarget = true;
-            score += GetDamageAgainstEnemyScore(skill, enemy, predictedDamage);
+            int pendingDamage = GetAllyPendingDamage(context, enemy.Character);
+            score += GetDamageAgainstEnemyScore(skill, enemy, predictedDamage, pendingDamage);
         }
 
         if (!foundCharacterTarget && capturedContext.PrimaryStone != null)
@@ -525,7 +604,7 @@ public static partial class CombatAiPlanner
 
         if (skill.SelfHpCost > 0)
         {
-            score -= GetSelfHpCostPenalty(context.Owner, skill.SelfHpCost);
+            score -= GetSelfHpCostPenalty(context, skill.SelfHpCost);
         }
 
         score -= Mathf.Clamp(skill.CooldownSeconds, 0f, 10f) * 0.7f;
@@ -542,15 +621,22 @@ public static partial class CombatAiPlanner
         return score;
     }
 
-    private static float GetDamageAgainstEnemyScore(SkillBase skill, CombatCharacterIntel enemy, int predictedDamage)
+    private static float GetDamageAgainstEnemyScore(
+        SkillBase skill,
+        CombatCharacterIntel enemy,
+        int predictedDamage,
+        int pendingDamage)
     {
-        int hp = Mathf.Max(1, enemy.HP);
+        int hp = Mathf.Max(0, enemy.HP - pendingDamage);
+        if (hp <= 0) return -80f;
         int maxHp = Mathf.Max(hp, enemy.MaxHP);
         int effectiveDamage = Mathf.Min(predictedDamage, hp);
         int overkillDamage = Mathf.Max(0, predictedDamage - hp);
         float hpRatio = maxHp > 0 ? hp / (float)maxHp : 1f;
         float effectiveDamageRatio = maxHp > 0 ? effectiveDamage / (float)maxHp : 0f;
-        float targetValue = (1f - hpRatio) * 14f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
+        float targetValue = (1f - hpRatio) * 14f
+            + GetEnemyRoleTargetValue(enemy.WeaponKind)
+            + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
 
         float score = targetValue + effectiveDamageRatio * 44f;
         if (predictedDamage >= hp)
@@ -566,8 +652,38 @@ public static partial class CombatAiPlanner
         return score;
     }
 
-    private static float GetSelfHpCostPenalty(Character owner, int hpCost)
+    private static float GetEnemyRoleTargetValue(WeaponKind weaponKind)
     {
+        return weaponKind switch
+        {
+            WeaponKind.Sword => 12f,
+            WeaponKind.Wand => 12f,
+            WeaponKind.Grimoire => 9f,
+            WeaponKind.Shield => 6f,
+            WeaponKind.Bible => 4f,
+            WeaponKind.Rosary => 3f,
+            _ => 2f,
+        };
+    }
+
+    private static int GetAllyPendingDamage(CombatAiContext context, Character target)
+    {
+        int damage = 0;
+        for (int i = 0; i < context.AllyPendingDamage.Count; i++)
+        {
+            CombatAiPendingDamage pending = context.AllyPendingDamage[i];
+            if (pending.Target == target)
+            {
+                damage += pending.Damage;
+            }
+        }
+
+        return damage;
+    }
+
+    private static float GetSelfHpCostPenalty(CombatAiContext context, int hpCost)
+    {
+        Character owner = context != null ? context.Owner : null;
         if (owner == null || owner.Health == null || owner.MaxHP <= 0)
         {
             return hpCost;
@@ -583,6 +699,17 @@ public static partial class CombatAiPlanner
         else if (remainingRatio < 0.25f)
         {
             penalty += (0.25f - remainingRatio) * 80f;
+        }
+
+        int remainingHp = owner.Health.HP - hpCost;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition || !enemy.CanAct) continue;
+            float distance = HorizontalDistance(owner.transform.position, enemy.KnownPosition);
+            if (distance > enemy.WeaponRange + enemy.MoveSpeed * 1.5f) continue;
+
+            penalty += remainingHp <= owner.MaxHP * 0.4f ? 18f : 6f;
         }
 
         return penalty;
@@ -818,7 +945,7 @@ public static partial class CombatAiPlanner
     {
         if (skill is not IdentifiedSkill identified) return 0f;
 
-        return identified.SkillId switch
+        float score = identified.SkillId switch
         {
             SkillId.Bible_StrBuff when ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Shield => 28f,
             SkillId.Bible_IntBuff when ally.WeaponKind == WeaponKind.Wand || ally.WeaponKind == WeaponKind.Grimoire => 28f,
@@ -828,6 +955,14 @@ public static partial class CombatAiPlanner
             SkillId.Bible_Gotsume when ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Shield => 14f,
             _ => 0f,
         };
+
+        if (ally.HasObjective && ally.Objective == CombatObjective.AttackEnemy &&
+            (ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Shield))
+        {
+            score += 10f;
+        }
+
+        return score;
     }
 
     private static float GetDebuffTargetAffinityScore(SkillBase skill, CombatCharacterIntel enemy)
@@ -846,20 +981,46 @@ public static partial class CombatAiPlanner
         };
     }
 
-    private static bool HasEquivalentEffect(SkillBase skill, IReadOnlyList<CombatStatusEffectSnapshot> effects)
+    private static float GetCastRiskPenalty(CombatAiContext context, float castTimeSeconds)
     {
-        if (skill is not IdentifiedSkill identified || effects == null) return false;
+        if (context == null || context.Owner == null || castTimeSeconds <= 0f) return 0f;
 
+        float shortestThreatTime = float.PositiveInfinity;
+        Vector3 ownerPosition = context.Owner.transform.position;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasDirectSight || !enemy.CanAct) continue;
+
+            float distance = HorizontalDistance(ownerPosition, enemy.CurrentPosition);
+            float distanceToThreat = Mathf.Max(0f, distance - Mathf.Max(0.5f, enemy.WeaponRange));
+            shortestThreatTime = Mathf.Min(shortestThreatTime, distanceToThreat / enemy.MoveSpeed);
+        }
+
+        if (float.IsPositiveInfinity(shortestThreatTime) || shortestThreatTime >= castTimeSeconds)
+        {
+            return 0f;
+        }
+
+        float risk = 1f - shortestThreatTime / castTimeSeconds;
+        return Mathf.Lerp(12f, 48f, Mathf.Clamp01(risk));
+    }
+
+    private static float GetStatusRedundancyPenalty(SkillBase skill, IReadOnlyList<CombatStatusEffectSnapshot> effects)
+    {
+        if (skill is not IdentifiedSkill identified || effects == null) return 0f;
+
+        float longestRemainingSeconds = 0f;
         for (int i = 0; i < effects.Count; i++)
         {
             CombatStatusEffectSnapshot effect = effects[i];
             if (MatchesEffect(identified.SkillId, effect))
             {
-                return true;
+                longestRemainingSeconds = Mathf.Max(longestRemainingSeconds, effect.RemainingSeconds);
             }
         }
 
-        return false;
+        return Mathf.Clamp01(longestRemainingSeconds / 4f) * 70f;
     }
 
     private static bool MatchesEffect(SkillId skillId, CombatStatusEffectSnapshot effect)

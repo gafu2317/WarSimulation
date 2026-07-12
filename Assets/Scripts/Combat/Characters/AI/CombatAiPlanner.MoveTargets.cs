@@ -8,6 +8,14 @@ public static partial class CombatAiPlanner
         return context.HasEnemyStonePosition ? CombatMoveTarget.ForPosition(context.EnemyStonePosition) : CombatMoveTarget.None;
     }
 
+    private static CombatMoveTarget CreateBridgeWaypointTarget(CombatAiContext context, Vector3 bridgePosition)
+    {
+        if (context == null || context.Owner == null) return CombatMoveTarget.None;
+        return HorizontalDistance(context.Owner.transform.position, bridgePosition) > 2f
+            ? CombatMoveTarget.ForPosition(bridgePosition)
+            : CombatMoveTarget.None;
+    }
+
     private static CombatMoveTarget CreateOwnStoneTarget(CombatAiContext context)
     {
         return context.HasOwnStonePosition ? CombatMoveTarget.ForPosition(context.OwnStonePosition) : CombatMoveTarget.None;
@@ -57,6 +65,71 @@ public static partial class CombatAiPlanner
         }
 
         return CombatMoveTarget.ForCharacter(ally);
+    }
+
+    private static CombatMoveTarget CreateBestBodyBlockTarget(CombatAiContext context)
+    {
+        Character owner = context != null ? context.Owner : null;
+        if (owner == null || owner.EquippedWeapon == null || owner.EquippedWeapon.Kind != WeaponKind.Shield)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        float bestValue = 0f;
+        Vector3 bestPosition = default;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.HasKnownPosition || !enemy.CanAct) continue;
+
+            for (int j = 0; j < context.AllyIntel.Count; j++)
+            {
+                CombatCharacterIntel ally = context.AllyIntel[j];
+                if (!ally.CanAct) continue;
+                TrySelectBodyBlockPosition(owner, enemy, ally.CurrentPosition, GetProtectedAllyValue(ally), ref bestValue, ref bestPosition);
+            }
+
+            if (context.HasOwnStonePosition)
+            {
+                TrySelectBodyBlockPosition(owner, enemy, context.OwnStonePosition, 70f, ref bestValue, ref bestPosition);
+            }
+        }
+
+        return bestValue > 0f ? CombatMoveTarget.ForPosition(bestPosition) : CombatMoveTarget.None;
+    }
+
+    private static void TrySelectBodyBlockPosition(
+        Character owner,
+        CombatCharacterIntel enemy,
+        Vector3 protectedPosition,
+        float protectedValue,
+        ref float bestValue,
+        ref Vector3 bestPosition)
+    {
+        Vector3 threatDirection = Flatten(enemy.KnownPosition - protectedPosition);
+        float enemyDistance = threatDirection.magnitude;
+        if (enemyDistance <= 0.1f || enemyDistance > 12f) return;
+
+        threatDirection /= enemyDistance;
+        Vector3 candidate = protectedPosition + threatDirection * Mathf.Min(2f, enemyDistance * 0.5f);
+        candidate.y = owner.transform.position.y;
+        float ownerArrival = HorizontalDistance(owner.transform.position, candidate) /
+            Mathf.Max(0.1f, owner.GetComponent<UnityEngine.AI.NavMeshAgent>()?.speed ?? 3.5f);
+        float enemyArrival = Mathf.Max(0f, enemyDistance - 1.5f) / enemy.MoveSpeed;
+        if (ownerArrival >= enemyArrival) return;
+
+        float value = protectedValue + Mathf.Clamp((enemyArrival - ownerArrival) * 8f, 0f, 24f);
+        if (value <= bestValue) return;
+        bestValue = value;
+        bestPosition = candidate;
+    }
+
+    private static float GetProtectedAllyValue(CombatCharacterIntel ally)
+    {
+        if (ally.MaxHP <= 0) return 20f;
+        float missingHpRatio = 1f - ally.HP / (float)ally.MaxHP;
+        float roleValue = ally.WeaponKind == WeaponKind.Wand || ally.WeaponKind == WeaponKind.Grimoire ? 18f : 8f;
+        return 30f + missingHpRatio * 45f + roleValue;
     }
 
     private static CombatMoveTarget CreateRosarySupportTarget(CombatAiContext context, Character owner, Character ally)
@@ -293,7 +366,9 @@ public static partial class CombatAiPlanner
         CombatCharacterIntel enemy = FindEnemyIntel(context, enemyCharacter);
         if (enemy.Character == null || !enemy.HasKnownPosition) return float.NegativeInfinity;
 
-        float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
+        int predictedHp = enemy.HP - GetAllyPendingDamage(context, enemyCharacter);
+        if (predictedHp <= 0) return float.NegativeInfinity;
+        float hpRatio = enemy.MaxHP > 0 ? predictedHp / (float)enemy.MaxHP : 1f;
         return (1f - hpRatio) * 60f + (enemy.HasDirectSight ? 25f : enemy.HasMemory ? 10f : 0f);
     }
 

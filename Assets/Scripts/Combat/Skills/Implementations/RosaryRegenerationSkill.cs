@@ -28,6 +28,12 @@ public sealed class RosaryRegenerationSkill : SkillBase
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
     public override float MaxRange => _maxRange;
 
+    public override int EstimateHealing(Character self, SkillExecutionContext context, Character target)
+    {
+        int tickCount = Mathf.Max(1, Mathf.CeilToInt(_durationSeconds / Mathf.Max(0.1f, _tickIntervalSeconds)));
+        return Mathf.Max(0, _healPerTick) * tickCount;
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         Character target = context.PrimaryTarget;

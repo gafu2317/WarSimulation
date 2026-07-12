@@ -36,7 +36,7 @@ public sealed class CombatRosaryHealSkillTests
     }
 
     [Test]
-    public void RosaryDistantHealSkill_DoesNotHealAllyOutOfRange()
+    public void RosaryDistantHealSkill_HealsAllyAtMaxRange()
     {
         GameObject ownerGo = new GameObject("Owner");
         GameObject allyGo = new GameObject("Ally");
@@ -54,9 +54,10 @@ public sealed class CombatRosaryHealSkillTests
                 skill,
                 CombatSkillEvaluationRequest.ForTarget(owner, ally));
 
-            Assert.That(result.CanUse, Is.False);
+            Assert.That(result.CanUse, Is.True);
+            skill.Execute(owner, result.Context);
 
-            Assert.That(ally.Health.HP, Is.EqualTo(10));
+            Assert.That(ally.Health.HP, Is.EqualTo(13));
         }
         finally
         {
@@ -86,7 +87,7 @@ public sealed class CombatRosaryHealSkillTests
             Assert.That(result.CanUse, Is.True);
             skill.Execute(owner, result.Context);
 
-            Assert.That(ally.Health.HP, Is.EqualTo(21));
+            Assert.That(ally.Health.HP, Is.EqualTo(19));
         }
         finally
         {
@@ -150,7 +151,7 @@ public sealed class CombatRosaryHealSkillTests
             skill.Execute(owner, result.Context);
 
             Assert.That(ally.Health.CanAct, Is.False);
-            Assert.That(ally.Health.HP, Is.EqualTo(16));
+            Assert.That(ally.Health.HP, Is.EqualTo(15));
         }
         finally
         {

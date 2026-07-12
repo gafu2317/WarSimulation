@@ -96,7 +96,26 @@ public static class CombatAiAssessmentBuilder
         assessment.SetValue(CombatAiMetricIndex.KillableTargetValue, v10);
         if (captureDebug) assessment.Metrics.Add(m10);
 
+        var m11 = EvaluateWinProximity(context, captureDebug, out float v11);
+        assessment.SetValue(CombatAiMetricIndex.WinProximity, v11);
+        if (captureDebug) assessment.Metrics.Add(m11);
+
         return assessment;
+    }
+
+    private static CombatAiMetric EvaluateWinProximity(CombatAiContext context, bool captureDebug, out float value)
+    {
+        CombatAiMetric metric = captureDebug ? CreateMetric("WinProximity") : null;
+        value = context.HasEnemyStoneHealth && context.EnemyStoneMaxHP > 0
+            ? ClampMetric((1f - context.EnemyStoneHP / (float)context.EnemyStoneMaxHP) * MaxMetricValue)
+            : 0f;
+        if (value >= 60f)
+        {
+            AddReason(metric, CombatAiReasonCode.WinProximityHigh);
+        }
+
+        if (metric != null) metric.Value = value;
+        return metric;
     }
 
     private static CombatAiMetric EvaluateOwnStoneThreat(CombatAiContext context, bool captureDebug, out float value)
@@ -176,6 +195,21 @@ public static class CombatAiAssessmentBuilder
                 AddReason(metric, CombatAiReasonCode.EnemyLineOfSight);
                 AddReason(metric, CombatAiReasonCode.EnemyInRange);
             }
+
+        }
+
+        int incomingDamage = GetPendingDamage(context.EnemyPendingDamage, owner);
+        if (incomingDamage > 0)
+        {
+            score += Mathf.Clamp(incomingDamage / (float)owner.Health.MaxHP * 60f, 0f, 60f);
+            AddReason(metric, CombatAiReasonCode.IncomingEnemyCast);
+        }
+
+        int nearbyEnemies = CountActiveCharactersNear(context.EnemyIntel, owner.transform.position, 10f, true);
+        int nearbyAllies = CountActiveCharactersNear(context.AllyIntel, owner.transform.position, 10f, false) + 1;
+        if (nearbyEnemies > nearbyAllies)
+        {
+            score += Mathf.Min(36f, (nearbyEnemies - nearbyAllies) * 12f);
         }
 
         if (score > 45f)
@@ -204,11 +238,16 @@ public static class CombatAiAssessmentBuilder
                 AddReason(metric, CombatAiReasonCode.AllyLowHp);
             }
 
-            if (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, NearbyDistance))
+            int nearbyEnemyCount = CountKnownEnemiesNear(context.EnemyIntel, ally.CurrentPosition, NearbyDistance);
+            if (nearbyEnemyCount > 0)
             {
-                score += 10f;
+                score += Mathf.Min(30f, nearbyEnemyCount * 10f);
                 AddReason(metric, CombatAiReasonCode.AllyFrontline);
             }
+
+            int incomingDamage = GetPendingDamage(context.EnemyPendingDamage, ally.Character);
+
+            score += Mathf.Clamp(incomingDamage / (float)ally.MaxHP * 40f, 0f, 40f);
         }
 
         if (score > 35f)
@@ -503,8 +542,11 @@ public static class CombatAiAssessmentBuilder
             CombatCharacterIntel enemy = context.EnemyIntel[i];
             if (!enemy.HasKnownPosition || enemy.HP <= 0) continue;
 
+            int predictedHp = enemy.HP - GetAllyPendingDamage(context, enemy.Character);
+            if (predictedHp <= 0) continue;
+
             float targetValue = Mathf.Lerp(0.45f, 1f, GetRoleThreat(enemy.WeaponKind));
-            float finishEase = GetFinishEase(enemy);
+            float finishEase = GetFinishEase(enemy, predictedHp);
             float reachFactor = GetOwnerReachFactor(owner, enemy);
             float recognitionFactor = enemy.HasDirectSight ? 1f : enemy.HasMemory ? 0.7f : 0f;
             float actionOpportunity = enemy.CanAct ? 1f : 1.15f;
@@ -597,11 +639,65 @@ public static class CombatAiAssessmentBuilder
 
     private static float GetFinishEase(CombatCharacterIntel enemy)
     {
-        float hpRatio = enemy.MaxHP > 0 ? enemy.HP / (float)enemy.MaxHP : 1f;
+        return GetFinishEase(enemy, enemy.HP);
+    }
+
+    private static float GetFinishEase(CombatCharacterIntel enemy, int hp)
+    {
+        float hpRatio = enemy.MaxHP > 0 ? hp / (float)enemy.MaxHP : 1f;
         if (hpRatio <= 0.3f) return 1f;
         if (hpRatio <= 0.5f) return 0.7f;
         if (hpRatio <= 0.7f) return 0.35f;
         return 0.1f;
+    }
+
+    private static int GetAllyPendingDamage(CombatAiContext context, Character target)
+    {
+        int damage = 0;
+        for (int i = 0; i < context.AllyPendingDamage.Count; i++)
+        {
+            if (context.AllyPendingDamage[i].Target == target)
+            {
+                damage += context.AllyPendingDamage[i].Damage;
+            }
+        }
+
+        return damage;
+    }
+
+    private static int GetPendingDamage(IReadOnlyList<CombatAiPendingDamage> pendingDamage, Character target)
+    {
+        int damage = 0;
+        for (int i = 0; i < pendingDamage.Count; i++)
+        {
+            if (pendingDamage[i].Target == target)
+            {
+                damage += pendingDamage[i].Damage;
+            }
+        }
+
+        return damage;
+    }
+
+    private static int CountActiveCharactersNear(
+        IReadOnlyList<CombatCharacterIntel> characters,
+        Vector3 position,
+        float radius,
+        bool requireKnownPosition)
+    {
+        int count = 0;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            CombatCharacterIntel character = characters[i];
+            if (requireKnownPosition && !character.HasKnownPosition) continue;
+            Vector3 characterPosition = character.HasKnownPosition ? character.KnownPosition : character.CurrentPosition;
+            if (character.CanAct && HorizontalDistance(position, characterPosition) <= radius)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static float GetOwnerReachFactor(Character owner, CombatCharacterIntel enemy)
@@ -626,6 +722,24 @@ public static class CombatAiAssessmentBuilder
         }
 
         return false;
+    }
+
+    private static int CountKnownEnemiesNear(
+        IReadOnlyList<CombatCharacterIntel> enemies,
+        Vector3 position,
+        float radius)
+    {
+        int count = 0;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            if (!enemies[i].HasKnownPosition || !enemies[i].CanAct) continue;
+            if (HorizontalDistance(position, enemies[i].KnownPosition) <= radius)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static int CountEnemiesNear(IReadOnlyList<CombatCharacterIntel> enemies, Vector3 position, float radius)

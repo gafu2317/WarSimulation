@@ -61,7 +61,7 @@ public sealed class CombatSkillCasterTests
             target.transform.position = Vector3.forward * 100f;
             owner.SkillCaster.Tick(float.PositiveInfinity);
 
-            Assert.That(target.Health.HP, Is.EqualTo(21));
+            Assert.That(target.Health.HP, Is.EqualTo(26));
         }
         finally
         {

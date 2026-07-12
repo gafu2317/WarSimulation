@@ -26,6 +26,13 @@ public sealed class RosaryCloseHealSkill : SkillBase
 
     public override float MaxRange => _maxRange;
 
+    public override int EstimateHealing(Character self, SkillExecutionContext context, Character target)
+    {
+        if (self == null || target == null) return 0;
+        context = context.Capture(self);
+        return Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.FAI) * _faiScale));
+    }
+
     public override void Execute(Character self, SkillExecutionContext context)
     {
         Character target = context.PrimaryTarget;
@@ -33,7 +40,6 @@ public sealed class RosaryCloseHealSkill : SkillBase
         if (!target.Health.IsAlive) return;
         context = context.Capture(self);
 
-        int healAmount = Mathf.Max(1, Mathf.RoundToInt(context.GetEffectiveStat(CombatStat.FAI) * _faiScale));
-        target.Health.Heal(healAmount);
+        target.Health.Heal(EstimateHealing(self, context, target));
     }
 }
