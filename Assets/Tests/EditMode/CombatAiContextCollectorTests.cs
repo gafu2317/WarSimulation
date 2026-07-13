@@ -614,6 +614,68 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Planner_ShieldFollowsAdvancingFrontlineRegardlessOfWeaponKind()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject frontlineGo = new GameObject("WandFrontline");
+        GameObject backlineGo = new GameObject("FragileBackline");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character frontline = frontlineGo.AddComponent<Character>();
+            frontline.Health.Initialize(30);
+            frontline.EquipWeapon(new Wand());
+            Character backline = backlineGo.AddComponent<Character>();
+            backline.Health.Initialize(30, 5);
+            backline.EquipWeapon(new Rosary());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(10f, 0f, 0f);
+            frontlineGo.transform.position = new Vector3(4f, 0f, 0f);
+            backlineGo.transform.position = new Vector3(-2f, 0f, 0f);
+            Vector3 frontlineDestination = new Vector3(8f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy },
+                allies: new[] { frontline, backline },
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        frontline,
+                        true,
+                        frontlineGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy,
+                        intendedTarget: enemy,
+                        hasIntendedDestination: true,
+                        intendedDestination: frontlineDestination),
+                    CreateIntel(backline, true, backlineGo.transform.position),
+                },
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            CombatAiMoveCandidateEntry supportMove = FindMove(snapshot, CombatAiMoveCode.SupportAlly);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+            Assert.That(supportMove.Target.Destination.x, Is.GreaterThan(frontlineGo.transform.position.x));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(backlineGo);
+            Object.DestroyImmediate(frontlineGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_HealingAreaChoosesMidpointThatCoversTwoInjuredAllies()
     {
         GameObject ownerGo = new GameObject("RosaryOwner");
@@ -1089,6 +1151,145 @@ public sealed class CombatAiContextCollectorTests
         }
     }
 
+    [Test]
+    public void Planner_SwordPrefersPursuitWithAllySupportOverIsolatedPursuit()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject allyGo = new GameObject("Ally");
+        GameObject enemyGo = new GameObject("Enemy");
+        GameObject secondEnemyGo = new GameObject("SecondEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.Health.Initialize(30);
+            Character secondEnemy = secondEnemyGo.AddComponent<Character>();
+            secondEnemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(10f, 0f, 0f);
+            secondEnemyGo.transform.position = new Vector3(12f, 0f, 0f);
+            allyGo.transform.position = new Vector3(-10f, 0f, 0f);
+
+            CombatAiContext isolated = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy, secondEnemy },
+                allies: new[] { ally },
+                enemyIntel: new[]
+                {
+                    CreateIntel(enemy, true, enemyGo.transform.position),
+                    CreateIntel(secondEnemy, true, secondEnemyGo.transform.position),
+                },
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) });
+            allyGo.transform.position = new Vector3(8f, 0f, 0f);
+            CombatAiContext supported = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy, secondEnemy },
+                allies: new[] { ally },
+                enemyIntel: new[]
+                {
+                    CreateIntel(enemy, true, enemyGo.transform.position),
+                    CreateIntel(secondEnemy, true, secondEnemyGo.transform.position),
+                },
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) });
+
+            float isolatedScore = FindMoveScore(CombatAiPlanner.BuildDebugSnapshot(isolated, null), CombatAiMoveCode.PursueEnemy);
+            float supportedScore = FindMoveScore(CombatAiPlanner.BuildDebugSnapshot(supported, null), CombatAiMoveCode.PursueEnemy);
+
+            Assert.That(supportedScore, Is.GreaterThan(isolatedScore));
+        }
+        finally
+        {
+            Object.DestroyImmediate(secondEnemyGo);
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_MoveScoreDropsWhenAllyAlreadyMovesToSameDestination()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject allyGo = new GameObject("Ally");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Wand());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            Vector3 forest = new Vector3(6f, 0f, 0f);
+
+            CombatAiContext free = CreatePlannerContext(
+                owner,
+                allies: new[] { ally },
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) },
+                forestCandidates: new[] { forest });
+            CombatAiContext occupied = CreatePlannerContext(
+                owner,
+                allies: new[] { ally },
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        ally,
+                        true,
+                        allyGo.transform.position,
+                        hasIntendedDestination: true,
+                        intendedDestination: forest),
+                },
+                forestCandidates: new[] { forest });
+
+            float freeScore = FindMoveScore(CombatAiPlanner.BuildDebugSnapshot(free, null), CombatAiMoveCode.MoveForest);
+            float occupiedScore = FindMoveScore(CombatAiPlanner.BuildDebugSnapshot(occupied, null), CombatAiMoveCode.MoveForest);
+
+            Assert.That(freeScore - occupiedScore, Is.EqualTo(12f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_RosaryForestPositionKeepsAllyWithinSupportRange()
+    {
+        GameObject ownerGo = new GameObject("RosaryOwner");
+        GameObject allyGo = new GameObject("Ally");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Rosary());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            allyGo.transform.position = new Vector3(5f, 0f, 0f);
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new AiPlannerHealSkill());
+            Vector3 validForest = new Vector3(8f, 0f, 0f);
+            Vector3 distantForest = new Vector3(20f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allies: new[] { ally },
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) },
+                forestCandidates: new[] { distantForest, validForest });
+
+            CombatAiMoveCandidateEntry move = FindMove(
+                CombatAiPlanner.BuildDebugSnapshot(context, null),
+                CombatAiMoveCode.MoveForest);
+
+            Assert.That(move.Target.Destination, Is.EqualTo(validForest));
+        }
+        finally
+        {
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
     private static AiContextFixture CreateFixture()
     {
         var fixture = new AiContextFixture();
@@ -1211,7 +1412,8 @@ public sealed class CombatAiContextCollectorTests
         int enemyStoneMaxHP = 0,
         IReadOnlyList<CombatAiPendingDamage> allyPendingDamage = null,
         IReadOnlyList<CombatAiPendingDamage> enemyPendingDamage = null,
-        IReadOnlyList<Vector3> bridgePositions = null)
+        IReadOnlyList<Vector3> bridgePositions = null,
+        IReadOnlyList<Vector3> forestCandidates = null)
     {
         return new CombatAiContext(
             owner,
@@ -1229,7 +1431,7 @@ public sealed class CombatAiContextCollectorTests
             System.Array.Empty<Vector3>(),
             bridgePositions ?? System.Array.Empty<Vector3>(),
             highGroundCandidates ?? System.Array.Empty<Vector3>(),
-            System.Array.Empty<Vector3>(),
+            forestCandidates ?? System.Array.Empty<Vector3>(),
             hasEnemyStoneHealth,
             enemyStoneHP,
             enemyStoneMaxHP,

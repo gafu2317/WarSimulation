@@ -66,16 +66,12 @@ public sealed class CombatSkillExecutionTests
 
             CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
             bool acted = brain.ExecutePlan(plan);
-            CombatAiWorldLabel label = ownerGo.GetComponent<CombatAiWorldLabel>();
 
             Assert.That(acted, Is.True);
             Assert.That(target.Health.HP, Is.EqualTo(23));
             Assert.That(owner.SkillCooldowns.IsReady(skill), Is.False);
             Assert.That(brain.HasLastSkillEvaluation, Is.True);
             Assert.That(brain.LastSkillEvaluation.CanUse, Is.True);
-            Assert.That(label, Is.Not.Null);
-            Assert.That(label.CurrentWeaponText, Is.EqualTo("剣"));
-            Assert.That(label.CurrentSkillText, Is.EqualTo("AiBrainTestSlash"));
         }
         finally
         {
@@ -124,7 +120,7 @@ public sealed class CombatSkillExecutionTests
     }
 
     [Test]
-    public void AiBrain_ExecutePlan_UpdatesWorldObjectiveLabel()
+    public void AiBrain_ExecutePlan_UpdatesLastPlanObjective()
     {
         GameObject ownerGo = new GameObject("Owner");
         try
@@ -143,11 +139,7 @@ public sealed class CombatSkillExecutionTests
 
             brain.ExecutePlan(plan);
 
-            CombatAiWorldLabel label = ownerGo.GetComponent<CombatAiWorldLabel>();
-            Assert.That(label, Is.Not.Null);
             Assert.That(brain.LastPlan.Objective, Is.EqualTo(CombatObjective.SupportAlly));
-            Assert.That(label.CurrentText, Is.EqualTo("味方を援護"));
-            Assert.That(label.CurrentWeaponText, Is.EqualTo("盾"));
         }
         finally
         {

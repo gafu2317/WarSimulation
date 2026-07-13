@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.AI;
 
 public sealed class CombatPhase4SkillTests
 {
@@ -108,8 +109,10 @@ public sealed class CombatPhase4SkillTests
 
             CombatCharacterBody ownerBody = owner.GetComponent<CombatCharacterBody>();
             CombatCharacterBody allyBody = ally.GetComponent<CombatCharacterBody>();
+            NavMeshAgent allyAgent = ally.GetComponent<NavMeshAgent>();
             ownerBody.BaseSpeed = 3f;
             allyBody.BaseSpeed = 2f;
+            Vector3 initialAllyPosition = ally.transform.position;
 
             new BibleCarryRushSkill().Execute(owner, SkillExecutionContext.ForTarget(ally));
 
@@ -117,18 +120,20 @@ public sealed class CombatPhase4SkillTests
             Assert.That(effect, Is.Not.Null);
             Assert.That(ownerBody.BaseSpeed, Is.EqualTo(5.4f).Within(0.001f));
             Assert.That(allyBody.BaseSpeed, Is.EqualTo(3.6f).Within(0.001f));
-            Assert.That(ally.transform.position, Is.EqualTo(owner.transform.position));
+            Assert.That(ally.transform.position, Is.EqualTo(initialAllyPosition));
+            Assert.That(ally.transform.parent, Is.EqualTo(owner.transform));
+            Assert.That(allyAgent.enabled, Is.False);
 
             owner.transform.position += Vector3.right * 5f;
-            InvokePrivateUpdate(effect);
-
-            Assert.That(ally.transform.position, Is.EqualTo(owner.transform.position));
+            Assert.That(ally.transform.position, Is.EqualTo(initialAllyPosition + Vector3.right * 5f));
 
             ForceCarryRushExpired(effect);
             InvokePrivateUpdate(effect);
 
             Assert.That(ownerBody.BaseSpeed, Is.EqualTo(3f).Within(0.001f));
             Assert.That(allyBody.BaseSpeed, Is.EqualTo(2f).Within(0.001f));
+            Assert.That(ally.transform.parent, Is.Null);
+            Assert.That(allyAgent.enabled, Is.True);
         }
         finally
         {

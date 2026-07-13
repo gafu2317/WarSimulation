@@ -81,6 +81,12 @@ public class CombatMapSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _frozenLakeSpeedMultiplier = 0.9f;
 
     public MapData CurrentMap { get; private set; }
+    public float MinimumTerrainHeight { get; private set; }
+    public float MaximumTerrainHeight { get; private set; }
+
+    private TerrainData _cachedTerrainData;
+    private float _cachedTerrainMinimumHeight;
+    private float _cachedTerrainMaximumHeight;
 
     // 天気
     public enum Weather { Sunny, Rainy, Hot, Cold, Thunder }
@@ -101,7 +107,85 @@ public class CombatMapSystem : MonoBehaviour
     public void SetCurrentMap(MapData map)
     {
         CurrentMap = map;
+        UpdateTerrainHeightRange(map);
         InitializeMagicStoneSystem(map);
+    }
+
+    private void UpdateTerrainHeightRange(MapData map)
+    {
+        MinimumTerrainHeight = 0f;
+        MaximumTerrainHeight = 0f;
+        if (map == null) return;
+
+        HeightMap heightMap = map.Height;
+        MinimumTerrainHeight = float.PositiveInfinity;
+        MaximumTerrainHeight = float.NegativeInfinity;
+        for (int z = 0; z < heightMap.Height; z++)
+        {
+            for (int x = 0; x < heightMap.Width; x++)
+            {
+                float height = heightMap.GetHeight(x, z);
+                MinimumTerrainHeight = Mathf.Min(MinimumTerrainHeight, height);
+                MaximumTerrainHeight = Mathf.Max(MaximumTerrainHeight, height);
+            }
+        }
+    }
+
+    public bool TryGetSightHeightContext(
+        Vector3 worldPosition,
+        out float currentHeight,
+        out float minimumHeight,
+        out float maximumHeight)
+    {
+        currentHeight = 0f;
+        minimumHeight = 0f;
+        maximumHeight = 0f;
+
+        if (CurrentMap != null && TryGetTerrainInfo(worldPosition, out TerrainInfo terrainInfo))
+        {
+            currentHeight = terrainInfo.Height;
+            minimumHeight = MinimumTerrainHeight;
+            maximumHeight = MaximumTerrainHeight;
+            return true;
+        }
+
+        Terrain terrain = Terrain.activeTerrain != null
+            ? Terrain.activeTerrain
+            : FindAnyObjectByType<Terrain>();
+        TerrainData terrainData = terrain != null ? terrain.terrainData : null;
+        if (terrainData == null) return false;
+
+        CacheTerrainHeightRange(terrainData);
+        Vector3 localPosition = terrain.transform.InverseTransformPoint(worldPosition);
+        Vector3 terrainSize = terrainData.size;
+        float normalizedX = terrainSize.x > Mathf.Epsilon ? Mathf.Clamp01(localPosition.x / terrainSize.x) : 0f;
+        float normalizedZ = terrainSize.z > Mathf.Epsilon ? Mathf.Clamp01(localPosition.z / terrainSize.z) : 0f;
+        currentHeight = terrainData.GetInterpolatedHeight(normalizedX, normalizedZ);
+        minimumHeight = _cachedTerrainMinimumHeight;
+        maximumHeight = _cachedTerrainMaximumHeight;
+        return true;
+    }
+
+    private void CacheTerrainHeightRange(TerrainData terrainData)
+    {
+        if (_cachedTerrainData == terrainData) return;
+
+        float[,] heights = terrainData.GetHeights(0, 0, terrainData.heightmapResolution, terrainData.heightmapResolution);
+        float minimumNormalizedHeight = float.PositiveInfinity;
+        float maximumNormalizedHeight = float.NegativeInfinity;
+        for (int z = 0; z < heights.GetLength(0); z++)
+        {
+            for (int x = 0; x < heights.GetLength(1); x++)
+            {
+                float height = heights[z, x];
+                minimumNormalizedHeight = Mathf.Min(minimumNormalizedHeight, height);
+                maximumNormalizedHeight = Mathf.Max(maximumNormalizedHeight, height);
+            }
+        }
+
+        _cachedTerrainData = terrainData;
+        _cachedTerrainMinimumHeight = minimumNormalizedHeight * terrainData.size.y;
+        _cachedTerrainMaximumHeight = maximumNormalizedHeight * terrainData.size.y;
     }
 
     public MapData GenerateAndSetCurrentMap()

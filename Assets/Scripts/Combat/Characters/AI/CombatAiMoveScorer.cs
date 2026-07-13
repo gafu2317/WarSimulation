@@ -27,7 +27,8 @@ public static class CombatAiMoveScorer
                     focusEnemy,
                     focusCommitmentRemainingSeconds)
                 + GetCoverBonus(weaponKind, snapshot.Assessment, code)
-                - GetAllyRoleOverlapPenalty(snapshot.Context, code, target)
+                - GetAllyDestinationOverlapPenalty(snapshot.Context, code, target)
+                - GetSwordIsolationPenalty(snapshot.Context, snapshot.Assessment, weaponKind, code, target)
                 - GetRouteRiskPenalty(snapshot.Context, code, target),
             WeaponScore = GetWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, code),
             PersonalityScore = GetPersonalityScore(personalityProfile, code, objective),
@@ -60,7 +61,8 @@ public static class CombatAiMoveScorer
             + GetWeaponScore(weaponWeightsProfile, owner.EquippedWeapon, code)
             + GetPersonalityScore(personalityProfile, code, objective)
             + GetCoverBonus(weaponKind, assessment, code)
-            - GetAllyRoleOverlapPenalty(context, code, target)
+            - GetAllyDestinationOverlapPenalty(context, code, target)
+            - GetSwordIsolationPenalty(context, assessment, weaponKind, code, target)
             - GetRouteRiskPenalty(context, code, target);
     }
 
@@ -177,21 +179,73 @@ public static class CombatAiMoveScorer
         return hitCharacter == enemy.Character;
     }
 
-    private static float GetAllyRoleOverlapPenalty(CombatAiContext context, string code, CombatMoveTarget target)
+    private static float GetAllyDestinationOverlapPenalty(CombatAiContext context, string code, CombatMoveTarget target)
     {
-        if (context == null || code != CombatAiMoveCode.TakeHighGround || !target.HasDestination) return 0f;
+        if (context == null || !target.HasDestination) return 0f;
 
+        float penalty = 0f;
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (!ally.HasObjective || ally.Objective != CombatObjective.Search || !ally.HasIntendedDestination) continue;
+            if (!ally.HasIntendedDestination) continue;
             if (HorizontalDistance(ally.IntendedDestination, target.Destination) <= 3f)
             {
-                return 36f;
+                if (code == CombatAiMoveCode.TakeHighGround &&
+                    ally.HasObjective && ally.Objective == CombatObjective.Search)
+                {
+                    return 36f;
+                }
+
+                penalty += 12f;
             }
         }
 
-        return 0f;
+        return Mathf.Min(36f, penalty);
+    }
+
+    private static float GetSwordIsolationPenalty(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        WeaponKind weaponKind,
+        string code,
+        CombatMoveTarget target)
+    {
+        if (context == null || weaponKind != WeaponKind.Sword || code != CombatAiMoveCode.PursueEnemy || !target.HasDestination)
+        {
+            return 0f;
+        }
+
+        int nearbyEnemies = 0;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.CanAct && enemy.HasKnownPosition && HorizontalDistance(enemy.KnownPosition, target.Destination) <= 6f)
+            {
+                nearbyEnemies++;
+            }
+        }
+
+        int supportingAllies = 0;
+        float nearestAllyDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.CanAct) continue;
+            float distance = HorizontalDistance(ally.CurrentPosition, target.Destination);
+            nearestAllyDistance = Mathf.Min(nearestAllyDistance, distance);
+            if (distance <= 8f) supportingAllies++;
+        }
+
+        float penalty = Mathf.Max(0, nearbyEnemies - supportingAllies - 1) * 18f;
+        if (nearestAllyDistance > 12f) penalty += 18f;
+        else if (nearestAllyDistance > 8f) penalty += 8f;
+
+        if (assessment.GetValue(CombatAiMetricIndex.KillableTargetValue) > 0f)
+        {
+            penalty *= 0.35f;
+        }
+
+        return penalty;
     }
 
     private static float GetCoverBonus(WeaponKind weaponKind, CombatAiAssessment assessment, string code)

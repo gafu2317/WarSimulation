@@ -1,14 +1,30 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class CombatSkillDebugIndicatorSystem
+public sealed class CombatSkillDebugIndicatorSystem : CombatDebugBehaviour
 {
+    public override string InspectorDescription => "スキル使用時に対象・地点・範囲を一時的な立体マーカーで表示します。";
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private const string GeneratedRootName = "GeneratedSkillDebugIndicators";
 
     private static readonly HashSet<SkillId> WarnedMissingSkills = new();
     private static readonly Dictionary<uint, Material> MaterialCache = new();
+    private static CombatSkillDebugIndicatorSystem _instance;
     private static Transform _generatedRoot;
+
+    private void OnEnable()
+    {
+        _instance = this;
+    }
+
+    private void OnDisable()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
 
     public static void Show(Character self, SkillId skillId, string skillName, SkillExecutionContext context)
     {
@@ -19,6 +35,8 @@ public static class CombatSkillDebugIndicatorSystem
         {
             label.ShowSkill(skillName);
         }
+
+        if (_instance == null) return;
 
         if (!CombatSkillDebugVisualCatalog.TryGetSpecs(skillId, out IReadOnlyList<CombatSkillDebugMarkerSpec> specs))
         {
@@ -147,6 +165,7 @@ public static class CombatSkillDebugIndicatorSystem
 
         var root = new GameObject(GeneratedRootName);
         _generatedRoot = root.transform;
+        _generatedRoot.SetParent(_instance.transform, worldPositionStays: false);
     }
 
     private static Material GetOrCreateMaterial(Color color)

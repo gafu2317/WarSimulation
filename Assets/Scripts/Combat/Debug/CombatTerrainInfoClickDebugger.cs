@@ -2,8 +2,10 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public sealed class CombatTerrainInfoClickDebugger : MonoBehaviour
+public sealed class CombatTerrainInfoClickDebugger : CombatDebugBehaviour
 {
+    public override string InspectorDescription => "クリックした地形のセル・高さ・地面状態・バイオーム情報をConsoleへ出力します。";
+
     [SerializeField] private Camera _cameraTarget;
     [SerializeField] private LayerMask _hitLayers = ~0;
     [SerializeField, Min(0.1f)] private float _maxRayDistance = 1000f;

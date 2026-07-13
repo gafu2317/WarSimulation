@@ -7,8 +7,10 @@ using UnityEngine;
 using WarSimulation.Combat.Map;
 
 [DisallowMultipleComponent]
-public sealed class CombatBattleEventLogger : MonoBehaviour
+public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 {
+    public override string InspectorDescription => "戦闘開始から終了まで、AI判断・HP変化・定期状態をログファイルへ記録します。";
+
     private const string LogDirectoryName = "Logs/CombatBattles";
 
     [SerializeField] private bool _enabled = true;

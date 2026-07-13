@@ -18,6 +18,7 @@ namespace WarSimulation.Combat.Map
     public sealed class FeatureRenderer : MonoBehaviour
     {
         private const string RootName = "GeneratedFeatures";
+        private const string VisionObstacleLayerName = "VisionObstacle";
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
@@ -196,6 +197,7 @@ namespace WarSimulation.Combat.Map
         {
             var tree = new GameObject($"Tree_{idx}");
             tree.transform.SetParent(parent, worldPositionStays: false);
+            SetVisionObstacleLayer(tree);
             // PlacedFeature の座標はマップローカル（親 MapGenerator 基準）。ワールド直指定だと親が動いているときだけ地形とズレる。
             tree.transform.localPosition = f.WorldPosition;
             tree.transform.localRotation = f.Rotation;
@@ -218,6 +220,7 @@ namespace WarSimulation.Combat.Map
             // localScale.y = targetHeight / 2 で高さを、localScale.x/z = targetDiameter で太さを作る。
             var trunk = new GameObject("Trunk", typeof(MeshFilter), typeof(MeshRenderer), typeof(CapsuleCollider));
             trunk.transform.SetParent(tree.transform, worldPositionStays: false);
+            SetVisionObstacleLayer(trunk);
             trunk.transform.localPosition = new Vector3(0f, trunkHeight * 0.5f, 0f);
             trunk.transform.localScale = new Vector3(trunkRadius * 2f, trunkHeight * 0.5f, trunkRadius * 2f);
             trunk.GetComponent<MeshFilter>().sharedMesh = cylinder;
@@ -228,6 +231,7 @@ namespace WarSimulation.Combat.Map
             // Unity のデフォルト Sphere は直径 1m。localScale = diameter で好きなサイズに。
             var foliage = new GameObject("Foliage", typeof(MeshFilter), typeof(MeshRenderer), typeof(SphereCollider));
             foliage.transform.SetParent(tree.transform, worldPositionStays: false);
+            SetVisionObstacleLayer(foliage);
             foliage.transform.localPosition = new Vector3(0f, foliageCenterY, 0f);
             float foliageDiameter = foliageRadius * 2f;
             foliage.transform.localScale = new Vector3(foliageDiameter, foliageDiameter, foliageDiameter);
@@ -235,6 +239,12 @@ namespace WarSimulation.Combat.Map
             foliage.GetComponent<MeshRenderer>().sharedMaterial = foliageMat;
             foliage.GetComponent<SphereCollider>().isTrigger = false;
             IgnoreFromNavMeshBuild(foliage);
+        }
+
+        private static void SetVisionObstacleLayer(GameObject target)
+        {
+            int layer = LayerMask.NameToLayer(VisionObstacleLayerName);
+            if (layer >= 0) target.layer = layer;
         }
 
         /// <summary>

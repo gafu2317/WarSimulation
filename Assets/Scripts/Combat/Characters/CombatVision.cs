@@ -67,17 +67,20 @@ public readonly struct CombatVisionDebugCommunicationSnapshot
 [RequireComponent(typeof(Character))]
 public sealed class CombatVision : MonoBehaviour
 {
-    [SerializeField] private CombatCharacterSystem _characterSystem;
+    private const string VisionObstacleLayerName = "VisionObstacle";
+    private const float HorizontalFovDegreesValue = 160f;
+
+    private CombatCharacterSystem _characterSystem;
+    private CombatMapSystem _mapSystem;
 
     [Header("Sight")]
     [SerializeField] private Vector3 _headOffsetFromFoot = new Vector3(0f, 1f, 0f);
     [SerializeField, Range(1f, 180f)] private float _verticalFov = 90f;
-    [SerializeField, Range(1f, 360f)] private float _horizontalFov = 180f;
-    [SerializeField, Min(0.1f)] private float _maxSightDistance = 30f;
+    [SerializeField, Min(0f)] private float _minimumSightRange = 30f;
+    [SerializeField, Min(0f)] private float _maximumSightRange = 100f;
     [SerializeField, Min(0f)] private float _searchTimeout = 5f;
     [SerializeField] private LayerMask _obstructionLayers = ~0;
     [SerializeField] private bool _ignoreCharacterLayer = true;
-    [SerializeField] private bool _drawDebugRays = false;
 
     private readonly Dictionary<Character, CharacterMemory> _memories = new();
     private readonly List<Character> _visibleEnemies = new();
@@ -97,6 +100,10 @@ public sealed class CombatVision : MonoBehaviour
     public IReadOnlyList<Character> VisibleEnemies => _visibleEnemies;
     public IReadOnlyList<Character> RememberedEnemies => _rememberedEnemies;
     public float SearchTimeoutSeconds => _searchTimeout;
+    public float HorizontalFovDegrees => HorizontalFovDegreesValue;
+    public float VerticalFovDegrees => _verticalFov;
+    public Vector3 EyePosition => transform.TransformPoint(_headOffsetFromFoot);
+    public float CurrentSightRange => GetCurrentSightRange();
     public Character LastSharedTo => _lastSharedTo;
     public Character LastReceivedFrom => _lastReceivedFrom;
     public float LastSharedAgeSeconds => _lastSharedTo != null ? Time.time - _lastSharedAt : float.PositiveInfinity;
@@ -296,33 +303,21 @@ public sealed class CombatVision : MonoBehaviour
             return false;
         }
 
+        if (!IsWithinFieldOfView(target)) return false;
+
         Vector3 headPos = transform.TransformPoint(_headOffsetFromFoot);
         Vector3 targetHeadPos = target.TransformPoint(_headOffsetFromFoot);
         Vector3 diff = targetHeadPos - headPos;
         float distanceToTarget = diff.magnitude;
 
         if (distanceToTarget < Mathf.Epsilon) return true;
-        if (distanceToTarget > _maxSightDistance) return false;
+        Vector2 horizontalDiff = new Vector2(diff.x, diff.z);
+        float sightRange = GetCurrentSightRange();
+        if (horizontalDiff.sqrMagnitude > sightRange * sightRange) return false;
 
         Vector3 dirToTarget = diff / distanceToTarget;
-        Vector3 localDir = transform.InverseTransformDirection(dirToTarget);
 
-        float horizontalAngle = Mathf.Abs(Mathf.Atan2(localDir.x, localDir.z) * Mathf.Rad2Deg);
-        if (horizontalAngle > _horizontalFov * 0.5f) return false;
-
-        float verticalAngle = Mathf.Abs(Mathf.Atan2(localDir.y, localDir.z) * Mathf.Rad2Deg);
-        if (verticalAngle > _verticalFov * 0.5f) return false;
-
-        int layerMask = _obstructionLayers;
-        if (_ignoreCharacterLayer)
-        {
-            layerMask &= ~LayerMask.GetMask("Character");
-        }
-
-        if (_drawDebugRays)
-        {
-            Debug.DrawRay(headPos, dirToTarget * distanceToTarget, Color.red, 1f);
-        }
+        int layerMask = ResolveObstructionLayerMask();
 
         int hitCount = Physics.RaycastNonAlloc(
             headPos,
@@ -343,6 +338,100 @@ public sealed class CombatVision : MonoBehaviour
         }
 
         return true;
+    }
+
+    public bool IsWithinFieldOfView(Transform target)
+    {
+        if (target == null) return false;
+
+        Vector3 diff = target.TransformPoint(_headOffsetFromFoot) - transform.TransformPoint(_headOffsetFromFoot);
+        if (diff.sqrMagnitude < Mathf.Epsilon) return true;
+
+        Vector3 localDirection = transform.InverseTransformDirection(diff.normalized);
+        float horizontalAngle = Mathf.Abs(Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg);
+        if (horizontalAngle > HorizontalFovDegreesValue * 0.5f) return false;
+
+        float verticalAngle = Mathf.Abs(Mathf.Atan2(localDirection.y, localDirection.z) * Mathf.Rad2Deg);
+        return verticalAngle <= _verticalFov * 0.5f;
+    }
+
+    private float GetCurrentSightRange()
+    {
+        float minimumRange = Mathf.Min(_minimumSightRange, _maximumSightRange);
+        float maximumRange = Mathf.Max(_minimumSightRange, _maximumSightRange);
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null ||
+            !mapSystem.TryGetSightHeightContext(
+                transform.position,
+                out float currentHeight,
+                out float minimumHeight,
+                out float maximumHeight)) return minimumRange;
+
+        float heightRange = maximumHeight - minimumHeight;
+        if (heightRange <= Mathf.Epsilon) return minimumRange;
+
+        float heightRatio = Mathf.InverseLerp(minimumHeight, maximumHeight, currentHeight);
+        return Mathf.Lerp(minimumRange, maximumRange, heightRatio);
+    }
+
+    public bool TryGetSightRay(Transform target, out Vector3 origin, out Vector3 end, out bool blocked)
+    {
+        origin = transform.TransformPoint(_headOffsetFromFoot);
+        end = target != null ? target.TransformPoint(_headOffsetFromFoot) : origin;
+        blocked = false;
+        if (target == null) return false;
+
+        Vector3 diff = end - origin;
+        float distance = diff.magnitude;
+        if (distance < Mathf.Epsilon) return true;
+
+        Vector3 direction = diff / distance;
+        float horizontalDistance = new Vector2(diff.x, diff.z).magnitude;
+        float rayDistance = distance;
+        if (horizontalDistance > CurrentSightRange && horizontalDistance > Mathf.Epsilon)
+        {
+            rayDistance *= CurrentSightRange / horizontalDistance;
+            end = origin + direction * rayDistance;
+        }
+
+        int hitCount = Physics.RaycastNonAlloc(
+            origin,
+            direction,
+            _lineOfSightHits,
+            rayDistance,
+            ResolveObstructionLayerMask(),
+            QueryTriggerInteraction.Ignore);
+        float nearestDistance = float.PositiveInfinity;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = _lineOfSightHits[i];
+            Transform hitTransform = hit.transform;
+            if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, target)) continue;
+            if (hit.distance >= nearestDistance) continue;
+
+            nearestDistance = hit.distance;
+            end = hit.point;
+            blocked = true;
+        }
+
+        return true;
+    }
+
+    private int ResolveObstructionLayerMask()
+    {
+        int layerMask = _obstructionLayers;
+        int visionObstacleLayer = LayerMask.NameToLayer(VisionObstacleLayerName);
+        if (visionObstacleLayer >= 0)
+        {
+            layerMask |= 1 << visionObstacleLayer;
+        }
+
+        if (_ignoreCharacterLayer)
+        {
+            layerMask &= ~LayerMask.GetMask("Character");
+        }
+
+        return layerMask;
     }
 
     private static bool IsPartOfTransform(Transform candidate, Transform root)
@@ -463,6 +552,21 @@ public sealed class CombatVision : MonoBehaviour
         return _characterSystem;
     }
 
+    private CombatMapSystem ResolveMapSystem()
+    {
+        if (_mapSystem != null) return _mapSystem;
+
+        CombatSceneContext context = CombatSceneContext.Instance;
+        if (context != null && context.MapSystem != null)
+        {
+            _mapSystem = context.MapSystem;
+            return _mapSystem;
+        }
+
+        _mapSystem = FindAnyObjectByType<CombatMapSystem>();
+        return _mapSystem;
+    }
+
     // 指定した味方との間に障害物がないか判定する
     private bool CanCommunicateWith(Character ally)
     {
@@ -476,16 +580,7 @@ public sealed class CombatVision : MonoBehaviour
         if (distance < Mathf.Epsilon) return true;
 
         Vector3 dirToAlly = diff / distance;
-        int layerMask = _obstructionLayers;
-        if (_ignoreCharacterLayer)
-        {
-            layerMask &= ~LayerMask.GetMask("Character");
-        }
-
-        if (_drawDebugRays)
-        {
-            Debug.DrawRay(myHeadPos, dirToAlly * distance, Color.green, 1f);
-        }
+        int layerMask = ResolveObstructionLayerMask();
 
         int hitCount = Physics.RaycastNonAlloc(
             myHeadPos,

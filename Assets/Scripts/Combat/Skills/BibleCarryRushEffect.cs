@@ -12,6 +12,10 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
     private float _speedMultiplier;
     private float _expiresAt;
     private bool _hasAppliedSpeedBoost;
+    private Transform _passengerOriginalParent;
+    private NavMeshAgent _passengerAgent;
+    private bool _passengerAgentWasEnabled;
+    private bool _hasAttachedPassenger;
 
     public void Initialize(
         Character carrier,
@@ -19,6 +23,7 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
         float speedMultiplier,
         float durationSeconds)
     {
+        ReleasePassenger();
         RestoreBaseSpeeds();
 
         _carrier = carrier;
@@ -42,7 +47,7 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
 
         if (_carrier != null && _passenger != null)
         {
-            SyncPassengerPosition();
+            AttachPassenger();
         }
 
         _hasAppliedSpeedBoost = true;
@@ -58,15 +63,15 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
             !_passenger.Health.IsAlive)
         {
             RestoreBaseSpeeds();
+            ReleasePassenger();
             DestroySelf();
             return;
         }
 
-        SyncPassengerPosition();
-
         if (Time.time >= _expiresAt)
         {
             RestoreBaseSpeeds();
+            ReleasePassenger();
             DestroySelf();
         }
     }
@@ -74,12 +79,14 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
     private void OnDestroy()
     {
         RestoreBaseSpeeds();
+        ReleasePassenger();
     }
 
     public void CancelImmediate()
     {
         enabled = false;
         RestoreBaseSpeeds();
+        ReleasePassenger();
         DestroySelf();
     }
 
@@ -111,20 +118,42 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
         DestroyImmediate(this);
     }
 
-    private void SyncPassengerPosition()
+    private void AttachPassenger()
     {
         if (_carrier == null || _passenger == null) return;
 
         _passengerBody?.Stop();
-        Vector3 destination = _carrier.transform.position;
-
-        NavMeshAgent passengerAgent = _passenger.GetComponent<NavMeshAgent>();
-        if (passengerAgent != null && passengerAgent.isOnNavMesh)
+        _passengerOriginalParent = _passenger.transform.parent;
+        _passengerAgent = _passenger.GetComponent<NavMeshAgent>();
+        if (_passengerAgent != null)
         {
-            passengerAgent.Warp(destination);
-            return;
+            _passengerAgentWasEnabled = _passengerAgent.enabled;
+            _passengerAgent.enabled = false;
         }
 
-        _passenger.transform.position = destination;
+        _passenger.transform.SetParent(_carrier.transform, worldPositionStays: true);
+        _hasAttachedPassenger = true;
+    }
+
+    private void ReleasePassenger()
+    {
+        if (!_hasAttachedPassenger || _passenger == null) return;
+
+        Transform passengerTransform = _passenger.transform;
+        passengerTransform.SetParent(_passengerOriginalParent, worldPositionStays: true);
+        if (_passengerAgent != null && _passengerAgentWasEnabled)
+        {
+            if (NavMesh.SamplePosition(passengerTransform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                passengerTransform.position = hit.position;
+            }
+
+            _passengerAgent.enabled = true;
+        }
+
+        _passengerOriginalParent = null;
+        _passengerAgent = null;
+        _passengerAgentWasEnabled = false;
+        _hasAttachedPassenger = false;
     }
 }

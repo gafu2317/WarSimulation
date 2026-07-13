@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using WarSimulation.Combat.Map;
 
 public sealed class CombatTeamVisionTests
 {
@@ -130,6 +131,146 @@ public sealed class CombatTeamVisionTests
             Object.DestroyImmediate(systemGo);
             Object.DestroyImmediate(allyGo);
             Object.DestroyImmediate(enemyGo);
+        }
+    }
+
+    [Test]
+    public void CombatVision_VisionObstacleLayerBlocksLineOfSight()
+    {
+        GameObject observerGo = new GameObject("Observer");
+        GameObject targetGo = new GameObject("Target");
+        GameObject treeGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+        try
+        {
+            Character observer = observerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            observerGo.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(0f, 0f, 5f);
+            treeGo.transform.position = new Vector3(0f, 1f, 2.5f);
+            treeGo.transform.localScale = new Vector3(1f, 2f, 1f);
+            treeGo.layer = LayerMask.NameToLayer("VisionObstacle");
+            Physics.SyncTransforms();
+
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.False);
+            Assert.That(observer.Vision.TryGetSightRay(target.transform, out _, out Vector3 end, out bool blocked), Is.True);
+            Assert.That(blocked, Is.True);
+            Assert.That(end.z, Is.LessThan(targetGo.transform.position.z));
+        }
+        finally
+        {
+            Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(treeGo);
+        }
+    }
+
+    [Test]
+    public void CombatVision_SightRangeScalesFrom30To100WithTerrainHeight()
+    {
+        GameObject mapSystemGo = new GameObject("CombatMapSystem");
+        GameObject observerGo = new GameObject("Observer");
+        GameObject targetGo = new GameObject("Target");
+
+        try
+        {
+            CombatMapSystem mapSystem = mapSystemGo.AddComponent<CombatMapSystem>();
+            var heightMap = new HeightMap(2, 2, 1f);
+            heightMap.SetHeight(1, 0, 10f);
+            heightMap.SetHeight(1, 1, 10f);
+            mapSystem.SetCurrentMap(new MapData(heightMap, new GroundStateGrid(2, 2, 1f), 1));
+
+            Character observer = observerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            observerGo.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(0f, 0f, 30f);
+            Physics.SyncTransforms();
+
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.True);
+
+            targetGo.transform.position = new Vector3(0f, 0f, 30.1f);
+            Physics.SyncTransforms();
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.False);
+            Assert.That(observer.Vision.TryGetSightRay(target.transform, out _, out Vector3 rangeEnd, out bool blocked), Is.True);
+            Assert.That(blocked, Is.False);
+            Assert.That(rangeEnd.z, Is.EqualTo(30f).Within(0.001f));
+
+            observerGo.transform.position = new Vector3(1f, 10f, 0f);
+            targetGo.transform.position = new Vector3(1f, 10f, 100f);
+            Physics.SyncTransforms();
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.True);
+
+            targetGo.transform.position = new Vector3(1f, 10f, 100.1f);
+            Physics.SyncTransforms();
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(mapSystemGo);
+            Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(targetGo);
+        }
+    }
+
+    [Test]
+    public void CombatVision_RejectsTargetBehindObserver()
+    {
+        GameObject observerGo = new GameObject("Observer");
+        GameObject targetGo = new GameObject("Target");
+
+        try
+        {
+            Character observer = observerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            observerGo.transform.position = Vector3.zero;
+            observerGo.transform.rotation = Quaternion.identity;
+            targetGo.transform.position = new Vector3(0f, 0f, -5f);
+
+            Assert.That(observer.Vision.IsWithinFieldOfView(target.transform), Is.False);
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(targetGo);
+        }
+    }
+
+    [Test]
+    public void CombatVision_UsesRenderedTerrainHeightOutsidePlayMode()
+    {
+        var terrainData = new TerrainData
+        {
+            heightmapResolution = 33,
+            size = new Vector3(10f, 10f, 10f),
+        };
+        var heights = new float[33, 33];
+        heights[0, 32] = 1f;
+        terrainData.SetHeights(0, 0, heights);
+
+        GameObject terrainGo = Terrain.CreateTerrainGameObject(terrainData);
+        GameObject mapSystemGo = new GameObject("CombatMapSystem");
+        GameObject observerGo = new GameObject("Observer");
+        GameObject targetGo = new GameObject("Target");
+
+        try
+        {
+            mapSystemGo.AddComponent<CombatMapSystem>();
+            Character observer = observerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            observerGo.transform.position = new Vector3(10f, 10f, 0f);
+            targetGo.transform.position = new Vector3(10f, 10f, 100f);
+            Physics.SyncTransforms();
+
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(terrainGo);
+            Object.DestroyImmediate(mapSystemGo);
+            Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(terrainData);
         }
     }
 

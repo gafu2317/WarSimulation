@@ -13,12 +13,10 @@ public sealed class CombatAiBrain : MonoBehaviour
     [SerializeField] private bool _executeMovement = true;
     [SerializeField] private bool _executeSkills = true;
     [SerializeField] private bool _executeStoneAttacks = true;
-    [SerializeField] private bool _showObjectiveLabel = true;
     [SerializeField] private CombatAiWeaponWeightsProfile _weaponWeightsProfile;
 
     private Character _owner;
     private CombatAiContextCollector _contextCollector;
-    private CombatAiWorldLabel _worldLabel;
     private float _nextDecisionTime;
     private float _nextStoneAttackTime;
     private Character _focusedEnemy;
@@ -31,16 +29,15 @@ public sealed class CombatAiBrain : MonoBehaviour
     public bool HasLastSkillEvaluation { get; private set; }
     public int LastStoneDamage { get; private set; }
     public CombatAiWeaponWeightsProfile WeaponWeightsProfile => ResolveWeaponWeightsProfile();
+    public bool IsAiEnabled => _enabled;
 
     private void Awake()
     {
         ResolveDependencies();
-        RefreshWorldLabel();
     }
 
     private void Update()
     {
-        RefreshWorldLabel();
         if (!_enabled || Time.time < _nextDecisionTime) return;
 
         _nextDecisionTime = Time.time + _decisionIntervalSeconds;
@@ -67,7 +64,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         {
             CombatAiDecisionEvents.RaiseObjectiveChanged(_owner, previousObjective, LastPlan.Objective);
         }
-        RefreshWorldLabel();
         return ExecutePlan(LastPlan);
     }
 
@@ -78,7 +74,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (_owner.SkillCaster.IsCasting) return false;
 
         LastPlan = plan;
-        RefreshWorldLabel();
         bool usedSkill = TryExecuteSkill(plan);
         bool attackedStone = !usedSkill && TryExecuteStoneAttack(plan);
         bool moved = !usedSkill && !attackedStone && TryExecuteMovement(plan);
@@ -265,15 +260,6 @@ public sealed class CombatAiBrain : MonoBehaviour
                 _contextCollector = gameObject.AddComponent<CombatAiContextCollector>();
             }
         }
-
-        if (_worldLabel == null)
-        {
-            _worldLabel = GetComponent<CombatAiWorldLabel>();
-            if (_worldLabel == null && _showObjectiveLabel)
-            {
-                _worldLabel = gameObject.AddComponent<CombatAiWorldLabel>();
-            }
-        }
     }
 
     private CombatAiWeaponWeightsProfile ResolveWeaponWeightsProfile()
@@ -285,16 +271,5 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         CombatSceneContext context = CombatSceneContext.Instance;
         return context != null ? context.AiWeaponWeightsProfile : null;
-    }
-
-    private void RefreshWorldLabel()
-    {
-        if (_worldLabel == null) return;
-        _worldLabel.SetVisible(_showObjectiveLabel);
-        if (_showObjectiveLabel)
-        {
-            _worldLabel.SetObjective(LastPlan.Objective, _enabled && _owner != null && _owner.Health != null && _owner.Health.IsAlive);
-            _worldLabel.SetWeapon(_owner != null ? _owner.EquippedWeapon : null);
-        }
     }
 }

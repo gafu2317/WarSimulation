@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public static class CombatAiObjectiveScorer
 {
     private static readonly CombatObjective[] AllObjectives = (CombatObjective[])System.Enum.GetValues(typeof(CombatObjective));
@@ -215,18 +217,55 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
+        float ownStoneThreat = assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat);
+        bool hasFrontlineAlly = HasAdvancingFrontlineAlly(context);
         return objective switch
         {
             CombatObjective.DefendOwnStone when context.HasOwnStonePosition
-                && (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 18f || assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 22f) => 18f,
-            CombatObjective.AttackEnemy when assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 16f
+                && ownStoneThreat > 18f => 18f,
+            CombatObjective.DefendOwnStone when ownStoneThreat < 12f && hasFrontlineAlly => -24f,
+            CombatObjective.SupportAlly when ownStoneThreat < 18f && hasFrontlineAlly => 32f,
+            CombatObjective.AttackEnemy when ownStoneThreat < 16f
                 && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 24f => 10f,
             CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
                 && assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 30f
-                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 12f
+                && ownStoneThreat < 12f
                 && assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 18f => 8f,
             _ => 0f,
         };
+    }
+
+    private static bool HasAdvancingFrontlineAlly(CombatAiContext context)
+    {
+        if (context == null) return false;
+
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.CanAct || !ally.HasObjective) continue;
+            if (ally.Objective != CombatObjective.AttackEnemy &&
+                ally.Objective != CombatObjective.DestroyEnemyStone) continue;
+            if (ally.IntendedTarget != null || ally.HasIntendedDestination || IsNearKnownEnemy(context, ally.CurrentPosition))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsNearKnownEnemy(CombatAiContext context, Vector3 position)
+    {
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.HasKnownPosition && HorizontalDistance(position, enemy.KnownPosition) <= 10f)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static float GetWandSituationAdjustment(

@@ -999,7 +999,6 @@ AI の判断ロジックは AI 系ディレクトリへまとめる。
 * `Assets/Scripts/Combat/Characters/AI/CombatAiReasonCode.cs`
   * 候補が選ばれた理由コード
   * 英語名を内部保持し、日本語訳を対応づける
-* `Assets/Scripts/Combat/Debug/CombatAiDecisionDebugView.cs`
   * 判断フローを 2D で可視化する表示専用ビュー
   * `CombatAiContextCollector` と `CombatAiPlanner` を呼んで描画する
 

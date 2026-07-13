@@ -358,6 +358,16 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             ForestRegion forest = forests[i];
             Vector3 localCenter = new Vector3(forest.Center.x, 0f, forest.Center.y);
             _forestCandidates.Add(ToWorldSurfacePosition(mapSystem, localCenter));
+            for (int directionIndex = 0; directionIndex < 8; directionIndex++)
+            {
+                float angle = directionIndex * Mathf.PI * 0.25f;
+                Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                float radius = forest.EffectiveRadius(
+                    direction.x * forest.Radius,
+                    direction.y * forest.Radius) * 0.8f;
+                Vector2 point = forest.Center + direction * radius;
+                _forestCandidates.Add(ToWorldSurfacePosition(mapSystem, new Vector3(point.x, 0f, point.y)));
+            }
         }
     }
 
