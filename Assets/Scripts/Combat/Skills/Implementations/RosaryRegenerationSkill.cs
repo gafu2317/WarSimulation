@@ -9,7 +9,7 @@ public sealed class RosaryRegenerationSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public RosaryRegenerationSkill(
-        float maxRange = 5f,
+        float maxRange = 25f,
         int healPerTick = 7,
         float durationSeconds = 5f,
         float tickIntervalSeconds = 1f,

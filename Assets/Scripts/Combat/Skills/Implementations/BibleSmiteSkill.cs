@@ -8,7 +8,7 @@ public sealed class BibleSmiteSkill : SkillBase
 
     public BibleSmiteSkill(
         float faiScale = 0.35f,
-        float maxRange = 8f,
+        float maxRange = 30f,
         float cooldownSeconds = 1.5f)
     {
         _faiScale = faiScale;

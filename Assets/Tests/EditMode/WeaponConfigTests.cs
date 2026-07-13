@@ -10,7 +10,7 @@ public sealed class WeaponConfigTests
         WeaponConfig config = CreateConfig(WeaponKind.Sword);
         try
         {
-            AssertWeapon(config.CreateWeapon(), 2f, 12, 1f, CombatStat.STR, WeaponKind.Sword);
+            AssertWeapon(config.CreateWeapon(), 2f, 12, 0.9f, CombatStat.STR, WeaponKind.Sword);
         }
         finally
         {

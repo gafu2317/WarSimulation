@@ -13,6 +13,41 @@ public static partial class CombatAiPlanner
 
     private static readonly List<SkillExecutionContext> s_skillContextsBuffer = new List<SkillExecutionContext>();
 
+    private static CombatMoveTarget CreatePersonalitySignatureTarget(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile)
+    {
+        if (context == null || context.Owner == null || personalityProfile == null) return CombatMoveTarget.None;
+
+        return personalityProfile.Kind switch
+        {
+            CombatAiPersonalityKind.AttentionSeeker => CreateAttentionSeekerTarget(context),
+            CombatAiPersonalityKind.Clumsy => CreateClumsyTarget(context),
+            CombatAiPersonalityKind.Coward => CreateAllyRelativeTarget(context, towardEnemy: false),
+            CombatAiPersonalityKind.Cunning => CreateCoverPositionTarget(context, context.Owner),
+            CombatAiPersonalityKind.Despicable => CreateAllyRelativeTarget(context, towardEnemy: false),
+            CombatAiPersonalityKind.Devoted => CreateAllyRelativeTarget(context, towardEnemy: true),
+            CombatAiPersonalityKind.Eccentric => CreateEccentricTarget(context),
+            CombatAiPersonalityKind.Gossiper => CreateRuntimePersonalityTarget(context),
+            CombatAiPersonalityKind.HotBlooded => CreateBestAllyTarget(context),
+            CombatAiPersonalityKind.Innocent => CreateOrbitTarget(context),
+            CombatAiPersonalityKind.Lonely => CreateBestAllyTarget(context),
+            CombatAiPersonalityKind.LoneWolf => CreateLoneWolfTarget(context),
+            CombatAiPersonalityKind.Lecherous => CreateRuntimePersonalityTarget(context),
+            CombatAiPersonalityKind.OverlySerious => CreateBestEnemyTarget(context, null, 0f),
+            CombatAiPersonalityKind.Reckless => CreateEnemyStoneTarget(context),
+            _ => CombatMoveTarget.None,
+        };
+    }
+
+    private static CombatMoveTarget CreateRuntimePersonalityTarget(CombatAiContext context)
+    {
+        CombatAiPersonalityRuntime runtime = context.Owner.GetComponent<CombatAiPersonalityRuntime>();
+        return runtime != null && runtime.TryGetSignatureTarget(out CombatMoveTarget target)
+            ? target
+            : CombatMoveTarget.None;
+    }
+
     public static CombatAiPlan BuildPlan(
         CombatAiContext context,
         CombatAiPersonalityProfile personalityProfile,
@@ -93,6 +128,8 @@ public static partial class CombatAiPlanner
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.SearchLastKnown, CreateLastKnownEnemyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+            CombatAiMoveCode.PersonalitySignature, CreatePersonalitySignatureTarget(context, personalityProfile), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.HoldPosition, CombatMoveTarget.None, objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
 
         return bestTarget;
@@ -149,6 +186,7 @@ public static partial class CombatAiPlanner
             for (int j = 0; j < s_skillContextsBuffer.Count; j++)
             {
                 CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, s_skillContextsBuffer[j]);
+                if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
                 float score = GetSkillBaseScore(skill, objective)
                     + GetSkillWeaponScore(weaponWeightsProfile, context.Owner.EquippedWeapon, skill)
                     + GetSkillPersonalityScore(personalityProfile, skill, objective)
@@ -252,6 +290,7 @@ public static partial class CombatAiPlanner
             AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.MoveForest, "森へ移動", forestTarget, objective, focusEnemy, focusCommitmentRemainingSeconds);
         }
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SearchLastKnown, "最終既知地点へ移動", CreateLastKnownEnemyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
+        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.PersonalitySignature, "性格固有の移動", CreatePersonalitySignatureTarget(snapshot.Context, personalityProfile), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.HoldPosition, "待機", CombatMoveTarget.None, objective, focusEnemy, focusCommitmentRemainingSeconds);
     }
 
@@ -332,8 +371,25 @@ public static partial class CombatAiPlanner
         List<SkillExecutionContext> contexts = CombatAiSkillContextBuilder.Build(snapshot.Context, snapshot.Owner, skill);
         for (int i = 0; i < contexts.Count; i++)
         {
+            CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(snapshot.Owner, skill, contexts[i]);
+            if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
             AddSkillEntry(snapshot, personalityProfile, weaponWeightsProfile, skill, contexts[i], i, focusEnemy, focusCommitmentRemainingSeconds);
         }
+    }
+
+    private static bool CanPersonalityUseSkill(
+        CombatAiPersonalityProfile personalityProfile,
+        SkillBase skill,
+        SkillExecutionContext context)
+    {
+        if (personalityProfile == null || skill == null) return true;
+        if (personalityProfile.Kind == CombatAiPersonalityKind.Innocent && CombatAiSkillClassifier.IsDamage(skill)) return false;
+        if (personalityProfile.Kind == CombatAiPersonalityKind.Reckless)
+        {
+            return CombatAiSkillClassifier.IsDamage(skill) && context.PrimaryStone != null;
+        }
+
+        return true;
     }
 
     private static void AddSkillEntry(
@@ -406,22 +462,21 @@ public static partial class CombatAiPlanner
     private static float GetSkillPersonalityScore(CombatAiPersonalityProfile personalityProfile, SkillBase skill, CombatObjective objective)
     {
         if (personalityProfile == null || skill == null) return 0f;
+        float score = 0f;
         if (CombatAiSkillClassifier.IsDamage(skill))
         {
-            return personalityProfile.Aggression * 10f - personalityProfile.Caution * 2f;
+            score = personalityProfile.Aggression * 10f - personalityProfile.Caution * 2f;
         }
-
-        if (CombatAiSkillClassifier.IsSupport(skill))
+        else if (CombatAiSkillClassifier.IsSupport(skill))
         {
-            return personalityProfile.SupportBias * 12f + personalityProfile.Caution * 4f;
+            score = personalityProfile.SupportBias * 12f + personalityProfile.Caution * 4f;
         }
-
-        if (CombatAiSkillClassifier.IsMobility(skill) && objective == CombatObjective.Search)
+        else if (CombatAiSkillClassifier.IsMobility(skill) && objective == CombatObjective.Search)
         {
-            return personalityProfile.ExplorationBias * 10f;
+            score = personalityProfile.ExplorationBias * 10f;
         }
 
-        return 0f;
+        return score + CombatAiPersonalityBehavior.GetSkillScore(personalityProfile, skill);
     }
 
     private static float GetSkillSituationScore(
@@ -705,7 +760,7 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition || !enemy.CanAct) continue;
+            if (!enemy.IsAlive || !enemy.HasKnownPosition || !enemy.CanAct) continue;
             float distance = HorizontalDistance(owner.transform.position, enemy.KnownPosition);
             if (distance > enemy.WeaponRange + enemy.MoveSpeed * 1.5f) continue;
 
@@ -881,8 +936,19 @@ public static partial class CombatAiPlanner
     {
         for (int i = 0; i < enemies.Count; i++)
         {
-            if (!enemies[i].HasKnownPosition) continue;
+            if (!enemies[i].IsAlive || !enemies[i].HasKnownPosition) continue;
             if (HorizontalDistance(position, enemies[i].KnownPosition) <= radius) return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasVisibleLivingEnemy(CombatAiContext context)
+    {
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.IsAlive && enemy.HasDirectSight) return true;
         }
 
         return false;
@@ -936,7 +1002,7 @@ public static partial class CombatAiPlanner
             CombatObjective.Retreat when CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill) => 20f,
             CombatObjective.Search when CombatAiSkillClassifier.IsStealth(skill) || CombatAiSkillClassifier.IsMobility(skill) => 16f,
             CombatObjective.DestroyEnemyStone when CombatAiSkillClassifier.IsSupport(skill) && assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 20f => -20f,
-            CombatObjective.DestroyEnemyStone when CombatAiSkillClassifier.IsDamage(skill) && context.VisibleEnemies.Count > 0 => 6f,
+            CombatObjective.DestroyEnemyStone when CombatAiSkillClassifier.IsDamage(skill) && HasVisibleLivingEnemy(context) => 6f,
             _ => 0f,
         };
     }
@@ -990,7 +1056,7 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasDirectSight || !enemy.CanAct) continue;
+            if (!enemy.IsAlive || !enemy.HasDirectSight || !enemy.CanAct) continue;
 
             float distance = HorizontalDistance(ownerPosition, enemy.CurrentPosition);
             float distanceToThreat = Mathf.Max(0f, distance - Mathf.Max(0.5f, enemy.WeaponRange));

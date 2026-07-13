@@ -34,6 +34,36 @@ public class CombatCharacterSystem : MonoBehaviour
         AssignTeam(EnemyCharacters, CombatTeam.Enemy);
     }
 
+    public void SetParticipants(
+        IReadOnlyList<Character> allies,
+        IReadOnlyList<Character> enemies)
+    {
+        var previousCharacters = new HashSet<Character>(AllyCharacters);
+        previousCharacters.UnionWith(EnemyCharacters);
+
+        ReplaceParticipants(AllyCharacters, allies, CombatTeam.Ally);
+        ReplaceParticipants(EnemyCharacters, enemies, CombatTeam.Enemy);
+
+        var participants = new HashSet<Character>(AllyCharacters);
+        participants.UnionWith(EnemyCharacters);
+        foreach (Character character in previousCharacters)
+        {
+            if (character != null && !participants.Contains(character))
+            {
+                character.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    public void SetParticipants(
+        IReadOnlyList<CombatParticipantSetup> allies,
+        IReadOnlyList<CombatParticipantSetup> enemies)
+    {
+        var allyCharacters = ApplySetups(allies);
+        var enemyCharacters = ApplySetups(enemies);
+        SetParticipants(allyCharacters, enemyCharacters);
+    }
+
     public bool TryGetHomePosition(Character character, out Vector3 homePosition)
     {
         homePosition = default;
@@ -347,6 +377,26 @@ public class CombatCharacterSystem : MonoBehaviour
         }
     }
 
+    private void ReplaceParticipants(
+        List<Character> destination,
+        IReadOnlyList<Character> source,
+        CombatTeam team)
+    {
+        destination.Clear();
+        if (source == null) return;
+
+        for (int i = 0; i < source.Count; i++)
+        {
+            Character character = source[i];
+            if (character == null || destination.Contains(character)) continue;
+
+            character.gameObject.SetActive(true);
+            character.SetTeam(team);
+            destination.Add(character);
+            RegisterInitialPosition(character);
+        }
+    }
+
     private bool TryGetMainStonePositionForTeam(CombatTeam team, out Vector3 position)
     {
         position = default;
@@ -386,5 +436,22 @@ public class CombatCharacterSystem : MonoBehaviour
 
         _mapSystem = FindAnyObjectByType<CombatMapSystem>();
         return _mapSystem;
+    }
+
+    private static List<Character> ApplySetups(IReadOnlyList<CombatParticipantSetup> setups)
+    {
+        var characters = new List<Character>();
+        if (setups == null) return characters;
+
+        for (int i = 0; i < setups.Count; i++)
+        {
+            CombatParticipantSetup setup = setups[i];
+            if (setup?.Character == null || characters.Contains(setup.Character)) continue;
+
+            setup.Character.ConfigureForBattle(setup.Weapon, setup.Personality);
+            characters.Add(setup.Character);
+        }
+
+        return characters;
     }
 }

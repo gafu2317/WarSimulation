@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using WarSimulation.Combat.Map;
 
@@ -20,6 +21,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
     private CombatBattleState _state = CombatBattleState.WaitingToStart;
 
     public CombatBattleState State => _state;
+    public event Action<CombatBattleState> BattleEnded;
 
     public static bool IsRunning => s_instance != null && s_instance._state == CombatBattleState.Running;
     public static bool AllowsCombatActions => s_instance == null || s_instance._state == CombatBattleState.Running;
@@ -152,10 +154,11 @@ public sealed class CombatBattleFlow : MonoBehaviour
     public void EndBattle(CombatBattleState outcome)
     {
         if (_state != CombatBattleState.Running) return;
-        if (outcome == CombatBattleState.Running) return;
+        if (outcome != CombatBattleState.Victory && outcome != CombatBattleState.Defeat) return;
 
         _state = outcome;
         StopAllCharacters();
+        BattleEnded?.Invoke(outcome);
     }
 
     private void StopAllCharacters()

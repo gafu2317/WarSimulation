@@ -93,6 +93,27 @@ public sealed class CombatSkillCasterTests
     }
 
     [Test]
+    public void Cast_DeathImmediatelyCancelsTheActiveCast()
+    {
+        Character owner = CreateCharacter("Owner", CombatTeam.Ally, Vector3.zero);
+        Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
+        try
+        {
+            SkillBase skill = new WandBoltSkill();
+            Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
+
+            owner.Health.TakeDamage(owner.Health.MaxHP, target);
+
+            Assert.That(owner.Health.LifeState, Is.EqualTo(LifeState.Retreating));
+            Assert.That(owner.SkillCaster.IsCasting, Is.False);
+        }
+        finally
+        {
+            DestroyCharacters(owner, target);
+        }
+    }
+
+    [Test]
     public void Cast_DefeatedTargetIsNotReplacedAndStillStartsCooldown()
     {
         Character owner = CreateCharacter("Owner", CombatTeam.Ally, Vector3.zero);

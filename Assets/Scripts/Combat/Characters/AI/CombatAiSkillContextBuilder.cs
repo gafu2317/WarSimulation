@@ -64,7 +64,7 @@ public static class CombatAiSkillContextBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character == null || !enemy.HasKnownPosition) continue;
+            if (enemy.Character == null || !enemy.IsAlive || !enemy.HasKnownPosition) continue;
 
             AddUniqueTarget(contexts, enemy.Character);
         }
@@ -113,14 +113,14 @@ public static class CombatAiSkillContextBuilder
         for (int i = 0; i < targets.Count; i++)
         {
             CombatCharacterIntel target = targets[i];
-            if (!support && !target.HasKnownPosition) continue;
+            if (!support && (!target.IsAlive || !target.HasKnownPosition)) continue;
             Vector3 targetPosition = support ? target.CurrentPosition : target.KnownPosition;
 
             AddUniquePoint(contexts, targetPosition);
             for (int j = i + 1; j < targets.Count; j++)
             {
                 CombatCharacterIntel other = targets[j];
-                if (!support && !other.HasKnownPosition) continue;
+                if (!support && (!other.IsAlive || !other.HasKnownPosition)) continue;
                 Vector3 otherPosition = support ? other.CurrentPosition : other.KnownPosition;
                 if (HorizontalDistance(targetPosition, otherPosition) > skill.AreaRadius * 2f) continue;
                 AddUniquePoint(contexts, (targetPosition + otherPosition) * 0.5f);
@@ -157,13 +157,13 @@ public static class CombatAiSkillContextBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition) continue;
+            if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
 
             AddUniqueArea(contexts, owner, enemy.KnownPosition, skill.AreaRadius, skill);
             for (int j = i + 1; j < context.EnemyIntel.Count; j++)
             {
                 CombatCharacterIntel other = context.EnemyIntel[j];
-                if (!other.HasKnownPosition) continue;
+                if (!other.IsAlive || !other.HasKnownPosition) continue;
                 if (HorizontalDistance(enemy.KnownPosition, other.KnownPosition) > skill.AreaRadius * 2f) continue;
 
                 Vector3 center = (enemy.KnownPosition + other.KnownPosition) * 0.5f;

@@ -1,9 +1,104 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using WarSimulation.Combat.Map;
 
 public sealed class CombatCharacterSystemTests
 {
+    [Test]
+    public void SetParticipants_AppliesEachCharactersWeaponAndPersonalitySetup()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        GameObject allyObject = new GameObject("Ally");
+        GameObject enemyObject = new GameObject("Enemy");
+        WeaponConfig allyWeapon = ScriptableObject.CreateInstance<WeaponConfig>();
+        WeaponConfig enemyWeapon = ScriptableObject.CreateInstance<WeaponConfig>();
+        CombatAiPersonalityProfile allyPersonality = ScriptableObject.CreateInstance<CombatAiPersonalityProfile>();
+        CombatAiPersonalityProfile enemyPersonality = ScriptableObject.CreateInstance<CombatAiPersonalityProfile>();
+
+        try
+        {
+            allyWeapon.ApplyKindDefaults(WeaponKind.Sword);
+            enemyWeapon.ApplyKindDefaults(WeaponKind.Wand);
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            Character ally = allyObject.AddComponent<Character>();
+            Character enemy = enemyObject.AddComponent<Character>();
+
+            system.SetParticipants(
+                new[] { new CombatParticipantSetup(ally, allyWeapon, allyPersonality) },
+                new[] { new CombatParticipantSetup(enemy, enemyWeapon, enemyPersonality) });
+
+            Assert.That(ally.EquippedWeaponConfig, Is.SameAs(allyWeapon));
+            Assert.That(ally.EquippedWeapon.Kind, Is.EqualTo(WeaponKind.Sword));
+            Assert.That(ally.PersonalityProfile, Is.SameAs(allyPersonality));
+            Assert.That(ally.Team, Is.EqualTo(CombatTeam.Ally));
+            Assert.That(enemy.EquippedWeaponConfig, Is.SameAs(enemyWeapon));
+            Assert.That(enemy.EquippedWeapon.Kind, Is.EqualTo(WeaponKind.Wand));
+            Assert.That(enemy.PersonalityProfile, Is.SameAs(enemyPersonality));
+            Assert.That(enemy.Team, Is.EqualTo(CombatTeam.Enemy));
+
+            ally.InitializeOnBattleStart();
+            enemy.InitializeOnBattleStart();
+
+            Assert.That(ally.EquippedWeaponConfig, Is.SameAs(allyWeapon));
+            Assert.That(enemy.EquippedWeaponConfig, Is.SameAs(enemyWeapon));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyPersonality);
+            Object.DestroyImmediate(allyPersonality);
+            Object.DestroyImmediate(enemyWeapon);
+            Object.DestroyImmediate(allyWeapon);
+            Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(allyObject);
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
+    [Test]
+    public void SetParticipants_RegistersSelectedCharactersAndDisablesOthers()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        GameObject selectedObject = new GameObject("SelectedAlly");
+        GameObject unselectedObject = new GameObject("UnselectedAlly");
+        GameObject enemyObject = new GameObject("Enemy");
+
+        try
+        {
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            Character selected = selectedObject.AddComponent<Character>();
+            Character unselected = unselectedObject.AddComponent<Character>();
+            Character enemy = enemyObject.AddComponent<Character>();
+            system.AllyCharacters.Add(selected);
+            system.AllyCharacters.Add(unselected);
+            system.EnemyCharacters.Add(enemy);
+
+            system.SetParticipants(new List<Character> { selected }, new List<Character> { enemy });
+
+            Assert.That(system.AllyCharacters, Is.EqualTo(new[] { selected }));
+            Assert.That(system.EnemyCharacters, Is.EqualTo(new[] { enemy }));
+            Assert.That(selected.Team, Is.EqualTo(CombatTeam.Ally));
+            Assert.That(enemy.Team, Is.EqualTo(CombatTeam.Enemy));
+            Assert.That(selectedObject.activeSelf, Is.True);
+            Assert.That(enemyObject.activeSelf, Is.True);
+            Assert.That(unselectedObject.activeSelf, Is.False);
+
+            system.SetParticipants(
+                new List<Character> { selected, unselected },
+                new List<Character> { enemy });
+
+            Assert.That(unselectedObject.activeSelf, Is.True);
+            Assert.That(system.AllyCharacters, Does.Contain(unselected));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(unselectedObject);
+            Object.DestroyImmediate(selectedObject);
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
     [Test]
     public void TryRelocateCharactersNearMainStones_MovesTeamsNearOwnStoneWithSpacing()
     {

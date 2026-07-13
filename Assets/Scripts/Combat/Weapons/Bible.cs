@@ -23,7 +23,7 @@ public class Bible : WeaponBase
     public override IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public Bible(
-        float range = 6f,
+        float range = 30f,
         float cooldown = 1.6f,
         int faiBonus = 10,
         float chaseEnemyBias = 0f,

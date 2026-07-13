@@ -9,7 +9,7 @@ public sealed class GrimoirePoisonSkill : SkillBase
     private readonly float _cooldownSeconds;
 
     public GrimoirePoisonSkill(
-        float maxRange = 6f,
+        float maxRange = 25f,
         int damagePerTick = 4,
         float durationSeconds = 5f,
         float tickIntervalSeconds = 1f,

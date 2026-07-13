@@ -2,7 +2,7 @@
 
 現状のスキル調整値は主に2か所に分かれている。
 
-- 武器の射程・CT・主ステ補正: `Assets/Data/CombatFields/Weapon/*.asset`
+- 武器の射程・CT・主ステ補正: `Assets/Data/Map/Weapon/*.asset`
 - 各スキルの射程・係数・持続時間: `Assets/Scripts/Combat/Skills/Implementations/*.cs` と `Assets/Scripts/Combat/Skills/CombatSkillFactory.cs`
 
 `Assets/Data/Combat/Skills/*.asset` の `SkillDefinition` は表示名と必要武器種の管理が中心で、射程や威力は持っていない。
@@ -18,7 +18,8 @@
 | マップ一辺 | 60m | 端から端まで約60m |
 | 移動速度 | 2 m/s | 60mを横断するのに約30秒 |
 | AI判断間隔 | 0.5s | 行動再選択の周期 |
-| 最大視界 | 30m | これより遠い敵は認識対象外 |
+| 平地の視界 | 30m | 遮蔽物と視野角の条件を満たしたときの基準 |
+| 高所の最大視界 | 100m | 高さに応じて30mから100mまで拡張する。現在の60mマップでは実質的に戦場全域を見渡せる |
 
 ### キャラ基準
 
@@ -32,18 +33,25 @@
 
 ### 威力・射程・CTの基準
 
-- 通常攻撃1発の目安ダメージ = `実効ステ40 × 係数`。TTKは通常攻撃 6〜8発（120HP）を標準とする。
-  - 主火力（Sword / Wand）: 係数 0.4 → 約16ダメージ
+- 通常攻撃1発の目安ダメージ = `実効ステ40 × 係数`。遠隔通常のTTKは6〜8発（120HP）を標準とし、接敵リスクを負う剣だけは5発を基準とする。
+  - 近接主火力（Sword）: 係数 0.65 → 約26ダメージ
+  - 遠隔主火力（Wand）: 係数 0.4 → 約16ダメージ
   - 支援兼務（Grimoire / Bible）: 係数 0.35 → 約14ダメージ
   - 補助職（Shield / Rosary）: 係数 0.3 → 約12ダメージ
 - バースト攻撃は「通常攻撃の複数発分」を1回で出す代わりに長いCTを持つ。
   - 中バースト（極大魔弾 0.9 ≒ 通常2.3発）: CT 7s
   - 大バースト（神の手 1.3 ≒ 通常3.3発）: CT 9s
-- 射程はマップ60m・視界30mに対し、遠隔は 8〜16m を上限帯とする（狙撃でも視界の半分程度に収める）。
+- 射程は「見えているのに大半のスキルが届かない」状態を標準にしない。平地の主力遠隔は、平地視界30mをおおむね使い切れる射程を持たせる。
   - 近接: 2〜4m
-  - 遠隔通常: 8〜10m
-  - 遠隔バースト: 12〜16m
-  - 支援（回復/バフ/デバフ）: 3〜10m
+  - 近距離スキル: 6〜15m
+  - 遠隔通常: 24〜30m
+  - 遠隔バースト・狙撃: 35〜60m
+  - 回復/バフ/デバフ: 24〜40m
+- 高所の100m視界は、すべてのスキルを100mへ届かせる意味ではない。高所からは長射程スキル、広域支援、索敵と味方への情報共有によって、平地より多くの対象へ影響できるようにする。
+- 射程100mは認識敵全体を対象にする例外的な広域スキルだけに使う。通常攻撃を100mにすると位置取りが消えるため採用しない。
+- 射程と射線は別条件とする。射程内でも遮蔽物で射線が切れれば使えず、射線が通っても射程外なら使えない。
+- 調整前の遠隔8〜16mはこの基準に対して短すぎるため、主力遠隔を24〜30m以上へ広げる。
+- 剣は接敵まで攻撃できず、移動中に被弾するリスクを負うため、接敵後の単体継続火力を詠唱込みの遠隔通常に対しておおむね2〜3倍にする。盾は防御役なのでこの火力補償の対象外とする。
 - 回復は「通常攻撃1〜2発分を返す」を基準にし、単発大回復ほど長いCTにする。
 - 状態異常・デバフの持続は 3〜5s、CT は効果の強さに応じて 5〜7s を基準とする。
 
@@ -76,6 +84,36 @@
 
 `Sword` と `Shield` のスキルは0秒で即時実行する。
 
+## 今回実装する調整値
+
+以下を初期値として実装し、射線が通る平地と高所の両方でプレイ確認して再調整する。
+
+| 武器・用途 | 対象スキル | 目標射程 | 威力方針 |
+|---|---|---:|---|
+| 剣の通常攻撃 | `Sword_Slash` | 2m | 係数0.65、CT 0.9秒を初期値とし、接敵後の単体火力を明確に最高にする |
+| 杖の通常攻撃 | `Wand_Bolt` | 30m | 現在の距離依存威力を維持し、平地視界の外周から攻撃できる |
+| 杖の範囲攻撃 | `Wand_AreaBlast` | 35m | 高所から密集地点へ干渉できる |
+| 杖の中バースト | `Wand_ArcaneBlast` | 45m | 高所を取る価値が出る長射程枠 |
+| 杖の大バースト | `Wand_GodsHand` | 60m | 長い詠唱とCTに見合う最長射程枠 |
+| 魔導書の通常攻撃 | `Grimoire_Bolt` | 30m | 平地視界を使い切れる |
+| 魔導書のデバフ | 能力低下4種 | 35m | 高所から複数候補を選べる |
+| 魔導書の拘束・毒 | `Grimoire_Bind`, `Grimoire_Poison` | 25m | 強い妨害なので通常攻撃より短くする |
+| 聖書の攻撃・単体支援 | `Bible_Smite`, 能力強化4種 | 30〜35m | 高所から前線の複数味方を支援候補にできる |
+| ロザリオの遠隔回復 | `Rosary_DistantHeal` | 40m | 高所と後方配置から前線を支えられる |
+| ロザリオの継続・範囲回復 | `Rosary_Regeneration`, `Rosary_HealingArea` | 25〜35m | 高所から支援先を増やしつつ、近距離大回復との差を残す |
+
+剣の係数0.65は実効STR40で約26ダメージ、標準HP120を通常攻撃5発で倒す初期値になる。遠隔職には接近前の攻撃時間と安全距離があるため、剣を従来と同じ6〜8発基準へ揃えない。
+
+### 実装後の確認条件
+
+- 平地では30m付近の敵へ主力遠隔が届き、遮蔽物があれば同じ距離でも使えない。
+- 高所では30mより遠い対象を視認でき、長射程攻撃、支援、または情報共有の対象が平地より増える。
+- 高所から100m先を視認できても、射程30mのスキルは100m先へ使えない。
+- 剣は移動時間を除く接敵後の単体継続火力で、詠唱込みの遠隔通常のおおむね2〜3倍になる。
+- 剣が接敵できない時間を含む戦闘全体では、遠隔職を常に上回らない。接敵成功時の見返りと、接敵を阻止する価値の両方が残る。
+- AIは移動後に有効対象が増える高所を平地より優先し、同じ対象へ同じスキルを使えるだけの高所には不要に登らない。
+- 敵位置が不明な索敵局面でも、情報を得られる高所を候補から外さない。
+
 ## 現在の計算式
 
 - 攻撃/回復の基本式: `最終値 = 実効ステータス × スキル係数`
@@ -90,50 +128,50 @@
 - 距離依存回復:
   - `Rosary_DistantHeal`: 近距離 `x1.4` -> 遠距離 `x0.8`
 
-## 通常攻撃
+## 調整後の通常攻撃
 
-実効ステ40想定のダメージ目安を併記する。TTKは通常攻撃6〜8発（120HP）が標準。
+実効ステ40想定のダメージ目安を併記する。
 
 | 武器 | 実装スキル | 日本語名 | 射程 | 主ステ | スキル係数 | CT | 目安ダメージ |
 |---|---|---|---:|---|---:|---:|---:|
-| Sword | `Sword_Slash` | 斬撃 | 2.0 | `STR` | 0.4 | 1.0 | 16 |
+| Sword | `Sword_Slash` | 斬撃 | 2.0 | `STR` | 0.65 | 0.9 | 26 |
 | Shield | `Shield_Slash` | 盾撃 | 2.0 | `STR` | 0.3 | 1.1 | 12 |
-| Wand | `Wand_Bolt` | 魔弾 | 10.0 | `INT` | 0.4 | 1.4 | 11〜21 |
-| Grimoire | `Grimoire_Bolt` | 呪弾 | 8.0 | `INT` | 0.35 | 1.3 | 14 |
-| Bible | `Bible_Smite` | 裁制 | 8.0 | `FAI` | 0.35 | 1.5 | 14 |
-| Rosary | `Rosary_Strike` | 聖撃 | 4.0 | `FAI` | 0.3 | 1.3 | 12 |
+| Wand | `Wand_Bolt` | 魔弾 | 30.0 | `INT` | 0.4 | 1.4 | 11〜21 |
+| Grimoire | `Grimoire_Bolt` | 呪弾 | 30.0 | `INT` | 0.35 | 1.3 | 14 |
+| Bible | `Bible_Smite` | 裁制 | 30.0 | `FAI` | 0.35 | 1.5 | 14 |
+| Rosary | `Rosary_Strike` | 聖撃 | 15.0 | `FAI` | 0.3 | 1.3 | 12 |
 
 ## 杖
 
 | スキル | 日本語名 | 射程 | 範囲 | 主ステ | 係数 | CT | 備考 |
 |---|---|---:|---:|---|---:|---:|---|
-| `Wand_Bolt` | 魔弾 | 10.0 | - | `INT` | 0.4 | 1.4 | 遠いほど高威力（約11〜21） |
-| `Wand_ArcaneBlast` | 極大魔弾 | 15.0 | - | `INT` | 0.9 | 7.0 | 中バースト（約36、通常2.3発） |
-| `Wand_AreaBlast` | 範囲魔法 | 12.0 | 半径3.0 | `INT` | 0.35 | 5.0 | 範囲攻撃（1体約14） |
-| `Wand_GodsHand` | 神の手 | 16.0 | - | `INT` | 1.3 | 9.0 | 大バースト（約52、通常3.3発） |
+| `Wand_Bolt` | 魔弾 | 30.0 | - | `INT` | 0.4 | 1.4 | 遠いほど高威力（約11〜21） |
+| `Wand_ArcaneBlast` | 極大魔弾 | 45.0 | - | `INT` | 0.9 | 7.0 | 中バースト（約36、通常2.3発） |
+| `Wand_AreaBlast` | 範囲魔法 | 35.0 | 半径3.0 | `INT` | 0.35 | 5.0 | 範囲攻撃（1体約14） |
+| `Wand_GodsHand` | 神の手 | 60.0 | - | `INT` | 1.3 | 9.0 | 大バースト（約52、通常3.3発） |
 
 ## 魔導書
 
 | スキル | 日本語名 | 射程 | 効果 | CT | 備考 |
 |---|---|---:|---|---:|---|
-| `Grimoire_Bolt` | 呪弾 | 8.0 | `INT x0.35` | 1.3 | 単体攻撃（約14） |
-| `Grimoire_StrDebuff` | STRデバフ | 8.0 | `STR x0.7` に低下 | 5.0 | 5秒 |
-| `StatDebuff_INT` | INTデバフ | 8.0 | `INT x0.7` に低下 | 5.0 | 5秒 |
-| `StatDebuff_FAI` | FAIデバフ | 8.0 | `FAI x0.7` に低下 | 5.0 | 5秒 |
-| `StatDebuff_AGI` | AGIデバフ | 8.0 | `AGI x0.7` に低下 | 5.0 | 5秒 |
-| `Grimoire_Bind` | 金縛り | 6.0 | 拘束 | 7.0 | 3秒 |
-| `Grimoire_Poison` | 毒 | 6.0 | 4 dmg/tick | 6.0 | 5秒、1秒ごと（計約20） |
+| `Grimoire_Bolt` | 呪弾 | 30.0 | `INT x0.35` | 1.3 | 単体攻撃（約14） |
+| `Grimoire_StrDebuff` | STRデバフ | 35.0 | `STR x0.7` に低下 | 5.0 | 5秒 |
+| `StatDebuff_INT` | INTデバフ | 35.0 | `INT x0.7` に低下 | 5.0 | 5秒 |
+| `StatDebuff_FAI` | FAIデバフ | 35.0 | `FAI x0.7` に低下 | 5.0 | 5秒 |
+| `StatDebuff_AGI` | AGIデバフ | 35.0 | `AGI x0.7` に低下 | 5.0 | 5秒 |
+| `Grimoire_Bind` | 金縛り | 25.0 | 拘束 | 7.0 | 3秒 |
+| `Grimoire_Poison` | 毒 | 25.0 | 4 dmg/tick | 6.0 | 5秒、1秒ごと（計約20） |
 | `Grimoire_Stealth` | 不可視 | 自己 | 不可視 | 7.0 | 5秒 |
 
 ## 聖書
 
 | スキル | 日本語名 | 射程 | 効果 | CT | 備考 |
 |---|---|---:|---|---:|---|
-| `Bible_Smite` | 裁制 | 8.0 | `FAI x0.35` | 1.5 | 単体攻撃（約14） |
-| `Bible_StrBuff` | 守護 | 味方/自己 | `STR x1.25` | 5.0 | 5秒 |
-| `Bible_IntBuff` | INTバフ | 味方/自己 | `INT x1.25` | 5.0 | 5秒 |
-| `Bible_FaiBuff` | 信仰バフ | 味方/自己 | `FAI x1.2` | 6.0 | 6秒 |
-| `Bible_AgiBuff` | AGIバフ | 味方/自己 | `AGI x1.25` | 5.0 | 5秒 |
+| `Bible_Smite` | 裁制 | 30.0 | `FAI x0.35` | 1.5 | 単体攻撃（約14） |
+| `Bible_StrBuff` | 守護 | 35.0/自己 | `STR x1.25` | 5.0 | 5秒 |
+| `Bible_IntBuff` | INTバフ | 35.0/自己 | `INT x1.25` | 5.0 | 5秒 |
+| `Bible_FaiBuff` | 信仰バフ | 35.0/自己 | `FAI x1.2` | 6.0 | 6秒 |
+| `Bible_AgiBuff` | AGIバフ | 35.0/自己 | `AGI x1.25` | 5.0 | 5秒 |
 | `Bible_Invulnerable` | 無敵 | 自己 | 無敵 | 8.0 | 3秒 |
 | `Bible_Gotsume` | ゴツメ | 6.0 | 反射8 dmg | 7.0 | 5秒 |
 | `Bible_CarryRush` | 高速移動 | 4.0 | 移動速度 `x1.8` | 8.0 | 4秒 |
@@ -142,22 +180,22 @@
 
 | スキル | 日本語名 | 射程 | 範囲 | 効果 | CT | 備考 |
 |---|---|---:|---:|---|---:|---|
-| `Rosary_Strike` | 聖撃 | 4.0 | - | `FAI x0.3` | 1.3 | 単体攻撃（約12） |
-| `Rosary_DistantHeal` | 遠隔癒し | 10.0 | - | `FAI x0.4` | 3.5 | 近いほど高回復（約13〜22） |
-| `Rosary_CloseHeal` | 大回復 | 3.0 | - | `FAI x0.9` | 6.0 | 単体大回復（約36） |
-| `Rosary_Regeneration` | 継続回復 | 5.0 | - | 7 heal/tick | 6.0 | 5秒、1秒ごと（計約35） |
-| `Rosary_HealingArea` | 回復エリア | 7.0 | 半径3.0 | 4 heal/tick | 7.0 | 5秒、1秒ごと（計約20） |
+| `Rosary_Strike` | 聖撃 | 15.0 | - | `FAI x0.3` | 1.3 | 単体攻撃（約12） |
+| `Rosary_DistantHeal` | 遠隔癒し | 40.0 | - | `FAI x0.4` | 3.5 | 近いほど高回復（約13〜22） |
+| `Rosary_CloseHeal` | 大回復 | 6.0 | - | `FAI x0.9` | 6.0 | 単体大回復（約36） |
+| `Rosary_Regeneration` | 継続回復 | 25.0 | - | 7 heal/tick | 6.0 | 5秒、1秒ごと（計約35） |
+| `Rosary_HealingArea` | 回復エリア | 35.0 | 半径3.0 | 4 heal/tick | 7.0 | 5秒、1秒ごと（計約20） |
 | `Rosary_SacrificeThunder` | 神の雷 | 認識敵全員 | 全体 | `FAI x0.7` | 9.0 | 自傷12（約28） |
 
 ## 直接いじる場所
 
 - 通常攻撃の武器アセット調整:
-  - `Assets/Data/CombatFields/Weapon/BibleWeaponConfig.asset`
-  - `Assets/Data/CombatFields/Weapon/GrimoireWeaponConfig.asset`
-  - `Assets/Data/CombatFields/Weapon/RosaryWeaponConfig.asset`
-  - `Assets/Data/CombatFields/Weapon/ShieldWeaponConfig.asset`
-  - `Assets/Data/CombatFields/Weapon/SwordWeaponConfig.asset`
-  - `Assets/Data/CombatFields/Weapon/WandWeaponConfig.asset`
+  - `Assets/Data/Map/Weapon/BibleWeaponConfig.asset`
+  - `Assets/Data/Map/Weapon/GrimoireWeaponConfig.asset`
+  - `Assets/Data/Map/Weapon/RosaryWeaponConfig.asset`
+  - `Assets/Data/Map/Weapon/ShieldWeaponConfig.asset`
+  - `Assets/Data/Map/Weapon/SwordWeaponConfig.asset`
+  - `Assets/Data/Map/Weapon/WandWeaponConfig.asset`
 - スキル個別の数値調整:
   - `Assets/Scripts/Combat/Skills/Implementations/`
 - バフ/デバフ共通値調整:

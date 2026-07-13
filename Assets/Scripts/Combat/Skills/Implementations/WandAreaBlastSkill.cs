@@ -9,7 +9,7 @@ public sealed class WandAreaBlastSkill : SkillBase
 
     public WandAreaBlastSkill(
         float intScale = 0.35f,
-        float maxRange = 12f,
+        float maxRange = 35f,
         float radius = 3f,
         float cooldownSeconds = 5f)
     {

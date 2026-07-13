@@ -55,11 +55,25 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
     public bool TrySetDestination(Vector3 worldPosition)
     {
+        return TrySetDestination(worldPosition, false, out _);
+    }
+
+    public bool TrySetRetreatDestination(Vector3 worldPosition, out Vector3 resolvedDestination)
+    {
+        return TrySetDestination(worldPosition, true, out resolvedDestination);
+    }
+
+    private bool TrySetDestination(
+        Vector3 worldPosition,
+        bool isRetreat,
+        out Vector3 resolvedDestination)
+    {
+        resolvedDestination = default;
         if (!CombatBattleFlow.AllowsCombatActions) return false;
         if (_agent == null || !_agent.isOnNavMesh) return false;
         Character owner = GetComponent<Character>();
-        if (owner != null && owner.SkillCaster.IsCasting) return false;
-        if (IsMovementRestricted()) return false;
+        if (!isRetreat && owner != null && owner.SkillCaster.IsCasting) return false;
+        if (!isRetreat && IsMovementRestricted()) return false;
 
         if (!ResolveNavigationSystem().TryResolveDestination(
                 _agent,
@@ -73,6 +87,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
         _agent.isStopped = false;
         if (!_agent.SetDestination(destination)) return false;
 
+        resolvedDestination = destination;
         SetRoute(path.corners);
         return true;
     }
@@ -193,6 +208,11 @@ public sealed class CombatCharacterBody : MonoBehaviour
     private bool IsMovementRestricted()
     {
         Character owner = GetComponent<Character>();
+        if (owner != null && owner.Health != null && owner.Health.LifeState == LifeState.Retreating)
+        {
+            return false;
+        }
+
         return owner != null &&
             owner.StatusEffects != null &&
             (owner.StatusEffects.IsRooted || owner.StatusEffects.IsBound);

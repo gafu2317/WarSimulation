@@ -117,7 +117,7 @@ public sealed class WeaponConfig : ScriptableObject
         {
             case WeaponKind.Sword:
                 _range = 2f;
-                _cooldownSeconds = 1f;
+                _cooldownSeconds = 0.9f;
                 _primaryStatBonus = 12;
                 _chaseEnemyBias = 20f;
                 _hideInForestBias = 0f;
@@ -134,7 +134,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _followMeleeAllyBias = 40f;
                 break;
             case WeaponKind.Wand:
-                _range = 8f;
+                _range = 30f;
                 _cooldownSeconds = 1.4f;
                 _primaryStatBonus = 10;
                 _chaseEnemyBias = 0f;
@@ -143,7 +143,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _followMeleeAllyBias = 0f;
                 break;
             case WeaponKind.Grimoire:
-                _range = 7f;
+                _range = 30f;
                 _cooldownSeconds = 2f;
                 _primaryStatBonus = 14;
                 _chaseEnemyBias = 0f;
@@ -152,7 +152,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _followMeleeAllyBias = 0f;
                 break;
             case WeaponKind.Bible:
-                _range = 6f;
+                _range = 30f;
                 _cooldownSeconds = 1.6f;
                 _primaryStatBonus = 10;
                 _chaseEnemyBias = 0f;
@@ -161,7 +161,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _followMeleeAllyBias = 0f;
                 break;
             case WeaponKind.Rosary:
-                _range = 5f;
+                _range = 15f;
                 _cooldownSeconds = 1.2f;
                 _primaryStatBonus = 8;
                 _chaseEnemyBias = 0f;

@@ -228,6 +228,16 @@ public sealed class CombatStatusEffects : MonoBehaviour
         }
     }
 
+    public void ClearEffect(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return;
+
+        for (int i = _effects.Count - 1; i >= 0; i--)
+        {
+            if (_effects[i].Key == key) _effects.RemoveAt(i);
+        }
+    }
+
     public void ClearAll()
     {
         _effects.Clear();

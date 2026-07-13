@@ -88,4 +88,11 @@ public sealed class CombatStatSkillTests
         Assert.That(CombatSkillFactory.Create(SkillId.StatDebuff_FAI), Is.TypeOf<IdentifiedSkill>());
         Assert.That(CombatSkillFactory.Create(SkillId.StatDebuff_AGI), Is.TypeOf<IdentifiedSkill>());
     }
+
+    [Test]
+    public void StatBuffAndDebuff_DefaultRangesSupportHighGroundPositioning()
+    {
+        Assert.That(CombatSkillFactory.Create(SkillId.Bible_StrBuff).MaxRange, Is.EqualTo(35f).Within(0.001f));
+        Assert.That(CombatSkillFactory.Create(SkillId.Grimoire_StrDebuff).MaxRange, Is.EqualTo(35f).Within(0.001f));
+    }
 }

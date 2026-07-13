@@ -23,7 +23,7 @@ public class Rosary : WeaponBase
     public override IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public Rosary(
-        float range = 5f,
+        float range = 15f,
         float cooldown = 1.2f,
         int faiBonus = 8,
         float chaseEnemyBias = 0f,

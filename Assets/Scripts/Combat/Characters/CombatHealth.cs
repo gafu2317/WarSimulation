@@ -29,6 +29,8 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     private Vector3 _retreatDestination;
     private bool _hasRetreatDestination;
     private float _retreatStartTime;
+    private bool _canReviveAfterRetreat = true;
+    private bool _withdrawalCompleted;
 
     public int MaxHP => _maxHP;
     public int HP => _hp;
@@ -42,6 +44,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
             ResolveOwner().StatusEffects == null ||
             !ResolveOwner().StatusEffects.HasActiveEffectImmediate(CombatStatusEffects.EffectType.Bind));
     public bool HasRetreatDestination => _hasRetreatDestination;
+    public bool IsWithdrawn => LifeState == LifeState.Retreating && !_canReviveAfterRetreat;
 
     public event Action HealthChanged;
     public event Action<IncomingDamageContext> IncomingDamage;
@@ -56,6 +59,11 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
     private void Update()
     {
+        if (LifeState == LifeState.Retreating && !_hasRetreatDestination)
+        {
+            TryStartRetreatMove();
+        }
+
         TryCompleteRetreatIfArrived();
     }
 
@@ -65,6 +73,8 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         _hp = Mathf.Clamp(currentHP < 0 ? _maxHP : currentHP, 0, _maxHP);
         LifeState = _hp > 0 ? LifeState.Active : LifeState.Retreating;
         _hasRetreatDestination = false;
+        _canReviveAfterRetreat = true;
+        _withdrawalCompleted = false;
         NotifyHealthChanged();
     }
 
@@ -123,6 +133,8 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         LifeState = LifeState.Active;
         _hasRetreatDestination = false;
         _retreatStartTime = 0f;
+        _canReviveAfterRetreat = true;
+        _withdrawalCompleted = false;
         NotifyHealthChanged();
     }
 
@@ -131,8 +143,31 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         _hp = 0;
         LifeState = LifeState.Retreating;
         _retreatStartTime = Time.time;
+        _canReviveAfterRetreat = true;
+        _withdrawalCompleted = false;
 
         _hasRetreatDestination = false;
+        ResolveOwner()?.SkillCaster?.ClearCast();
+        TryStartRetreatMove();
+    }
+
+    public void WithdrawFromBattle()
+    {
+        if (LifeState != LifeState.Active) return;
+
+        _hp = 0;
+        LifeState = LifeState.Retreating;
+        _retreatStartTime = Time.time;
+        _canReviveAfterRetreat = false;
+        _withdrawalCompleted = false;
+        _hasRetreatDestination = false;
+        ResolveOwner()?.SkillCaster?.ClearCast();
+        TryStartRetreatMove();
+        NotifyHealthChanged();
+    }
+
+    private bool TryStartRetreatMove()
+    {
         if (TryResolveHomePosition(out Vector3 homePosition))
         {
             _retreatDestination = homePosition;
@@ -142,21 +177,34 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
             {
                 _hasRetreatDestination = true;
                 TryCompleteRetreatIfArrived();
-                return;
+                return true;
             }
 
-            if (_body != null && _body.TrySetDestination(homePosition))
+            if (_body != null &&
+                _body.TrySetRetreatDestination(homePosition, out Vector3 resolvedDestination))
             {
+                _retreatDestination = resolvedDestination;
                 _hasRetreatDestination = true;
+                return true;
             }
         }
+
+        return false;
     }
 
     public bool TryCompleteRetreatIfArrived()
     {
-        if (LifeState != LifeState.Retreating || !_hasRetreatDestination) return false;
+        if (LifeState != LifeState.Retreating || !_hasRetreatDestination || _withdrawalCompleted) return false;
         if (Time.time - _retreatStartTime < _minReviveDelay) return false;
         if (!IsAtRetreatDestination(_retreatDestination)) return false;
+
+        if (!_canReviveAfterRetreat)
+        {
+            _withdrawalCompleted = true;
+            _body ??= GetComponent<CombatCharacterBody>();
+            _body?.Stop();
+            return true;
+        }
 
         RestoreFull();
         return true;

@@ -16,6 +16,8 @@ public static class CombatAiObjectiveScorer
         for (int i = 0; i < AllObjectives.Length; i++)
         {
             CombatObjective objective = AllObjectives[i];
+            if (!IsObjectiveSelectable(snapshot.Context, objective)) continue;
+
             var breakdown = new CombatAiScoreBreakdown
             {
                 BaseScore = GetBaseScore(objective),
@@ -32,7 +34,7 @@ public static class CombatAiObjectiveScorer
                         focusCommitmentRemainingSeconds,
                         previousObjective),
                 WeaponScore = GetWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, objective),
-                PersonalityScore = GetPersonalityScore(personalityProfile, objective),
+                PersonalityScore = GetPersonalityScore(snapshot.Context, personalityProfile, snapshot.Assessment, objective),
             };
 
             AddReasons(snapshot.Assessment, objective, breakdown);
@@ -63,11 +65,13 @@ public static class CombatAiObjectiveScorer
         for (int i = 0; i < AllObjectives.Length; i++)
         {
             CombatObjective objective = AllObjectives[i];
+            if (!IsObjectiveSelectable(context, objective)) continue;
+
             float score = GetBaseScore(objective)
                 + GetSituationScore(context, assessment, weapon, objective)
                 + CombatAiFocusTargeting.GetObjectiveScore(context, weapon, objective, focusEnemy, focusCommitmentRemainingSeconds, previousObjective)
                 + GetWeaponScore(weaponWeightsProfile, weapon, objective)
-                + GetPersonalityScore(personalityProfile, objective);
+                + GetPersonalityScore(context, personalityProfile, assessment, objective);
             if (score > bestScore)
             {
                 bestScore = score;
@@ -76,6 +80,56 @@ public static class CombatAiObjectiveScorer
         }
 
         return best;
+    }
+
+    private static bool IsObjectiveSelectable(CombatAiContext context, CombatObjective objective)
+    {
+        if (context == null) return false;
+
+        bool hasLivingEnemy = false;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            if (context.EnemyIntel[i].IsAlive)
+            {
+                hasLivingEnemy = true;
+                break;
+            }
+        }
+
+        bool hasPossibleEnemy = context.EnemyIntel.Count == 0 || hasLivingEnemy;
+        return objective switch
+        {
+            CombatObjective.DestroyEnemyStone => context.HasEnemyStonePosition &&
+                (!context.HasEnemyStoneHealth || context.EnemyStoneHP > 0),
+            CombatObjective.AttackEnemy => HasAttackTarget(context),
+            CombatObjective.DefendOwnStone => hasPossibleEnemy && context.HasOwnStonePosition,
+            CombatObjective.SupportAlly => hasPossibleEnemy && context.AllyIntel.Count > 0,
+            CombatObjective.Search => hasPossibleEnemy,
+            CombatObjective.Retreat => hasPossibleEnemy,
+            _ => false,
+        };
+    }
+
+    private static bool HasAttackTarget(CombatAiContext context)
+    {
+        if (context == null) return false;
+
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
+
+            int pendingDamage = 0;
+            for (int j = 0; j < context.AllyPendingDamage.Count; j++)
+            {
+                CombatAiPendingDamage pending = context.AllyPendingDamage[j];
+                if (pending.Target == enemy.Character) pendingDamage += pending.Damage;
+            }
+
+            if (enemy.HP - pendingDamage > 0) return true;
+        }
+
+        return false;
     }
 
     private static float GetBaseScore(CombatObjective objective)
@@ -120,7 +174,7 @@ public static class CombatAiObjectiveScorer
             CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.2f
                 - (context.HasEnemyStonePosition ? 14f : 0f)
-                + (context.VisibleEnemies.Count == 0 && context.HighGroundCandidates.Count > 0 ? 14f : 0f),
+                + (!HasVisibleLivingEnemy(context) && context.HighGroundCandidates.Count > 0 ? 14f : 0f),
             CombatObjective.Retreat => assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.9f
                 + assessment.GetValue(CombatAiMetricIndex.RetreatRouteSafety) * 0.3f
                 + assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f,
@@ -157,7 +211,7 @@ public static class CombatAiObjectiveScorer
                 continue;
             }
 
-            if (ally.IntendedTarget != null && ally.IntendedTarget.Team != ally.Team)
+            if (IsLivingEnemy(context, ally.IntendedTarget))
             {
                 return true;
             }
@@ -165,7 +219,7 @@ public static class CombatAiObjectiveScorer
             for (int j = 0; j < context.EnemyIntel.Count; j++)
             {
                 CombatCharacterIntel enemy = context.EnemyIntel[j];
-                if (!enemy.HasKnownPosition) continue;
+                if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
                 if (HorizontalDistance(ally.CurrentPosition, enemy.KnownPosition) <= 8f)
                 {
                     return true;
@@ -259,10 +313,23 @@ public static class CombatAiObjectiveScorer
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.HasKnownPosition && HorizontalDistance(position, enemy.KnownPosition) <= 10f)
+            if (enemy.IsAlive && enemy.HasKnownPosition && HorizontalDistance(position, enemy.KnownPosition) <= 10f)
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private static bool IsLivingEnemy(CombatAiContext context, Character character)
+    {
+        if (character == null) return false;
+
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.Character == character) return enemy.IsAlive;
         }
 
         return false;
@@ -277,7 +344,7 @@ public static class CombatAiObjectiveScorer
         return objective switch
         {
             CombatObjective.Search when assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 45f
-                || (context.VisibleEnemies.Count == 0 && context.HighGroundCandidates.Count > 0)
+                || (!HasVisibleLivingEnemy(context) && context.HighGroundCandidates.Count > 0)
                 || lacksReliableShot => 16f,
             CombatObjective.AttackEnemy when assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 28f
                 && assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) > 35f => 14f,
@@ -293,7 +360,7 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        bool multipleEnemiesVisible = context.VisibleEnemies.Count >= 2;
+        bool multipleEnemiesVisible = CountVisibleLivingEnemies(context) >= 2;
         return objective switch
         {
             CombatObjective.AttackEnemy when multipleEnemiesVisible
@@ -359,11 +426,30 @@ public static class CombatAiObjectiveScorer
             : CombatAiWeaponWeightsProfile.GetDefaultObjectiveWeight(kind, objective);
     }
 
-    private static float GetPersonalityScore(CombatAiPersonalityProfile personalityProfile, CombatObjective objective)
+    private static bool HasVisibleLivingEnemy(CombatAiContext context)
     {
-        if (personalityProfile == null) return 0f;
+        return CountVisibleLivingEnemies(context) > 0;
+    }
 
-        return objective switch
+    private static int CountVisibleLivingEnemies(CombatAiContext context)
+    {
+        int count = 0;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.IsAlive && enemy.HasDirectSight) count++;
+        }
+
+        return count;
+    }
+
+    private static float GetPersonalityScore(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatAiAssessment assessment,
+        CombatObjective objective)
+    {
+        float score = personalityProfile != null ? objective switch
         {
             CombatObjective.AttackEnemy => personalityProfile.Aggression * 20f - personalityProfile.Caution * 8f,
             CombatObjective.DefendOwnStone => personalityProfile.ObjectiveFocus * 16f + personalityProfile.Caution * 6f,
@@ -372,7 +458,27 @@ public static class CombatAiObjectiveScorer
             CombatObjective.Search => personalityProfile.ExplorationBias * 18f,
             CombatObjective.Retreat => personalityProfile.Caution * 18f - personalityProfile.RiskTolerance * 6f,
             _ => 0f,
-        };
+        } : 0f;
+        score += CombatAiPersonalityBehavior.GetObjectiveScore(personalityProfile, assessment, objective);
+        if (objective == CombatObjective.AttackEnemy && HasNearbyHotBloodedAlly(context)) score += 24f;
+        return score;
+    }
+
+    private static bool HasNearbyHotBloodedAlly(CombatAiContext context)
+    {
+        if (context == null || context.Owner == null) return false;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.IsAlive || ally.Character == null || ally.Character.PersonalityProfile == null) continue;
+            if (ally.Character.PersonalityProfile.Kind == CombatAiPersonalityKind.HotBlooded &&
+                Vector3.Distance(context.Owner.transform.position, ally.CurrentPosition) <= 6f)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AddReasons(CombatAiAssessment assessment, CombatObjective objective, CombatAiScoreBreakdown breakdown)

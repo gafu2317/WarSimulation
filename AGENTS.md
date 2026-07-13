@@ -9,8 +9,27 @@ docsにゲームの内容についてが書いてあるよ
 - Avoid unnecessary abstractions, wrapper methods, temporary variables, comments, and branching when the same behavior can be expressed clearly with less code.
 - Do not compress code in ways that make intent harder to understand, hide important state changes, or make Unity Inspector usage less clear.
 
+## UI Conventions
+
+- Use `Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset` for TextMeshPro UI text by default, including its matching shared material. Do not use the TextMeshPro default font for newly created UI.
+
+## Unity Scene Safety
+
+- Treat existing scene objects, Prefab instances, hierarchy, RectTransforms, and serialized references as user-owned. Do not move, rename, delete, replace, reparent, or duplicate them unless the user explicitly requests that exact change.
+- When adding a feature to an existing scene, place all newly owned objects under one clearly named feature root. Setup and repair tools may recreate only that owned root; they must not reorganize unrelated existing objects.
+- Do not instantiate a replacement Prefab merely because an expected scene object was not found. Stop with a clear validation error and inspect the actual scene structure first.
+- Editor setup tools must validate every required existing object and asset before making the first mutation. If validation fails, leave the scene unchanged.
+- Editor setup tools must be idempotent and narrowly scoped. Re-running a tool may replace only objects previously created by that same tool.
+- Preserve the parent, sibling relationship, anchors, pivot, offsets, scale, and serialized references of existing UI. Toggle existing UI through explicit references without changing its hierarchy or layout.
+- Before editing a scene, check whether it already has uncommitted changes. After editing, verify that only the intended scene objects changed and keep a scene-only Git restore as the rollback path.
+- Never claim a Unity scene repair succeeded without verifying its postconditions. If the running Editor cannot be inspected through tools, ask the user to execute one explicit menu action and confirm the resulting hierarchy before removing temporary tooling.
+
 ## Verification Notes
 
+- Assume the Unity Editor is already running for this project. Do not launch another Unity process or repeatedly start and quit Unity from the command line.
+- If Prefab, scene, or other Unity API work is required, use the already-open Editor. Prefer a temporary explicit Editor menu command that the user runs once, then remove the temporary generation/setup code after confirming completion.
+- Do not automatically change the user's currently open scene from an import hook or `InitializeOnLoad` callback. Scene mutations must be initiated explicitly in the existing Editor.
+- If the current session has no tool connection to the running Editor, edit files and ask the user to perform the minimal Editor action instead of starting Unity yourself.
 - Avoid launching Unity in batchmode for routine verification because it can hang during licensing initialization and force the running Unity Editor to close.
 - Prefer `dotnet build Assembly-CSharp.csproj` for quick compile checks after Unity has regenerated the csproj files.
 - Do not run `dotnet build Assembly-CSharp.csproj` by default when the generated csproj is stale or missing the touched source files; it is not useful in that state and can hang during restore/build in this environment.

@@ -20,7 +20,7 @@ public class Character : MonoBehaviour
     [SerializeField] private bool _unlockAllCatalogSkillsForKindWhenLearnedEmpty = true;
 
     // キャラクターの基礎データ
-    public CharacterData CharacterData { private set; get; }
+    [field: SerializeField] public CharacterData CharacterData { private set; get; }
     public string DisplayName =>
         CharacterData != null && !string.IsNullOrWhiteSpace(CharacterData.CharacterName)
             ? CharacterData.CharacterName
@@ -66,6 +66,7 @@ public class Character : MonoBehaviour
     private CombatSkillCooldowns _skillCooldowns;
     private CombatSkillCaster _skillCaster;
     private CombatAiPersonalityProfile _runtimePersonalityProfile;
+    private WeaponConfig _runtimeWeaponConfig;
 
     private void Awake()
     {
@@ -176,9 +177,21 @@ public class Character : MonoBehaviour
 
     public void ApplyInitialWeaponFromConfig()
     {
-        if (_initialWeaponConfig == null) return;
+        WeaponConfig weaponConfig = _runtimeWeaponConfig != null
+            ? _runtimeWeaponConfig
+            : _initialWeaponConfig;
+        if (weaponConfig == null) return;
 
-        EquipWeapon(_initialWeaponConfig.CreateWeapon(), _initialWeaponConfig);
+        EquipWeapon(weaponConfig.CreateWeapon(), weaponConfig);
+    }
+
+    public void ConfigureForBattle(
+        WeaponConfig weaponConfig,
+        CombatAiPersonalityProfile personalityProfile)
+    {
+        _runtimeWeaponConfig = weaponConfig;
+        _runtimePersonalityProfile = personalityProfile;
+        ApplyInitialWeaponFromConfig();
     }
 
     // 武器装備
@@ -284,6 +297,7 @@ public class Character : MonoBehaviour
         RebuildCombatSkills();
         _vision ??= GetComponent<CombatVision>();
         _vision?.Initialize();
+        GetComponent<CombatAiPersonalityRuntime>()?.ResetForBattle();
     }
 
     // ==========================================

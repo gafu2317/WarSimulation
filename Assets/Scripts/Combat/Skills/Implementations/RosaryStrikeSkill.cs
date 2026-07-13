@@ -8,7 +8,7 @@ public sealed class RosaryStrikeSkill : SkillBase
 
     public RosaryStrikeSkill(
         float faiScale = 0.3f,
-        float maxRange = 4f,
+        float maxRange = 15f,
         float cooldownSeconds = 1.3f)
     {
         _faiScale = faiScale;

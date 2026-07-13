@@ -19,6 +19,7 @@ public static class CombatAiMoveScorer
         {
             BaseScore = target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f,
             SituationScore = GetSituationScore(snapshot.Assessment, code, objective)
+                + GetHighGroundUtilityScore(snapshot.Owner, snapshot.Context, code, target, objective)
                 + CombatAiFocusTargeting.GetMoveScore(
                     snapshot.Context,
                     snapshot.Owner.EquippedWeapon,
@@ -29,7 +30,7 @@ public static class CombatAiMoveScorer
                 + GetCoverBonus(weaponKind, snapshot.Assessment, code)
                 - GetAllyDestinationOverlapPenalty(snapshot.Context, code, target)
                 - GetSwordIsolationPenalty(snapshot.Context, snapshot.Assessment, weaponKind, code, target)
-                - GetRouteRiskPenalty(snapshot.Context, code, target),
+                - GetRouteRiskPenalty(snapshot.Context, personalityProfile, code, target),
             WeaponScore = GetWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, code),
             PersonalityScore = GetPersonalityScore(personalityProfile, code, objective),
         };
@@ -37,7 +38,7 @@ public static class CombatAiMoveScorer
         if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
         if (breakdown.PersonalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
         if (GetCoverBonus(weaponKind, snapshot.Assessment, code) > 0f) AddReason(breakdown, CombatAiReasonCode.SelfExposedByEnemy);
-        if (GetRouteRiskPenalty(snapshot.Context, code, target) >= 12f) AddReason(breakdown, CombatAiReasonCode.RouteRiskHigh);
+        if (GetRouteRiskPenalty(snapshot.Context, personalityProfile, code, target) >= 12f) AddReason(breakdown, CombatAiReasonCode.RouteRiskHigh);
         return breakdown;
     }
 
@@ -57,16 +58,21 @@ public static class CombatAiMoveScorer
         WeaponKind weaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
         return (target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f)
             + GetSituationScore(assessment, code, objective)
+            + GetHighGroundUtilityScore(owner, context, code, target, objective)
             + CombatAiFocusTargeting.GetMoveScore(context, owner.EquippedWeapon, code, target, focusEnemy, focusCommitmentRemainingSeconds)
             + GetWeaponScore(weaponWeightsProfile, owner.EquippedWeapon, code)
             + GetPersonalityScore(personalityProfile, code, objective)
             + GetCoverBonus(weaponKind, assessment, code)
             - GetAllyDestinationOverlapPenalty(context, code, target)
             - GetSwordIsolationPenalty(context, assessment, weaponKind, code, target)
-            - GetRouteRiskPenalty(context, code, target);
+            - GetRouteRiskPenalty(context, personalityProfile, code, target);
     }
 
-    private static float GetRouteRiskPenalty(CombatAiContext context, string code, CombatMoveTarget target)
+    private static float GetRouteRiskPenalty(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        string code,
+        CombatMoveTarget target)
     {
         if (context == null || context.Owner == null || !target.HasDestination) return 0f;
 
@@ -78,7 +84,10 @@ public static class CombatAiMoveScorer
             risk = (risk + remainingRisk) * 0.5f;
         }
 
-        return risk * 0.55f;
+        float multiplier = personalityProfile != null && personalityProfile.Kind == CombatAiPersonalityKind.Cautious
+            ? 1.5f
+            : 0.55f;
+        return risk * multiplier;
     }
 
     private static float GetTravelDistance(CombatAiContext context, string code, CombatMoveTarget target)
@@ -144,7 +153,7 @@ public static class CombatAiMoveScorer
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition || !enemy.CanAct) continue;
+            if (!enemy.IsAlive || !enemy.HasKnownPosition || !enemy.CanAct) continue;
 
             float dangerRadius = Mathf.Max(1.5f, enemy.WeaponRange + 2f);
             float distance = HorizontalDistance(point, enemy.KnownPosition);
@@ -219,7 +228,7 @@ public static class CombatAiMoveScorer
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.CanAct && enemy.HasKnownPosition && HorizontalDistance(enemy.KnownPosition, target.Destination) <= 6f)
+            if (enemy.IsAlive && enemy.CanAct && enemy.HasKnownPosition && HorizontalDistance(enemy.KnownPosition, target.Destination) <= 6f)
             {
                 nearbyEnemies++;
             }
@@ -297,15 +306,18 @@ public static class CombatAiMoveScorer
             return kind == WeaponKind.Shield ? 28f : -40f;
         }
 
-        return weaponWeightsProfile != null
+        float score = weaponWeightsProfile != null
             ? weaponWeightsProfile.GetMoveWeight(kind, code)
             : CombatAiWeaponWeightsProfile.GetDefaultMoveWeight(kind, code);
+        return code == CombatAiMoveCode.TakeHighGround && weapon != null
+            ? score + weapon.SeekHighGroundBias * 0.4f
+            : score;
     }
 
     private static float GetPersonalityScore(CombatAiPersonalityProfile personalityProfile, string code, CombatObjective objective)
     {
         if (personalityProfile == null) return 0f;
-        return code switch
+        float score = code switch
         {
             CombatAiMoveCode.PursueEnemy => personalityProfile.Aggression * 14f - personalityProfile.Caution * 4f,
             CombatAiMoveCode.AdvanceEnemyStone => personalityProfile.ObjectiveFocus * 16f + personalityProfile.RiskTolerance * 6f,
@@ -318,6 +330,7 @@ public static class CombatAiMoveScorer
             CombatAiMoveCode.SearchLastKnown => personalityProfile.ExplorationBias * 8f + (objective == CombatObjective.Search ? 4f : 0f),
             _ => 0f,
         };
+        return score + CombatAiPersonalityBehavior.GetMoveScore(personalityProfile, code);
     }
 
     private static void AddReasons(string code, CombatAiScoreBreakdown breakdown)
@@ -367,16 +380,124 @@ public static class CombatAiMoveScorer
         float terrainAdvantage = assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage);
         if (objective != CombatObjective.Search)
         {
-            return terrainAdvantage * 0.8f;
+            return terrainAdvantage * 0.4f;
         }
 
         float confidence = assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence);
-        if (confidence <= 0f)
+        return terrainAdvantage * 0.3f + (100f - confidence) * 0.35f;
+    }
+
+    private static float GetHighGroundUtilityScore(
+        Character owner,
+        CombatAiContext context,
+        string code,
+        CombatMoveTarget target,
+        CombatObjective objective)
+    {
+        if (code != CombatAiMoveCode.TakeHighGround || owner == null || context == null || !target.HasDestination)
         {
-            return terrainAdvantage * 0.15f;
+            return 0f;
         }
 
-        return terrainAdvantage * 0.3f + confidence * 0.15f;
+        GetUsefulSkillRanges(owner, out float hostileRange, out float supportRange);
+        int currentTargets = CountActionableTargets(context, owner.transform.position, hostileRange, supportRange, false);
+        int highGroundTargets = CountActionableTargets(context, target.Destination, hostileRange, supportRange, true);
+        int actionableGain = Mathf.Max(0, highGroundTargets - currentTargets);
+        int intelGain = CountNewIntelTargets(context, target.Destination);
+
+        if (actionableGain > 0 || intelGain > 0)
+        {
+            return Mathf.Min(54f, actionableGain * 18f + intelGain * 10f);
+        }
+
+        WeaponKind kind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+        if (objective == CombatObjective.Search && context.EnemyIntel.Count == 0 && UsesHighGround(kind))
+        {
+            return 24f;
+        }
+
+        return -20f;
+    }
+
+    private static void GetUsefulSkillRanges(Character owner, out float hostileRange, out float supportRange)
+    {
+        hostileRange = owner.EquippedWeapon != null ? owner.EquippedWeapon.Range : 0f;
+        supportRange = 0f;
+        for (int i = 0; i < owner.AvailableCombatSkills.Count; i++)
+        {
+            SkillBase skill = owner.AvailableCombatSkills[i];
+            if (skill == null || float.IsInfinity(skill.MaxRange)) continue;
+            if (CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill))
+            {
+                hostileRange = Mathf.Max(hostileRange, skill.MaxRange);
+            }
+            if (CombatAiSkillClassifier.IsSupport(skill)) supportRange = Mathf.Max(supportRange, skill.MaxRange);
+        }
+    }
+
+    private static int CountActionableTargets(
+        CombatAiContext context,
+        Vector3 position,
+        float hostileRange,
+        float supportRange,
+        bool fromHighGround)
+    {
+        int count = 0;
+        if (hostileRange > 0f)
+        {
+            for (int i = 0; i < context.EnemyIntel.Count; i++)
+            {
+                CombatCharacterIntel enemy = context.EnemyIntel[i];
+                if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
+                if (!fromHighGround && !enemy.HasDirectSight) continue;
+                if (HorizontalDistance(position, enemy.KnownPosition) > hostileRange) continue;
+                if (HasProjectedLineOfSight(position, enemy.KnownPosition, enemy.Character)) count++;
+            }
+        }
+
+        if (supportRange <= 0f) return count;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.IsAlive || HorizontalDistance(position, ally.CurrentPosition) > supportRange) continue;
+            if (HasProjectedLineOfSight(position, ally.CurrentPosition, ally.Character)) count++;
+        }
+
+        return count;
+    }
+
+    private static int CountNewIntelTargets(CombatAiContext context, Vector3 highGroundPosition)
+    {
+        int count = 0;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.IsAlive || !enemy.HasKnownPosition || enemy.HasDirectSight) continue;
+            if (HorizontalDistance(highGroundPosition, enemy.KnownPosition) > 100f) continue;
+            if (HasProjectedLineOfSight(highGroundPosition, enemy.KnownPosition, enemy.Character)) count++;
+        }
+
+        return count;
+    }
+
+    private static bool HasProjectedLineOfSight(Vector3 from, Vector3 to, Character target)
+    {
+        from += Vector3.up;
+        to += Vector3.up;
+        if (!Physics.Linecast(from, to, out RaycastHit hit, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            return true;
+        }
+
+        return hit.collider != null && hit.collider.GetComponentInParent<Character>() == target;
+    }
+
+    private static bool UsesHighGround(WeaponKind kind)
+    {
+        return kind == WeaponKind.Wand ||
+            kind == WeaponKind.Grimoire ||
+            kind == WeaponKind.Bible ||
+            kind == WeaponKind.Rosary;
     }
 
     private static float GetObjectiveAlignmentScore(string code, CombatObjective objective)

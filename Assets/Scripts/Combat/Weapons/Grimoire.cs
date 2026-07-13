@@ -23,7 +23,7 @@ public class Grimoire : WeaponBase
     public override IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public Grimoire(
-        float range = 7f,
+        float range = 30f,
         float cooldown = 2f,
         int intBonus = 14,
         float chaseEnemyBias = 0f,

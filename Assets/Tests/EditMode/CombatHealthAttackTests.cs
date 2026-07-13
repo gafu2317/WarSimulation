@@ -136,6 +136,34 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
+    public void Health_RetriesReturnMoveAfterHomePositionBecomesAvailable()
+    {
+        GameObject characterGo = new GameObject("Character");
+        GameObject systemGo = null;
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            CombatHealth health = character.Health;
+            health.Initialize(maxHP: 20);
+
+            health.TakeDamage(20);
+            Assert.That(health.HasRetreatDestination, Is.False);
+
+            systemGo = new GameObject("CombatCharacterSystem");
+            systemGo.AddComponent<CombatCharacterSystem>();
+            health.SendMessage("Update");
+
+            Assert.That(health.HasRetreatDestination, Is.True);
+            Assert.That(health.LifeState, Is.EqualTo(LifeState.Retreating));
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
     public void CharacterSystem_ResolvesHomePositionFromTeamMainStoneOrInitialPosition()
     {
         GameObject mapGo = new GameObject("CombatMapSystem");
@@ -181,11 +209,11 @@ public sealed class CombatHealthAttackTests
     [Test]
     public void Weapons_ExposeExpectedCombatValues()
     {
-        AssertWeapon(new Sword(), 2f, 12, 1f, CombatStat.STR);
-        AssertWeapon(new Wand(), 8f, 10, 1.4f, CombatStat.INT);
-        AssertWeapon(new Grimoire(), 7f, 14, 2f, CombatStat.INT);
-        AssertWeapon(new Bible(), 6f, 10, 1.6f, CombatStat.FAI);
-        AssertWeapon(new Rosary(), 5f, 8, 1.2f, CombatStat.FAI);
+        AssertWeapon(new Sword(), 2f, 12, 0.9f, CombatStat.STR);
+        AssertWeapon(new Wand(), 30f, 10, 1.4f, CombatStat.INT);
+        AssertWeapon(new Grimoire(), 30f, 14, 2f, CombatStat.INT);
+        AssertWeapon(new Bible(), 30f, 10, 1.6f, CombatStat.FAI);
+        AssertWeapon(new Rosary(), 15f, 8, 1.2f, CombatStat.FAI);
         AssertWeapon(new Shield(), 1.8f, 6, 1.3f, CombatStat.STR);
     }
 

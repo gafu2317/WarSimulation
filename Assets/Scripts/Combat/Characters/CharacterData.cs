@@ -6,6 +6,10 @@ public class CharacterData : ScriptableObject
     // キャラクター名（識別IDを兼ねる）
     [field: SerializeField] public string CharacterName { private set; get; } = "Name";
 
+    [field: Header("Identity")]
+    [field: SerializeField] public CharacterGender Gender { private set; get; }
+    [field: SerializeField] public CharacterData Lover { private set; get; }
+
     // 基礎パラメータ
     [Header("Base Parameters")]
     [field: SerializeField] public int MaxHP { private set; get; }
@@ -31,7 +35,7 @@ public class CharacterData : ScriptableObject
     [Tooltip("慎重：被ダメージを減らすための行動を取りやすい。")]
     [field: SerializeField] public float Cautious { private set; get; }
 
-    [Tooltip("おっちょこちょい：稀に味方を攻撃する。")]
+    [Tooltip("おっちょこちょい：稀に対象、移動先、使用スキルのいずれか一つを選び間違える。")]
     [field: SerializeField] public float Clumsy { private set; get; }
 
     [Tooltip("臆病者：敵の注意を集めないことを優先する。")]

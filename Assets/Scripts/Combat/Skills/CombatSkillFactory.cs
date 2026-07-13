@@ -57,17 +57,24 @@ public static class CombatSkillFactory
         CombatStatusEffects.StatKind stat,
         float buffMultiplier = 1.25f,
         float durationSeconds = 5f,
+        float maxRange = 35f,
         float cooldownSeconds = 5f,
         string name = null)
     {
-        return new StatBuffSkill(stat, buffMultiplier, durationSeconds, cooldownSeconds, name);
+        return new StatBuffSkill(
+            stat,
+            buffMultiplier,
+            durationSeconds,
+            cooldownSeconds,
+            maxRange,
+            name);
     }
 
     private static StatDebuffSkill CreateStatDebuff(
         CombatStatusEffects.StatKind stat,
         float debuffMultiplier = 0.7f,
         float durationSeconds = 5f,
-        float maxRange = 8f,
+        float maxRange = 35f,
         float cooldownSeconds = 5f,
         string name = null)
     {

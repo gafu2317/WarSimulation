@@ -201,8 +201,8 @@ CombatAiMoveScorer / CombatAiPlanner
 | 盾 | 味方や魔石を守る | `AllyFragility`、`OwnStoneThreat`、遮断価値 |
 | 杖 | 露出を避けて攻撃する | `SelfExposure`、`ReachableEnemyValue` |
 | 魔導書 | 露出を避けて妨害する | `SelfExposure`、`EnemyThreatLevel`、スキル対象相性 |
-| 聖書 | 露出を避けて回復する | `SelfExposure`、`AllyFragility` |
-| ロザリオ | 露出を避けて支援する | `SelfExposure`、`AllyFragility`、スキル対象相性 |
+| 聖書 | 露出を避けて強化・防御する | `SelfExposure`、`AllyFragility`、スキル対象相性 |
+| ロザリオ | 露出を避けて回復する | `SelfExposure`、`AllyFragility`、予測回復量 |
 
 ## 味方の開始済み攻撃
 
@@ -210,8 +210,8 @@ CombatAiMoveScorer / CombatAiPlanner
 予測ダメージの入力は、現在詠唱中または発動済みで着弾前の攻撃に限定する。
 
 対象ごとに、味方が詠唱を開始した攻撃の予測ダメージを合計する。
-自分の攻撃候補は、敵の現在HPから開始済み攻撃の予測ダメージを引いた予測残HPに対して採点する。
-各意思決定で有効な開始済み攻撃を集計し直し、敵の現在HPから予測残HPを再計算する。
+自分の攻撃候補は、直接視認中なら敵の現在HP、認識保持中なら最後に観測したHPから、開始済み攻撃の予測ダメージを引いた予測残HPに対して採点する。
+各意思決定で有効な開始済み攻撃を集計し直し、その時点で利用可能な敵HPから予測残HPを再計算する。
 
 ## 採用済みの設計判断
 

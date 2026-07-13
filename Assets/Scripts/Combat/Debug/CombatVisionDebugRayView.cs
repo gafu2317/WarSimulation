@@ -27,7 +27,7 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
     private const float FieldOfViewDisplayDistance = 2f;
     private const int FieldOfViewArcSegments = 24;
 
-    public override string InspectorDescription => "認識関係を4色で表示します。遮蔽物確認Rayは視野内・遮蔽・視野外を色分けし、水平視野角を足元に表示します。";
+    public override string InspectorDescription => "認識関係を4色で表示し、相互に直接視認している線は中点から2色に分けます。遮蔽物確認Rayは視野内・遮蔽・視野外を色分けし、水平視野角を足元に表示します。";
 
     [Tooltip("観測者ごとに認識ラインの表示・非表示を切り替えます。")]
     [SerializeField] private List<CombatVisionDebugCharacterSetting> _characters = new();
@@ -181,6 +181,16 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
             if (Application.isPlaying && target.HP <= 0) continue;
             if (!vision.HasLineOfSight(target.transform)) continue;
 
+            if (IsMutuallyVisible(observer, target))
+            {
+                if (observer.GetInstanceID() > target.GetInstanceID()) continue;
+
+                Vector3 midpoint = (observer.transform.position + target.transform.position) * 0.5f;
+                DrawLine(observer.transform.position, midpoint, ResolveColor(observer, target), DirectLineWidth);
+                DrawLine(midpoint, target.transform.position, ResolveColor(target, observer), DirectLineWidth);
+                continue;
+            }
+
             DrawLine(observer.transform.position, target.transform.position, ResolveColor(observer, target), DirectLineWidth);
         }
 
@@ -198,6 +208,20 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
             Vector3 targetPosition = memory.Target != null ? memory.Target.transform.position : memory.LastSeenPosition;
             DrawLine(observer.transform.position, targetPosition, color, SharedLineWidth);
         }
+    }
+
+    private bool IsMutuallyVisible(Character observer, Character target)
+    {
+        for (int i = 0; i < _characters.Count; i++)
+        {
+            CombatVisionDebugCharacterSetting setting = _characters[i];
+            if (setting?.Character != target || !setting.ShowLines) continue;
+
+            CombatVision targetVision = target.Vision;
+            return targetVision != null && targetVision.HasLineOfSight(observer.transform);
+        }
+
+        return false;
     }
 
     private void DrawObstructionRays(Character observer)

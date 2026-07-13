@@ -13,7 +13,7 @@ public static class CombatAiFocusTargeting
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective)
     {
-        if (!HasSwordFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
+        if (!HasFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
         {
             return 0f;
         }
@@ -35,7 +35,7 @@ public static class CombatAiFocusTargeting
         Character focusEnemy,
         float focusCommitmentRemainingSeconds)
     {
-        if (!HasSwordFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
+        if (!HasFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
         {
             return 0f;
         }
@@ -63,7 +63,7 @@ public static class CombatAiFocusTargeting
         Character focusEnemy,
         float focusCommitmentRemainingSeconds)
     {
-        if (!HasSwordFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
+        if (!HasFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
         {
             return 0f;
         }
@@ -82,7 +82,7 @@ public static class CombatAiFocusTargeting
         float focusCommitmentRemainingSeconds)
     {
         WeaponBase weapon = context != null && context.Owner != null ? context.Owner.EquippedWeapon : null;
-        return HasSwordFocusCommitment(context, weapon, candidate, focusCommitmentRemainingSeconds)
+        return HasFocusCommitment(context, weapon, candidate, focusCommitmentRemainingSeconds)
             ? SwordFocusTargetScoreBonus
             : 0f;
     }
@@ -94,18 +94,21 @@ public static class CombatAiFocusTargeting
         CombatCharacterIntel intel = FindEnemyIntel(context, focusEnemy);
         return intel.Character != null &&
             intel.HasKnownPosition &&
-            intel.CanAct &&
             intel.HP > 0;
     }
 
-    private static bool HasSwordFocusCommitment(
+    private static bool HasFocusCommitment(
         CombatAiContext context,
         WeaponBase weapon,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds)
     {
-        return weapon != null &&
-            weapon.Kind == WeaponKind.Sword &&
+        bool sword = weapon != null && weapon.Kind == WeaponKind.Sword;
+        bool battleJunkie = context != null &&
+            context.Owner != null &&
+            context.Owner.PersonalityProfile != null &&
+            context.Owner.PersonalityProfile.Kind == CombatAiPersonalityKind.BattleJunkie;
+        return (sword || battleJunkie) &&
             focusCommitmentRemainingSeconds > 0f &&
             IsValid(context, focusEnemy);
     }

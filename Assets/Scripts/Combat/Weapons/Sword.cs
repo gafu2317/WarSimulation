@@ -24,7 +24,7 @@ public class Sword : WeaponBase
 
     public Sword(
         float range = 2f,
-        float cooldown = 1f,
+        float cooldown = 0.9f,
         int strBonus = 12,
         float chaseEnemyBias = 0f,
         float hideInForestBias = 0f,

@@ -178,7 +178,13 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         for (int i = 0; i < source.Count; i++)
         {
             Character character = source[i];
-            if (character == null || destination.Contains(character)) continue;
+            if (character == null ||
+                character.Health == null ||
+                !character.Health.IsAlive ||
+                destination.Contains(character))
+            {
+                continue;
+            }
 
             destination.Add(character);
         }

@@ -146,9 +146,8 @@ public sealed class CombatNormalAttackSkillTests
             target.SetTeam(CombatTeam.Enemy);
             target.Health.Initialize(maxHP: 30);
             typeof(Character).GetProperty("INT").SetValue(owner, 10);
-            targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 19f;
-
             var skill = new WandArcaneBlastSkill();
+            targetGo.transform.position = ownerGo.transform.position + Vector3.forward * (skill.MaxRange + 1f);
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
                 CombatSkillEvaluationRequest.ForTarget(owner, target));
@@ -156,6 +155,62 @@ public sealed class CombatNormalAttackSkillTests
             Assert.That(result.CanUse, Is.False);
 
             Assert.That(target.Health.HP, Is.EqualTo(30));
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [TestCase(SkillId.Sword_Slash, 2f)]
+    [TestCase(SkillId.Wand_Bolt, 30f)]
+    [TestCase(SkillId.Wand_AreaBlast, 35f)]
+    [TestCase(SkillId.Wand_ArcaneBlast, 45f)]
+    [TestCase(SkillId.Wand_GodsHand, 60f)]
+    [TestCase(SkillId.Grimoire_Bolt, 30f)]
+    [TestCase(SkillId.Grimoire_Bind, 25f)]
+    [TestCase(SkillId.Grimoire_Poison, 25f)]
+    [TestCase(SkillId.Bible_Smite, 30f)]
+    [TestCase(SkillId.Rosary_Strike, 15f)]
+    [TestCase(SkillId.Rosary_DistantHeal, 40f)]
+    [TestCase(SkillId.Rosary_CloseHeal, 6f)]
+    [TestCase(SkillId.Rosary_Regeneration, 25f)]
+    [TestCase(SkillId.Rosary_HealingArea, 35f)]
+    public void DefaultSkillRange_MatchesSightBasedCombatDistance(SkillId skillId, float expectedRange)
+    {
+        Assert.That(CombatSkillFactory.Create(skillId).MaxRange, Is.EqualTo(expectedRange).Within(0.001f));
+    }
+
+    [Test]
+    public void SwordSlash_DefaultCooldownRewardsSuccessfulMeleeApproach()
+    {
+        Assert.That(new SwordSlashSkill().CooldownSeconds, Is.EqualTo(0.9f).Within(0.001f));
+    }
+
+    [Test]
+    public void SwordSlash_DefaultHitDealsTwentySixDamageAtFortyStrength()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject targetGo = new GameObject("Target");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            typeof(Character).GetProperty("STR").SetValue(owner, 40);
+            target.Vision.ReceiveSharedMemory(
+                target,
+                new System.Collections.Generic.List<CharacterMemory>
+                {
+                    new CharacterMemory(owner, ownerGo.transform.position, Time.time),
+                });
+
+            int damage = new SwordSlashSkill().EstimateDamage(
+                owner,
+                SkillExecutionContext.ForTarget(target),
+                target);
+
+            Assert.That(damage, Is.EqualTo(26));
         }
         finally
         {

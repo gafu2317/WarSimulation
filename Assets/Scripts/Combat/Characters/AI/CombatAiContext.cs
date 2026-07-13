@@ -102,6 +102,7 @@ public readonly struct CombatCharacterIntel
     public bool RecognizesOwner { get; }
     public int HP { get; }
     public int MaxHP { get; }
+    public bool IsAlive => HP > 0;
     public bool CanAct { get; }
     public WeaponKind WeaponKind { get; }
     public float WeaponRange { get; }

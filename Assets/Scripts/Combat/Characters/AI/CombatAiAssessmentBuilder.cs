@@ -26,7 +26,7 @@ public static class CombatAiAssessmentBuilder
 
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
-            if (context.EnemyIntel[i].HasKnownPosition)
+            if (context.EnemyIntel[i].IsAlive && context.EnemyIntel[i].HasKnownPosition)
             {
                 knownEnemies++;
             }
@@ -34,8 +34,8 @@ public static class CombatAiAssessmentBuilder
 
         return new CombatAiContextSummary
         {
-            VisibleEnemyCount = context.VisibleEnemies.Count,
-            RememberedEnemyCount = context.RememberedEnemies.Count,
+            VisibleEnemyCount = CountLivingCharacters(context.VisibleEnemies),
+            RememberedEnemyCount = CountLivingCharacters(context.RememberedEnemies),
             KnownEnemyCount = knownEnemies,
             AllyCount = context.Allies.Count,
             LowHpAllyCount = lowHpAllies,
@@ -132,7 +132,7 @@ public static class CombatAiAssessmentBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel intel = context.EnemyIntel[i];
-            if (!intel.HasKnownPosition) continue;
+            if (!intel.IsAlive || !intel.HasKnownPosition) continue;
 
             float distance = HorizontalDistance(intel.KnownPosition, context.OwnStonePosition);
             if (distance > 18f) continue;
@@ -181,7 +181,7 @@ public static class CombatAiAssessmentBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel intel = context.EnemyIntel[i];
-            if (!intel.HasKnownPosition) continue;
+            if (!intel.IsAlive || !intel.HasKnownPosition) continue;
 
             float distance = HorizontalDistance(owner.transform.position, intel.KnownPosition);
             if (distance <= NearbyDistance)
@@ -274,7 +274,7 @@ public static class CombatAiAssessmentBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (!enemy.HasKnownPosition) continue;
+            if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
 
             float score = 0f;
             float distance = HorizontalDistance(owner.transform.position, enemy.KnownPosition);
@@ -387,12 +387,14 @@ public static class CombatAiAssessmentBuilder
     private static CombatAiMetric EvaluateEnemyLocationConfidence(CombatAiContext context, bool captureDebug, out float value)
     {
         CombatAiMetric metric = captureDebug ? CreateMetric("EnemyLocationConfidence") : null;
-        float score = context.VisibleEnemies.Count * 30f + context.RememberedEnemies.Count * 10f;
-        if (context.VisibleEnemies.Count > 0)
+        int visibleEnemies = CountLivingCharacters(context.VisibleEnemies);
+        int rememberedEnemies = CountLivingCharacters(context.RememberedEnemies);
+        float score = visibleEnemies * 30f + rememberedEnemies * 10f;
+        if (visibleEnemies > 0)
         {
             AddReason(metric, CombatAiReasonCode.VisibleEnemy);
         }
-        else if (context.RememberedEnemies.Count > 0)
+        else if (rememberedEnemies > 0)
         {
             AddReason(metric, CombatAiReasonCode.RememberedEnemy);
         }
@@ -451,7 +453,7 @@ public static class CombatAiAssessmentBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel intel = context.EnemyIntel[i];
-            if (!intel.RecognizesOwner || !intel.HasKnownPosition) continue;
+            if (!intel.IsAlive || !intel.RecognizesOwner || !intel.HasKnownPosition) continue;
 
             float distance = HorizontalDistance(owner.transform.position, intel.KnownPosition);
             score += Mathf.Lerp(30f, 8f, Mathf.Clamp01(distance / 20f));
@@ -689,7 +691,7 @@ public static class CombatAiAssessmentBuilder
         for (int i = 0; i < characters.Count; i++)
         {
             CombatCharacterIntel character = characters[i];
-            if (requireKnownPosition && !character.HasKnownPosition) continue;
+            if (!character.IsAlive || (requireKnownPosition && !character.HasKnownPosition)) continue;
             Vector3 characterPosition = character.HasKnownPosition ? character.KnownPosition : character.CurrentPosition;
             if (character.CanAct && HorizontalDistance(position, characterPosition) <= radius)
             {
@@ -714,7 +716,7 @@ public static class CombatAiAssessmentBuilder
     {
         for (int i = 0; i < enemies.Count; i++)
         {
-            if (!enemies[i].HasKnownPosition) continue;
+            if (!enemies[i].IsAlive || !enemies[i].HasKnownPosition) continue;
             if (HorizontalDistance(position, enemies[i].KnownPosition) <= radius)
             {
                 return true;
@@ -732,7 +734,7 @@ public static class CombatAiAssessmentBuilder
         int count = 0;
         for (int i = 0; i < enemies.Count; i++)
         {
-            if (!enemies[i].HasKnownPosition || !enemies[i].CanAct) continue;
+            if (!enemies[i].IsAlive || !enemies[i].HasKnownPosition || !enemies[i].CanAct) continue;
             if (HorizontalDistance(position, enemies[i].KnownPosition) <= radius)
             {
                 count++;
@@ -747,11 +749,23 @@ public static class CombatAiAssessmentBuilder
         int count = 0;
         for (int i = 0; i < enemies.Count; i++)
         {
-            if (!enemies[i].HasKnownPosition) continue;
+            if (!enemies[i].IsAlive || !enemies[i].HasKnownPosition) continue;
             if (HorizontalDistance(position, enemies[i].KnownPosition) <= radius)
             {
                 count++;
             }
+        }
+
+        return count;
+    }
+
+    private static int CountLivingCharacters(IReadOnlyList<Character> characters)
+    {
+        int count = 0;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character != null && character.Health != null && character.Health.IsAlive) count++;
         }
 
         return count;

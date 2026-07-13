@@ -10,4 +10,5 @@ public static class CombatAiMoveCode
     public const string MoveForest = "MoveForest";
     public const string SearchLastKnown = "SearchLastKnown";
     public const string HoldPosition = "HoldPosition";
+    public const string PersonalitySignature = "PersonalitySignature";
 }
