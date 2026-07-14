@@ -96,6 +96,8 @@ public class DateManager : ManagerBase<DateManager>
             {
                 _currentMonth = 1;
             }
+            
+            OnMonthChanged?.Invoke(_currentMonth);
         }
 
         // 日付変更イベントを発火
