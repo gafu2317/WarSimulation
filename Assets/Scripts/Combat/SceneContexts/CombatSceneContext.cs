@@ -8,8 +8,6 @@ public class CombatSceneContext : SceneContextBase<CombatSceneContext>
     [field: SerializeField] public CombatMagicStoneSystem MagicStoneSystem { get; private set; }
     [field: SerializeField] public CombatBattleFlow BattleFlow { get; private set; }
     [field: SerializeField] public CombatSkillCatalog SkillCatalog { get; private set; }
-    [field: SerializeField] public CombatAiWeaponWeightsProfile AiWeaponWeightsProfile { get; private set; }
-
     protected override void Awake()
     {
         base.Awake();

@@ -4,6 +4,83 @@ using UnityEngine;
 
 public sealed class CombatAiPersonalityBehaviorTests
 {
+    [TestCase(CombatAiPersonalityKind.AttentionSeeker, 36f)]
+    [TestCase(CombatAiPersonalityKind.BattleJunkie, 68f)]
+    [TestCase(CombatAiPersonalityKind.Calm, -4f)]
+    [TestCase(CombatAiPersonalityKind.Cautious, -8f)]
+    [TestCase(CombatAiPersonalityKind.Clumsy, 0f)]
+    [TestCase(CombatAiPersonalityKind.Coward, -8f)]
+    [TestCase(CombatAiPersonalityKind.Cunning, -4f)]
+    [TestCase(CombatAiPersonalityKind.Despicable, -6.4f)]
+    [TestCase(CombatAiPersonalityKind.Devoted, 0f)]
+    [TestCase(CombatAiPersonalityKind.Gossiper, 0f)]
+    [TestCase(CombatAiPersonalityKind.HotBlooded, 42f)]
+    [TestCase(CombatAiPersonalityKind.Innocent, -120f)]
+    [TestCase(CombatAiPersonalityKind.Lazy, -1.6f)]
+    [TestCase(CombatAiPersonalityKind.Lecherous, 0f)]
+    [TestCase(CombatAiPersonalityKind.Lonely, 0f)]
+    [TestCase(CombatAiPersonalityKind.LoneWolf, 32f)]
+    [TestCase(CombatAiPersonalityKind.OverlySerious, 0f)]
+    [TestCase(CombatAiPersonalityKind.Reckless, -200f)]
+    [TestCase(CombatAiPersonalityKind.Unstable, 0f)]
+    public void 性格ごとの攻撃目的補正を維持する(CombatAiPersonalityKind kind, float expected)
+    {
+        GameObject ownerObject = new GameObject("Owner");
+        GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile profile = null;
+        try
+        {
+            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(kind);
+            CombatAiContext context = CreateContext(owner, enemy);
+            CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context);
+
+            float score = CombatAiPersonalityBehavior.GetObjectiveScore(
+                context,
+                profile,
+                assessment,
+                CombatObjective.AttackEnemy);
+
+            Assert.That(score, Is.EqualTo(expected).Within(0.001f));
+        }
+        finally
+        {
+            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(ownerObject);
+        }
+    }
+
+    [Test]
+    public void 不思議ちゃんの攻撃目的補正はランダム候補だけを加算する()
+    {
+        GameObject ownerObject = new GameObject("Owner");
+        GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile profile = null;
+        try
+        {
+            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Eccentric);
+            CombatAiContext context = CreateContext(owner, enemy);
+
+            float score = CombatAiPersonalityBehavior.GetObjectiveScore(
+                context,
+                profile,
+                CombatAiAssessmentBuilder.Build(context),
+                CombatObjective.AttackEnemy);
+
+            Assert.That(score == 0f || score == 160f, Is.True);
+        }
+        finally
+        {
+            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(ownerObject);
+        }
+    }
+
     [Test]
     public void 猪突猛進は生存中の敵より敵魔石を選ぶ()
     {
@@ -105,21 +182,15 @@ public sealed class CombatAiPersonalityBehaviorTests
     {
         CombatCharacterIntel enemyIntel = CreateIntel(enemy);
         CombatCharacterIntel[] allyIntel = ally != null ? new[] { CreateIntel(ally) } : Array.Empty<CombatCharacterIntel>();
-        Character[] allies = ally != null ? new[] { ally } : Array.Empty<Character>();
         return new CombatAiContext(
             owner,
-            new[] { enemy },
-            Array.Empty<Character>(),
-            allies,
             new[] { enemyIntel },
             allyIntel,
             CombatMapSystem.Weather.Sunny,
-            Vector3.zero,
             false,
             default,
             enemyStonePosition.HasValue,
             enemyStonePosition.GetValueOrDefault(),
-            Array.Empty<Vector3>(),
             Array.Empty<Vector3>(),
             Array.Empty<Vector3>(),
             Array.Empty<Vector3>(),
@@ -138,8 +209,6 @@ public sealed class CombatAiPersonalityBehaviorTests
             false,
             true,
             character.transform.position,
-            false,
-            default,
             float.PositiveInfinity,
             false,
             character.Health.HP,

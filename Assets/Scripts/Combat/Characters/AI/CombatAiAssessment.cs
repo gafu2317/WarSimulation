@@ -18,47 +18,11 @@ public static class CombatAiMetricIndex
     public const int Count = 12;
 }
 
-public sealed class CombatAiContextSummary
-{
-    public int VisibleEnemyCount { get; set; }
-    public int RememberedEnemyCount { get; set; }
-    public int KnownEnemyCount { get; set; }
-    public int AllyCount { get; set; }
-    public int LowHpAllyCount { get; set; }
-    public string WeatherLabel { get; set; }
-    public string WeaponLabel { get; set; }
-    public string PersonalityLabel { get; set; }
-    public string WeaponWeightsLabel { get; set; }
-}
-
-public sealed class CombatAiMetric
-{
-    public string Code { get; set; }
-    public string Label { get; set; }
-    public float Value { get; set; }
-    private List<CombatAiReasonCode> _reasonCodes;
-    public List<CombatAiReasonCode> ReasonCodes => _reasonCodes ??= new List<CombatAiReasonCode>();
-}
-
 public sealed class CombatAiAssessment
 {
     private readonly float[] _values = new float[CombatAiMetricIndex.Count];
-    private List<CombatAiMetric> _metrics;
-
-    public List<CombatAiMetric> Metrics => _metrics ??= new List<CombatAiMetric>();
 
     public float GetValue(int index) => _values[index];
-
-    public float GetValue(string code)
-    {
-        if (_metrics == null) return 0f;
-        for (int i = 0; i < _metrics.Count; i++)
-        {
-            if (_metrics[i].Code == code) return _metrics[i].Value;
-        }
-
-        return 0f;
-    }
 
     internal void SetValue(int index, float value) => _values[index] = value;
 }
@@ -103,7 +67,6 @@ public sealed class CombatAiDebugSnapshot
 {
     public Character Owner { get; set; }
     public CombatAiContext Context { get; set; }
-    public CombatAiContextSummary ContextSummary { get; set; }
     public CombatAiAssessment Assessment { get; set; }
     public List<CombatAiObjectiveScoreEntry> ObjectiveEntries { get; } = new();
     public CombatAiObjectiveScoreEntry SelectedObjective { get; set; }
@@ -111,5 +74,4 @@ public sealed class CombatAiDebugSnapshot
     public CombatAiMoveCandidateEntry SelectedMove { get; set; }
     public List<CombatAiSkillCandidateEntry> SkillEntries { get; } = new();
     public CombatAiSkillCandidateEntry SelectedSkill { get; set; }
-    public CombatAiPlan FinalPlan { get; set; }
 }

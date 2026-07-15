@@ -3,69 +3,47 @@ using UnityEngine.AI;
 
 public static class CombatAiMoveScorer
 {
-    public static CombatAiScoreBreakdown Score(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        string code,
-        CombatMoveTarget target,
-        CombatObjective objective,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
-    {
-        float distance = GetTravelDistance(snapshot.Context, code, target);
-        WeaponKind weaponKind = snapshot.Owner.EquippedWeapon != null ? snapshot.Owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
-        var breakdown = new CombatAiScoreBreakdown
-        {
-            BaseScore = target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f,
-            SituationScore = GetSituationScore(snapshot.Assessment, code, objective)
-                + GetHighGroundUtilityScore(snapshot.Owner, snapshot.Context, snapshot.Assessment, code, target)
-                + CombatAiFocusTargeting.GetMoveScore(
-                    snapshot.Context,
-                    snapshot.Owner.EquippedWeapon,
-                    code,
-                    target,
-                    focusEnemy,
-                    focusCommitmentRemainingSeconds)
-                + GetCoverBonus(weaponKind, snapshot.Assessment, code)
-                - GetAllyDestinationOverlapPenalty(snapshot.Context, code, target)
-                - GetSwordIsolationPenalty(snapshot.Context, snapshot.Assessment, weaponKind, code, target)
-                - GetRouteRiskPenalty(snapshot.Context, personalityProfile, code, target),
-            WeaponScore = GetWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, code),
-            PersonalityScore = GetPersonalityScore(personalityProfile, code, objective),
-        };
-        AddReasons(code, breakdown);
-        if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
-        if (breakdown.PersonalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
-        if (GetCoverBonus(weaponKind, snapshot.Assessment, code) > 0f) AddReason(breakdown, CombatAiReasonCode.SelfExposedByEnemy);
-        if (GetRouteRiskPenalty(snapshot.Context, personalityProfile, code, target) >= 12f) AddReason(breakdown, CombatAiReasonCode.RouteRiskHigh);
-        return breakdown;
-    }
-
-    public static float ScoreDirect(
+    public static float Score(
         Character owner,
         CombatAiContext context,
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         string code,
         CombatMoveTarget target,
         CombatObjective objective,
         Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
+        float focusCommitmentRemainingSeconds,
+        CombatAiScoreBreakdown breakdown = null)
     {
         float distance = GetTravelDistance(context, code, target);
         WeaponKind weaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
-        return (target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f)
-            + GetSituationScore(assessment, code, objective)
+        float baseScore = target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f;
+        float coverBonus = GetCoverBonus(weaponKind, assessment, code);
+        float routeRiskPenalty = GetRouteRiskPenalty(context, personalityProfile, code, target);
+        float situationScore = GetSituationScore(assessment, code, objective)
             + GetHighGroundUtilityScore(owner, context, assessment, code, target)
             + CombatAiFocusTargeting.GetMoveScore(context, owner.EquippedWeapon, code, target, focusEnemy, focusCommitmentRemainingSeconds)
-            + GetWeaponScore(weaponWeightsProfile, owner.EquippedWeapon, code)
-            + GetPersonalityScore(personalityProfile, code, objective)
-            + GetCoverBonus(weaponKind, assessment, code)
+            + coverBonus
             - GetAllyDestinationOverlapPenalty(context, code, target)
             - GetSwordIsolationPenalty(context, assessment, weaponKind, code, target)
-            - GetRouteRiskPenalty(context, personalityProfile, code, target);
+            - routeRiskPenalty;
+        float weaponScore = GetWeaponScore(owner.EquippedWeapon, code);
+        float personalityScore = GetPersonalityScore(personalityProfile, code, objective);
+
+        if (breakdown != null)
+        {
+            breakdown.BaseScore = baseScore;
+            breakdown.SituationScore = situationScore;
+            breakdown.WeaponScore = weaponScore;
+            breakdown.PersonalityScore = personalityScore;
+            AddReasons(code, breakdown);
+            if (weaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
+            if (personalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
+            if (coverBonus > 0f) AddReason(breakdown, CombatAiReasonCode.SelfExposedByEnemy);
+            if (routeRiskPenalty >= 12f) AddReason(breakdown, CombatAiReasonCode.RouteRiskHigh);
+        }
+
+        return baseScore + situationScore + weaponScore + personalityScore;
     }
 
     private static float GetRouteRiskPenalty(
@@ -295,10 +273,7 @@ public static class CombatAiMoveScorer
         } + GetObjectiveAlignmentScore(code, objective);
     }
 
-    private static float GetWeaponScore(
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        WeaponBase weapon,
-        string code)
+    private static float GetWeaponScore(WeaponBase weapon, string code)
     {
         WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
         if (code == CombatAiMoveCode.InterceptThreat)
@@ -306,9 +281,7 @@ public static class CombatAiMoveScorer
             return kind == WeaponKind.Shield ? 28f : -40f;
         }
 
-        float score = weaponWeightsProfile != null
-            ? weaponWeightsProfile.GetMoveWeight(kind, code)
-            : CombatAiWeaponWeightsProfile.GetDefaultMoveWeight(kind, code);
+        float score = CombatAiWeaponWeights.GetMoveWeight(kind, code);
         return code == CombatAiMoveCode.TakeHighGround && weapon != null
             ? score + weapon.SeekHighGroundBias * 0.4f
             : score;
@@ -316,21 +289,7 @@ public static class CombatAiMoveScorer
 
     private static float GetPersonalityScore(CombatAiPersonalityProfile personalityProfile, string code, CombatObjective objective)
     {
-        if (personalityProfile == null) return 0f;
-        float score = code switch
-        {
-            CombatAiMoveCode.PursueEnemy => personalityProfile.Aggression * 14f - personalityProfile.Caution * 4f,
-            CombatAiMoveCode.AdvanceEnemyStone => personalityProfile.ObjectiveFocus * 16f + personalityProfile.RiskTolerance * 6f,
-            CombatAiMoveCode.AdvanceViaBridge => personalityProfile.ObjectiveFocus * 14f + personalityProfile.Caution * 6f,
-            CombatAiMoveCode.ReturnOwnStone => personalityProfile.Caution * 10f,
-            CombatAiMoveCode.SupportAlly => personalityProfile.SupportBias * 14f,
-            CombatAiMoveCode.InterceptThreat => personalityProfile.SupportBias * 12f + personalityProfile.Caution * 4f,
-            CombatAiMoveCode.TakeHighGround => personalityProfile.PreferredRangeBias * 10f,
-            CombatAiMoveCode.MoveForest => personalityProfile.Caution * 8f,
-            CombatAiMoveCode.SearchLastKnown => personalityProfile.ExplorationBias * 8f + (objective == CombatObjective.Search ? 4f : 0f),
-            _ => 0f,
-        };
-        return score + CombatAiPersonalityBehavior.GetMoveScore(personalityProfile, code);
+        return CombatAiPersonalityBehavior.GetMoveScore(personalityProfile, code, objective);
     }
 
     private static void AddReasons(string code, CombatAiScoreBreakdown breakdown)

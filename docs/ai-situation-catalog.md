@@ -1,234 +1,66 @@
 # 戦闘AI 状況カタログ
 
-## 目的
+## この文書の役割
 
-この文書は、戦闘AIに求める挙動と実装方針を対応付けるための設計資料である。
-実装時は、状況ごとの専用分岐を増やさず、観測した戦況から目的候補・移動候補・スキル候補を採点する。
+戦闘AIに求める状況別の判断と、それを確認する自動テストの対応を管理する。
+現在の計算方法と武器・性格ごとの振る舞いは [AI挙動.md](AI挙動.md)を正とする。
+未実装の候補は [AIPlan.md](AIPlan.md)で管理する。
 
-この文書内の表記は次の意味で統一する。
+`CombatAiContext → CombatAiAssessment → 目的・移動・スキルの採点 → CombatAiPlan` という共通経路で要求を表現し、状況名ごとの専用分岐は作らない。
+対応テストの「未作成」は専用の自動テストがないことを表し、実装がないことは表さない。
 
-| 表記 | 意味 |
-|---|---|
-| 実装済 | 現在のコードに存在する |
+## 戦略判断
 
-## 判断の原則
-
-1. 状況は検証に使う例とし、実装では観測値から候補を採点する。
-2. 戦闘全体を表す値だけを全体指標として保持する。
-3. 特定の移動先やスキルだけに必要な値は、その候補を採点するときに計算する。
-4. 同じ意味の値は一か所で計算して再利用する。
-5. 性格による補正は基本判断を置き換えず、候補が同程度のときの選択傾向として加える。
-6. 地面による移動コストと到達可能性はナビメッシュの計算結果を使う。
-
-## 現在の判断フロー
-
-```text
-CombatAiContext
-  観測情報を収集する
-        ↓
-CombatAiAssessmentBuilder
-  戦闘全体の指標を計算する
-        ↓
-CombatAiObjectiveScorer
-  目的候補を採点する
-        ↓
-CombatAiMoveScorer / CombatAiPlanner
-  選んだ目的に合う移動候補・スキル候補を採点する
-```
-
-目的候補は `AttackEnemy`、`DestroyEnemyStone`、`DefendOwnStone`、`SupportAlly`、`Search`、`Retreat` とする。
-各目的の合計点は、基本点・戦況点・武器補正・性格補正から算出する。
-
-## 値の分類
-
-値が何を比較するためのものかに応じて、次の3種類へ分ける。
-
-### 全体指標
-
-目的候補の比較に使う戦況の要約値。原則として0から100の範囲に正規化する。
-
-| 指標 | 状態 | 意味 | 主な使用先 |
+| 番号 | 状況 | 求める判断 | 対応テスト |
 |---|---|---|---|
-| `OwnStoneThreat` | 実装済 | 自陣魔石が攻められている危険度 | `DefendOwnStone` |
-| `SelfThreat` | 実装済 | 自分が狙われ、倒される危険度 | `Retreat`、`AttackEnemy`の減点 |
-| `AllyFragility` | 実装済 | 味方が倒される危険度 | `SupportAlly`、`DefendOwnStone` |
-| `ReachableEnemyValue` | 実装済 | 現在攻撃可能な敵がいる度合い | `AttackEnemy` |
-| `EnemyStoneReachability` | 実装済 | 敵魔石への到達しやすさ | `DestroyEnemyStone` |
-| `TerrainAdvantage` | 実装済 | 現在地や候補地点の地形的優位 | `AttackEnemy`、`Search`、移動候補 |
-| `EnemyLocationConfidence` | 実装済 | 敵位置を把握できている度合い | `Search` |
-| `RetreatRouteSafety` | 実装済 | 撤退経路の安全度 | `Retreat` |
-| `SelfExposure` | 実装済 | 敵から認識・攻撃されやすい度合い | 隠密を重視する移動候補 |
-| `EnemyThreatLevel` | 実装済 | 敵集団を放置した場合の危険度 | `AttackEnemy`、`DestroyEnemyStone`の減点 |
-| `KillableTargetValue` | 実装済 | 現在倒し切れる敵の価値 | `AttackEnemy`、攻撃スキル候補 |
-| `WinProximity` | 実装済 | 敵魔石を破壊して勝利できる近さ | `DestroyEnemyStone` |
+| 戦略-01 | 敵が回復・支援役だけ | 脅威の低い敵より敵魔石の破壊を優先する | 未作成 |
+| 戦略-02 | 敵火力を迂回して敵魔石へ行ける | 危険の少ない経路で敵魔石を攻撃する | `CombatAiMoveTests.Planner_BridgeDetourScoresHigherWhenDirectStoneRouteCrossesEnemyRange` |
+| 戦略-03 | 敵魔石の体力が残りわずか | 危険を受け入れて破壊を狙う | `CombatAiObjectiveTests.Planner_LowEnemyMainStoneHealthRaisesDestroyObjectiveScore` |
+| 戦略-04 | 敵が味方一体へ集中している | 横槍、魔石攻撃、支援、撤退を比較する | 未作成 |
+| 戦略-05 | 味方前線が安定している | 攻撃役は敵魔石の破壊へ回る | `CombatAiObjectiveTests.Planner_StableAllyFrontlineRaisesDamageDealerStoneObjectiveScore` |
+| 戦略-06 | 生存している味方が敵より多い | 人数差に応じて攻撃的になり、撤退しにくくなる | `CombatAiObjectiveTests.Planner_NumericalAdvantageRaisesOffenseAndLowersRetreat` |
+| 戦略-07 | 生存している敵がいない | 対象のない目的を候補から外し、敵魔石の破壊を検討できる | `CombatAiObjectiveTests.Planner_ExcludesObjectivesAndTargetsThatHaveNoLivingEnemy` |
 
-### 観測情報
+## 偵察・経路
 
-候補採点の入力に使う事実。単一の点数へ潰さず、対象ごとの情報として保持する。
+| 番号 | 状況 | 求める判断 | 対応テスト |
+|---|---|---|---|
+| 経路-01 | 最短経路が敵射程を長く通る | 到着距離と被攻撃危険を比較する | `CombatAiMoveTests.MoveScorer_RouteThroughEnemyRangeIsRiskierThanClearRoute` |
+| 経路-02 | 最短の橋に敵が待ち構えている | より安全な橋を選ぶ | `CombatAiMoveTests.Planner_BridgeDetourScoresHigherWhenDirectStoneRouteCrossesEnemyRange` |
+| 経路-03 | 高所を経由・占拠できる | 攻撃または偵察に有利な場合だけ高所へ移動する | `CombatAiMoveTests.MoveScorer_HighGroundScoresHigherWhenItAddsActionableTargets` |
+| 偵察-01 | 敵位置が不明で高所がある | 遠距離役は視認範囲を広げられる高所を検討する | `CombatAiMoveTests.Planner_RangedSearchPrefersHighGroundWhenEnemyInfoIsMissing` |
+| 偵察-02 | 味方が高所へ偵察に向かっている | 同じ高所への重複を避ける | `CombatAiMoveTests.Planner_HighGroundScoreDropsWhenAllyIsAlreadySearchingThere` |
+| 偵察-03 | 未認識の敵がいる | 敵の実位置を使わず、探索情報だけで移動先を決める | `CombatAiAssessmentTests.Assessment_IgnoresEnemyWithoutKnownPosition` |
 
-| 観測情報 | 状態 | 内容 |
-|---|---|---|
-| 味方交戦情報 | 実装済 | 味方ごとの目的、攻撃対象、移動先、開始済み攻撃、予測与ダメージ |
-| 敵状態情報 | 実装済 | HP、武器、拘束・行動不能、詠唱対象と予測ダメージ、位置、視認状態 |
-| 地点情報 | 実装済 | `BridgePositions`、`HighGroundCandidates`、魔石位置 |
-| 経路情報 | 実装済 | ナビメッシュ経路、敵射程内の通過量、敵射線、味方支援距離 |
+## 交戦・スキル選択
 
-従来案の `AllyEngagementState` に相当する情報は、味方ごとの観測情報として扱う。
-これにより「誰が、誰を、どの程度攻撃しているか」を個別に参照できる。
+| 番号 | 状況 | 求める判断 | 対応テスト |
+|---|---|---|---|
+| 交戦-01 | 瀕死の敵がいる | 倒し切れる中で消費の軽い攻撃を選ぶ | 未作成 |
+| 交戦-02 | 敵の主火力が生きている | 高脅威の敵へ攻撃、弱体化、拘束を使う | `CombatAiSkillTests.Planner_GrimoireDebuffsEnemyWhoseRoleMatchesStat` |
+| 交戦-03 | 自分が集中攻撃されている | 安全な位置へ退避または撤退する | `CombatAiObjectiveTests.Planner_RosaryPrefersRetreatWhenSelfThreatIsHigh` |
+| 技能-01 | 長い詠唱中に敵が接近できる | 危険な詠唱を避ける | `CombatAiSkillTests.Planner_LongCastScoreDropsWhenEnemyCanEnterRangeBeforeCompletion` |
+| 技能-02 | 高価な攻撃技でしか倒せない | 倒す価値と消費を比較する | 未作成 |
+| 技能-03 | 敵が密集している | 複数の有効対象を含む範囲攻撃を選ぶ | `CombatAiSkillTests.Planner_AreaSkillPrefersPointThatHitsMultipleEnemies` |
+| 技能-04 | 味方攻撃役が交戦する | 武器役割に合う強化を使う | `CombatAiSkillTests.Planner_BibleBuffsAllyWhoseRoleMatchesStat` |
+| 技能-05 | 対象に同種の状態効果が残っている | 効果時間が十分残っていれば重複を避ける | `CombatAiSkillTests.Planner_EquivalentStatusWithLongRemainingTimeGetsLargerPenalty` |
+| 技能-06 | 自己体力消費技で自分が危険になる | 使用後の生存見込みが低い技を避ける | 未作成 |
 
-### 候補評価値
+## 連携・防衛
 
-移動先・スキル・対象の組み合わせごとに計算し、その候補の点数へ直接反映する。
-これらは `CombatAiAssessment` ではなく、各候補の採点処理で計算する。
+| 番号 | 状況 | 求める判断 | 対応テスト |
+|---|---|---|---|
+| 連携-01 | 自分が加われば敵を倒し切れる | 味方の開始済み攻撃を考慮し、必要な火力を加える | 未作成 |
+| 連携-02 | 味方の開始済み攻撃だけで敵を倒し切れる | 追加攻撃を避け、別対象または別目的を選ぶ | `CombatAiSkillTests.Planner_SelectsAnotherEnemyWhenAllyCastingWillDefeatTarget` |
+| 防衛-01 | 敵の射線が後衛や魔石へ通る | 盾役が間に入る | `CombatAiMoveTests.Planner_ShieldCreatesInterceptionPointBetweenEnemyAndFragileAlly` |
+| 防衛-02 | 敵が後衛へ接近している | 先回りできる場合は迎撃地点へ移動する | `CombatAiMoveTests.Planner_ShieldCreatesInterceptionPointBetweenEnemyAndFragileAlly` |
+| 防衛-03 | 自軍魔石が攻められている | 魔石防衛を目的候補にする | `CombatAiObjectiveTests.Planner_ShieldDefendsThreatenedOwnStone` |
+| 支援-01 | 味方が瀕死または被攻撃中 | 回復後の生存見込みが高い対象を救う | `CombatAiSkillTests.Planner_ChoosesLowHpAllyForHealSkill` |
+| 撤退-01 | 数的不利または体力不足で押されている | 攻撃の継続と撤退を比較する | `CombatAiObjectiveTests.Planner_RosaryPrefersRetreatWhenSelfThreatIsHigh` |
 
-| 候補評価値 | 状態 | 意味 |
-|---|---|---|
-| 詠唱危険度 | 実装済 | 詠唱完了前に接近・被弾・死亡する危険 |
-| 範囲対象価値 | 実装済 | 範囲内に含む有効対象の価値合計 |
-| スキル対象相性 | 実装済 | 効果と対象の武器・役割・目的・状態の相性 |
-| 状態効果重複度 | 実装済 | 同じ目的の状態効果を重ねる無駄の大きさ |
-| 遮断価値 | 実装済 | 候補地点へ移動して味方や魔石を守れる価値 |
-| 経路危険度 | 実装済 | 候補経路上で攻撃を受ける危険 |
+## 更新方法
 
-従来案の `SkillOpportunityCost` に相当する判断は、予測ダメージ、過剰ダメージ、クールタイム、詠唱時間、自己HP消費、対象価値を各スキル候補の採点へ直接使って表現する。
-
-## 実装済みの重要な判断
-
-### 敵脅威度
-
-`EnemyThreatLevel` は「その敵を放置すると危険か」だけを表す。
-
-```text
-敵単体脅威 = 役割脅威 × 接敵補正 × 行動補正
-敵脅威度 = 最大の敵単体脅威 + それ以外の合計 × 0.3
-```
-
-初期の役割脅威は次の固定値を使う。
-
-```text
-双剣 0.9 / 杖 0.9 / 魔導書 0.7 / 盾 0.55 / 聖書 0.35 / ロザリオ 0.25
-```
-
-行動補正は次の値を使う。
-
-```text
-通常 1.0
-瀕死 0.6
-拘束・行動不能 0.35
-瀕死かつ拘束・行動不能 0.25
-戦闘離脱 0.0
-```
-
-`DestroyEnemyStone` は、敵が魔石破壊を妨げられる危険度に応じて減点する。
-
-### 倒し切り価値
-
-`KillableTargetValue` は「その敵を今倒し切る価値があるか」を表す。
-瀕死や拘束中の敵への追撃はこちらで扱い、`EnemyThreatLevel` には混ぜない。
-
-`KillableTargetValue` は `AttackEnemy` と攻撃スキル候補へ反映する。
-`EnemyThreatLevel` は「危険だから敵を止める判断」、`KillableTargetValue` は「倒せるから追撃する判断」をそれぞれ担当する。
-
-### 攻撃スキル選択
-
-攻撃スキル候補は次の順で評価する。
-
-1. スキルごとに対象への予測ダメージを求める。
-2. 予測ダメージが対象HP以上なら、倒せる候補として加点する。
-3. 倒せる候補同士では、通常攻撃、短いクールタイム、短い詠唱、少ない自己HP消費を優先する。
-4. 対象HPを超える過剰ダメージは減点する。
-5. 倒せない候補は、対象価値、有効ダメージ、複数対象への命中、クールタイム、詠唱時間、自己HP消費を合わせて評価する。
-
-この処理は実装済み。ただし、味方がこれから与える予定のダメージはまだ含めていない。
-
-## 状況カタログ
-
-各行を一つの要求として扱う。実装は「使用する値」と「候補への反映」に従い、状況名による専用分岐は作らない。
-
-### 戦略判断
-
-| 番号 | 状況 | 期待する判断 | 使用する値 | 実装方針 | 状態 |
-|---|---|---|---|---|---|
-| 戦略-01 | 相手が回復・支援役だけ | 敵を無視して魔石を攻撃する | `EnemyThreatLevel`、`EnemyStoneReachability` | 敵脅威が低く魔石へ到達可能なら、`DestroyEnemyStone`を相対的に上げる | 実装済 |
-| 戦略-02 | 敵火力を迂回して魔石へ行ける | 安全な経路で魔石を攻撃する | 経路危険度、`EnemyStoneReachability` | 各橋を経由点とする経路を作り、総距離と経路危険度の合計が低い候補を選ぶ | 実装済 |
-| 戦略-03 | 敵魔石のHPが残りわずか | 多少の危険を受け入れて破壊を狙う | `WinProximity`、`SelfThreat` | 敵魔石HP率から勝利接近度を算出し、魔石攻撃を加点する | 実装済 |
-| 戦略-04 | 敵が味方一体へ集中している | 横槍、魔石攻撃、撤退を比較する | `KillableTargetValue`、`SelfThreat`、`AllyFragility`、経路危険度 | 味方周辺の敵数と開始済み攻撃を観測し、攻撃・魔石攻撃・撤退・支援を同じ目的採点で比較する | 実装済 |
-| 戦略-05 | 味方前線が安定している | 火力役は魔石攻撃へ移る | 味方交戦情報、`AllyFragility`、`OwnStoneThreat` | HPが十分な味方が交戦目的を持ち、敵へ接敵している場合に火力役の魔石攻撃を加点する | 実装済 |
-
-### 偵察・経路
-
-| 番号 | 状況 | 期待する判断 | 使用する値 | 実装方針 | 状態 |
-|---|---|---|---|---|---|
-| 経路-01 | 最短経路が敵射程を長く通る | 安全な迂回路を選ぶ | 経路情報、経路危険度 | ナビメッシュ経路を一定間隔で評価し、直行と橋経由の危険度を比較する | 実装済 |
-| 経路-02 | 最短の橋に敵が待ち構えている | 別の橋を選ぶ | `BridgePositions`、経路危険度 | 各橋経由の総距離、敵射程・射線内の通過量、味方支援距離を比較する | 実装済 |
-| 経路-03 | 高所を経由・占拠できる | 攻撃や偵察に有利なら高所へ移動する | `HighGroundCandidates`、`TerrainAdvantage` | 高所候補を通常の移動候補へ加え、目的と武器に応じて採点する | 実装済 |
-| 偵察-01 | 敵位置が不明で高所がある | 高所から索敵する | `EnemyLocationConfidence`、`TerrainAdvantage`、味方交戦情報 | 味方が同じ高所へ索敵中なら重複減点し、それ以外の高所候補を比較する | 実装済 |
-| 偵察-03 | 味方が高所へ索敵に向かっている | 索敵を重複せず別の役割を担う | 味方交戦情報 | 味方の目的と移動先から担当済みの高所を判定し、重複候補を減点する | 実装済 |
-
-### 交戦・スキル選択
-
-| 番号 | 状況 | 期待する判断 | 使用する値 | 実装方針 | 状態 |
-|---|---|---|---|---|---|
-| 交戦-01 | 瀕死の敵がいる | 軽い攻撃で仕留める | `KillableTargetValue`、攻撃スキル候補点 | 倒せる候補を加点し、通常攻撃、短いクールタイム、少ない過剰ダメージを優先する | 実装済 |
-| 交戦-02 | 敵の主火力が生きている | 攻撃・弱体化・拘束を優先する | `EnemyThreatLevel`、スキル対象相性 | 敵の武器役割と弱体化能力が一致する候補、接近職への拘束候補を加点する | 実装済 |
-| 交戦-03 | 自分が集中攻撃されている | 隠れるか撤退する | `SelfThreat`、`SelfExposure`、`RetreatRouteSafety` | 撤退目的と、短時間で射線・射程から外れる移動候補を加点する | 実装済 |
-| 技能-01 | 長い詠唱中に敵が接近できる | 退避または短い詠唱を選ぶ | 詠唱危険度、`SelfThreat` | 敵到達時間が詠唱時間より短い候補を減点する | 実装済 |
-| 技能-02 | 高価な攻撃技でしか倒せない | 勝敗への価値と消費を比較する | 攻撃スキル候補点、対象価値 | 敵の武器役割価値と倒し切り加点を、過剰ダメージ・クールタイム・詠唱時間・自己HP消費の減点と比較する | 実装済 |
-| 技能-03 | 敵が密集している | 有効な範囲攻撃を選ぶ | 範囲対象価値 | 敵位置と敵同士の中点から候補地点を作り、対象価値合計が高い地点を選ぶ | 実装済 |
-| 技能-04 | 味方前衛がこれから交戦する | 相性のよい強化を使う | 味方交戦情報、スキル対象相性 | 味方の武器、交戦目的、攻撃対象から効果時間を活かせる対象を選ぶ | 実装済 |
-| 技能-05 | 対象に同種の状態効果が残っている | 別対象か別スキルを選ぶ | 状態効果重複度 | 同じ目的の効果が十分残っていれば減点し、残り時間が短ければ更新を許可する | 実装済 |
-| 技能-06 | 自己HP消費技で自分が危険になる | 使用を避ける | 使用後HP、敵到達範囲、攻撃スキル候補点 | 使用後HPと短時間で攻撃可能な敵を評価し、死亡または瀕死見込みなら強く減点する | 実装済 |
-
-### 連携・防衛
-
-| 番号 | 状況 | 期待する判断 | 使用する値 | 実装方針 | 状態 |
-|---|---|---|---|---|---|
-| 連携-01 | 自分が加われば敵を倒し切れる | 必要な火力だけを合わせる | 味方交戦情報、`KillableTargetValue` | 味方の開始済み攻撃を引いた予測残HPに対して、目的・追跡対象・攻撃候補を採点する | 実装済 |
-| 連携-02 | 味方だけで敵を倒し切れる | 別対象・魔石・支援へ移る | 味方交戦情報 | 味方の開始済み攻撃が残HP以上なら、倒し切り価値・追跡・追加攻撃の候補から外す | 実装済 |
-| 防衛-01 | 敵の射線が後衛や魔石へ通る | 盾役が射線へ入る | 遮断価値 | 敵と味方または魔石の間へ遮断候補点を作り、保護対象価値と到着時間差で採点する | 実装済 |
-| 防衛-02 | 敵が後衛へ接近している | 前衛が先回りして止める | 経路情報、遮断価値 | 敵より先に到達できる迎撃地点を生成し、到着時間差で採点する | 実装済 |
-| 防衛-03 | 自陣魔石が攻められている | 防衛へ戻る | `OwnStoneThreat` | 魔石付近の敵数、到達時間、予測火力、味方防衛数から防衛目的を上げる | 実装済 |
-| 支援-01 | 味方が瀕死 | 回復・防御・遮断で救う | `AllyFragility`、予測回復量、開始済み敵攻撃、遮断価値 | 有効回復量と回復後の生存見込みを採点し、防御スキルや遮断移動と比較する | 実装済 |
-| 撤退-01 | 数的不利で押されている | 撤退して立て直す | `SelfThreat`、`RetreatRouteSafety` | 周辺の行動可能人数とHPを脅威へ反映し、安全な退路があれば撤退を上げる | 実装済 |
-
-## 武器ごとの基本傾向
-
-武器傾向は目的や候補の基本点へ反映し、戦況指標による補正と合わせて評価する。
-
-| 武器 | 基本傾向 | 主な判断材料 |
-|---|---|---|
-| 双剣 | 敵へ接近して攻撃する | `ReachableEnemyValue`、`KillableTargetValue` |
-| 盾 | 味方や魔石を守る | `AllyFragility`、`OwnStoneThreat`、遮断価値 |
-| 杖 | 露出を避けて攻撃する | `SelfExposure`、`ReachableEnemyValue` |
-| 魔導書 | 露出を避けて妨害する | `SelfExposure`、`EnemyThreatLevel`、スキル対象相性 |
-| 聖書 | 露出を避けて強化・防御する | `SelfExposure`、`AllyFragility`、スキル対象相性 |
-| ロザリオ | 露出を避けて回復する | `SelfExposure`、`AllyFragility`、予測回復量 |
-
-## 味方の開始済み攻撃
-
-集中攻撃と過剰攻撃の回避には、味方が開始済みの攻撃だけを使う。
-予測ダメージの入力は、現在詠唱中または発動済みで着弾前の攻撃に限定する。
-
-対象ごとに、味方が詠唱を開始した攻撃の予測ダメージを合計する。
-自分の攻撃候補は、直接視認中なら敵の現在HP、認識保持中なら最後に観測したHPから、開始済み攻撃の予測ダメージを引いた予測残HPに対して採点する。
-各意思決定で有効な開始済み攻撃を集計し直し、その時点で利用可能な敵HPから予測残HPを再計算する。
-
-## 採用済みの設計判断
-
-### 移動対象とスキル対象は独立して選ぶ
-
-一回の意思決定で目的・移動候補・スキル候補をまとめて選ぶが、移動対象とスキル対象はそれぞれ採点する。
-スキルを使用できた場合はその回の移動を実行せず、次の意思決定で計画全体を作り直す。
-移動対象とスキル対象が異なる場合はスキルを実行し、次の意思決定で移動対象を再計算する。
-
-### 敵脅威度は武器種の固定値を使う
-
-`EnemyThreatLevel` の役割脅威は、能力値・装備・スキル構成から動的に推定せず、武器種ごとの固定値を使う。
-単純で調整しやすい現在の計算方式を正式な仕様として維持する。
-
-## 更新手順
-
-1. 新しい要求は状況カタログへ一行追加する。
-2. 既存の全体指標・観測情報・候補評価値で表現できるか確認する。
-3. 新しい全体指標は、複数の目的候補を比較するために本当に必要な場合だけ追加する。
-4. 実装後は状態を更新し、実際の計算方法と文書の説明が一致しているか確認する。
+1. 新しい要求を対応する分類の表へ一行追加する。
+2. 現在仕様の説明が必要な場合は `AI挙動.md` を更新し、この文書へ重複記載しない。
+3. 自動テストがなければ、対応テストを「未作成」とする。
+4. 実装とテストの追加後に対応テストを更新する。

@@ -10,12 +10,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     [SerializeField] private CombatCharacterSystem _characterSystem;
     [SerializeField] private CombatMapSystem _mapSystem;
 
-    private readonly List<Character> _visibleEnemies = new();
-    private readonly List<Character> _rememberedEnemies = new();
-    private readonly List<Character> _allies = new();
     private readonly List<CombatCharacterIntel> _enemyIntel = new();
     private readonly List<CombatCharacterIntel> _allyIntel = new();
-    private readonly List<Vector3> _rockPositions = new();
     private readonly List<Vector3> _bridgePositions = new();
     private readonly List<Vector3> _highGroundCandidates = new();
     private readonly List<Vector3> _forestCandidates = new();
@@ -36,9 +32,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         CombatVision vision = owner != null ? owner.Vision : null;
         vision?.UpdateVision();
 
-        CopyCharacters(vision != null ? vision.VisibleEnemies : null, _visibleEnemies);
-        CopyCharacters(vision != null ? vision.RememberedEnemies : null, _rememberedEnemies);
-
         IReadOnlyList<Character> enemies = characterSystem != null && owner != null
             ? characterSystem.GetEnemiesOf(owner)
             : Array.Empty<Character>();
@@ -46,11 +39,10 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             ? characterSystem.GetAlliesOf(owner)
             : Array.Empty<Character>();
 
-        CopyAllies(owner, allies, _allies);
         BuildIntel(owner, enemies, vision, _enemyIntel);
-        BuildIntel(owner, _allies, vision, _allyIntel);
-        CollectPendingDamage(_allies, _allyPendingDamage);
-        CollectPendingDamage(enemies, _enemyPendingDamage);
+        BuildIntel(owner, allies, vision, _allyIntel);
+        CollectPendingDamage(allies, owner, _allyPendingDamage);
+        CollectPendingDamage(enemies, null, _enemyPendingDamage);
 
         Vector3 ownStonePosition = default;
         Vector3 enemyStonePosition = default;
@@ -88,18 +80,13 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
         return new CombatAiContext(
             owner,
-            _visibleEnemies,
-            _rememberedEnemies,
-            _allies,
             _enemyIntel,
             _allyIntel,
             mapSystem != null ? mapSystem.CurrentWeather : default,
-            mapSystem != null ? mapSystem.WindVector : Vector3.zero,
             hasOwnStonePosition,
             ownStonePosition,
             hasEnemyStonePosition,
             enemyStonePosition,
-            _rockPositions,
             _bridgePositions,
             _highGroundCandidates,
             _forestCandidates,
@@ -132,12 +119,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
     private void ClearBuffers()
     {
-        _visibleEnemies.Clear();
-        _rememberedEnemies.Clear();
-        _allies.Clear();
         _enemyIntel.Clear();
         _allyIntel.Clear();
-        _rockPositions.Clear();
         _bridgePositions.Clear();
         _highGroundCandidates.Clear();
         _forestCandidates.Clear();
@@ -147,11 +130,13 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
     private static void CollectPendingDamage(
         IReadOnlyList<Character> characters,
+        Character excludedSource,
         List<CombatAiPendingDamage> destination)
     {
         for (int i = 0; i < characters.Count; i++)
         {
             Character source = characters[i];
+            if (source == excludedSource) continue;
             CombatSkillCaster caster = source != null ? source.SkillCaster : null;
             SkillBase skill = caster != null ? caster.CastingSkill : null;
             if (skill == null || !CombatAiSkillClassifier.IsDamage(skill)) continue;
@@ -165,41 +150,9 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 int damage = skill.EstimateDamage(source, castingContext, target);
                 if (damage > 0)
                 {
-                    destination.Add(new CombatAiPendingDamage(source, target, damage));
+                    destination.Add(new CombatAiPendingDamage(target, damage));
                 }
             }
-        }
-    }
-
-    private static void CopyCharacters(IReadOnlyList<Character> source, List<Character> destination)
-    {
-        if (source == null) return;
-
-        for (int i = 0; i < source.Count; i++)
-        {
-            Character character = source[i];
-            if (character == null ||
-                character.Health == null ||
-                !character.Health.IsAlive ||
-                destination.Contains(character))
-            {
-                continue;
-            }
-
-            destination.Add(character);
-        }
-    }
-
-    private static void CopyAllies(Character owner, IReadOnlyList<Character> source, List<Character> destination)
-    {
-        if (source == null) return;
-
-        for (int i = 0; i < source.Count; i++)
-        {
-            Character ally = source[i];
-            if (ally == null || ally == owner || destination.Contains(ally)) continue;
-
-            destination.Add(ally);
         }
     }
 
@@ -214,7 +167,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         for (int i = 0; i < characters.Count; i++)
         {
             Character character = characters[i];
-            if (character == null || character == owner) continue;
+            if (character == null || character == owner || ContainsCharacter(destination, character)) continue;
 
             Vector3 lastKnownPosition = default;
             bool hasLastKnownPosition = vision != null &&
@@ -254,8 +207,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 hasMemory,
                 hasKnownPosition,
                 knownPosition,
-                hasLastKnownPosition,
-                hasLastKnownPosition ? lastKnownPosition : default,
                 memoryAgeSeconds,
                 recognizesOwner,
                 health != null ? health.HP : 0,
@@ -271,6 +222,16 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 hasIntendedDestination,
                 hasIntendedDestination ? plan.MoveTarget.Destination : default));
         }
+    }
+
+    private static bool ContainsCharacter(List<CombatCharacterIntel> characters, Character target)
+    {
+        for (int i = 0; i < characters.Count; i++)
+        {
+            if (characters[i].Character == target) return true;
+        }
+
+        return false;
     }
 
     private static IReadOnlyList<CombatStatusEffectSnapshot> CopyStatusEffects(
@@ -333,9 +294,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                         hasEnemyStonePosition = true;
                         enemyStonePosition = position;
                     }
-                    break;
-                case FeatureType.Rock:
-                    _rockPositions.Add(position);
                     break;
                 case FeatureType.Bridge:
                     _bridgePositions.Add(position);

@@ -9,83 +9,162 @@ public static class CombatAiObjectiveScorer
     public static void BuildEntries(
         CombatAiDebugSnapshot snapshot,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective)
     {
         snapshot.ObjectiveEntries.Clear();
-        for (int i = 0; i < AllObjectives.Length; i++)
-        {
-            CombatObjective objective = AllObjectives[i];
-            if (!IsObjectiveSelectable(snapshot.Context, objective)) continue;
-
-            var breakdown = new CombatAiScoreBreakdown
-            {
-                BaseScore = GetBaseScore(objective),
-                SituationScore = GetSituationScore(
-                    snapshot.Context,
-                    snapshot.Assessment,
-                    snapshot.Owner.EquippedWeapon,
-                    objective)
-                    + CombatAiFocusTargeting.GetObjectiveScore(
-                        snapshot.Context,
-                        snapshot.Owner.EquippedWeapon,
-                        objective,
-                        focusEnemy,
-                        focusCommitmentRemainingSeconds,
-                        previousObjective),
-                WeaponScore = GetWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, objective),
-                PersonalityScore = GetPersonalityScore(snapshot.Context, personalityProfile, snapshot.Assessment, objective),
-            };
-
-            AddReasons(snapshot.Assessment, objective, breakdown);
-            if (GetNumericalAdvantageAdjustment(snapshot.Context, objective) != 0f)
-            {
-                AddReason(breakdown, CombatAiReasonCode.NumericalAdvantage);
-            }
-            if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
-            if (breakdown.PersonalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
-
-            snapshot.ObjectiveEntries.Add(new CombatAiObjectiveScoreEntry
-            {
-                Objective = objective,
-                Label = CombatAiDebugLabels.Objective(objective),
-                Breakdown = breakdown,
-            });
-        }
+        CombatObjective selected = EvaluateObjectives(
+            snapshot.Context,
+            snapshot.Assessment,
+            personalityProfile,
+            focusEnemy,
+            focusCommitmentRemainingSeconds,
+            previousObjective,
+            snapshot.ObjectiveEntries);
+        snapshot.SelectedObjective = FindEntry(snapshot.ObjectiveEntries, selected);
     }
 
     public static CombatObjective SelectBestObjective(
         CombatAiContext context,
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
-        CombatObjective previousObjective)
+        CombatObjective previousObjective,
+        System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null)
+    {
+        return EvaluateObjectives(
+            context,
+            assessment,
+            personalityProfile,
+            focusEnemy,
+            focusCommitmentRemainingSeconds,
+            previousObjective,
+            entries: null,
+            selectedReasons);
+    }
+
+    private static CombatObjective EvaluateObjectives(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        CombatObjective previousObjective,
+        System.Collections.Generic.List<CombatAiObjectiveScoreEntry> entries,
+        System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null)
     {
         WeaponBase weapon = context.Owner != null ? context.Owner.EquippedWeapon : null;
-        CombatObjective best = default;
+        CombatObjective best = CombatObjective.Search;
         float bestScore = float.NegativeInfinity;
+        float bestBaseScore = 0f;
+        float bestSituationScore = 0f;
+        float bestWeaponScore = 0f;
+        float bestPersonalityScore = 0f;
         for (int i = 0; i < AllObjectives.Length; i++)
         {
             CombatObjective objective = AllObjectives[i];
             if (!IsObjectiveSelectable(context, objective)) continue;
 
-            float score = GetBaseScore(objective)
-                + GetSituationScore(context, assessment, weapon, objective)
-                + CombatAiFocusTargeting.GetObjectiveScore(context, weapon, objective, focusEnemy, focusCommitmentRemainingSeconds, previousObjective)
-                + GetWeaponScore(weaponWeightsProfile, weapon, objective)
-                + GetPersonalityScore(context, personalityProfile, assessment, objective);
+            float baseScore = GetBaseScore(objective);
+            float situationScore = GetSituationScore(context, assessment, weapon, objective)
+                + CombatAiFocusTargeting.GetObjectiveScore(
+                    context,
+                    weapon,
+                    objective,
+                    focusEnemy,
+                    focusCommitmentRemainingSeconds,
+                    previousObjective);
+            float weaponScore = GetWeaponScore(weapon, objective);
+            float personalityScore = GetPersonalityScore(context, personalityProfile, assessment, objective);
+            float score = baseScore + situationScore + weaponScore + personalityScore;
+
+            if (entries != null)
+            {
+                CombatAiScoreBreakdown breakdown = CreateBreakdown(
+                    context,
+                    assessment,
+                    objective,
+                    baseScore,
+                    situationScore,
+                    weaponScore,
+                    personalityScore);
+                entries.Add(new CombatAiObjectiveScoreEntry
+                {
+                    Objective = objective,
+                    Label = CombatAiDebugLabels.Objective(objective),
+                    Breakdown = breakdown,
+                });
+            }
+
             if (score > bestScore)
             {
                 bestScore = score;
                 best = objective;
+                bestBaseScore = baseScore;
+                bestSituationScore = situationScore;
+                bestWeaponScore = weaponScore;
+                bestPersonalityScore = personalityScore;
+            }
+        }
+
+        if (selectedReasons != null)
+        {
+            selectedReasons.Clear();
+            if (!float.IsNegativeInfinity(bestScore))
+            {
+                CombatAiScoreBreakdown selectedBreakdown = CreateBreakdown(
+                    context,
+                    assessment,
+                    best,
+                    bestBaseScore,
+                    bestSituationScore,
+                    bestWeaponScore,
+                    bestPersonalityScore);
+                selectedReasons.AddRange(selectedBreakdown.ReasonCodes);
             }
         }
 
         return best;
+    }
+
+    private static CombatAiScoreBreakdown CreateBreakdown(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective,
+        float baseScore,
+        float situationScore,
+        float weaponScore,
+        float personalityScore)
+    {
+        var breakdown = new CombatAiScoreBreakdown
+        {
+            BaseScore = baseScore,
+            SituationScore = situationScore,
+            WeaponScore = weaponScore,
+            PersonalityScore = personalityScore,
+        };
+        AddReasons(assessment, objective, breakdown);
+        if (GetNumericalAdvantageAdjustment(context, objective) != 0f)
+        {
+            AddReason(breakdown, CombatAiReasonCode.NumericalAdvantage);
+        }
+        if (weaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
+        if (personalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
+        return breakdown;
+    }
+
+    private static CombatAiObjectiveScoreEntry FindEntry(
+        System.Collections.Generic.List<CombatAiObjectiveScoreEntry> entries,
+        CombatObjective objective)
+    {
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Objective == objective) return entries[i];
+        }
+
+        return null;
     }
 
     private static bool IsObjectiveSelectable(CombatAiContext context, CombatObjective objective)
@@ -448,15 +527,10 @@ public static class CombatAiObjectiveScorer
         };
     }
 
-    private static float GetWeaponScore(
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        WeaponBase weapon,
-        CombatObjective objective)
+    private static float GetWeaponScore(WeaponBase weapon, CombatObjective objective)
     {
         WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
-        return weaponWeightsProfile != null
-            ? weaponWeightsProfile.GetObjectiveWeight(kind, objective)
-            : CombatAiWeaponWeightsProfile.GetDefaultObjectiveWeight(kind, objective);
+        return CombatAiWeaponWeights.GetObjectiveWeight(kind, objective);
     }
 
     private static int CountVisibleLivingEnemies(CombatAiContext context)
@@ -477,36 +551,7 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        float score = personalityProfile != null ? objective switch
-        {
-            CombatObjective.AttackEnemy => personalityProfile.Aggression * 20f - personalityProfile.Caution * 8f,
-            CombatObjective.DefendOwnStone => personalityProfile.ObjectiveFocus * 16f + personalityProfile.Caution * 6f,
-            CombatObjective.SupportAlly => personalityProfile.SupportBias * 20f + personalityProfile.Caution * 4f,
-            CombatObjective.DestroyEnemyStone => personalityProfile.ObjectiveFocus * 18f + personalityProfile.RiskTolerance * 8f,
-            CombatObjective.Search => personalityProfile.ExplorationBias * 18f,
-            CombatObjective.Retreat => personalityProfile.Caution * 18f - personalityProfile.RiskTolerance * 6f,
-            _ => 0f,
-        } : 0f;
-        score += CombatAiPersonalityBehavior.GetObjectiveScore(context.Owner, personalityProfile, assessment, objective);
-        if (objective == CombatObjective.AttackEnemy && HasNearbyHotBloodedAlly(context)) score += 24f;
-        return score;
-    }
-
-    private static bool HasNearbyHotBloodedAlly(CombatAiContext context)
-    {
-        if (context == null || context.Owner == null) return false;
-        for (int i = 0; i < context.AllyIntel.Count; i++)
-        {
-            CombatCharacterIntel ally = context.AllyIntel[i];
-            if (!ally.IsAlive || ally.Character == null || ally.Character.PersonalityProfile == null) continue;
-            if (ally.Character.PersonalityProfile.Kind == CombatAiPersonalityKind.HotBlooded &&
-                Vector3.Distance(context.Owner.transform.position, ally.CurrentPosition) <= 6f)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return CombatAiPersonalityBehavior.GetObjectiveScore(context, personalityProfile, assessment, objective);
     }
 
     private static void AddReasons(CombatAiAssessment assessment, CombatObjective objective, CombatAiScoreBreakdown breakdown)

@@ -4,7 +4,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 各チケットは単独で差分と回帰原因を確認できる単位にする。判断経路の変更、データ削除、資産整理を同じチケットへ含めない。
 
-## AI-01 実戦判断と診断判断の不一致を修正する
+## AI-01 実戦判断と診断判断の不一致を修正する（完了）
 
 ### 目的
 
@@ -26,7 +26,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - なし
 
-## AI-02 目的候補の生成と採点を一本化する
+## AI-02 目的候補の生成と採点を一本化する（完了）
 
 ### 目的
 
@@ -48,7 +48,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-01
 
-## AI-03 移動候補の生成と採点を一本化する
+## AI-03 移動候補の生成と採点を一本化する（完了）
 
 ### 目的
 
@@ -70,7 +70,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-02
 
-## AI-04 技能候補の生成と採点を一本化する
+## AI-04 技能候補の生成と採点を一本化する（完了）
 
 ### 目的
 
@@ -92,7 +92,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-03
 
-## AI-05 判断計画の入口を一本化する
+## AI-05 判断計画の入口を一本化する（完了）
 
 ### 目的
 
@@ -114,7 +114,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-04
 
-## AI-06 戦闘ログへ実際の判断理由を渡す
+## AI-06 戦闘ログへ実際の判断理由を渡す（完了）
 
 ### 目的
 
@@ -135,7 +135,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-05
 
-## AI-07 旧性格を本番の選択肢から外す
+## AI-07 旧性格を本番の選択肢から外す（完了）
 
 ### 目的
 
@@ -156,7 +156,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - なし
 
-## AI-08 明確に未使用の状況データを削除する
+## AI-08 明確に未使用の状況データを削除する（完了）
 
 ### 目的
 
@@ -179,7 +179,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-05
 
-## AI-09 敵と味方の一覧をIntelへ一本化する
+## AI-09 敵と味方の一覧をIntelへ一本化する（完了）
 
 ### 目的
 
@@ -201,7 +201,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-08
 
-## AI-10 未使用の診断モデルを縮小する
+## AI-10 未使用の診断モデルを縮小する（完了）
 
 ### 目的
 
@@ -225,7 +225,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 - AI-06
 - AI-09
 
-## AI-11 武器ウェイトの管理元を一本化する
+## AI-11 武器ウェイトの管理元を一本化する（完了）
 
 ### 目的
 
@@ -252,7 +252,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-05
 
-## AI-12 状態を持たない性格補正を一か所へ集約する
+## AI-12 状態を持たない性格補正を一か所へ集約する（完了）
 
 ### 目的
 
@@ -275,7 +275,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 - AI-05
 - AI-07
 
-## AI-13 AIテストを責務ごとに分割する
+## AI-13 AIテストを責務ごとに分割する（完了）
 
 ### 目的
 
@@ -297,7 +297,7 @@ AIの基本構造である `CombatAiContext → CombatAiAssessment → 各採点
 
 - AI-05
 
-## AI-14 AI設計資料の役割を整理する
+## AI-14 AI設計資料の役割を整理する（完了）
 
 ### 目的
 

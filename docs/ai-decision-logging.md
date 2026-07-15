@@ -75,9 +75,10 @@ rg "BATTLE_END" Logs/CombatBattles/
 
 ## 実装の要点
 
-- イベント源: [`CombatAiDecisionEvents`](../Assets/Scripts/Combat/Characters/AI/CombatAiDecisionEvents.cs), [`CombatSkillUseEvents`](../Assets/Scripts/Combat/UI/CombatSkillUseEvents.cs), [`CombatHealth.Defeated`](../Assets/Scripts/Combat/Characters/CombatHealth.cs), [`CombatMagicStoneSystem.MainStoneDestroyed`](../Assets/Scripts/Combat/Systems/CombatMagicStoneSystem.cs)
+- イベント源: [`CombatAiDecisionEvents`](../Assets/Scripts/Combat/Characters/AI/CombatAiDecisionEvents.cs), [`CombatSkillActionEvents`](../Assets/Scripts/Combat/Skills/CombatSkillActionEvents.cs), [`CombatHealth.Defeated`](../Assets/Scripts/Combat/Characters/CombatHealth.cs), [`CombatMagicStoneSystem.MainStoneDestroyed`](../Assets/Scripts/Combat/Systems/CombatMagicStoneSystem.cs)
 - 整形: [`CombatBattleLogFormatter`](../Assets/Scripts/Combat/Debug/CombatBattleLogFormatter.cs)
-- 目的切替時のみ [`CombatAiPlanner.BuildDebugSnapshot`](../Assets/Scripts/Combat/Characters/AI/CombatAiPlanner.cs) を呼び、理由コードを抽出（ランタイム経路は enum 比較1回のみ）
+- 目的変更イベントに含まれる実際の判断理由をそのまま記録し、ログ用に別の判断を実行しない
+- 失敗したスキル実行は `SKILL` として記録しない
 
 ## 肥大化防止
 

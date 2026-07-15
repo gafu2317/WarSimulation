@@ -1,10 +1,4 @@
-using System;
-using UnityEngine;
-
-[CreateAssetMenu(
-    fileName = "CombatAiWeaponWeightsProfile",
-    menuName = "WarSimulation/Combat/AI Weapon Weights Profile")]
-public sealed class CombatAiWeaponWeightsProfile : ScriptableObject
+public static class CombatAiWeaponWeights
 {
     private static readonly CombatAiWeaponWeightsEntry DefaultSword = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Sword);
     private static readonly CombatAiWeaponWeightsEntry DefaultShield = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Shield);
@@ -14,89 +8,19 @@ public sealed class CombatAiWeaponWeightsProfile : ScriptableObject
     private static readonly CombatAiWeaponWeightsEntry DefaultRosary = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Rosary);
     private static readonly CombatAiWeaponWeightsEntry DefaultUnarmed = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Unarmed);
 
-    [SerializeField] private CombatAiWeaponWeightsEntry _sword = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Sword);
-    [SerializeField] private CombatAiWeaponWeightsEntry _shield = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Shield);
-    [SerializeField] private CombatAiWeaponWeightsEntry _wand = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Wand);
-    [SerializeField] private CombatAiWeaponWeightsEntry _grimoire = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Grimoire);
-    [SerializeField] private CombatAiWeaponWeightsEntry _bible = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Bible);
-    [SerializeField] private CombatAiWeaponWeightsEntry _rosary = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Rosary);
-    [SerializeField] private CombatAiWeaponWeightsEntry _unarmed = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Unarmed);
-
-    public float GetObjectiveWeight(WeaponKind kind, CombatObjective objective)
-    {
-        return GetEntry(kind).GetObjectiveWeight(objective);
-    }
-
-    public float GetMoveWeight(WeaponKind kind, string moveCode)
-    {
-        return GetEntry(kind).GetMoveWeight(moveCode);
-    }
-
-    public float GetSkillWeight(WeaponKind kind, SkillBase skill)
-    {
-        return GetEntry(kind).GetSkillWeight(skill);
-    }
-
-    public static float GetDefaultObjectiveWeight(WeaponKind kind, CombatObjective objective)
+    public static float GetObjectiveWeight(WeaponKind kind, CombatObjective objective)
     {
         return GetDefaultEntry(kind).GetObjectiveWeight(objective);
     }
 
-    public static float GetDefaultMoveWeight(WeaponKind kind, string moveCode)
+    public static float GetMoveWeight(WeaponKind kind, string moveCode)
     {
         return GetDefaultEntry(kind).GetMoveWeight(moveCode);
     }
 
-    public static float GetDefaultSkillWeight(WeaponKind kind, SkillBase skill)
+    public static float GetSkillWeight(WeaponKind kind, SkillBase skill)
     {
         return GetDefaultEntry(kind).GetSkillWeight(skill);
-    }
-
-    public void SetObjectiveWeight(WeaponKind kind, CombatObjective objective, float value)
-    {
-        GetEntry(kind).SetObjectiveWeight(objective, value);
-    }
-
-    [ContextMenu("Apply Current Defaults")]
-    public void ApplyCurrentDefaults()
-    {
-        _sword = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Sword);
-        _shield = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Shield);
-        _wand = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Wand);
-        _grimoire = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Grimoire);
-        _bible = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Bible);
-        _rosary = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Rosary);
-        _unarmed = CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Unarmed);
-    }
-
-    private void Reset()
-    {
-        ApplyCurrentDefaults();
-    }
-
-    private void OnValidate()
-    {
-        _sword ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Sword);
-        _shield ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Shield);
-        _wand ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Wand);
-        _grimoire ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Grimoire);
-        _bible ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Bible);
-        _rosary ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Rosary);
-        _unarmed ??= CombatAiWeaponWeightsEntry.CreateDefault(WeaponKind.Unarmed);
-    }
-
-    private CombatAiWeaponWeightsEntry GetEntry(WeaponKind kind)
-    {
-        return kind switch
-        {
-            WeaponKind.Sword => _sword,
-            WeaponKind.Shield => _shield,
-            WeaponKind.Wand => _wand,
-            WeaponKind.Grimoire => _grimoire,
-            WeaponKind.Bible => _bible,
-            WeaponKind.Rosary => _rosary,
-            _ => _unarmed,
-        };
     }
 
     private static CombatAiWeaponWeightsEntry GetDefaultEntry(WeaponKind kind)
@@ -114,12 +38,11 @@ public sealed class CombatAiWeaponWeightsProfile : ScriptableObject
     }
 }
 
-[Serializable]
 public sealed class CombatAiWeaponWeightsEntry
 {
-    [SerializeField] private CombatAiObjectiveWeights _objectives = new();
-    [SerializeField] private CombatAiMoveWeights _moves = new();
-    [SerializeField] private CombatAiSkillWeights _skills = new();
+    private CombatAiObjectiveWeights _objectives = new();
+    private CombatAiMoveWeights _moves = new();
+    private CombatAiSkillWeights _skills = new();
 
     public float DamageSkillWeight => _skills.Damage;
     public float ProtectSkillWeight => _skills.Protect;
@@ -174,31 +97,6 @@ public sealed class CombatAiWeaponWeightsEntry
         if (CombatAiSkillClassifier.IsDebuff(skill)) return DebuffSkillWeight;
         if (CombatAiSkillClassifier.IsStealth(skill)) return StealthSkillWeight;
         return 0f;
-    }
-
-    public void SetObjectiveWeight(CombatObjective objective, float value)
-    {
-        switch (objective)
-        {
-            case CombatObjective.AttackEnemy:
-                _objectives.AttackEnemy = value;
-                break;
-            case CombatObjective.DefendOwnStone:
-                _objectives.DefendOwnStone = value;
-                break;
-            case CombatObjective.SupportAlly:
-                _objectives.SupportAlly = value;
-                break;
-            case CombatObjective.DestroyEnemyStone:
-                _objectives.DestroyEnemyStone = value;
-                break;
-            case CombatObjective.Search:
-                _objectives.Search = value;
-                break;
-            case CombatObjective.Retreat:
-                _objectives.Retreat = value;
-                break;
-        }
     }
 
     public void ApplyDefaults(WeaponKind kind)
@@ -309,7 +207,6 @@ public sealed class CombatAiWeaponWeightsEntry
     }
 }
 
-[Serializable]
 public sealed class CombatAiObjectiveWeights
 {
     public float AttackEnemy;
@@ -320,7 +217,6 @@ public sealed class CombatAiObjectiveWeights
     public float Retreat;
 }
 
-[Serializable]
 public sealed class CombatAiMoveWeights
 {
     public float AdvanceEnemyStone;
@@ -333,7 +229,6 @@ public sealed class CombatAiMoveWeights
     public float HoldPosition;
 }
 
-[Serializable]
 public sealed class CombatAiSkillWeights
 {
     public float Damage;

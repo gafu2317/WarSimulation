@@ -2,7 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
-internal static class CombatEditModeTestUtil
+internal static partial class CombatEditModeTestUtil
 {
     public static void SetPrivateField(object target, string fieldName, object value)
     {

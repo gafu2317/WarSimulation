@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using WarSimulation.Combat.Map;
 
@@ -15,7 +16,6 @@ public sealed class CombatAiBrain : MonoBehaviour
     [SerializeField] private bool _executeMovement = true;
     [SerializeField] private bool _executeSkills = true;
     [SerializeField] private bool _executeStoneAttacks = true;
-    [SerializeField] private CombatAiWeaponWeightsProfile _weaponWeightsProfile;
 
     private Character _owner;
     private CombatAiContextCollector _contextCollector;
@@ -26,13 +26,13 @@ public sealed class CombatAiBrain : MonoBehaviour
     private float _focusedEnemyLockedUntilTime;
     private float _personalityPauseUntilTime;
     private MagicStone _cachedEnemyMainStone;
+    private readonly List<CombatAiReasonCode> _objectiveReasonCodes = new List<CombatAiReasonCode>();
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
     public CombatAiContext LastContext { get; private set; }
     public CombatSkillEvaluationResult LastSkillEvaluation { get; private set; }
     public bool HasLastSkillEvaluation { get; private set; }
     public int LastStoneDamage { get; private set; }
-    public CombatAiWeaponWeightsProfile WeaponWeightsProfile => ResolveWeaponWeightsProfile();
     public bool IsAiEnabled => _enabled;
 
     private void Awake()
@@ -87,6 +87,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         LastContext = null;
         HasLastSkillEvaluation = false;
         LastStoneDamage = 0;
+        _objectiveReasonCodes.Clear();
     }
 
     private bool TickNowCore()
@@ -102,6 +103,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         PruneFocusedEnemy(LastContext);
         CombatAiPlan previousPlan = LastPlan;
         CombatObjective previousObjective = previousPlan.Objective;
+        _objectiveReasonCodes.Clear();
         if (_personalityRuntime.TryBuildRevengePlan(out CombatAiPlan revengePlan))
         {
             LastPlan = revengePlan;
@@ -112,10 +114,10 @@ public sealed class CombatAiBrain : MonoBehaviour
         LastPlan = CombatAiPlanner.BuildPlan(
             LastContext,
             _owner.PersonalityProfile,
-            ResolveWeaponWeightsProfile(),
             _focusedEnemy,
             GetFocusCommitmentRemainingSeconds(),
-            previousObjective);
+            previousObjective,
+            _objectiveReasonCodes);
         NotifyPlanSelected(previousPlan, LastPlan);
         return ExecutePlan(LastPlan);
     }
@@ -123,7 +125,11 @@ public sealed class CombatAiBrain : MonoBehaviour
     private void NotifyPlanSelected(CombatAiPlan previous, CombatAiPlan next)
     {
         CombatAiDecisionEvents.RaisePlanSelected(_owner, previous, next);
-        CombatAiDecisionEvents.RaiseObjectiveChanged(_owner, previous.Objective, next.Objective);
+        CombatAiDecisionEvents.RaiseObjectiveChanged(
+            _owner,
+            previous.Objective,
+            next.Objective,
+            _objectiveReasonCodes);
     }
 
     public bool ExecutePlan(CombatAiPlan plan)
@@ -362,14 +368,4 @@ public sealed class CombatAiBrain : MonoBehaviour
         }
     }
 
-    private CombatAiWeaponWeightsProfile ResolveWeaponWeightsProfile()
-    {
-        if (_weaponWeightsProfile != null)
-        {
-            return _weaponWeightsProfile;
-        }
-
-        CombatSceneContext context = CombatSceneContext.Instance;
-        return context != null ? context.AiWeaponWeightsProfile : null;
-    }
 }

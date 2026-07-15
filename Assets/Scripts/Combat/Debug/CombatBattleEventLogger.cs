@@ -190,11 +190,22 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         _subscribedHealth.Clear();
     }
 
-    private void OnObjectiveChanged(Character owner, CombatObjective previous, CombatObjective next)
+    private void OnObjectiveChanged(
+        Character owner,
+        CombatObjective previous,
+        CombatObjective next,
+        IReadOnlyList<CombatAiReasonCode> reasonCodes)
     {
         if (_writer == null || owner == null) return;
 
-        IReadOnlyList<string> reasonLabels = BuildObjectiveReasonLabels(owner, previous, next);
+        var reasonLabels = new List<string>();
+        if (reasonCodes != null)
+        {
+            for (int i = 0; i < reasonCodes.Count; i++)
+            {
+                reasonLabels.Add(CombatAiDebugLabels.Reason(reasonCodes[i]));
+            }
+        }
         string weaponLabel = CombatAiDebugLabels.WeaponShort(owner.EquippedWeapon);
         float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
         WriteLine(_formatter.FormatObjectiveChange(
@@ -251,48 +262,6 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
         float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
         WriteLine(_formatter.FormatStoneDestroyed(battleTime, stoneType));
-    }
-
-    private List<string> BuildObjectiveReasonLabels(Character owner, CombatObjective previous, CombatObjective next)
-    {
-        var labels = new List<string>();
-        CombatAiContextCollector collector = owner.GetComponent<CombatAiContextCollector>();
-        if (collector == null) return labels;
-
-        CombatAiContext context = collector.Collect(owner);
-        CombatAiBrain brain = owner.GetComponent<CombatAiBrain>();
-        CombatAiWeaponWeightsProfile weaponWeightsProfile = brain != null
-            ? brain.WeaponWeightsProfile
-            : CombatSceneContext.Instance != null
-                ? CombatSceneContext.Instance.AiWeaponWeightsProfile
-                : null;
-
-        CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(
-            context,
-            owner.PersonalityProfile,
-            weaponWeightsProfile,
-            focusEnemy: null,
-            focusCommitmentRemainingSeconds: 0f,
-            previousObjective: previous);
-        if (snapshot == null) return labels;
-
-        for (int i = 0; i < snapshot.ObjectiveEntries.Count; i++)
-        {
-            CombatAiObjectiveScoreEntry entry = snapshot.ObjectiveEntries[i];
-            if (entry.Objective != next) continue;
-
-            CombatAiScoreBreakdown breakdown = entry.Breakdown;
-            if (breakdown == null) break;
-
-            for (int j = 0; j < breakdown.ReasonCodes.Count; j++)
-            {
-                labels.Add(CombatAiDebugLabels.Reason(breakdown.ReasonCodes[j]));
-            }
-
-            break;
-        }
-
-        return labels;
     }
 
     private bool TryGetBattleSnapshot(

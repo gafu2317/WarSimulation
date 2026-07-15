@@ -51,135 +51,232 @@ public static partial class CombatAiPlanner
     public static CombatAiPlan BuildPlan(
         CombatAiContext context,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile = null,
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
-        CombatObjective previousObjective = CombatObjective.Search)
+        CombatObjective previousObjective = CombatObjective.Search,
+        List<CombatAiReasonCode> selectedObjectiveReasons = null)
     {
         if (context == null || context.Owner == null) return CombatAiPlan.None;
-        return BuildPlanDirect(context, personalityProfile, weaponWeightsProfile, focusEnemy, focusCommitmentRemainingSeconds, previousObjective);
+        return BuildPlanCore(
+            context,
+            personalityProfile,
+            focusEnemy,
+            focusCommitmentRemainingSeconds,
+            previousObjective,
+            null,
+            selectedObjectiveReasons);
     }
 
-    private static CombatAiPlan BuildPlanDirect(
+    private static CombatAiPlan BuildPlanCore(
         CombatAiContext context,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
-        CombatObjective previousObjective)
+        CombatObjective previousObjective,
+        CombatAiDebugSnapshot snapshot,
+        List<CombatAiReasonCode> selectedObjectiveReasons)
     {
-        CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context, captureDebug: false);
+        bool captureDebug = snapshot != null;
+        CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context);
+        CombatObjective objective;
+        if (captureDebug)
+        {
+            snapshot.Assessment = assessment;
+            CombatAiObjectiveScorer.BuildEntries(
+                snapshot,
+                personalityProfile,
+                focusEnemy,
+                focusCommitmentRemainingSeconds,
+                previousObjective);
+            objective = snapshot.SelectedObjective != null
+                ? snapshot.SelectedObjective.Objective
+                : CombatObjective.Search;
+            if (selectedObjectiveReasons != null)
+            {
+                selectedObjectiveReasons.Clear();
+                if (snapshot.SelectedObjective?.Breakdown != null)
+                {
+                    selectedObjectiveReasons.AddRange(snapshot.SelectedObjective.Breakdown.ReasonCodes);
+                }
+            }
+        }
+        else
+        {
+            objective = CombatAiObjectiveScorer.SelectBestObjective(
+                context,
+                assessment,
+                personalityProfile,
+                focusEnemy,
+                focusCommitmentRemainingSeconds,
+                previousObjective,
+                selectedObjectiveReasons);
+        }
 
-        CombatObjective objective = CombatAiObjectiveScorer.SelectBestObjective(
-            context, assessment, personalityProfile, weaponWeightsProfile,
-            focusEnemy, focusCommitmentRemainingSeconds, previousObjective);
-
-        CombatMoveTarget moveTarget = SelectBestMoveDirect(
-            context, assessment, personalityProfile, weaponWeightsProfile,
-            objective, focusEnemy, focusCommitmentRemainingSeconds);
-
-        SelectBestSkillDirect(
-            context, assessment, personalityProfile, weaponWeightsProfile,
+        CombatMoveTarget moveTarget = SelectBestMove(
+            context, assessment, personalityProfile,
             objective, focusEnemy, focusCommitmentRemainingSeconds,
-            out SkillBase bestSkill, out SkillExecutionContext bestSkillContext);
+            captureDebug ? snapshot.MoveEntries : null,
+            out CombatAiMoveCandidateEntry selectedMove);
+        if (captureDebug) snapshot.SelectedMove = selectedMove;
 
-        return new CombatAiPlan(objective, moveTarget, bestSkill, bestSkillContext);
+        SelectBestSkill(
+            context, assessment, personalityProfile,
+            objective, focusEnemy, focusCommitmentRemainingSeconds,
+            captureDebug ? snapshot.SkillEntries : null,
+            out SkillBase bestSkill,
+            out SkillExecutionContext bestSkillContext,
+            out CombatAiSkillCandidateEntry selectedSkill);
+        if (captureDebug) snapshot.SelectedSkill = selectedSkill;
+
+        var plan = new CombatAiPlan(objective, moveTarget, bestSkill, bestSkillContext);
+        return plan;
     }
 
-    private static CombatMoveTarget SelectBestMoveDirect(
+    private static CombatMoveTarget SelectBestMove(
         CombatAiContext context,
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         CombatObjective objective,
         Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
+        float focusCommitmentRemainingSeconds,
+        List<CombatAiMoveCandidateEntry> entries,
+        out CombatAiMoveCandidateEntry selectedEntry)
     {
         Character owner = context.Owner;
         CombatMoveTarget bestTarget = CombatMoveTarget.None;
         float bestScore = float.NegativeInfinity;
+        selectedEntry = null;
+        entries?.Clear();
 
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.AdvanceEnemyStone, CreateEnemyStoneTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.AdvanceEnemyStone, "敵魔石へ前進", CreateEnemyStoneTarget(context), objective, focusEnemy,
+            focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         for (int i = 0; i < context.BridgePositions.Count; i++)
         {
-            TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-                CombatAiMoveCode.AdvanceViaBridge, CreateBridgeWaypointTarget(context, context.BridgePositions[i]), objective,
-                focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+            TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+                CombatAiMoveCode.AdvanceViaBridge, "橋を経由して敵魔石へ前進",
+                CreateBridgeWaypointTarget(context, context.BridgePositions[i]), objective, focusEnemy,
+                focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         }
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.ReturnOwnStone, CreateOwnStoneTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.PursueEnemy, CreateBestEnemyTarget(context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.SupportAlly, CreateBestAllyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.InterceptThreat, CreateBestBodyBlockTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.ReturnOwnStone, "自軍魔石へ戻る", CreateOwnStoneTarget(context), objective, focusEnemy,
+            focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.PursueEnemy, "敵へ接近", CreateBestEnemyTarget(context, focusEnemy, focusCommitmentRemainingSeconds),
+            objective, focusEnemy, focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.SupportAlly, "味方へ接近", CreateBestAllyTarget(context), objective, focusEnemy,
+            focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.InterceptThreat, "敵の進路を遮断", CreateBestBodyBlockTarget(context), objective, focusEnemy,
+            focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         WeaponKind ownerWeaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
         for (int i = 0; ownerWeaponKind != WeaponKind.Shield && i < context.HighGroundCandidates.Count; i++)
         {
-            TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-                CombatAiMoveCode.TakeHighGround, CreatePositionTargetIfMeaningful(owner, context.HighGroundCandidates[i]), objective,
-                focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+            TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+                CombatAiMoveCode.TakeHighGround, "高所へ移動", CreatePositionTargetIfMeaningful(owner, context.HighGroundCandidates[i]),
+                objective, focusEnemy, focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         }
         {
             CombatMoveTarget forestTarget = IsRangedOrSupportWeapon(ownerWeaponKind)
                 ? CreateCoverPositionTarget(context, owner)
                 : CreateNearestPositionTarget(owner, context.ForestCandidates);
-            TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-                CombatAiMoveCode.MoveForest, forestTarget, objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+            TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+                CombatAiMoveCode.MoveForest, "森へ移動", forestTarget, objective, focusEnemy, focusCommitmentRemainingSeconds,
+                entries, ref bestScore, ref bestTarget, ref selectedEntry);
         }
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.SearchLastKnown, CreateLastKnownEnemyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.PersonalitySignature, CreatePersonalitySignatureTarget(context, personalityProfile), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.HoldPosition, CombatMoveTarget.None, objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.SearchLastKnown, "最終既知地点へ移動", CreateLastKnownEnemyTarget(context), objective, focusEnemy,
+            focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.PersonalitySignature, "性格固有の移動", CreatePersonalitySignatureTarget(context, personalityProfile),
+            objective, focusEnemy, focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
+        TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
+            CombatAiMoveCode.HoldPosition, "待機", CombatMoveTarget.None, objective, focusEnemy,
+            focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
 
         return bestTarget;
     }
 
-    private static void TryScoreMoveDirectCandidate(
+    private static void TryScoreMoveCandidate(
         Character owner,
         CombatAiContext context,
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         string code,
+        string japanese,
         CombatMoveTarget target,
         CombatObjective objective,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
+        List<CombatAiMoveCandidateEntry> entries,
         ref float bestScore,
-        ref CombatMoveTarget bestTarget)
+        ref CombatMoveTarget bestTarget,
+        ref CombatAiMoveCandidateEntry selectedEntry)
     {
         if (code != CombatAiMoveCode.HoldPosition && !target.HasDestination) return;
-        float score = CombatAiMoveScorer.ScoreDirect(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            code, target, objective, focusEnemy, focusCommitmentRemainingSeconds);
+        CombatAiScoreBreakdown breakdown = entries != null ? new CombatAiScoreBreakdown() : null;
+        float score = CombatAiMoveScorer.Score(
+            owner, context, assessment, personalityProfile,
+            code, target, objective, focusEnemy, focusCommitmentRemainingSeconds, breakdown);
+        CombatAiMoveCandidateEntry entry = null;
+        if (entries != null)
+        {
+            entry = new CombatAiMoveCandidateEntry
+            {
+                Code = code,
+                Label = CombatAiDebugLabels.MoveCode(code, japanese),
+                Target = target,
+                Breakdown = breakdown,
+            };
+            entries.Add(entry);
+        }
         if (score > bestScore)
         {
             bestScore = score;
             bestTarget = target;
+            selectedEntry = entry;
         }
     }
 
-    private static void SelectBestSkillDirect(
+    private static void SelectBestSkill(
         CombatAiContext context,
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
         CombatObjective objective,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
+        List<CombatAiSkillCandidateEntry> entries,
         out SkillBase bestSkill,
-        out SkillExecutionContext bestSkillContext)
+        out SkillExecutionContext bestSkillContext,
+        out CombatAiSkillCandidateEntry selectedEntry)
     {
         bestSkill = null;
         bestSkillContext = SkillExecutionContext.None;
+        selectedEntry = null;
+        entries?.Clear();
         IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
         float waitBaseScore = skills.Count == 0 ? 12f : 3f;
         float waitSituationScore = objective == CombatObjective.Retreat ? 8f : 0f;
         float bestScore = waitBaseScore + waitSituationScore;
+        CombatAiSkillCandidateEntry waitEntry = null;
+        if (entries != null)
+        {
+            waitEntry = new CombatAiSkillCandidateEntry
+            {
+                Code = "Wait",
+                Label = CombatAiDebugLabels.Format("Wait", "何もしない"),
+                Skill = null,
+                SkillContext = SkillExecutionContext.None,
+                Evaluation = default,
+                Breakdown = new CombatAiScoreBreakdown
+                {
+                    BaseScore = waitBaseScore,
+                    SituationScore = waitSituationScore,
+                },
+            };
+            selectedEntry = waitEntry;
+        }
 
         for (int i = 0; i < skills.Count; i++)
         {
@@ -191,25 +288,83 @@ public static partial class CombatAiPlanner
             {
                 CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, s_skillContextsBuffer[j]);
                 if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
-                float score = GetSkillBaseScore(skill, objective)
-                    + GetSkillWeaponScore(weaponWeightsProfile, context.Owner.EquippedWeapon, skill)
-                    + GetSkillPersonalityScore(context.Owner, personalityProfile, skill, objective)
-                    + GetSkillSituationScore(context, assessment, skill, evaluation, objective)
-                    + CombatAiFocusTargeting.GetSkillScore(context, context.Owner.EquippedWeapon, skill, evaluation, focusEnemy, focusCommitmentRemainingSeconds);
+                CombatAiScoreBreakdown breakdown = entries != null ? new CombatAiScoreBreakdown() : null;
+                float score = ScoreSkillCandidate(
+                    context,
+                    assessment,
+                    personalityProfile,
+                    skill,
+                    evaluation,
+                    objective,
+                    focusEnemy,
+                    focusCommitmentRemainingSeconds,
+                    breakdown);
+                CombatAiSkillCandidateEntry entry = null;
+                if (entries != null)
+                {
+                    entry = new CombatAiSkillCandidateEntry
+                    {
+                        Code = BuildSkillCandidateCode(skill, j),
+                        Label = CombatAiDebugLabels.Skill(skill) + " / " + FormatSkillContextLabel(evaluation.Context),
+                        Skill = skill,
+                        SkillContext = evaluation.Context,
+                        Evaluation = evaluation,
+                        Breakdown = breakdown,
+                    };
+                    entries.Add(entry);
+                }
                 if (score > bestScore)
                 {
                     bestScore = score;
                     bestSkill = skill;
                     bestSkillContext = evaluation.Context;
+                    selectedEntry = entry;
                 }
             }
         }
+
+        if (entries != null) entries.Add(waitEntry);
+    }
+
+    private static float ScoreSkillCandidate(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatAiPersonalityProfile personalityProfile,
+        SkillBase skill,
+        CombatSkillEvaluationResult evaluation,
+        CombatObjective objective,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        CombatAiScoreBreakdown breakdown)
+    {
+        float baseScore = GetSkillBaseScore(skill, objective);
+        float weaponScore = GetSkillWeaponScore(context.Owner.EquippedWeapon, skill);
+        float personalityScore = GetSkillPersonalityScore(context.Owner, personalityProfile, skill, objective);
+        float situationScore = GetSkillSituationScore(context, assessment, skill, evaluation, objective)
+            + CombatAiFocusTargeting.GetSkillScore(
+                context,
+                context.Owner.EquippedWeapon,
+                skill,
+                evaluation,
+                focusEnemy,
+                focusCommitmentRemainingSeconds);
+        if (breakdown != null)
+        {
+            breakdown.BaseScore = baseScore;
+            breakdown.WeaponScore = weaponScore;
+            breakdown.PersonalityScore = personalityScore;
+            breakdown.SituationScore = situationScore;
+            AddSkillReasons(evaluation, breakdown);
+            if (weaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
+            if (personalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
+        }
+
+        return baseScore + weaponScore + personalityScore + situationScore;
     }
 
     public static CombatAiDebugSnapshot BuildDebugSnapshot(
         CombatAiContext context,
         CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile = null,
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search)
@@ -223,176 +378,16 @@ public static partial class CombatAiPlanner
         {
             Owner = context.Owner,
             Context = context,
-            ContextSummary = CombatAiAssessmentBuilder.BuildSummary(context, personalityProfile, weaponWeightsProfile),
-            Assessment = CombatAiAssessmentBuilder.Build(context, captureDebug: true),
         };
-
-        CombatAiObjectiveScorer.BuildEntries(
-            snapshot,
+        BuildPlanCore(
+            context,
             personalityProfile,
-            weaponWeightsProfile,
             focusEnemy,
             focusCommitmentRemainingSeconds,
-            previousObjective);
-        snapshot.SelectedObjective = SelectHighest(snapshot.ObjectiveEntries);
-        BuildMoveEntries(
+            previousObjective,
             snapshot,
-            personalityProfile,
-            weaponWeightsProfile,
-            focusEnemy,
-            focusCommitmentRemainingSeconds);
-        snapshot.SelectedMove = SelectHighest(snapshot.MoveEntries);
-        BuildSkillEntries(
-            snapshot,
-            personalityProfile,
-            weaponWeightsProfile,
-            focusEnemy,
-            focusCommitmentRemainingSeconds);
-        snapshot.SelectedSkill = SelectHighest(snapshot.SkillEntries);
-
-        snapshot.FinalPlan = new CombatAiPlan(
-            snapshot.SelectedObjective != null ? snapshot.SelectedObjective.Objective : CombatObjective.Search,
-            snapshot.SelectedMove != null ? snapshot.SelectedMove.Target : CombatMoveTarget.None,
-            snapshot.SelectedSkill != null ? snapshot.SelectedSkill.Skill : null,
-            snapshot.SelectedSkill != null ? snapshot.SelectedSkill.SkillContext : SkillExecutionContext.None);
+            null);
         return snapshot;
-    }
-
-    private static void BuildMoveEntries(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
-    {
-        snapshot.MoveEntries.Clear();
-        CombatObjective objective = snapshot.SelectedObjective != null ? snapshot.SelectedObjective.Objective : CombatObjective.Search;
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.AdvanceEnemyStone, "敵魔石へ前進", CreateEnemyStoneTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        for (int i = 0; i < snapshot.Context.BridgePositions.Count; i++)
-        {
-            AddMoveCandidate(
-                snapshot,
-                personalityProfile,
-                weaponWeightsProfile,
-                CombatAiMoveCode.AdvanceViaBridge,
-                "橋を経由して敵魔石へ前進",
-                CreateBridgeWaypointTarget(snapshot.Context, snapshot.Context.BridgePositions[i]),
-                objective,
-                focusEnemy,
-                focusCommitmentRemainingSeconds);
-        }
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.ReturnOwnStone, "自軍魔石へ戻る", CreateOwnStoneTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.PursueEnemy, "敵へ接近", CreateBestEnemyTarget(snapshot.Context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SupportAlly, "味方へ接近", CreateBestAllyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.InterceptThreat, "敵の進路を遮断", CreateBestBodyBlockTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        WeaponKind ownerWeaponKind = snapshot.Owner.EquippedWeapon != null
-            ? snapshot.Owner.EquippedWeapon.Kind
-            : WeaponKind.Unarmed;
-        for (int i = 0; ownerWeaponKind != WeaponKind.Shield && i < snapshot.Context.HighGroundCandidates.Count; i++)
-        {
-            AddMoveCandidate(
-                snapshot,
-                personalityProfile,
-                weaponWeightsProfile,
-                CombatAiMoveCode.TakeHighGround,
-                "高所へ移動",
-                CreatePositionTargetIfMeaningful(snapshot.Owner, snapshot.Context.HighGroundCandidates[i]),
-                objective,
-                focusEnemy,
-                focusCommitmentRemainingSeconds);
-        }
-        {
-            CombatMoveTarget forestTarget = IsRangedOrSupportWeapon(ownerWeaponKind)
-                ? CreateCoverPositionTarget(snapshot.Context, snapshot.Owner)
-                : CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.ForestCandidates);
-            AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.MoveForest, "森へ移動", forestTarget, objective, focusEnemy, focusCommitmentRemainingSeconds);
-        }
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SearchLastKnown, "最終既知地点へ移動", CreateLastKnownEnemyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.PersonalitySignature, "性格固有の移動", CreatePersonalitySignatureTarget(snapshot.Context, personalityProfile), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.HoldPosition, "待機", CombatMoveTarget.None, objective, focusEnemy, focusCommitmentRemainingSeconds);
-    }
-
-    private static void BuildSkillEntries(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
-    {
-        snapshot.SkillEntries.Clear();
-        IReadOnlyList<SkillBase> skills = snapshot.Owner.AvailableCombatSkills;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            SkillBase skill = skills[i];
-            AddSkillEntries(snapshot, personalityProfile, weaponWeightsProfile, skill, focusEnemy, focusCommitmentRemainingSeconds);
-        }
-
-        var waitBreakdown = new CombatAiScoreBreakdown
-        {
-            BaseScore = snapshot.SkillEntries.Count == 0 ? 12f : 3f,
-            SituationScore = snapshot.SelectedObjective != null && snapshot.SelectedObjective.Objective == CombatObjective.Retreat ? 8f : 0f,
-        };
-        snapshot.SkillEntries.Add(new CombatAiSkillCandidateEntry
-        {
-            Code = "Wait",
-            Label = CombatAiDebugLabels.Format("Wait", "何もしない"),
-            Skill = null,
-            SkillContext = SkillExecutionContext.None,
-            Evaluation = default,
-            Breakdown = waitBreakdown,
-        });
-    }
-
-    private static void AddMoveCandidate(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        string code,
-        string japanese,
-        CombatMoveTarget target,
-        CombatObjective objective,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
-    {
-        if (code != CombatAiMoveCode.HoldPosition && !target.HasDestination)
-        {
-            return;
-        }
-
-        CombatAiScoreBreakdown breakdown = CombatAiMoveScorer.Score(
-            snapshot,
-            personalityProfile,
-            weaponWeightsProfile,
-            code,
-            target,
-            objective,
-            focusEnemy,
-            focusCommitmentRemainingSeconds);
-
-        snapshot.MoveEntries.Add(new CombatAiMoveCandidateEntry
-        {
-            Code = code,
-            Label = CombatAiDebugLabels.MoveCode(code, japanese),
-            Target = target,
-            Breakdown = breakdown,
-        });
-    }
-
-    private static void AddSkillEntries(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        SkillBase skill,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
-    {
-        List<SkillExecutionContext> contexts = CombatAiSkillContextBuilder.Build(snapshot.Context, snapshot.Owner, skill);
-        for (int i = 0; i < contexts.Count; i++)
-        {
-            CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(snapshot.Owner, skill, contexts[i]);
-            if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
-            AddSkillEntry(snapshot, personalityProfile, weaponWeightsProfile, skill, contexts[i], i, focusEnemy, focusCommitmentRemainingSeconds);
-        }
     }
 
     private static bool CanPersonalityUseSkill(
@@ -408,41 +403,6 @@ public static partial class CombatAiPlanner
         }
 
         return true;
-    }
-
-    private static void AddSkillEntry(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        SkillBase skill,
-        SkillExecutionContext context,
-        int contextIndex,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds)
-    {
-        CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(snapshot.Owner, skill, context);
-        CombatObjective objective = snapshot.SelectedObjective != null ? snapshot.SelectedObjective.Objective : CombatObjective.Search;
-        var breakdown = new CombatAiScoreBreakdown
-        {
-            BaseScore = GetSkillBaseScore(skill, objective),
-            WeaponScore = GetSkillWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, skill),
-            PersonalityScore = GetSkillPersonalityScore(snapshot.Owner, personalityProfile, skill, objective),
-            SituationScore = GetSkillSituationScore(snapshot.Context, snapshot.Assessment, skill, evaluation, objective)
-                + CombatAiFocusTargeting.GetSkillScore(snapshot.Context, snapshot.Owner.EquippedWeapon, skill, evaluation, focusEnemy, focusCommitmentRemainingSeconds),
-        };
-        AddSkillReasons(evaluation, breakdown);
-        if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
-        if (breakdown.PersonalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
-
-        snapshot.SkillEntries.Add(new CombatAiSkillCandidateEntry
-        {
-            Code = BuildSkillCandidateCode(skill, contextIndex),
-            Label = CombatAiDebugLabels.Skill(skill) + " / " + FormatSkillContextLabel(evaluation.Context),
-            Skill = skill,
-            SkillContext = evaluation.Context,
-            Evaluation = evaluation,
-            Breakdown = breakdown,
-        });
     }
 
     private static float GetSkillBaseScore(SkillBase skill, CombatObjective objective)
@@ -466,35 +426,15 @@ public static partial class CombatAiPlanner
         return score;
     }
 
-    private static float GetSkillWeaponScore(
-        CombatAiWeaponWeightsProfile weaponWeightsProfile,
-        WeaponBase weapon,
-        SkillBase skill)
+    private static float GetSkillWeaponScore(WeaponBase weapon, SkillBase skill)
     {
         if (weapon == null || skill == null) return 0f;
-        return weaponWeightsProfile != null
-            ? weaponWeightsProfile.GetSkillWeight(weapon.Kind, skill)
-            : CombatAiWeaponWeightsProfile.GetDefaultSkillWeight(weapon.Kind, skill);
+        return CombatAiWeaponWeights.GetSkillWeight(weapon.Kind, skill);
     }
 
     private static float GetSkillPersonalityScore(Character owner, CombatAiPersonalityProfile personalityProfile, SkillBase skill, CombatObjective objective)
     {
-        if (personalityProfile == null || skill == null) return 0f;
-        float score = 0f;
-        if (CombatAiSkillClassifier.IsDamage(skill))
-        {
-            score = personalityProfile.Aggression * 10f - personalityProfile.Caution * 2f;
-        }
-        else if (CombatAiSkillClassifier.IsSupport(skill))
-        {
-            score = personalityProfile.SupportBias * 12f + personalityProfile.Caution * 4f;
-        }
-        else if (CombatAiSkillClassifier.IsMobility(skill) && objective == CombatObjective.Search)
-        {
-            score = personalityProfile.ExplorationBias * 10f;
-        }
-
-        return score + CombatAiPersonalityBehavior.GetSkillScore(owner, personalityProfile, skill);
+        return CombatAiPersonalityBehavior.GetSkillScore(owner, personalityProfile, skill, objective);
     }
 
     private static float GetSkillSituationScore(
@@ -845,54 +785,6 @@ public static partial class CombatAiPlanner
         return "None";
     }
 
-    private static CombatAiObjectiveScoreEntry SelectHighest(List<CombatAiObjectiveScoreEntry> entries)
-    {
-        CombatAiObjectiveScoreEntry best = null;
-        float bestScore = float.NegativeInfinity;
-        for (int i = 0; i < entries.Count; i++)
-        {
-            CombatAiObjectiveScoreEntry entry = entries[i];
-            if (entry == null || entry.Breakdown == null) continue;
-            if (entry.Breakdown.Total <= bestScore) continue;
-            bestScore = entry.Breakdown.Total;
-            best = entry;
-        }
-
-        return best;
-    }
-
-    private static CombatAiMoveCandidateEntry SelectHighest(List<CombatAiMoveCandidateEntry> entries)
-    {
-        CombatAiMoveCandidateEntry best = null;
-        float bestScore = float.NegativeInfinity;
-        for (int i = 0; i < entries.Count; i++)
-        {
-            CombatAiMoveCandidateEntry entry = entries[i];
-            if (entry == null || entry.Breakdown == null) continue;
-            if (entry.Breakdown.Total <= bestScore) continue;
-            bestScore = entry.Breakdown.Total;
-            best = entry;
-        }
-
-        return best;
-    }
-
-    private static CombatAiSkillCandidateEntry SelectHighest(List<CombatAiSkillCandidateEntry> entries)
-    {
-        CombatAiSkillCandidateEntry best = null;
-        float bestScore = float.NegativeInfinity;
-        for (int i = 0; i < entries.Count; i++)
-        {
-            CombatAiSkillCandidateEntry entry = entries[i];
-            if (entry == null || entry.Breakdown == null) continue;
-            if (entry.Breakdown.Total <= bestScore) continue;
-            bestScore = entry.Breakdown.Total;
-            best = entry;
-        }
-
-        return best;
-    }
-
     private static void AddReason(CombatAiScoreBreakdown breakdown, CombatAiReasonCode reason)
     {
         if (!breakdown.ReasonCodes.Contains(reason))
@@ -921,8 +813,6 @@ public static partial class CombatAiPlanner
                 hasMemory: false,
                 hasKnownPosition: true,
                 knownPosition: character.transform.position,
-                hasLastKnownPosition: false,
-                lastKnownPosition: default,
                 memoryAgeSeconds: 0f,
                 recognizesOwner: false,
                 hp: character.Health.HP,
