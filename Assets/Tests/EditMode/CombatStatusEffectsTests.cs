@@ -5,6 +5,104 @@ using UnityEngine;
 public sealed class CombatStatusEffectsTests
 {
     [Test]
+    public void CombatStatusEffects_ReportsBindAndPoisonSources()
+    {
+        GameObject targetGo = new GameObject("Target");
+        GameObject sourceGo = new GameObject("Source");
+        var reportedTypes = new System.Collections.Generic.List<CombatStatusEffects.EffectType>();
+        Character reportedSource = null;
+        void Handle(Character target, CombatStatusEffects.EffectType type, Character source)
+        {
+            reportedTypes.Add(type);
+            reportedSource = source;
+        }
+
+        CombatStatusEffectEvents.Applied += Handle;
+        try
+        {
+            Character target = targetGo.AddComponent<Character>();
+            Character source = sourceGo.AddComponent<Character>();
+
+            target.StatusEffects.ApplyBind(3f, source: source);
+            target.StatusEffects.ApplyPoison(4, 5f, 1f, source: source);
+
+            Assert.That(reportedTypes, Is.EqualTo(new[]
+            {
+                CombatStatusEffects.EffectType.Bind,
+                CombatStatusEffects.EffectType.Poison,
+            }));
+            Assert.That(reportedSource, Is.SameAs(source));
+        }
+        finally
+        {
+            CombatStatusEffectEvents.Applied -= Handle;
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(sourceGo);
+        }
+    }
+
+    [Test]
+    public void CombatStatusEffects_ReportsLifecycleAndKeepsPeriodicDamageSource()
+    {
+        GameObject targetGo = new GameObject("Target");
+        GameObject sourceGo = new GameObject("Source");
+        var changes = new System.Collections.Generic.List<CombatStatusEffectChange>();
+        CombatDamageEvent reportedDamage = default;
+        void HandleChange(CombatStatusEffectChange change) => changes.Add(change);
+        void HandleDamage(CombatDamageEvent damage) => reportedDamage = damage;
+
+        CombatStatusEffectEvents.Changed += HandleChange;
+        CombatDamageEvents.Resolved += HandleDamage;
+        try
+        {
+            Character target = targetGo.AddComponent<Character>();
+            Character source = sourceGo.AddComponent<Character>();
+            target.Health.Initialize(30);
+            SkillBase skill = new IdentifiedSkill(new GrimoirePoisonSkill(), SkillId.Grimoire_Poison);
+            CombatSkillActionInfo action = CombatSkillActionEvents.Start(
+                source,
+                skill,
+                SkillExecutionContext.ForTarget(target));
+
+            CombatSkillActionEvents.Execute(action, () =>
+            {
+                target.StatusEffects.ApplyPoison(4, 5f, 1f, "Poison", source);
+                target.StatusEffects.ApplyPoison(4, 5f, 1f, "Poison", source);
+                target.StatusEffects.ApplyBind(2f, "Bind", source);
+                target.StatusEffects.ClearEffect("Bind");
+            });
+            ForceAllPeriodicEffectsReadyNow(target.StatusEffects);
+            target.StatusEffects.GetActiveEffectSnapshots();
+            ExpireAllEffects(target.StatusEffects);
+            target.StatusEffects.GetActiveEffectSnapshots();
+
+            Assert.That(changes.Exists(change =>
+                change.Kind == CombatStatusEffectChangeKind.Applied &&
+                change.Source.Character == source &&
+                change.Source.SkillId == SkillId.Grimoire_Poison), Is.True);
+            Assert.That(changes.Exists(change =>
+                change.Kind == CombatStatusEffectChangeKind.Tick &&
+                change.Amount == 4), Is.True);
+            Assert.That(changes.Exists(change =>
+                change.Kind == CombatStatusEffectChangeKind.Refreshed), Is.True);
+            Assert.That(changes.Exists(change =>
+                change.Kind == CombatStatusEffectChangeKind.Removed), Is.True);
+            Assert.That(changes.Exists(change =>
+                change.Kind == CombatStatusEffectChangeKind.Expired), Is.True);
+            Assert.That(reportedDamage.Target, Is.SameAs(target));
+            Assert.That(reportedDamage.Source.Character, Is.SameAs(source));
+            Assert.That(reportedDamage.Source.SkillId, Is.EqualTo(SkillId.Grimoire_Poison));
+        }
+        finally
+        {
+            CombatStatusEffectEvents.Changed -= HandleChange;
+            CombatDamageEvents.Resolved -= HandleDamage;
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(sourceGo);
+        }
+    }
+
+    [Test]
     public void CombatStatusEffects_ApplyReducesMultiplier()
     {
         GameObject characterGo = new GameObject("Character");

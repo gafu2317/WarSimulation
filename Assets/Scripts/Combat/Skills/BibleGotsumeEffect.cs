@@ -5,14 +5,20 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
     private Character _wearer;
     private int _reflectDamage;
     private float _expiresAt;
+    private CombatEffectSource _source;
 
-    public void Initialize(Character wearer, int reflectDamage, float durationSeconds)
+    public void Initialize(
+        Character wearer,
+        int reflectDamage,
+        float durationSeconds,
+        CombatEffectSource source)
     {
         CleanupSubscription();
 
         _wearer = wearer;
         _reflectDamage = Mathf.Max(1, reflectDamage);
         _expiresAt = Time.time + Mathf.Max(0f, durationSeconds);
+        _source = source;
 
         Subscribe();
     }
@@ -43,7 +49,7 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
         if (attacker.Team == _wearer.Team) return;
         if (attacker.Health == null || !attacker.Health.IsTargetable) return;
 
-        attacker.Health.TakeDamage(_reflectDamage, null);
+        attacker.Health.TakeDamage(_reflectDamage, _source);
     }
 
     private void DestroySelf()

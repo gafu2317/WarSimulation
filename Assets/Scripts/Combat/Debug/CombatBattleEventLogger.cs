@@ -141,8 +141,8 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     {
         CombatAiDecisionEvents.ObjectiveChanged -= OnObjectiveChanged;
         CombatAiDecisionEvents.ObjectiveChanged += OnObjectiveChanged;
-        CombatSkillUseEvents.SkillUsed -= OnSkillUsed;
-        CombatSkillUseEvents.SkillUsed += OnSkillUsed;
+        CombatSkillActionEvents.Completed -= OnSkillCompleted;
+        CombatSkillActionEvents.Completed += OnSkillCompleted;
         ResolveDependencies();
         if (_magicStoneSystem != null)
         {
@@ -154,7 +154,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     private void UnsubscribeEvents()
     {
         CombatAiDecisionEvents.ObjectiveChanged -= OnObjectiveChanged;
-        CombatSkillUseEvents.SkillUsed -= OnSkillUsed;
+        CombatSkillActionEvents.Completed -= OnSkillCompleted;
         if (_magicStoneSystem != null)
         {
             _magicStoneSystem.MainStoneDestroyed -= OnMainStoneDestroyed;
@@ -206,12 +206,28 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
             reasonLabels));
     }
 
-    private void OnSkillUsed(Character user, string skillName)
+    private void OnSkillCompleted(CombatSkillActionResult result)
     {
-        if (_writer == null || user == null) return;
+        Character user = result?.Action.Actor;
+        if (_writer == null || user == null || result.Outcome == CombatSkillActionOutcome.Failed) return;
+
+        Character target = result.Action.Context.PrimaryTarget;
+        if (target == null)
+        {
+            for (int i = 0; i < result.Effects.Count; i++)
+            {
+                if (result.Effects[i].Target == null) continue;
+                target = result.Effects[i].Target;
+                break;
+            }
+        }
 
         float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
-        string line = _formatter.FormatSkillUsed(battleTime, user.name, skillName, targetName: null);
+        string line = _formatter.FormatSkillUsed(
+            battleTime,
+            user.name,
+            result.Action.SkillName,
+            target != null ? target.name : null);
         if (!string.IsNullOrEmpty(line))
         {
             WriteLine(line);

@@ -7,28 +7,30 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 {
     public sealed class IncomingDamageContext
     {
-        public IncomingDamageContext(int amount, Character attacker)
+        public IncomingDamageContext(int amount, CombatEffectSource attackSource)
         {
             Amount = amount;
-            Attacker = attacker;
+            AttackSource = attackSource;
         }
 
         public int Amount { get; set; }
-        public Character Attacker { get; }
+        public CombatEffectSource AttackSource { get; }
+        public Character Attacker => AttackSource.Character;
+        public CombatEffectSource PreventionSource { get; set; }
         public bool IsHandled { get; set; }
     }
 
     [SerializeField, Min(1)] private int _maxHP = 1;
     [SerializeField, Min(0)] private int _hp = 1;
     [SerializeField, Min(0.1f)] private float _retreatArrivalDistance = 1.25f;
-    [SerializeField, Min(0f)] private float _minReviveDelay = 5f;
+    [SerializeField, Min(0f)] private float _reviveDelayAfterArrival = 15f;
 
     private Character _owner;
     private CombatCharacterBody _body;
     private CombatCharacterSystem _characterSystem;
     private Vector3 _retreatDestination;
     private bool _hasRetreatDestination;
-    private float _retreatStartTime;
+    private float _reviveAtTime = float.PositiveInfinity;
     private bool _canReviveAfterRetreat = true;
     private bool _withdrawalCompleted;
 
@@ -73,6 +75,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         _hp = Mathf.Clamp(currentHP < 0 ? _maxHP : currentHP, 0, _maxHP);
         LifeState = _hp > 0 ? LifeState.Active : LifeState.Retreating;
         _hasRetreatDestination = false;
+        _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = true;
         _withdrawalCompleted = false;
         NotifyHealthChanged();
@@ -80,50 +83,95 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
     public int TakeDamage(int amount, Character attacker = null)
     {
+        return TakeDamage(amount, CombatEffectSource.Capture(attacker));
+    }
+
+    public int TakeDamage(int amount, CombatEffectSource source)
+    {
         if (amount <= 0 || !IsTargetable) return 0;
 
-        var incomingDamage = new IncomingDamageContext(amount, attacker);
+        int requestedDamage = Mathf.Min(amount, _hp);
+        var incomingDamage = new IncomingDamageContext(amount, source);
         IncomingDamage?.Invoke(incomingDamage);
-        if (incomingDamage.IsHandled) return 0;
+        if (incomingDamage.IsHandled)
+        {
+            CombatDamageEvents.RaiseDamagePrevented(
+                ResolveOwner(),
+                requestedDamage,
+                source,
+                incomingDamage.PreventionSource);
+            return 0;
+        }
 
         amount = incomingDamage.Amount;
-        if (amount <= 0 || !IsTargetable) return 0;
+        if (amount <= 0 || !IsTargetable)
+        {
+            CombatDamageEvents.RaiseDamagePrevented(
+                ResolveOwner(),
+                requestedDamage,
+                source,
+                incomingDamage.PreventionSource);
+            return 0;
+        }
 
         Character owner = ResolveOwner();
         if (owner != null &&
             owner.StatusEffects != null &&
             owner.StatusEffects.HasActiveEffectImmediate(CombatStatusEffects.EffectType.Invulnerable))
         {
+            owner.StatusEffects.TryGetActiveEffectSourceImmediate(
+                CombatStatusEffects.EffectType.Invulnerable,
+                out CombatEffectSource preventionSource);
+            CombatDamageEvents.RaiseDamagePrevented(
+                ResolveOwner(),
+                requestedDamage,
+                source,
+                preventionSource);
             return 0;
         }
 
         int previousHP = _hp;
         _hp = Mathf.Max(0, _hp - amount);
         int appliedDamage = previousHP - _hp;
+        CombatDamageEvents.RaiseDamagePrevented(
+            ResolveOwner(),
+            Mathf.Max(0, requestedDamage - appliedDamage),
+            source,
+            incomingDamage.PreventionSource);
 
         if (_hp == 0)
         {
             EnterRetreat();
-            Defeated?.Invoke(ResolveOwner(), attacker);
+            Defeated?.Invoke(ResolveOwner(), source.Character);
         }
 
         if (appliedDamage > 0)
         {
-            Damaged?.Invoke(appliedDamage, attacker);
+            Damaged?.Invoke(appliedDamage, source.Character);
+            CombatDamageEvents.RaiseDamageApplied(ResolveOwner(), appliedDamage, source);
         }
 
         NotifyHealthChanged();
         return appliedDamage;
     }
 
-    public int Heal(int amount)
+    public int Heal(int amount, Character healer = null)
+    {
+        return Heal(amount, CombatEffectSource.Capture(healer));
+    }
+
+    public int Heal(int amount, CombatEffectSource source)
     {
         if (amount <= 0 || LifeState != LifeState.Active) return 0;
 
         int previousHP = _hp;
         _hp = Mathf.Min(_maxHP, _hp + amount);
         int healed = _hp - previousHP;
-        if (healed > 0) NotifyHealthChanged();
+        if (healed > 0)
+        {
+            CombatHealingEvents.RaiseHealingApplied(ResolveOwner(), healed, source);
+            NotifyHealthChanged();
+        }
         return healed;
     }
 
@@ -132,7 +180,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         _hp = _maxHP;
         LifeState = LifeState.Active;
         _hasRetreatDestination = false;
-        _retreatStartTime = 0f;
+        _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = true;
         _withdrawalCompleted = false;
         NotifyHealthChanged();
@@ -142,7 +190,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     {
         _hp = 0;
         LifeState = LifeState.Retreating;
-        _retreatStartTime = Time.time;
+        _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = true;
         _withdrawalCompleted = false;
 
@@ -157,7 +205,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
         _hp = 0;
         LifeState = LifeState.Retreating;
-        _retreatStartTime = Time.time;
+        _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = false;
         _withdrawalCompleted = false;
         _hasRetreatDestination = false;
@@ -195,8 +243,17 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     public bool TryCompleteRetreatIfArrived()
     {
         if (LifeState != LifeState.Retreating || !_hasRetreatDestination || _withdrawalCompleted) return false;
-        if (Time.time - _retreatStartTime < _minReviveDelay) return false;
-        if (!IsAtRetreatDestination(_retreatDestination)) return false;
+        if (!IsAtRetreatDestination(_retreatDestination))
+        {
+            _reviveAtTime = float.PositiveInfinity;
+            return false;
+        }
+
+        if (float.IsPositiveInfinity(_reviveAtTime))
+        {
+            _reviveAtTime = Time.time + _reviveDelayAfterArrival;
+        }
+        if (Time.time < _reviveAtTime) return false;
 
         if (!_canReviveAfterRetreat)
         {

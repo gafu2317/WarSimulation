@@ -11,6 +11,8 @@ public sealed class IdentifiedSkill : SkillBase
 
     public SkillId SkillId => _skillId;
 
+    public override SkillId Id => _skillId;
+
     public override string Name => _inner.Name;
 
     public override float CooldownSeconds => _inner.CooldownSeconds;

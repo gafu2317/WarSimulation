@@ -38,5 +38,10 @@ public sealed class BibleCarryRushSkill : SkillBase
         }
 
         effect.Initialize(self, target, _speedMultiplier, _durationSeconds);
+        CombatSkillActionEvents.RecordCharacterEffect(
+            CombatActionEffectKind.PersistentEffectStarted,
+            CombatEffectSource.Capture(self),
+            target,
+            statusKey: "BibleCarryRush");
     }
 }

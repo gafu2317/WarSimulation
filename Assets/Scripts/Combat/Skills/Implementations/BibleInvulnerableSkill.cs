@@ -19,6 +19,6 @@ public sealed class BibleInvulnerableSkill : SkillBase
     public override void Execute(Character self, SkillExecutionContext context)
     {
         if (self == null) return;
-        self.StatusEffects?.ApplyInvulnerable(_durationSeconds, "BibleInvulnerable");
+        self.StatusEffects?.ApplyInvulnerable(_durationSeconds, "BibleInvulnerable", self);
     }
 }

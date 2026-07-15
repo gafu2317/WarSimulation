@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 using WarSimulation.Combat.Map;
 
 public sealed class CombatCharacterSystemTests
@@ -100,7 +102,7 @@ public sealed class CombatCharacterSystemTests
     }
 
     [Test]
-    public void TryRelocateCharactersNearMainStones_MovesTeamsNearOwnStoneWithSpacing()
+    public void TryRelocateCharactersNearMainStones_MovesTeamsNearOwnStoneWithoutFeatureOverlap()
     {
         GameObject mapObject = new GameObject("MapSystem");
         GameObject characterSystemObject = new GameObject("CharacterSystem");
@@ -133,10 +135,10 @@ public sealed class CombatCharacterSystemTests
             bool moved = characterSystem.TryRelocateCharactersNearMainStones();
 
             Assert.That(moved, Is.True);
-            Assert.That(HorizontalDistance(allyA.transform.position, new Vector3(2.5f, 0f, 1.5f)), Is.LessThan(3.5f));
-            Assert.That(HorizontalDistance(allyB.transform.position, new Vector3(2.5f, 0f, 1.5f)), Is.LessThan(3.5f));
-            Assert.That(HorizontalDistance(enemyA.transform.position, new Vector3(5.5f, 0f, 6.5f)), Is.LessThan(3.5f));
-            Assert.That(HorizontalDistance(enemyB.transform.position, new Vector3(5.5f, 0f, 6.5f)), Is.LessThan(3.5f));
+            Assert.That(HorizontalDistance(allyA.transform.position, new Vector3(2.5f, 0f, 1.5f)), Is.LessThan(6f));
+            Assert.That(HorizontalDistance(allyB.transform.position, new Vector3(2.5f, 0f, 1.5f)), Is.LessThan(6f));
+            Assert.That(HorizontalDistance(enemyA.transform.position, new Vector3(5.5f, 0f, 6.5f)), Is.LessThan(6f));
+            Assert.That(HorizontalDistance(enemyB.transform.position, new Vector3(5.5f, 0f, 6.5f)), Is.LessThan(6f));
 
             Assert.That(HorizontalDistance(allyA.transform.position, allyB.transform.position), Is.GreaterThanOrEqualTo(1.5f));
             Assert.That(HorizontalDistance(enemyA.transform.position, enemyB.transform.position), Is.GreaterThanOrEqualTo(1.5f));
@@ -145,6 +147,10 @@ public sealed class CombatCharacterSystemTests
             AssertValidTerrain(mapSystem, allyB.transform.position);
             AssertValidTerrain(mapSystem, enemyA.transform.position);
             AssertValidTerrain(mapSystem, enemyB.transform.position);
+            AssertClearOfSolidFeatures(mapSystem.CurrentMap, allyA.transform.position);
+            AssertClearOfSolidFeatures(mapSystem.CurrentMap, allyB.transform.position);
+            AssertClearOfSolidFeatures(mapSystem.CurrentMap, enemyA.transform.position);
+            AssertClearOfSolidFeatures(mapSystem.CurrentMap, enemyB.transform.position);
         }
         finally
         {
@@ -153,6 +159,33 @@ public sealed class CombatCharacterSystemTests
             Object.DestroyImmediate(allyObjectB);
             Object.DestroyImmediate(allyObjectA);
             Object.DestroyImmediate(characterSystemObject);
+            Object.DestroyImmediate(mapObject);
+        }
+    }
+
+    [Test]
+    public void RenderedRock_UsesNotWalkableNavMeshArea()
+    {
+        GameObject mapObject = new GameObject("Map");
+
+        try
+        {
+            var map = new MapData(new HeightMap(1, 1, 1f), new GroundStateGrid(1, 1, 1f), seed: 1);
+            map.AddFeature(new PlacedFeature(FeatureType.Rock, Vector3.zero));
+
+            FeatureRenderer renderer = mapObject.AddComponent<FeatureRenderer>();
+            renderer.Render(map);
+
+            Transform rock = mapObject.transform.Find("GeneratedFeatures/Rock_0");
+            Assert.That(rock, Is.Not.Null);
+            NavMeshModifier modifier = rock.GetComponent<NavMeshModifier>();
+
+            Assert.That(modifier, Is.Not.Null);
+            Assert.That(modifier.overrideArea, Is.True);
+            Assert.That(modifier.area, Is.EqualTo(NavMesh.GetAreaFromName("Not Walkable")));
+        }
+        finally
+        {
             Object.DestroyImmediate(mapObject);
         }
     }
@@ -178,7 +211,20 @@ public sealed class CombatCharacterSystemTests
         var map = new MapData(height, ground, seed: 7);
         map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(2.5f, 0f, 1.5f)));
         map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(5.5f, 0f, 6.5f)));
+        map.AddFeature(new PlacedFeature(FeatureType.Rock, new Vector3(3.5f, 0f, 1.5f)));
+        map.AddFeature(new PlacedFeature(FeatureType.Tree, new Vector3(4.5f, 0f, 6.5f)));
         return map;
+    }
+
+    private static void AssertClearOfSolidFeatures(MapData map, Vector3 position)
+    {
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            PlacedFeature feature = map.Features[i];
+            if (feature.Type == FeatureType.Bridge) continue;
+
+            Assert.That(HorizontalDistance(position, feature.WorldPosition), Is.GreaterThanOrEqualTo(3f));
+        }
     }
 
     private static void AssertValidTerrain(CombatMapSystem mapSystem, Vector3 position)

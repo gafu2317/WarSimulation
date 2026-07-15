@@ -687,7 +687,7 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
-    public void Planner_ShieldFollowsAdvancingFrontlineRegardlessOfWeaponKind()
+    public void Planner_ShieldFollowsAdvancingRangedAttackerInsteadOfFragileSupporter()
     {
         GameObject ownerGo = new GameObject("ShieldOwner");
         GameObject frontlineGo = new GameObject("WandFrontline");
@@ -721,8 +721,10 @@ public sealed class CombatAiContextCollectorTests
                 {
                     CreateIntel(
                         frontline,
-                        true,
-                        frontlineGo.transform.position,
+                        false,
+                        default,
+                        hasDirectSight: false,
+                        hasMemory: false,
                         hasObjective: true,
                         objective: CombatObjective.AttackEnemy,
                         intendedTarget: enemy,
@@ -1048,6 +1050,93 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Planner_ScoresEveryHighGroundCandidate()
+    {
+        GameObject ownerGo = new GameObject("WandOwner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Wand());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(70f, 0f, 0f);
+            CombatCharacterIntel enemyIntel = CreateIntel(
+                enemy,
+                true,
+                enemyGo.transform.position,
+                hasDirectSight: false,
+                hasMemory: true);
+            Vector3 nearest = new Vector3(-3f, 3f, 0f);
+            Vector3 useful = new Vector3(30f, 4f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                rememberedEnemies: new[] { enemy },
+                enemyIntel: new[] { enemyIntel },
+                highGroundCandidates: new[] { nearest, useful });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            CombatAiMoveCandidateEntry nearestEntry = snapshot.MoveEntries.Find(entry =>
+                entry.Code == CombatAiMoveCode.TakeHighGround && entry.Target.Destination == nearest);
+            CombatAiMoveCandidateEntry usefulEntry = snapshot.MoveEntries.Find(entry =>
+                entry.Code == CombatAiMoveCode.TakeHighGround && entry.Target.Destination == useful);
+
+            Assert.That(nearestEntry, Is.Not.Null);
+            Assert.That(usefulEntry, Is.Not.Null);
+            Assert.That(usefulEntry.Breakdown.Total, Is.GreaterThan(nearestEntry.Breakdown.Total));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void MoveScorer_HighGroundValuesExpandedSightWhenEnemyLocationIsUncertain()
+    {
+        GameObject mapSystemGo = new GameObject("CombatMapSystem");
+        GameObject ownerGo = new GameObject("WandOwner");
+        try
+        {
+            CombatMapSystem mapSystem = mapSystemGo.AddComponent<CombatMapSystem>();
+            var heightMap = new WarSimulation.Combat.Map.HeightMap(4, 4, 1f);
+            for (int z = 0; z < 4; z++)
+            {
+                heightMap.SetHeight(3, z, 10f);
+            }
+            mapSystem.SetCurrentMap(new WarSimulation.Combat.Map.MapData(
+                heightMap,
+                new WarSimulation.Combat.Map.GroundStateGrid(4, 4, 1f),
+                1));
+
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Wand());
+            Vector3 flatGround = new Vector3(0f, 0f, 3f);
+            Vector3 highGround = new Vector3(3f, 10f, 0f);
+            CombatAiContext flatContext = CreatePlannerContext(owner, highGroundCandidates: new[] { flatGround });
+            CombatAiContext highContext = CreatePlannerContext(owner, highGroundCandidates: new[] { highGround });
+
+            float flatScore = FindMoveScore(
+                CombatAiPlanner.BuildDebugSnapshot(flatContext, null),
+                CombatAiMoveCode.TakeHighGround);
+            float highScore = FindMoveScore(
+                CombatAiPlanner.BuildDebugSnapshot(highContext, null),
+                CombatAiMoveCode.TakeHighGround);
+
+            Assert.That(highScore, Is.GreaterThan(flatScore + 20f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+            Object.DestroyImmediate(mapSystemGo);
+        }
+    }
+
+    [Test]
     public void Planner_DoesNotSelectHighGroundWhenAlreadyAtCandidate()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -1190,6 +1279,96 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Planner_GrimoireChoosesAttackEnemyWhenEnemyIsKnown()
+    {
+        GameObject ownerGo = new GameObject("GrimoireOwner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Grimoire());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy },
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_NumericalAdvantageRaisesOffenseAndLowersRetreat()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject allyGo = new GameObject("Ally");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            allyGo.transform.position = new Vector3(100f, 0f, 0f);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+
+            CombatAiContext balanced = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy },
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+            CombatAiContext advantaged = CreatePlannerContext(
+                owner,
+                visibleEnemies: new[] { enemy },
+                allies: new[] { ally },
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot balancedSnapshot = CombatAiPlanner.BuildDebugSnapshot(balanced, null);
+            CombatAiDebugSnapshot advantagedSnapshot = CombatAiPlanner.BuildDebugSnapshot(advantaged, null);
+
+            Assert.That(
+                FindObjectiveScore(advantagedSnapshot, CombatObjective.AttackEnemy) -
+                FindObjectiveScore(balancedSnapshot, CombatObjective.AttackEnemy),
+                Is.EqualTo(6f).Within(0.001f));
+            Assert.That(
+                FindObjectiveScore(advantagedSnapshot, CombatObjective.DestroyEnemyStone) -
+                FindObjectiveScore(balancedSnapshot, CombatObjective.DestroyEnemyStone),
+                Is.EqualTo(4.5f).Within(0.001f));
+            Assert.That(
+                FindObjectiveScore(advantagedSnapshot, CombatObjective.Retreat) -
+                FindObjectiveScore(balancedSnapshot, CombatObjective.Retreat),
+                Is.EqualTo(-4.5f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_ShieldDefendsThreatenedOwnStone()
     {
         GameObject ownerGo = new GameObject("ShieldOwner");
@@ -1219,6 +1398,218 @@ public sealed class CombatAiContextCollectorTests
         finally
         {
             Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldDoesNotCreateHighGroundMoveCandidate()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                highGroundCandidates: new[] { new Vector3(3f, 5f, 0f) });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.MoveEntries.Exists(entry => entry.Code == CombatAiMoveCode.TakeHighGround), Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void AdvanceProgress_UsesPositionAlongStoneAxisAndIgnoresLateralOffset()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(10f, 0f, 0f));
+
+            Assert.That(CombatAiPositioning.GetAdvanceProgress(context, Vector3.zero), Is.EqualTo(0f));
+            Assert.That(CombatAiPositioning.GetAdvanceProgress(context, new Vector3(5f, 0f, 0f)), Is.EqualTo(0.5f));
+            Assert.That(CombatAiPositioning.GetAdvanceProgress(context, new Vector3(5f, 0f, 20f)), Is.EqualTo(0.5f));
+            Assert.That(CombatAiPositioning.GetAdvanceProgress(context, new Vector3(10f, 0f, 0f)), Is.EqualTo(1f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldFollowsForwardSwordInsteadOfNearbyWand()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject swordGo = new GameObject("ForwardSword");
+        GameObject wandGo = new GameObject("NearbyWand");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character sword = swordGo.AddComponent<Character>();
+            sword.Health.Initialize(30);
+            sword.EquipWeapon(new Sword());
+            Character wand = wandGo.AddComponent<Character>();
+            wand.Health.Initialize(30);
+            wand.EquipWeapon(new Wand());
+            ownerGo.transform.position = new Vector3(1f, 0f, 0f);
+            swordGo.transform.position = new Vector3(8f, 0f, 0f);
+            wandGo.transform.position = new Vector3(3f, 0f, 0f);
+            Vector3 swordDestination = new Vector3(9f, 0f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allies: new[] { sword, wand },
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        sword,
+                        true,
+                        swordGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy,
+                        hasIntendedDestination: true,
+                        intendedDestination: swordDestination),
+                    CreateIntel(
+                        wand,
+                        true,
+                        wandGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy,
+                        hasIntendedDestination: true,
+                        intendedDestination: new Vector3(4f, 0f, 0f)),
+                },
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(10f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            CombatAiMoveCandidateEntry move = FindMove(snapshot, CombatAiMoveCode.SupportAlly);
+
+            Assert.That(move.Target.Destination, Is.EqualTo(swordDestination));
+        }
+        finally
+        {
+            Object.DestroyImmediate(wandGo);
+            Object.DestroyImmediate(swordGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_HealPrefersForwardAllyWhenHealingNeedIsEqual()
+    {
+        GameObject ownerGo = new GameObject("RosaryOwner");
+        GameObject rearGo = new GameObject("RearAlly");
+        GameObject forwardGo = new GameObject("ForwardAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Rosary());
+            Character rear = rearGo.AddComponent<Character>();
+            rear.Health.Initialize(30, 15);
+            Character forward = forwardGo.AddComponent<Character>();
+            forward.Health.Initialize(30, 15);
+            rearGo.transform.position = new Vector3(2f, 0f, 0f);
+            forwardGo.transform.position = new Vector3(8f, 0f, 0f);
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new AiPlannerHealSkill());
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allies: new[] { rear, forward },
+                allyIntel: new[]
+                {
+                    CreateIntel(rear, true, rearGo.transform.position),
+                    CreateIntel(forward, true, forwardGo.transform.position),
+                },
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(10f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedSkill.SkillContext.PrimaryTarget, Is.EqualTo(forward));
+        }
+        finally
+        {
+            Object.DestroyImmediate(forwardGo);
+            Object.DestroyImmediate(rearGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldFollowsAdvancingAttackerInsteadOfAdvancingSupporter()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject attackerGo = new GameObject("Attacker");
+        GameObject supporterGo = new GameObject("Supporter");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character attacker = attackerGo.AddComponent<Character>();
+            attacker.Health.Initialize(30);
+            attacker.EquipWeapon(new Sword());
+            Character supporter = supporterGo.AddComponent<Character>();
+            supporter.Health.Initialize(30);
+            supporter.EquipWeapon(new Bible());
+            Vector3 attackerDestination = new Vector3(10f, 0f, 0f);
+            Vector3 supporterDestination = new Vector3(0f, 0f, 4f);
+            attackerGo.transform.position = new Vector3(8f, 0f, 0f);
+            supporterGo.transform.position = new Vector3(0f, 0f, 2f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allies: new[] { attacker, supporter },
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        attacker,
+                        true,
+                        attackerGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy,
+                        hasIntendedDestination: true,
+                        intendedDestination: attackerDestination),
+                    CreateIntel(
+                        supporter,
+                        true,
+                        supporterGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.SupportAlly,
+                        hasIntendedDestination: true,
+                        intendedDestination: supporterDestination),
+                });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            CombatAiMoveCandidateEntry move = FindMove(snapshot, CombatAiMoveCode.SupportAlly);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo(CombatAiMoveCode.SupportAlly));
+            Assert.That(move.Target.Destination, Is.EqualTo(attackerDestination));
+        }
+        finally
+        {
+            Object.DestroyImmediate(supporterGo);
+            Object.DestroyImmediate(attackerGo);
             Object.DestroyImmediate(ownerGo);
         }
     }

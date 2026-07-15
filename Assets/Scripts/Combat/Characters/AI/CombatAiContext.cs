@@ -87,6 +87,23 @@ public readonly struct CombatAiPendingDamage
     }
 }
 
+public static class CombatAiPositioning
+{
+    public static float GetAdvanceProgress(CombatAiContext context, Vector3 position)
+    {
+        if (context == null || !context.HasOwnStonePosition || !context.HasEnemyStonePosition) return 0f;
+
+        Vector3 battleAxis = context.EnemyStonePosition - context.OwnStonePosition;
+        battleAxis.y = 0f;
+        float axisLengthSquared = battleAxis.sqrMagnitude;
+        if (axisLengthSquared <= 0.01f) return 0f;
+
+        Vector3 offset = position - context.OwnStonePosition;
+        offset.y = 0f;
+        return Mathf.Clamp01(Vector3.Dot(offset, battleAxis) / axisLengthSquared);
+    }
+}
+
 public readonly struct CombatCharacterIntel
 {
     public Character Character { get; }

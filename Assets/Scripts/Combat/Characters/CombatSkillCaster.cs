@@ -8,6 +8,7 @@ public sealed class CombatSkillCaster : MonoBehaviour
     private SkillExecutionContext _context;
     private float _startedAt;
     private float _completeAt;
+    private CombatSkillActionInfo _castingAction;
 
     public bool IsCasting => CastingSkill != null;
     public SkillBase CastingSkill { get; private set; }
@@ -35,14 +36,16 @@ public sealed class CombatSkillCaster : MonoBehaviour
         if (!CombatBattleFlow.AllowsCombatActions || !_owner.Health.CanAct) return false;
 
         context = context.Capture(_owner);
+        CombatSkillActionInfo action = CombatSkillActionEvents.Start(_owner, skill, context);
         if (skill.CastTimeSeconds <= 0f)
         {
-            Execute(skill, context, raiseCastCompleted: false);
+            Execute(action, skill, context, raiseCastCompleted: false);
             return true;
         }
 
         CastingSkill = skill;
         _context = context;
+        _castingAction = action;
         _startedAt = Time.time;
         _completeAt = _startedAt + skill.CastTimeSeconds;
         _owner.StopMoving();
@@ -70,20 +73,41 @@ public sealed class CombatSkillCaster : MonoBehaviour
 
         SkillBase skill = CastingSkill;
         SkillExecutionContext context = _context;
-        ClearCast();
-        Execute(skill, context, raiseCastCompleted: true);
+        CombatSkillActionInfo action = _castingAction;
+        ResetCast();
+        Execute(action, skill, context, raiseCastCompleted: true);
     }
 
     public void ClearCast()
     {
-        CastingSkill = null;
-        _context = SkillExecutionContext.None;
+        if (IsCasting)
+        {
+            SkillBase skill = CastingSkill;
+            CombatSkillActionInfo action = _castingAction;
+            ResetCast();
+            CombatSkillActionEvents.Cancel(action);
+            CombatSkillCastEvents.RaiseCastCancelled(_owner, skill);
+            return;
+        }
+
+        ResetCast();
     }
 
-    private void Execute(SkillBase skill, SkillExecutionContext context, bool raiseCastCompleted)
+    private void ResetCast()
+    {
+        CastingSkill = null;
+        _context = SkillExecutionContext.None;
+        _castingAction = default;
+    }
+
+    private void Execute(
+        CombatSkillActionInfo action,
+        SkillBase skill,
+        SkillExecutionContext context,
+        bool raiseCastCompleted)
     {
         if (_owner == null || skill == null) return;
-        skill.Execute(_owner, context);
+        CombatSkillActionEvents.Execute(action, () => skill.Execute(_owner, context));
         _owner.SkillCooldowns.StartCooldown(skill);
         CombatSkillUseEvents.RaiseSkillUsed(_owner, skill.Name);
         if (raiseCastCompleted)

@@ -1,5 +1,6 @@
 using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace WarSimulation.Combat.Map
 {
@@ -19,6 +20,7 @@ namespace WarSimulation.Combat.Map
     {
         private const string RootName = "GeneratedFeatures";
         private const string VisionObstacleLayerName = "VisionObstacle";
+        private const string NotWalkableAreaName = "Not Walkable";
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
@@ -274,6 +276,7 @@ namespace WarSimulation.Combat.Map
             rock.GetComponent<MeshFilter>().sharedMesh = cube;
             rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
             rock.GetComponent<BoxCollider>().isTrigger = false;
+            MarkNotWalkable(rock);
         }
 
         /// <summary>
@@ -312,6 +315,13 @@ namespace WarSimulation.Combat.Map
         {
             var navModifier = go.AddComponent<NavMeshModifier>();
             navModifier.ignoreFromBuild = true;
+        }
+
+        private static void MarkNotWalkable(GameObject go)
+        {
+            var navModifier = go.AddComponent<NavMeshModifier>();
+            navModifier.overrideArea = true;
+            navModifier.area = NavMesh.GetAreaFromName(NotWalkableAreaName);
         }
 
         private static Mesh _cachedCylinder;

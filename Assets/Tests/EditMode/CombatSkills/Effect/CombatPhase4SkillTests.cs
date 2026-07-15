@@ -171,10 +171,28 @@ public sealed class CombatPhase4SkillTests
 
             guardian.Vision.UpdateVision();
             new ShieldShoulderGuardSkill().Execute(guardian, SkillExecutionContext.ForTarget(ally));
-            ally.Health.TakeDamage(10, enemy);
+            CombatEffectSource redirectedSource = CombatEffectSource.None;
+            void CaptureRedirectedDamage(CombatDamageEvent damage)
+            {
+                if (!damage.WasPrevented && damage.Target == guardian) redirectedSource = damage.AttackSource;
+            }
+
+            CombatDamageEvents.Resolved += CaptureRedirectedDamage;
+            try
+            {
+                ally.Health.TakeDamage(
+                    10,
+                    new CombatEffectSource(enemy, SkillId.Grimoire_Poison, "毒"));
+            }
+            finally
+            {
+                CombatDamageEvents.Resolved -= CaptureRedirectedDamage;
+            }
 
             Assert.That(ally.Health.HP, Is.EqualTo(30));
             Assert.That(guardian.Health.HP, Is.EqualTo(24));
+            Assert.That(redirectedSource.Character, Is.SameAs(enemy));
+            Assert.That(redirectedSource.SkillId, Is.EqualTo(SkillId.Grimoire_Poison));
         }
         finally
         {

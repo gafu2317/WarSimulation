@@ -38,5 +38,10 @@ public sealed class ShieldShoulderGuardSkill : SkillBase
         }
 
         effect.Initialize(self, target, _damageMultiplier, _durationSeconds);
+        CombatSkillActionEvents.RecordCharacterEffect(
+            CombatActionEffectKind.PersistentEffectStarted,
+            CombatEffectSource.Capture(self),
+            target,
+            statusKey: "ShieldShoulderGuard");
     }
 }

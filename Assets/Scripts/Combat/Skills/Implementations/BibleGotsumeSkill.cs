@@ -36,6 +36,12 @@ public sealed class BibleGotsumeSkill : SkillBase
             effect = target.gameObject.AddComponent<BibleGotsumeEffect>();
         }
 
-        effect.Initialize(target, _reflectDamage, _durationSeconds);
+        CombatEffectSource source = CombatEffectSource.Capture(self);
+        effect.Initialize(target, _reflectDamage, _durationSeconds, source);
+        CombatSkillActionEvents.RecordCharacterEffect(
+            CombatActionEffectKind.PersistentEffectStarted,
+            source,
+            target,
+            statusKey: "BibleGotsume");
     }
 }

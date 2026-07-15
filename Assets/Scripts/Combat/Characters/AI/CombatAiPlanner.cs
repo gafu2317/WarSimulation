@@ -115,10 +115,14 @@ public static partial class CombatAiPlanner
             CombatAiMoveCode.SupportAlly, CreateBestAllyTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
         TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
             CombatAiMoveCode.InterceptThreat, CreateBestBodyBlockTarget(context), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
-        TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
-            CombatAiMoveCode.TakeHighGround, CreateNearestPositionTarget(owner, context.HighGroundCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        WeaponKind ownerWeaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+        for (int i = 0; ownerWeaponKind != WeaponKind.Shield && i < context.HighGroundCandidates.Count; i++)
         {
-            WeaponKind ownerWeaponKind = owner.EquippedWeapon != null ? owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+            TryScoreMoveDirectCandidate(owner, context, assessment, personalityProfile, weaponWeightsProfile,
+                CombatAiMoveCode.TakeHighGround, CreatePositionTargetIfMeaningful(owner, context.HighGroundCandidates[i]), objective,
+                focusEnemy, focusCommitmentRemainingSeconds, ref bestScore, ref bestTarget);
+        }
+        {
             CombatMoveTarget forestTarget = IsRangedOrSupportWeapon(ownerWeaponKind)
                 ? CreateCoverPositionTarget(context, owner)
                 : CreateNearestPositionTarget(owner, context.ForestCandidates);
@@ -189,7 +193,7 @@ public static partial class CombatAiPlanner
                 if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
                 float score = GetSkillBaseScore(skill, objective)
                     + GetSkillWeaponScore(weaponWeightsProfile, context.Owner.EquippedWeapon, skill)
-                    + GetSkillPersonalityScore(personalityProfile, skill, objective)
+                    + GetSkillPersonalityScore(context.Owner, personalityProfile, skill, objective)
                     + GetSkillSituationScore(context, assessment, skill, evaluation, objective)
                     + CombatAiFocusTargeting.GetSkillScore(context, context.Owner.EquippedWeapon, skill, evaluation, focusEnemy, focusCommitmentRemainingSeconds);
                 if (score > bestScore)
@@ -281,9 +285,23 @@ public static partial class CombatAiPlanner
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.PursueEnemy, "敵へ接近", CreateBestEnemyTarget(snapshot.Context, focusEnemy, focusCommitmentRemainingSeconds), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.SupportAlly, "味方へ接近", CreateBestAllyTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
         AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.InterceptThreat, "敵の進路を遮断", CreateBestBodyBlockTarget(snapshot.Context), objective, focusEnemy, focusCommitmentRemainingSeconds);
-        AddMoveCandidate(snapshot, personalityProfile, weaponWeightsProfile, CombatAiMoveCode.TakeHighGround, "高所へ移動", CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.HighGroundCandidates), objective, focusEnemy, focusCommitmentRemainingSeconds);
+        WeaponKind ownerWeaponKind = snapshot.Owner.EquippedWeapon != null
+            ? snapshot.Owner.EquippedWeapon.Kind
+            : WeaponKind.Unarmed;
+        for (int i = 0; ownerWeaponKind != WeaponKind.Shield && i < snapshot.Context.HighGroundCandidates.Count; i++)
         {
-            WeaponKind ownerWeaponKind = snapshot.Owner.EquippedWeapon != null ? snapshot.Owner.EquippedWeapon.Kind : WeaponKind.Unarmed;
+            AddMoveCandidate(
+                snapshot,
+                personalityProfile,
+                weaponWeightsProfile,
+                CombatAiMoveCode.TakeHighGround,
+                "高所へ移動",
+                CreatePositionTargetIfMeaningful(snapshot.Owner, snapshot.Context.HighGroundCandidates[i]),
+                objective,
+                focusEnemy,
+                focusCommitmentRemainingSeconds);
+        }
+        {
             CombatMoveTarget forestTarget = IsRangedOrSupportWeapon(ownerWeaponKind)
                 ? CreateCoverPositionTarget(snapshot.Context, snapshot.Owner)
                 : CreateNearestPositionTarget(snapshot.Owner, snapshot.Context.ForestCandidates);
@@ -408,7 +426,7 @@ public static partial class CombatAiPlanner
         {
             BaseScore = GetSkillBaseScore(skill, objective),
             WeaponScore = GetSkillWeaponScore(weaponWeightsProfile, snapshot.Owner.EquippedWeapon, skill),
-            PersonalityScore = GetSkillPersonalityScore(personalityProfile, skill, objective),
+            PersonalityScore = GetSkillPersonalityScore(snapshot.Owner, personalityProfile, skill, objective),
             SituationScore = GetSkillSituationScore(snapshot.Context, snapshot.Assessment, skill, evaluation, objective)
                 + CombatAiFocusTargeting.GetSkillScore(snapshot.Context, snapshot.Owner.EquippedWeapon, skill, evaluation, focusEnemy, focusCommitmentRemainingSeconds),
         };
@@ -459,7 +477,7 @@ public static partial class CombatAiPlanner
             : CombatAiWeaponWeightsProfile.GetDefaultSkillWeight(weapon.Kind, skill);
     }
 
-    private static float GetSkillPersonalityScore(CombatAiPersonalityProfile personalityProfile, SkillBase skill, CombatObjective objective)
+    private static float GetSkillPersonalityScore(Character owner, CombatAiPersonalityProfile personalityProfile, SkillBase skill, CombatObjective objective)
     {
         if (personalityProfile == null || skill == null) return 0f;
         float score = 0f;
@@ -476,7 +494,7 @@ public static partial class CombatAiPlanner
             score = personalityProfile.ExplorationBias * 10f;
         }
 
-        return score + CombatAiPersonalityBehavior.GetSkillScore(personalityProfile, skill);
+        return score + CombatAiPersonalityBehavior.GetSkillScore(owner, personalityProfile, skill);
     }
 
     private static float GetSkillSituationScore(
@@ -542,6 +560,8 @@ public static partial class CombatAiPlanner
             }
 
             float score = missingHpRatio * (CombatAiSkillClassifier.IsHeal(skill) ? 50f : 18f);
+            score += CombatAiPositioning.GetAdvanceProgress(context, ally.CurrentPosition) *
+                (CombatAiSkillClassifier.IsHeal(skill) ? 8f : 12f);
             if (CombatAiSkillClassifier.IsHeal(skill))
             {
                 int missingHp = Mathf.Max(0, ally.MaxHP - ally.HP);
@@ -596,6 +616,7 @@ public static partial class CombatAiPlanner
             score += missingHp / (float)ally.MaxHP * 28f;
             score += Mathf.Min(missingHp, healing) / (float)ally.MaxHP * 36f;
             score += GetPostHealSurvivalScore(context, ally, healing);
+            score += CombatAiPositioning.GetAdvanceProgress(context, ally.CurrentPosition) * 6f;
         }
 
         Character owner = context.Owner;

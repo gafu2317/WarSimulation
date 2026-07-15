@@ -63,10 +63,33 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (!_enabled || Time.time < _nextDecisionTime) return;
 
         _nextDecisionTime = Time.time + _decisionIntervalSeconds;
-        TickNow();
+        ResolveDependencies();
+        CombatBattleRandom.AdvanceDecisionTick(_owner);
+        TickNowCore();
     }
 
     public bool TickNow()
+    {
+        ResolveDependencies();
+        CombatBattleRandom.AdvanceDecisionTick(_owner);
+        return TickNowCore();
+    }
+
+    public void ResetForBattle()
+    {
+        _nextDecisionTime = 0f;
+        _nextStoneAttackTime = 0f;
+        _focusedEnemy = null;
+        _focusedEnemyLockedUntilTime = 0f;
+        _personalityPauseUntilTime = 0f;
+        _cachedEnemyMainStone = null;
+        LastPlan = CombatAiPlan.None;
+        LastContext = null;
+        HasLastSkillEvaluation = false;
+        LastStoneDamage = 0;
+    }
+
+    private bool TickNowCore()
     {
         ResolveDependencies();
         if (!CanRun()) return false;
@@ -77,10 +100,12 @@ public sealed class CombatAiBrain : MonoBehaviour
         _personalityRuntime.Refresh();
         if (!_owner.Health.CanAct) return false;
         PruneFocusedEnemy(LastContext);
-        CombatObjective previousObjective = LastPlan.Objective;
+        CombatAiPlan previousPlan = LastPlan;
+        CombatObjective previousObjective = previousPlan.Objective;
         if (_personalityRuntime.TryBuildRevengePlan(out CombatAiPlan revengePlan))
         {
             LastPlan = revengePlan;
+            NotifyPlanSelected(previousPlan, LastPlan);
             return ExecutePlan(LastPlan);
         }
 
@@ -91,11 +116,14 @@ public sealed class CombatAiBrain : MonoBehaviour
             _focusedEnemy,
             GetFocusCommitmentRemainingSeconds(),
             previousObjective);
-        if (LastPlan.Objective != previousObjective)
-        {
-            CombatAiDecisionEvents.RaiseObjectiveChanged(_owner, previousObjective, LastPlan.Objective);
-        }
+        NotifyPlanSelected(previousPlan, LastPlan);
         return ExecutePlan(LastPlan);
+    }
+
+    private void NotifyPlanSelected(CombatAiPlan previous, CombatAiPlan next)
+    {
+        CombatAiDecisionEvents.RaisePlanSelected(_owner, previous, next);
+        CombatAiDecisionEvents.RaiseObjectiveChanged(_owner, previous.Objective, next.Objective);
     }
 
     public bool ExecutePlan(CombatAiPlan plan)
@@ -105,9 +133,9 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (_owner.SkillCaster.IsCasting) return false;
 
         LastPlan = plan;
+        bool moved = TryExecuteMovement(plan);
         bool usedSkill = TryExecuteSkill(plan);
         bool attackedStone = !usedSkill && TryExecuteStoneAttack(plan);
-        bool moved = !usedSkill && !attackedStone && TryExecuteMovement(plan);
         _personalityRuntime?.NotifyPlanExecuted(plan, usedSkill);
         UpdateFocusedEnemy(plan);
         bool acted = attackedStone || usedSkill || moved;
@@ -138,7 +166,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (HorizontalDistance(_owner.transform.position, stone.transform.position) > attackRange) return false;
 
         int damage = Mathf.Max(1, Mathf.RoundToInt(GetEffectiveScalingStat(weapon.ScalingStat) * 0.5f));
-        LastStoneDamage = stoneSystem.TakeDamage(stone.FeatureIndex, damage);
+        LastStoneDamage = stoneSystem.TakeDamage(stone.FeatureIndex, damage, _owner);
         if (LastStoneDamage <= 0) return false;
 
         _nextStoneAttackTime = Time.time + Mathf.Max(0.1f, weapon.CooldownSeconds);
@@ -170,8 +198,7 @@ public sealed class CombatAiBrain : MonoBehaviour
             plan.MoveTarget.TargetCharacter != null
                 ? plan.MoveTarget.TargetCharacter.transform.position
                 : plan.MoveTarget.Destination;
-        _owner.MoveToTarget(destination);
-        return true;
+        return _owner.MoveToTarget(destination);
     }
 
     private MagicStone FindEnemyMainStone()
@@ -302,9 +329,10 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private void HandleIncomingDamage(CombatHealth.IncomingDamageContext damage)
     {
-        if (HasPersonality(CombatAiPersonalityKind.Innocent) && Random.value < 0.25f)
+        if (HasPersonality(CombatAiPersonalityKind.Innocent) && CombatBattleRandom.Roll(_owner, "InnocentAvoidDamage", 0.25f))
         {
             damage.IsHandled = true;
+            damage.PreventionSource = CombatEffectSource.Capture(_owner);
         }
     }
 

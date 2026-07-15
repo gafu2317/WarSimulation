@@ -6,7 +6,8 @@ using WarSimulation.Combat.Map;
 [DisallowMultipleComponent]
 public sealed class CombatNavMeshBuilder : MonoBehaviour
 {
-    private const float MinAreaCost = 0.01f;
+    private const float MinRelativeAreaCost = 0.01f;
+    private const float MinNavMeshAreaCost = 1f;
     private const string AreaVolumeRootName = "GeneratedNavAreaVolumes";
     private const string WalkableAreaName = CombatNavMeshAreaGridBuilder.WalkableAreaName;
     private const string RiverAreaName = CombatNavMeshAreaGridBuilder.RiverAreaName;
@@ -20,7 +21,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
     public sealed class NavMeshAreaCost
     {
         [SerializeField] private string _areaName = "Walkable";
-        [SerializeField, Min(MinAreaCost)] private float _cost = 1f;
+        [SerializeField, Min(MinRelativeAreaCost)] private float _cost = 1f;
 
         public string AreaName => _areaName;
         public float Cost => _cost;
@@ -42,13 +43,13 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
     [Header("Area Costs")]
     [SerializeField] private NavMeshAreaCost[] _areaCosts =
     {
-        new(WalkableAreaName, 1f),
-        new(RiverAreaName, 20f),
+        new(WalkableAreaName, 2f),
+        new(RiverAreaName, 40f),
         new(ForestAreaName, 1f),
-        new(SnowAreaName, 1.3f),
-        new(SwampAreaName, 1.5f),
-        new(LakeAreaName, 20f),
-        new(FrozenLakeAreaName, 1f),
+        new(SnowAreaName, 3f),
+        new(SwampAreaName, 3f),
+        new(LakeAreaName, 1998f),
+        new(FrozenLakeAreaName, 2f),
     };
 
     public NavMeshSurface Surface => _surface;
@@ -221,14 +222,32 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
     {
         if (_areaCosts == null) return;
 
+        float scale = CalculateAreaCostScale(_areaCosts);
         for (int i = 0; i < _areaCosts.Length; i++)
         {
             NavMeshAreaCost areaCost = _areaCosts[i];
             if (areaCost == null) continue;
 
             int area = ResolveAreaIndex(areaCost.AreaName);
-            NavMesh.SetAreaCost(area, Mathf.Max(MinAreaCost, areaCost.Cost));
+            NavMesh.SetAreaCost(area, Mathf.Max(MinNavMeshAreaCost, areaCost.Cost * scale));
         }
+    }
+
+    private static float CalculateAreaCostScale(NavMeshAreaCost[] areaCosts)
+    {
+        float minimum = float.PositiveInfinity;
+        for (int i = 0; i < areaCosts.Length; i++)
+        {
+            NavMeshAreaCost areaCost = areaCosts[i];
+            if (areaCost != null && areaCost.Cost > 0f)
+            {
+                minimum = Mathf.Min(minimum, areaCost.Cost);
+            }
+        }
+
+        return minimum < MinNavMeshAreaCost
+            ? MinNavMeshAreaCost / minimum
+            : 1f;
     }
 
     private static void GetVolumeHeight(MapData map, out float centerY, out float height)

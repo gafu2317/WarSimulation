@@ -20,8 +20,6 @@ public sealed class GrimoireBoltSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
-    public override float CastTimeSeconds => 0.7f;
-
     public override float MaxRange => _maxRange;
     public override bool CanTargetMagicStone => true;
 

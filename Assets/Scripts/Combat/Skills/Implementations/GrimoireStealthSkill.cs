@@ -20,6 +20,6 @@ public sealed class GrimoireStealthSkill : SkillBase
     {
         if (self == null) return;
 
-        self.StatusEffects?.ApplyStealth(_durationSeconds, "GrimoireStealth");
+        self.StatusEffects?.ApplyStealth(_durationSeconds, "GrimoireStealth", self);
     }
 }

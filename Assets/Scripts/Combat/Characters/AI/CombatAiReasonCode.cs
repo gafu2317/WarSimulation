@@ -41,4 +41,5 @@ public enum CombatAiReasonCode
     RouteRiskHigh = 38,
     BodyBlockValuable = 39,
     IncomingEnemyCast = 40,
+    NumericalAdvantage = 41,
 }

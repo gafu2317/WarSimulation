@@ -51,5 +51,10 @@ public sealed class RosaryHealingAreaSkill : SkillBase
             _healPerTick,
             _durationSeconds,
             _tickIntervalSeconds);
+        CombatSkillActionEvents.RecordCharacterEffect(
+            CombatActionEffectKind.PersistentEffectStarted,
+            CombatEffectSource.Capture(self),
+            null,
+            statusKey: "RosaryHealingArea");
     }
 }

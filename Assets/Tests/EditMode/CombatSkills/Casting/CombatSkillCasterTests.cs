@@ -26,7 +26,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new IdentifiedSkill(new WandBoltSkill(), SkillId.Wand_Bolt);
+            SkillBase skill = new IdentifiedSkill(new WandArcaneBlastSkill(), SkillId.Wand_ArcaneBlast);
 
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
             Assert.That(owner.SkillCaster.IsCasting, Is.True);
@@ -46,22 +46,80 @@ public sealed class CombatSkillCasterTests
     }
 
     [Test]
-    public void Cast_UsesStatsDistanceAndRecognitionCapturedAtStart()
+    public void Cast_CompletedResultContainsActualDamageTarget()
+    {
+        Character owner = CreateCharacter("Owner", CombatTeam.Ally, Vector3.zero);
+        Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
+        CombatSkillActionResult reported = null;
+        void Handle(CombatSkillActionResult result) => reported = result;
+
+        CombatSkillActionEvents.Completed += Handle;
+        try
+        {
+            SkillBase skill = new IdentifiedSkill(new WandArcaneBlastSkill(), SkillId.Wand_ArcaneBlast);
+
+            Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
+            owner.SkillCaster.Tick(float.PositiveInfinity);
+
+            Assert.That(reported, Is.Not.Null);
+            Assert.That(reported.Action.Actor, Is.SameAs(owner));
+            Assert.That(reported.Action.SkillId, Is.EqualTo(SkillId.Wand_ArcaneBlast));
+            Assert.That(reported.Action.Context.PrimaryTarget, Is.SameAs(target));
+            Assert.That(reported.Outcome, Is.EqualTo(CombatSkillActionOutcome.Completed));
+            Assert.That(reported.Effects, Has.Some.Matches<CombatActionEffect>(effect =>
+                effect.Kind == CombatActionEffectKind.Damage &&
+                effect.Target == target &&
+                effect.Amount > 0));
+        }
+        finally
+        {
+            CombatSkillActionEvents.Completed -= Handle;
+            DestroyCharacters(owner, target);
+        }
+    }
+
+    [Test]
+    public void Cast_DeathRaisesCancelledResult()
+    {
+        Character owner = CreateCharacter("Owner", CombatTeam.Ally, Vector3.zero);
+        Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
+        CombatSkillActionResult reported = null;
+        void Handle(CombatSkillActionResult result) => reported = result;
+
+        CombatSkillActionEvents.Cancelled += Handle;
+        try
+        {
+            SkillBase skill = new IdentifiedSkill(new WandArcaneBlastSkill(), SkillId.Wand_ArcaneBlast);
+            Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
+
+            owner.Health.TakeDamage(owner.Health.MaxHP, target);
+
+            Assert.That(reported, Is.Not.Null);
+            Assert.That(reported.Action.Actor, Is.SameAs(owner));
+            Assert.That(reported.Outcome, Is.EqualTo(CombatSkillActionOutcome.Cancelled));
+        }
+        finally
+        {
+            CombatSkillActionEvents.Cancelled -= Handle;
+            DestroyCharacters(owner, target);
+        }
+    }
+
+    [Test]
+    public void Cast_UsesStatsCapturedAtStart()
     {
         Character owner = CreateCharacter("Owner", CombatTeam.Ally, Vector3.zero);
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
             CombatEditModeTestUtil.SetPrivateField(owner, "<INT>k__BackingField", 10);
-            target.transform.position = Vector3.zero;
-            SkillBase skill = new WandBoltSkill();
+            SkillBase skill = new WandArcaneBlastSkill();
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.StatusEffects.Apply(CombatStatusEffects.StatKind.INT, 2f, 10f);
-            target.transform.position = Vector3.forward * 100f;
             owner.SkillCaster.Tick(float.PositiveInfinity);
 
-            Assert.That(target.Health.HP, Is.EqualTo(26));
+            Assert.That(target.Health.HP, Is.EqualTo(21));
         }
         finally
         {
@@ -76,7 +134,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandBoltSkill();
+            SkillBase skill = new WandArcaneBlastSkill();
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(1, target);
@@ -99,7 +157,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandBoltSkill();
+            SkillBase skill = new WandArcaneBlastSkill();
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(owner.Health.MaxHP, target);
@@ -120,7 +178,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandBoltSkill();
+            SkillBase skill = new WandArcaneBlastSkill();
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             target.Health.TakeDamage(100);
@@ -168,7 +226,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandBoltSkill();
+            SkillBase skill = new WandArcaneBlastSkill();
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(100);
@@ -184,27 +242,22 @@ public sealed class CombatSkillCasterTests
         }
     }
 
-    [TestCase(SkillId.Wand_Bolt, 0.6f)]
     [TestCase(SkillId.Wand_ArcaneBlast, 1.5f)]
     [TestCase(SkillId.Wand_AreaBlast, 1.5f)]
     [TestCase(SkillId.Wand_GodsHand, 2.5f)]
-    [TestCase(SkillId.Grimoire_Bolt, 0.7f)]
     [TestCase(SkillId.Grimoire_StrDebuff, 1f)]
     [TestCase(SkillId.Grimoire_Bind, 1.4f)]
     [TestCase(SkillId.Grimoire_Poison, 1.1f)]
     [TestCase(SkillId.Grimoire_Stealth, 0.8f)]
-    [TestCase(SkillId.Bible_Smite, 0.7f)]
     [TestCase(SkillId.Bible_StrBuff, 0.9f)]
     [TestCase(SkillId.Bible_Invulnerable, 1.2f)]
     [TestCase(SkillId.Bible_Gotsume, 1f)]
     [TestCase(SkillId.Bible_CarryRush, 1.2f)]
-    [TestCase(SkillId.Rosary_Strike, 0.6f)]
-    [TestCase(SkillId.Rosary_DistantHeal, 0.9f)]
     [TestCase(SkillId.Rosary_CloseHeal, 1.3f)]
     [TestCase(SkillId.Rosary_Regeneration, 1f)]
     [TestCase(SkillId.Rosary_HealingArea, 1.5f)]
     [TestCase(SkillId.Rosary_SacrificeThunder, 2.5f)]
-    public void FactorySkill_HasConfiguredCastTime(SkillId skillId, float expected)
+    public void StrongSkill_HasConfiguredCastTime(SkillId skillId, float expected)
     {
         Assert.That(CombatSkillFactory.Create(skillId).CastTimeSeconds, Is.EqualTo(expected).Within(0.001f));
     }
@@ -212,7 +265,12 @@ public sealed class CombatSkillCasterTests
     [TestCase(SkillId.Sword_Slash)]
     [TestCase(SkillId.Shield_Slash)]
     [TestCase(SkillId.Shield_ShoulderGuard)]
-    public void PhysicalSkill_HasNoCastTime(SkillId skillId)
+    [TestCase(SkillId.Wand_Bolt)]
+    [TestCase(SkillId.Grimoire_Bolt)]
+    [TestCase(SkillId.Bible_Smite)]
+    [TestCase(SkillId.Rosary_Strike)]
+    [TestCase(SkillId.Rosary_DistantHeal)]
+    public void ImmediateSkill_HasNoCastTime(SkillId skillId)
     {
         Assert.That(CombatSkillFactory.Create(skillId).CastTimeSeconds, Is.Zero);
     }

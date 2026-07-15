@@ -2,6 +2,8 @@ using UnityEngine;
 
 public abstract class SkillBase
 {
+    public virtual SkillId Id => SkillId.None;
+
     public abstract string Name { get; }
 
     public virtual float CooldownSeconds => 0f;
@@ -101,7 +103,7 @@ public abstract class SkillBase
             return TakeDamage(self, context, context.PrimaryTarget, amount);
         }
 
-        return TakeDamage(context.PrimaryStone, amount);
+        return TakeDamage(self, context.PrimaryStone, amount);
     }
 
     protected static int TakeDamage(
@@ -118,12 +120,12 @@ public abstract class SkillBase
         return target.Health.TakeDamage(damage, self);
     }
 
-    protected static int TakeDamage(MagicStone target, int amount)
+    protected static int TakeDamage(Character self, MagicStone target, int amount)
     {
         if (target == null || target.FeatureIndex < 0 || amount <= 0) return 0;
 
         CombatMagicStoneSystem system = CombatMagicStoneSystemResolver.Resolve();
-        return system != null ? system.TakeDamage(target.FeatureIndex, amount) : 0;
+        return system != null ? system.TakeDamage(target.FeatureIndex, amount, self) : 0;
     }
 
     protected static int ApplyDamageModifiers(Character self, SkillExecutionContext context, Character target, int amount)

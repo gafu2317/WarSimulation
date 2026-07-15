@@ -40,6 +40,6 @@ public sealed class RosaryCloseHealSkill : SkillBase
         if (!target.Health.IsAlive) return;
         context = context.Capture(self);
 
-        target.Health.Heal(EstimateHealing(self, context, target));
+        target.Health.Heal(EstimateHealing(self, context, target), self);
     }
 }

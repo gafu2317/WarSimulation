@@ -30,8 +30,8 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateClumsyTarget(CombatAiContext context)
     {
-        int interval = Mathf.FloorToInt(Time.time / 4f);
-        bool makesMistake = Mathf.Abs(context.Owner.DisplayName.GetHashCode() + interval) % 10 == 0;
+        int interval = CombatBattleRandom.GetInterval(4f);
+        bool makesMistake = CombatBattleRandom.Choose(context.Owner, "ClumsyMove", interval, 10) == 0;
         return makesMistake ? CreateOwnStoneTarget(context) : CombatMoveTarget.None;
     }
 
@@ -115,7 +115,7 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateEccentricTarget(CombatAiContext context)
     {
-        int choice = Mathf.Abs(context.Owner.DisplayName.GetHashCode() + Mathf.FloorToInt(Time.time / 3f)) % 3;
+        int choice = CombatBattleRandom.Choose(context.Owner, "EccentricMove", CombatBattleRandom.GetInterval(3f), 3);
         return choice switch
         {
             0 => CreateBestEnemyTarget(context, null, 0f),
@@ -188,8 +188,8 @@ public static partial class CombatAiPlanner
             for (int j = 0; j < context.AllyIntel.Count; j++)
             {
                 CombatCharacterIntel ally = context.AllyIntel[j];
-                if (!ally.CanAct) continue;
-                TrySelectBodyBlockPosition(owner, enemy, ally.CurrentPosition, GetProtectedAllyValue(ally), ref bestValue, ref bestPosition);
+                if (!ally.CanAct || !IsFrontlineAlly(context, ally)) continue;
+                TrySelectBodyBlockPosition(owner, enemy, ally.CurrentPosition, GetProtectedAllyValue(context, ally), ref bestValue, ref bestPosition);
             }
 
             if (context.HasOwnStonePosition)
@@ -227,12 +227,14 @@ public static partial class CombatAiPlanner
         bestPosition = candidate;
     }
 
-    private static float GetProtectedAllyValue(CombatCharacterIntel ally)
+    private static float GetProtectedAllyValue(CombatAiContext context, CombatCharacterIntel ally)
     {
         if (ally.MaxHP <= 0) return 20f;
         float missingHpRatio = 1f - ally.HP / (float)ally.MaxHP;
-        float roleValue = ally.WeaponKind == WeaponKind.Wand || ally.WeaponKind == WeaponKind.Grimoire ? 18f : 8f;
-        return 30f + missingHpRatio * 45f + roleValue;
+        float swordBonus = ally.WeaponKind == WeaponKind.Sword ? 15f : 0f;
+        return 30f + missingHpRatio * 45f
+            + CombatAiPositioning.GetAdvanceProgress(context, ally.CurrentPosition) * 40f
+            + swordBonus;
     }
 
     private static CombatMoveTarget CreateRosarySupportTarget(CombatAiContext context, Character owner, Character ally)
@@ -342,13 +344,10 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || !ally.CanAct) continue;
+            if (ally.Character == null || !ally.CanAct || !IsFrontlineAlly(context, ally)) continue;
 
-            float missingHpRatio = ally.MaxHP > 0 ? 1f - ally.HP / (float)ally.MaxHP : 0f;
-            float score = missingHpRatio * 45f;
-            if (IsFrontlineAlly(context, ally)) score += 70f;
+            float score = GetProtectedAllyValue(context, ally);
             if (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f)) score += 20f;
-            if (ally.WeaponKind == WeaponKind.Shield) score -= 24f;
             score -= HorizontalDistance(owner.transform.position, ally.CurrentPosition) * 0.5f;
             if (score <= bestScore) continue;
             bestScore = score;
@@ -425,6 +424,13 @@ public static partial class CombatAiPlanner
         }
 
         return found ? CombatMoveTarget.ForPosition(best) : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreatePositionTargetIfMeaningful(Character owner, Vector3 position)
+    {
+        return owner != null && HorizontalDistance(owner.transform.position, position) > 2f
+            ? CombatMoveTarget.ForPosition(position)
+            : CombatMoveTarget.None;
     }
 
     private static CombatMoveTarget CreateCoverPositionTarget(CombatAiContext context, Character owner)
@@ -600,7 +606,9 @@ public static partial class CombatAiPlanner
             CombatCharacterIntel ally = context.AllyIntel[i];
             if (ally.Character == null) continue;
             float hpRatio = ally.MaxHP > 0 ? (float)ally.HP / ally.MaxHP : 1f;
-            float score = (1f - hpRatio) * 60f + (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f) ? 20f : 0f);
+            float score = (1f - hpRatio) * 60f
+                + (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f) ? 20f : 0f)
+                + CombatAiPositioning.GetAdvanceProgress(context, ally.CurrentPosition) * 10f;
             if (score <= bestScore) continue;
             bestScore = score;
             best = ally.Character;

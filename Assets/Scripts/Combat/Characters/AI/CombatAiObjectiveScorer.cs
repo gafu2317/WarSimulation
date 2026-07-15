@@ -2,6 +2,8 @@ using UnityEngine;
 
 public static class CombatAiObjectiveScorer
 {
+    private const float NumericalAdvantagePerCharacter = 6f;
+    private const float MaximumNumericalAdvantageScore = 24f;
     private static readonly CombatObjective[] AllObjectives = (CombatObjective[])System.Enum.GetValues(typeof(CombatObjective));
 
     public static void BuildEntries(
@@ -38,6 +40,10 @@ public static class CombatAiObjectiveScorer
             };
 
             AddReasons(snapshot.Assessment, objective, breakdown);
+            if (GetNumericalAdvantageAdjustment(snapshot.Context, objective) != 0f)
+            {
+                AddReason(breakdown, CombatAiReasonCode.NumericalAdvantage);
+            }
             if (breakdown.WeaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
             if (breakdown.PersonalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
 
@@ -173,8 +179,7 @@ public static class CombatAiObjectiveScorer
                 + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f),
             CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.2f
-                - (context.HasEnemyStonePosition ? 14f : 0f)
-                + (!HasVisibleLivingEnemy(context) && context.HighGroundCandidates.Count > 0 ? 14f : 0f),
+                - (context.HasEnemyStonePosition ? 14f : 0f),
             CombatObjective.Retreat => assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.9f
                 + assessment.GetValue(CombatAiMetricIndex.RetreatRouteSafety) * 0.3f
                 + assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f,
@@ -188,7 +193,36 @@ public static class CombatAiObjectiveScorer
             score += 14f;
         }
 
-        return score + GetWeaponSituationAdjustment(context, assessment, weapon, objective);
+        return score
+            + GetNumericalAdvantageAdjustment(context, objective)
+            + GetWeaponSituationAdjustment(context, assessment, weapon, objective);
+    }
+
+    private static float GetNumericalAdvantageAdjustment(CombatAiContext context, CombatObjective objective)
+    {
+        int livingAllies = context.Owner != null && context.Owner.Health != null && context.Owner.Health.IsAlive ? 1 : 0;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            if (context.AllyIntel[i].IsAlive) livingAllies++;
+        }
+
+        int livingEnemies = 0;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            if (context.EnemyIntel[i].IsAlive) livingEnemies++;
+        }
+
+        float advantage = Mathf.Clamp(
+            (livingAllies - livingEnemies) * NumericalAdvantagePerCharacter,
+            0f,
+            MaximumNumericalAdvantageScore);
+        return objective switch
+        {
+            CombatObjective.AttackEnemy => advantage,
+            CombatObjective.DestroyEnemyStone => advantage * 0.75f,
+            CombatObjective.Retreat => advantage * -0.75f,
+            _ => 0f,
+        };
     }
 
     private static bool IsDamageWeapon(WeaponBase weapon)
@@ -344,7 +378,6 @@ public static class CombatAiObjectiveScorer
         return objective switch
         {
             CombatObjective.Search when assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) < 45f
-                || (!HasVisibleLivingEnemy(context) && context.HighGroundCandidates.Count > 0)
                 || lacksReliableShot => 16f,
             CombatObjective.AttackEnemy when assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 28f
                 && assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) > 35f => 14f,
@@ -426,11 +459,6 @@ public static class CombatAiObjectiveScorer
             : CombatAiWeaponWeightsProfile.GetDefaultObjectiveWeight(kind, objective);
     }
 
-    private static bool HasVisibleLivingEnemy(CombatAiContext context)
-    {
-        return CountVisibleLivingEnemies(context) > 0;
-    }
-
     private static int CountVisibleLivingEnemies(CombatAiContext context)
     {
         int count = 0;
@@ -459,7 +487,7 @@ public static class CombatAiObjectiveScorer
             CombatObjective.Retreat => personalityProfile.Caution * 18f - personalityProfile.RiskTolerance * 6f,
             _ => 0f,
         } : 0f;
-        score += CombatAiPersonalityBehavior.GetObjectiveScore(personalityProfile, assessment, objective);
+        score += CombatAiPersonalityBehavior.GetObjectiveScore(context.Owner, personalityProfile, assessment, objective);
         if (objective == CombatObjective.AttackEnemy && HasNearbyHotBloodedAlly(context)) score += 24f;
         return score;
     }

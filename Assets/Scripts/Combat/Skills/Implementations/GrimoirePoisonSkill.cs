@@ -33,6 +33,6 @@ public sealed class GrimoirePoisonSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
 
-        target.StatusEffects?.ApplyPoison(_damagePerTick, _durationSeconds, _tickIntervalSeconds, "GrimoirePoison");
+        target.StatusEffects?.ApplyPoison(_damagePerTick, _durationSeconds, _tickIntervalSeconds, "GrimoirePoison", self);
     }
 }

@@ -6,6 +6,7 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
     private Character _protectedTarget;
     private float _damageMultiplier;
     private float _expiresAt;
+    private CombatEffectSource _source;
 
     public void Initialize(Character guardian, Character protectedTarget, float damageMultiplier, float durationSeconds)
     {
@@ -15,6 +16,7 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
         _protectedTarget = protectedTarget;
         _damageMultiplier = Mathf.Max(0f, damageMultiplier);
         _expiresAt = Time.time + Mathf.Max(0f, durationSeconds);
+        _source = CombatEffectSource.Capture(guardian);
 
         if (_protectedTarget != null && _protectedTarget.Health != null)
         {
@@ -70,8 +72,9 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
         if (guardianVision != null && !guardianVision.IsVisible(attacker)) return;
 
         context.IsHandled = true;
+        context.PreventionSource = _source;
         int redirectedDamage = Mathf.Max(1, Mathf.RoundToInt(context.Amount * _damageMultiplier));
-        _guardian.Health.TakeDamage(redirectedDamage, attacker);
+        _guardian.Health.TakeDamage(redirectedDamage, context.AttackSource);
     }
 
     private void DestroySelf()

@@ -44,6 +44,7 @@ public sealed class StatDebuffSkill : SkillBase
             _stat,
             _debuffMultiplier,
             _durationSeconds,
-            GetEffectKey(_stat));
+            GetEffectKey(_stat),
+            self);
     }
 }

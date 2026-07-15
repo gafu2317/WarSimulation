@@ -103,7 +103,7 @@ public sealed class CombatVision : MonoBehaviour
     public float HorizontalFovDegrees => HorizontalFovDegreesValue;
     public float VerticalFovDegrees => _verticalFov;
     public Vector3 EyePosition => transform.TransformPoint(_headOffsetFromFoot);
-    public float CurrentSightRange => GetCurrentSightRange();
+    public float CurrentSightRange => GetSightRangeAt(transform.position);
     public Character LastSharedTo => _lastSharedTo;
     public Character LastReceivedFrom => _lastReceivedFrom;
     public float LastSharedAgeSeconds => _lastSharedTo != null ? Time.time - _lastSharedAt : float.PositiveInfinity;
@@ -312,7 +312,7 @@ public sealed class CombatVision : MonoBehaviour
 
         if (distanceToTarget < Mathf.Epsilon) return true;
         Vector2 horizontalDiff = new Vector2(diff.x, diff.z);
-        float sightRange = GetCurrentSightRange();
+        float sightRange = CurrentSightRange;
         if (horizontalDiff.sqrMagnitude > sightRange * sightRange) return false;
 
         Vector3 dirToTarget = diff / distanceToTarget;
@@ -355,14 +355,14 @@ public sealed class CombatVision : MonoBehaviour
         return verticalAngle <= _verticalFov * 0.5f;
     }
 
-    private float GetCurrentSightRange()
+    public float GetSightRangeAt(Vector3 worldPosition)
     {
         float minimumRange = Mathf.Min(_minimumSightRange, _maximumSightRange);
         float maximumRange = Mathf.Max(_minimumSightRange, _maximumSightRange);
         CombatMapSystem mapSystem = ResolveMapSystem();
         if (mapSystem == null ||
             !mapSystem.TryGetSightHeightContext(
-                transform.position,
+                worldPosition,
                 out float currentHeight,
                 out float minimumHeight,
                 out float maximumHeight)) return minimumRange;

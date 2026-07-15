@@ -102,6 +102,7 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.RouteRiskHigh => Format(nameof(CombatAiReasonCode.RouteRiskHigh), "移動経路の危険度が高い"),
             CombatAiReasonCode.BodyBlockValuable => Format(nameof(CombatAiReasonCode.BodyBlockValuable), "遮断で味方や魔石を守れる"),
             CombatAiReasonCode.IncomingEnemyCast => Format(nameof(CombatAiReasonCode.IncomingEnemyCast), "敵の詠唱攻撃を受ける見込み"),
+            CombatAiReasonCode.NumericalAdvantage => Format(nameof(CombatAiReasonCode.NumericalAdvantage), "数的優勢"),
             _ => reason.ToString(),
         };
     }

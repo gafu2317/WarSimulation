@@ -46,6 +46,7 @@ public sealed class StatBuffSkill : SkillBase
             _stat,
             _buffMultiplier,
             _durationSeconds,
-            GetEffectKey(_stat));
+            GetEffectKey(_stat),
+            self);
     }
 }

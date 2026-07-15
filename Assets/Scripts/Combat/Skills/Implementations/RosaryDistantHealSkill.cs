@@ -20,8 +20,6 @@ public sealed class RosaryDistantHealSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
-    public override float CastTimeSeconds => 0.9f;
-
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;
 
     public override float MaxRange => _maxRange;
@@ -42,6 +40,6 @@ public sealed class RosaryDistantHealSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
         context = context.Capture(self);
-        target.Health.Heal(EstimateHealing(self, context, target));
+        target.Health.Heal(EstimateHealing(self, context, target), self);
     }
 }

@@ -8,6 +8,7 @@ public class CombatCharacterSystem : MonoBehaviour
     private const float FlatCellMaxSlopeDeg = 8f;
     private const float TeamQuarterNavMeshSampleRadius = 2f;
     private const float CharacterSpacingDistance = 1.5f;
+    private const float InitialFeatureClearanceDistance = 3f;
 
     public List<Character> AllyCharacters = new List<Character>();
     public List<Character> EnemyCharacters = new List<Character>();
@@ -32,6 +33,7 @@ public class CombatCharacterSystem : MonoBehaviour
     {
         AssignTeam(AllyCharacters, CombatTeam.Ally);
         AssignTeam(EnemyCharacters, CombatTeam.Enemy);
+        AssignBattleParticipantIds();
     }
 
     public void SetParticipants(
@@ -53,6 +55,8 @@ public class CombatCharacterSystem : MonoBehaviour
                 character.gameObject.SetActive(false);
             }
         }
+
+        AssignBattleParticipantIds();
     }
 
     public void SetParticipants(
@@ -113,6 +117,7 @@ public class CombatCharacterSystem : MonoBehaviour
 
     public void ResetCharactersForBattle()
     {
+        AssignBattleParticipantIds();
         ResetCharactersForBattle(AllyCharacters);
         ResetCharactersForBattle(EnemyCharacters);
     }
@@ -136,7 +141,7 @@ public class CombatCharacterSystem : MonoBehaviour
 
         bool movedAllies = TryRelocateTeamNearMainStone(AllyCharacters, CombatTeam.Ally, mapSystem, map);
         bool movedEnemies = TryRelocateTeamNearMainStone(EnemyCharacters, CombatTeam.Enemy, mapSystem, map);
-        return movedAllies || movedEnemies;
+        return movedAllies && movedEnemies;
     }
 
     public bool TryRelocateCharactersToTeamQuarterFlats()
@@ -172,20 +177,30 @@ public class CombatCharacterSystem : MonoBehaviour
             return false;
         }
 
-        var placedPositions = new List<Vector3>(characters.Count);
-        bool movedAny = false;
+        var destinations = new List<Vector3>(characters.Count);
         for (int i = 0; i < characters.Count; i++)
         {
             Character character = characters[i];
             if (character == null) continue;
 
-            Vector3 destination = SelectCandidateWithSpacing(candidates, placedPositions);
-            PlaceCharacter(character, destination);
-            placedPositions.Add(destination);
-            movedAny = true;
+            if (!TrySelectCandidateWithSpacing(candidates, destinations, out Vector3 destination))
+            {
+                return false;
+            }
+
+            destinations.Add(destination);
         }
 
-        return movedAny;
+        int destinationIndex = 0;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character == null) continue;
+
+            PlaceCharacter(character, destinations[destinationIndex++]);
+        }
+
+        return destinations.Count > 0;
     }
 
     private static bool TryCollectFlatPositionsNearAnchor(
@@ -210,9 +225,14 @@ public class CombatCharacterSystem : MonoBehaviour
                 if (height.SampleSlopeDeg(mapLocalPosition) > FlatCellMaxSlopeDeg) continue;
 
                 Vector3 worldPosition = mapSystem.MapLocalToSurfaceWorldPosition(mapLocalPosition);
+                if (!IsClearOfSolidFeatures(mapSystem, map, worldPosition)) continue;
+
                 if (NavMesh.SamplePosition(worldPosition, out NavMeshHit hit, TeamQuarterNavMeshSampleRadius, NavMesh.AllAreas))
                 {
-                    candidates.Add(hit.position);
+                    if (IsClearOfSolidFeatures(mapSystem, map, hit.position))
+                    {
+                        candidates.Add(hit.position);
+                    }
                     continue;
                 }
 
@@ -230,18 +250,48 @@ public class CombatCharacterSystem : MonoBehaviour
         return candidates.Count > 0;
     }
 
-    private static Vector3 SelectCandidateWithSpacing(List<Vector3> candidates, List<Vector3> placedPositions)
+    private static bool TrySelectCandidateWithSpacing(
+        List<Vector3> candidates,
+        List<Vector3> placedPositions,
+        out Vector3 selected)
     {
         for (int i = 0; i < candidates.Count; i++)
         {
             Vector3 candidate = candidates[i];
             if (HasEnoughSpacing(candidate, placedPositions))
             {
-                return candidate;
+                selected = candidate;
+                return true;
             }
         }
 
-        return candidates[0];
+        selected = default;
+        return false;
+    }
+
+    private static bool IsClearOfSolidFeatures(
+        CombatMapSystem mapSystem,
+        MapData map,
+        Vector3 worldPosition)
+    {
+        float clearanceSqr = InitialFeatureClearanceDistance * InitialFeatureClearanceDistance;
+        Transform origin = mapSystem.MapOrigin;
+        List<PlacedFeature> features = map.Features;
+        for (int i = 0; i < features.Count; i++)
+        {
+            PlacedFeature feature = features[i];
+            if (feature.Type == FeatureType.Bridge) continue;
+
+            Vector3 featurePosition = origin != null
+                ? origin.TransformPoint(feature.WorldPosition)
+                : feature.WorldPosition;
+            if (HorizontalDistanceSqr(worldPosition, featurePosition) < clearanceSqr)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool HasEnoughSpacing(Vector3 candidate, List<Vector3> placedPositions)
@@ -375,6 +425,43 @@ public class CombatCharacterSystem : MonoBehaviour
             character.SetTeam(team);
             RegisterInitialPosition(character);
         }
+    }
+
+    private void AssignBattleParticipantIds()
+    {
+        AssignBattleParticipantIds(AllyCharacters, 1);
+        AssignBattleParticipantIds(EnemyCharacters, -1);
+    }
+
+    private static void AssignBattleParticipantIds(List<Character> characters, int teamSign)
+    {
+        var ordered = new List<Character>();
+        for (int i = 0; i < characters.Count; i++)
+        {
+            if (characters[i] != null) ordered.Add(characters[i]);
+        }
+
+        ordered.Sort((left, right) => string.CompareOrdinal(
+            BuildHierarchyKey(left.transform),
+            BuildHierarchyKey(right.transform)));
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].SetBattleParticipantId(teamSign * (i + 1));
+        }
+    }
+
+    private static string BuildHierarchyKey(Transform current)
+    {
+        if (current == null) return string.Empty;
+
+        string key = current.GetSiblingIndex().ToString("D4");
+        while (current.parent != null)
+        {
+            current = current.parent;
+            key = current.GetSiblingIndex().ToString("D4") + "/" + key;
+        }
+
+        return current.gameObject.scene.path + ":" + key;
     }
 
     private void ReplaceParticipants(

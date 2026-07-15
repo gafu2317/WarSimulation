@@ -3,6 +3,7 @@ using UnityEngine;
 public sealed class RosaryHealingAreaZone : MonoBehaviour
 {
     private Character _owner;
+    private CombatEffectSource _source;
     private float _radius;
     private int _healPerTick;
     private float _expiresAt;
@@ -17,6 +18,7 @@ public sealed class RosaryHealingAreaZone : MonoBehaviour
         float tickIntervalSeconds)
     {
         _owner = owner;
+        _source = CombatEffectSource.Capture(owner);
         _radius = radius;
         _healPerTick = healPerTick;
         _tickIntervalSeconds = Mathf.Max(0.01f, tickIntervalSeconds);
@@ -53,7 +55,7 @@ public sealed class RosaryHealingAreaZone : MonoBehaviour
             Character ally = allies[i];
             if (ally == null || ally.Health == null || !ally.Health.IsAlive) continue;
 
-            ally.Health.Heal(_healPerTick);
+            ally.Health.Heal(_healPerTick, _source);
         }
     }
 

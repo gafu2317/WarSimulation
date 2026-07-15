@@ -20,8 +20,6 @@ public sealed class RosaryStrikeSkill : SkillBase
 
     public override float CooldownSeconds => _cooldownSeconds;
 
-    public override float CastTimeSeconds => 0.6f;
-
     public override float MaxRange => _maxRange;
     public override bool CanTargetMagicStone => true;
 

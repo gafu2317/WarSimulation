@@ -27,6 +27,6 @@ public sealed class GrimoireBindSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsTargetable) return;
 
-        target.StatusEffects?.ApplyBind(_durationSeconds, "GrimoireBind");
+        target.StatusEffects?.ApplyBind(_durationSeconds, "GrimoireBind", self);
     }
 }

@@ -75,6 +75,17 @@ namespace WarSimulation.Combat.Map
             }
 
             int seed = _useRandomSeed ? unchecked(System.Environment.TickCount ^ GetHashCode()) : _seed;
+            return Generate(seed);
+        }
+
+        public MapData Generate(int seed)
+        {
+            if (_config == null)
+            {
+                Debug.LogError($"[{nameof(MapGenerator)}] MapGenerationConfig is not assigned.");
+                return null;
+            }
+
             IRandom rng = new SystemRandom(seed);
 
             MapData map = CreateEmptyMap(_config, seed);
@@ -122,6 +133,17 @@ namespace WarSimulation.Combat.Map
 
             global::CombatNavMeshBuilder navMeshBuilder = GetOrAddComponent<global::CombatNavMeshBuilder>();
             navMeshBuilder.Build(map);
+        }
+
+        public void Clear3D()
+        {
+            GetComponent<CombatNavMeshBuilder>()?.Clear();
+            GetComponent<FeatureRenderer>()?.Clear();
+            GetComponent<BridgeRenderer>()?.Clear();
+            GetComponent<LakeRenderer>()?.Clear();
+            GetComponent<RiverRenderer>()?.Clear();
+            GetComponent<TerrainSkirtRenderer>()?.Clear();
+            GetComponent<TerrainRenderer>()?.Clear();
         }
 
         private static void SetCombatMapSystemCurrentMap(MapData map)

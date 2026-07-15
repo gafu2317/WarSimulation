@@ -25,6 +25,7 @@ public class Character : MonoBehaviour
         CharacterData != null && !string.IsNullOrWhiteSpace(CharacterData.CharacterName)
             ? CharacterData.CharacterName
             : gameObject.name;
+    public int BattleParticipantId { get; private set; }
     public CombatTeam Team => _team;
     public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
     public CombatHealth Health => _health != null ? _health : GetComponent<CombatHealth>();
@@ -155,6 +156,11 @@ public class Character : MonoBehaviour
     public void SetTeam(CombatTeam team)
     {
         _team = team;
+    }
+
+    public void SetBattleParticipantId(int participantId)
+    {
+        BattleParticipantId = participantId;
     }
 
     // ステータス設定
@@ -297,6 +303,7 @@ public class Character : MonoBehaviour
         RebuildCombatSkills();
         _vision ??= GetComponent<CombatVision>();
         _vision?.Initialize();
+        GetComponent<CombatAiBrain>()?.ResetForBattle();
         GetComponent<CombatAiPersonalityRuntime>()?.ResetForBattle();
     }
 
@@ -307,18 +314,17 @@ public class Character : MonoBehaviour
     /// <summary>
     /// 指定した目標地点へNavMeshを使用して移動を開始します
     /// </summary>
-    public void MoveToTarget(Vector3 destination)
+    public bool MoveToTarget(Vector3 destination)
     {
         if (_body != null)
         {
-            _body.TrySetDestination(destination);
-            return;
+            return _body.TrySetDestination(destination);
         }
 
-        if (_agent == null || !_agent.isOnNavMesh) return;
+        if (_agent == null || !_agent.isOnNavMesh) return false;
         
         _agent.isStopped = false;
-        _agent.SetDestination(destination);
+        return _agent.SetDestination(destination);
     }
 
     /// <summary>

@@ -40,6 +40,11 @@ public sealed class RosaryRegenerationSkill : SkillBase
         if (self == null || target == null || target.Health == null) return;
         if (!target.Health.IsAlive) return;
 
-        target.StatusEffects?.ApplyHealOverTime(_healPerTick, _durationSeconds, _tickIntervalSeconds, "RosaryRegeneration");
+        target.StatusEffects?.ApplyHealOverTime(
+            _healPerTick,
+            _durationSeconds,
+            _tickIntervalSeconds,
+            "RosaryRegeneration",
+            self);
     }
 }

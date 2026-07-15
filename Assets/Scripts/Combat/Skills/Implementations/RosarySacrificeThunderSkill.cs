@@ -51,7 +51,7 @@ public sealed class RosarySacrificeThunderSkill : SkillBase
 
         for (int i = 0; i < context.ResolvedStones.Count; i++)
         {
-            dealtDamage |= TakeDamage(context.ResolvedStones[i], damage) > 0;
+            dealtDamage |= TakeDamage(self, context.ResolvedStones[i], damage) > 0;
         }
 
         if (dealtDamage)

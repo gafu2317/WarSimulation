@@ -33,8 +33,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     public void ResetSelection()
     {
-        SetAllSelected(_allyRows, false);
-        SetAllSelected(_enemyRows, false);
+        SetAllSelected(_allyRows, true);
+        SetAllSelected(_enemyRows, true);
         Refresh();
     }
 
@@ -252,7 +252,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void RefreshRow(SelectionRow row)
     {
-        SetButtonLabel(row.CharacterButton, $"{(row.Selected ? "✓" : "□")} {row.Character.DisplayName}");
+        SetButtonLabel(row.CharacterButton, $"{(row.Selected ? "■" : "□")} {row.Character.DisplayName}");
         SetButtonLabel(row.WeaponButton, $"武器: {GetWeaponName(GetOption(_weaponOptions, row.WeaponIndex))}");
         SetButtonLabel(row.PersonalityButton, $"性格: {GetPersonalityName(GetOption(_personalityOptions, row.PersonalityIndex))}");
 

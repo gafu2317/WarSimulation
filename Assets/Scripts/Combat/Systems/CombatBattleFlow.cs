@@ -99,9 +99,11 @@ public sealed class CombatBattleFlow : MonoBehaviour
         }
 
         CancelTransientBattleArtifacts();
+        CombatBattleRandom.Initialize(map.Seed);
         _characterSystem?.SnapAllCharactersToNavMesh();
         _characterSystem?.CaptureCurrentPositionsAsInitialPositions();
         _characterSystem?.ResetCharactersForBattle();
+        CombatSkillActionEvents.ResetBattle();
         _magicStoneSystem?.Initialize(map);
         _state = CombatBattleState.Running;
     }
@@ -121,7 +123,9 @@ public sealed class CombatBattleFlow : MonoBehaviour
         }
 
         CancelTransientBattleArtifacts();
+        CombatBattleRandom.Initialize(map.Seed);
         _characterSystem?.ResetCharactersForBattle();
+        CombatSkillActionEvents.ResetBattle();
         _magicStoneSystem?.Initialize(map);
         _state = CombatBattleState.Running;
     }

@@ -10,6 +10,7 @@ public readonly struct CombatStatusEffectSnapshot
     public float Magnitude { get; }
     public float TickIntervalSeconds { get; }
     public float RemainingSeconds { get; }
+    public CombatEffectSource Source { get; }
     public bool IsBuff => Type == CombatStatusEffects.EffectType.StatModifier && Multiplier > 1f;
     public bool IsDebuff => Type == CombatStatusEffects.EffectType.StatModifier && Multiplier < 1f;
 
@@ -20,7 +21,8 @@ public readonly struct CombatStatusEffectSnapshot
         float multiplier,
         float magnitude,
         float tickIntervalSeconds,
-        float remainingSeconds)
+        float remainingSeconds,
+        CombatEffectSource source = default)
     {
         Key = key;
         Type = type;
@@ -29,6 +31,7 @@ public readonly struct CombatStatusEffectSnapshot
         Magnitude = magnitude;
         TickIntervalSeconds = tickIntervalSeconds;
         RemainingSeconds = remainingSeconds;
+        Source = source;
     }
 }
 
@@ -64,6 +67,7 @@ public sealed class CombatStatusEffects : MonoBehaviour
         public float TickIntervalSeconds;
         public float NextTickAt;
         public float ExpiresAt;
+        public CombatEffectSource Source;
     }
 
     private const float MinMultiplier = 0.1f;
@@ -118,6 +122,22 @@ public sealed class CombatStatusEffects : MonoBehaviour
         return false;
     }
 
+    public bool TryGetActiveEffectSourceImmediate(
+        EffectType type,
+        out CombatEffectSource source)
+    {
+        for (int i = 0; i < _effects.Count; i++)
+        {
+            if (_effects[i].Type != type) continue;
+
+            source = _effects[i].Source;
+            return true;
+        }
+
+        source = CombatEffectSource.None;
+        return false;
+    }
+
     public float GetRemainingSeconds(string key)
     {
         if (string.IsNullOrEmpty(key)) return 0f;
@@ -151,13 +171,19 @@ public sealed class CombatStatusEffects : MonoBehaviour
                 effect.Multiplier,
                 effect.Magnitude,
                 effect.TickIntervalSeconds,
-                Mathf.Max(0f, effect.ExpiresAt - now)));
+                Mathf.Max(0f, effect.ExpiresAt - now),
+                effect.Source));
         }
 
         return _effectSnapshots;
     }
 
-    public void Apply(StatKind stat, float multiplier, float durationSeconds, string key = null)
+    public void Apply(
+        StatKind stat,
+        float multiplier,
+        float durationSeconds,
+        string key = null,
+        Character source = null)
     {
         string effectKey = ResolveEffectKey(stat, key);
         ApplyOrUpdateEffect(new ActiveEffect
@@ -170,47 +196,71 @@ public sealed class CombatStatusEffects : MonoBehaviour
             TickIntervalSeconds = 0f,
             NextTickAt = float.PositiveInfinity,
             ExpiresAt = Time.time + Mathf.Max(0f, durationSeconds),
+            Source = CombatEffectSource.Capture(source),
         });
     }
 
-    public void ApplyInvulnerable(float durationSeconds, string key = null)
+    public void ApplyInvulnerable(float durationSeconds, string key = null, Character source = null)
     {
-        ApplySimpleEffect(EffectType.Invulnerable, durationSeconds, ResolveEffectKey(EffectType.Invulnerable, key));
+        ApplySimpleEffect(
+            EffectType.Invulnerable,
+            durationSeconds,
+            ResolveEffectKey(EffectType.Invulnerable, key),
+            CombatEffectSource.Capture(source));
     }
 
-    public void ApplyRoot(float durationSeconds, string key = null)
+    public void ApplyRoot(float durationSeconds, string key = null, Character source = null)
     {
-        ApplySimpleEffect(EffectType.Root, durationSeconds, ResolveEffectKey(EffectType.Root, key));
+        ApplySimpleEffect(
+            EffectType.Root,
+            durationSeconds,
+            ResolveEffectKey(EffectType.Root, key),
+            CombatEffectSource.Capture(source));
     }
 
-    public void ApplyBind(float durationSeconds, string key = null)
+    public void ApplyBind(float durationSeconds, string key = null, Character source = null)
     {
-        ApplySimpleEffect(EffectType.Bind, durationSeconds, ResolveEffectKey(EffectType.Bind, key));
+        ApplySimpleEffect(
+            EffectType.Bind,
+            durationSeconds,
+            ResolveEffectKey(EffectType.Bind, key),
+            CombatEffectSource.Capture(source));
     }
 
-    public void ApplyPoison(int damagePerTick, float durationSeconds, float tickIntervalSeconds, string key = null)
+    public void ApplyPoison(int damagePerTick, float durationSeconds, float tickIntervalSeconds, string key = null, Character source = null)
     {
         ApplyTickEffect(
             EffectType.Poison,
             Mathf.Max(0, damagePerTick),
             durationSeconds,
             tickIntervalSeconds,
-            ResolveEffectKey(EffectType.Poison, key));
+            ResolveEffectKey(EffectType.Poison, key),
+            CombatEffectSource.Capture(source));
     }
 
-    public void ApplyHealOverTime(int healPerTick, float durationSeconds, float tickIntervalSeconds, string key = null)
+    public void ApplyHealOverTime(
+        int healPerTick,
+        float durationSeconds,
+        float tickIntervalSeconds,
+        string key = null,
+        Character source = null)
     {
         ApplyTickEffect(
             EffectType.HealOverTime,
             Mathf.Max(0, healPerTick),
             durationSeconds,
             tickIntervalSeconds,
-            ResolveEffectKey(EffectType.HealOverTime, key));
+            ResolveEffectKey(EffectType.HealOverTime, key),
+            CombatEffectSource.Capture(source));
     }
 
-    public void ApplyStealth(float durationSeconds, string key = null)
+    public void ApplyStealth(float durationSeconds, string key = null, Character source = null)
     {
-        ApplySimpleEffect(EffectType.Stealth, durationSeconds, ResolveEffectKey(EffectType.Stealth, key));
+        ApplySimpleEffect(
+            EffectType.Stealth,
+            durationSeconds,
+            ResolveEffectKey(EffectType.Stealth, key),
+            CombatEffectSource.Capture(source));
     }
 
     public bool IsInvulnerable => HasActiveEffect(EffectType.Invulnerable);
@@ -224,7 +274,7 @@ public sealed class CombatStatusEffects : MonoBehaviour
         {
             if (_effects[i].Type != type) continue;
 
-            _effects.RemoveAt(i);
+            RemoveEffectAt(i, CombatStatusEffectChangeKind.Removed);
         }
     }
 
@@ -234,13 +284,16 @@ public sealed class CombatStatusEffects : MonoBehaviour
 
         for (int i = _effects.Count - 1; i >= 0; i--)
         {
-            if (_effects[i].Key == key) _effects.RemoveAt(i);
+            if (_effects[i].Key == key) RemoveEffectAt(i, CombatStatusEffectChangeKind.Removed);
         }
     }
 
     public void ClearAll()
     {
-        _effects.Clear();
+        for (int i = _effects.Count - 1; i >= 0; i--)
+        {
+            RemoveEffectAt(i, CombatStatusEffectChangeKind.Removed);
+        }
         _effectSnapshots.Clear();
     }
 
@@ -249,7 +302,11 @@ public sealed class CombatStatusEffects : MonoBehaviour
         UpdateEffects();
     }
 
-    private void ApplySimpleEffect(EffectType type, float durationSeconds, string key)
+    private void ApplySimpleEffect(
+        EffectType type,
+        float durationSeconds,
+        string key,
+        CombatEffectSource source)
     {
         ApplyOrUpdateEffect(new ActiveEffect
         {
@@ -261,6 +318,7 @@ public sealed class CombatStatusEffects : MonoBehaviour
             TickIntervalSeconds = 0f,
             NextTickAt = float.PositiveInfinity,
             ExpiresAt = Time.time + Mathf.Max(0f, durationSeconds),
+            Source = source,
         });
     }
 
@@ -269,7 +327,8 @@ public sealed class CombatStatusEffects : MonoBehaviour
         int magnitude,
         float durationSeconds,
         float tickIntervalSeconds,
-        string key)
+        string key,
+        CombatEffectSource source)
     {
         float safeTickInterval = Mathf.Max(0.01f, tickIntervalSeconds);
         ApplyOrUpdateEffect(new ActiveEffect
@@ -282,6 +341,7 @@ public sealed class CombatStatusEffects : MonoBehaviour
             TickIntervalSeconds = safeTickInterval,
             NextTickAt = Time.time + safeTickInterval,
             ExpiresAt = Time.time + Mathf.Max(0f, durationSeconds),
+            Source = source,
         });
     }
 
@@ -293,10 +353,12 @@ public sealed class CombatStatusEffects : MonoBehaviour
             if (effect.Key != newEffect.Key) continue;
 
             _effects[i] = newEffect;
+            RaiseChanged(newEffect, CombatStatusEffectChangeKind.Refreshed);
             return;
         }
 
         _effects.Add(newEffect);
+        RaiseChanged(newEffect, CombatStatusEffectChangeKind.Applied);
     }
 
     private static string ResolveEffectKey(StatKind stat, string key)
@@ -344,7 +406,8 @@ public sealed class CombatStatusEffects : MonoBehaviour
             bool changed = false;
             while (now >= effect.NextTickAt && effect.NextTickAt <= effect.ExpiresAt)
             {
-                ApplyTickEffect(ownerHealth, effect);
+                int appliedAmount = ApplyTickEffect(ownerHealth, effect);
+                RaiseChanged(effect, CombatStatusEffectChangeKind.Tick, appliedAmount);
                 effect.NextTickAt += effect.TickIntervalSeconds;
                 changed = true;
             }
@@ -356,19 +419,19 @@ public sealed class CombatStatusEffects : MonoBehaviour
         }
     }
 
-    private static void ApplyTickEffect(CombatHealth ownerHealth, ActiveEffect effect)
+    private static int ApplyTickEffect(CombatHealth ownerHealth, ActiveEffect effect)
     {
         int amount = Mathf.RoundToInt(effect.Magnitude);
-        if (amount <= 0) return;
+        if (amount <= 0) return 0;
 
         switch (effect.Type)
         {
             case EffectType.Poison:
-                ownerHealth.TakeDamage(amount);
-                break;
+                return ownerHealth.TakeDamage(amount, effect.Source);
             case EffectType.HealOverTime:
-                ownerHealth.Heal(amount);
-                break;
+                return ownerHealth.Heal(amount, effect.Source);
+            default:
+                return 0;
         }
     }
 
@@ -379,8 +442,29 @@ public sealed class CombatStatusEffects : MonoBehaviour
         {
             if (now <= _effects[i].ExpiresAt) continue;
 
-            _effects.RemoveAt(i);
+            RemoveEffectAt(i, CombatStatusEffectChangeKind.Expired);
         }
+    }
+
+    private void RemoveEffectAt(int index, CombatStatusEffectChangeKind kind)
+    {
+        ActiveEffect effect = _effects[index];
+        _effects.RemoveAt(index);
+        RaiseChanged(effect, kind);
+    }
+
+    private void RaiseChanged(
+        ActiveEffect effect,
+        CombatStatusEffectChangeKind kind,
+        int amount = 0)
+    {
+        CombatStatusEffectEvents.RaiseChanged(new CombatStatusEffectChange(
+            GetComponent<Character>(),
+            effect.Key,
+            effect.Type,
+            kind,
+            effect.Source,
+            amount));
     }
 
     private CombatHealth ResolveOwnerHealth()

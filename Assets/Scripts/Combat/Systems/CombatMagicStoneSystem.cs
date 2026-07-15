@@ -12,6 +12,7 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
     private readonly Dictionary<int, MagicStone> _views = new Dictionary<int, MagicStone>();
 
     public event Action<int> StateChanged;
+    public event Action<int, int, Character> Damaged;
     public event Action<FeatureType> MainStoneDestroyed;
 
     public void Initialize(MapData map)
@@ -81,7 +82,7 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
         return false;
     }
 
-    public int TakeDamage(int featureIndex, int amount)
+    public int TakeDamage(int featureIndex, int amount, Character attacker = null)
     {
         if (amount <= 0 || !_states.TryGetValue(featureIndex, out MagicStoneRuntimeState state)) return 0;
         if (state.HP <= 0) return 0;
@@ -89,7 +90,10 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
         int previousHP = state.HP;
         state.HP = Mathf.Max(0, state.HP - amount);
         int applied = previousHP - state.HP;
+        CombatEffectSource source = CombatEffectSource.Capture(attacker);
 
+        Damaged?.Invoke(featureIndex, applied, attacker);
+        CombatSkillActionEvents.RecordMagicStoneDamage(source, featureIndex, applied);
         StateChanged?.Invoke(featureIndex);
 
         if (state.HP == 0)

@@ -5,6 +5,169 @@ using WarSimulation.Combat.Map;
 public sealed class CombatHealthAttackTests
 {
     [Test]
+    public void Health_RaisesAppliedDamageWithVictimAndAttacker()
+    {
+        GameObject victimGo = new GameObject("Victim");
+        GameObject attackerGo = new GameObject("Attacker");
+        Character reportedVictim = null;
+        Character reportedAttacker = null;
+        int reportedDamage = 0;
+        void Handle(Character victim, int amount, Character attacker)
+        {
+            reportedVictim = victim;
+            reportedAttacker = attacker;
+            reportedDamage = amount;
+        }
+
+        CombatDamageEvents.DamageApplied += Handle;
+        try
+        {
+            Character victim = victimGo.AddComponent<Character>();
+            Character attacker = attackerGo.AddComponent<Character>();
+            victim.Health.Initialize(20);
+
+            victim.Health.TakeDamage(7, attacker);
+
+            Assert.That(reportedVictim, Is.SameAs(victim));
+            Assert.That(reportedAttacker, Is.SameAs(attacker));
+            Assert.That(reportedDamage, Is.EqualTo(7));
+        }
+        finally
+        {
+            CombatDamageEvents.DamageApplied -= Handle;
+            Object.DestroyImmediate(victimGo);
+            Object.DestroyImmediate(attackerGo);
+        }
+    }
+
+    [Test]
+    public void Health_RaisesPreventedDamageWhenInvulnerable()
+    {
+        GameObject characterGo = new GameObject("Character");
+        int preventedDamage = 0;
+        void Handle(Character victim, int amount, Character attacker) => preventedDamage += amount;
+        CombatDamageEvents.DamagePrevented += Handle;
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            character.Health.Initialize(20);
+            character.StatusEffects.ApplyInvulnerable(5f);
+
+            character.Health.TakeDamage(7);
+
+            Assert.That(preventedDamage, Is.EqualTo(7));
+        }
+        finally
+        {
+            CombatDamageEvents.DamagePrevented -= Handle;
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
+    public void Health_ResolvedPreventionIdentifiesTheDefensiveSkill()
+    {
+        GameObject targetGo = new GameObject("Target");
+        GameObject attackerGo = new GameObject("Attacker");
+        CombatDamageEvent reported = default;
+        void Handle(CombatDamageEvent damage)
+        {
+            if (damage.WasPrevented) reported = damage;
+        }
+
+        CombatDamageEvents.Resolved += Handle;
+        try
+        {
+            Character target = targetGo.AddComponent<Character>();
+            Character attacker = attackerGo.AddComponent<Character>();
+            target.Health.Initialize(20);
+            SkillBase skill = new IdentifiedSkill(
+                new BibleInvulnerableSkill(),
+                SkillId.Bible_Invulnerable);
+            CombatSkillActionInfo action = CombatSkillActionEvents.Start(
+                target,
+                skill,
+                SkillExecutionContext.ForSelf(target));
+            CombatSkillActionEvents.Execute(action, () =>
+                target.StatusEffects.ApplyInvulnerable(5f, source: target));
+
+            target.Health.TakeDamage(7, attacker);
+
+            Assert.That(reported.Target, Is.SameAs(target));
+            Assert.That(reported.Amount, Is.EqualTo(7));
+            Assert.That(reported.AttackSource.Character, Is.SameAs(attacker));
+            Assert.That(reported.PreventionSource.Character, Is.SameAs(target));
+            Assert.That(reported.PreventionSource.SkillId, Is.EqualTo(SkillId.Bible_Invulnerable));
+        }
+        finally
+        {
+            CombatDamageEvents.Resolved -= Handle;
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(attackerGo);
+        }
+    }
+
+    [Test]
+    public void Health_RaisesEffectiveHealingAmount()
+    {
+        GameObject characterGo = new GameObject("Character");
+        Character reportedTarget = null;
+        int reportedHealing = 0;
+        void Handle(Character target, int amount)
+        {
+            reportedTarget = target;
+            reportedHealing = amount;
+        }
+
+        CombatHealingEvents.HealingApplied += Handle;
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            character.Health.Initialize(20);
+            character.Health.TakeDamage(8);
+
+            character.Health.Heal(20);
+
+            Assert.That(reportedTarget, Is.SameAs(character));
+            Assert.That(reportedHealing, Is.EqualTo(8));
+        }
+        finally
+        {
+            CombatHealingEvents.HealingApplied -= Handle;
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
+    public void Health_ResolvedHealingIdentifiesTheHealer()
+    {
+        GameObject targetGo = new GameObject("Target");
+        GameObject healerGo = new GameObject("Healer");
+        CombatHealingEvent reported = default;
+        void Handle(CombatHealingEvent healing) => reported = healing;
+
+        CombatHealingEvents.Resolved += Handle;
+        try
+        {
+            Character target = targetGo.AddComponent<Character>();
+            Character healer = healerGo.AddComponent<Character>();
+            target.Health.Initialize(20, 10);
+
+            target.Health.Heal(5, healer);
+
+            Assert.That(reported.Target, Is.SameAs(target));
+            Assert.That(reported.Amount, Is.EqualTo(5));
+            Assert.That(reported.Source.Character, Is.SameAs(healer));
+        }
+        finally
+        {
+            CombatHealingEvents.Resolved -= Handle;
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(healerGo);
+        }
+    }
+
+    [Test]
     public void Health_EntersRetreatWhenHpReachesZero()
     {
         GameObject characterGo = new GameObject("Character");
@@ -155,6 +318,43 @@ public sealed class CombatHealthAttackTests
 
             Assert.That(health.HasRetreatDestination, Is.True);
             Assert.That(health.LifeState, Is.EqualTo(LifeState.Retreating));
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
+    public void Health_RevivesFifteenSecondsAfterReachingHome()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject characterGo = new GameObject("Character");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character character = characterGo.AddComponent<Character>();
+            system.AllyCharacters.Add(character);
+            system.AssignTeamsFromLists();
+            CombatHealth health = character.Health;
+            health.Initialize(maxHP: 20);
+            var serializedHealth = new UnityEditor.SerializedObject(health);
+
+            Assert.That(
+                serializedHealth.FindProperty("_reviveDelayAfterArrival").floatValue,
+                Is.EqualTo(15f));
+
+            health.TakeDamage(20);
+
+            Assert.That(health.TryCompleteRetreatIfArrived(), Is.False);
+            Assert.That(health.LifeState, Is.EqualTo(LifeState.Retreating));
+
+            CombatEditModeTestUtil.SetPrivateField(health, "_reviveAtTime", Time.time - 0.01f);
+
+            Assert.That(health.TryCompleteRetreatIfArrived(), Is.True);
+            Assert.That(health.HP, Is.EqualTo(20));
+            Assert.That(health.LifeState, Is.EqualTo(LifeState.Active));
         }
         finally
         {

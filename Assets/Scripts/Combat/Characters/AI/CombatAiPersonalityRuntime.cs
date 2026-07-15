@@ -262,7 +262,12 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
         for (int value = (int)CombatStatusEffects.StatKind.STR; value <= (int)CombatStatusEffects.StatKind.AGI; value++)
         {
             CombatStatusEffects.StatKind stat = (CombatStatusEffects.StatKind)value;
-            _owner.StatusEffects.Apply(stat, multiplier, RelationshipEffectDuration, GetEffectKey(stat));
+            _owner.StatusEffects.Apply(
+                stat,
+                multiplier,
+                RelationshipEffectDuration,
+                GetEffectKey(stat),
+                _owner);
         }
     }
 

@@ -3,6 +3,7 @@ using UnityEngine;
 public static class CombatAiPersonalityBehavior
 {
     public static float GetObjectiveScore(
+        Character owner,
         CombatAiPersonalityProfile profile,
         CombatAiAssessment assessment,
         CombatObjective objective)
@@ -13,7 +14,7 @@ public static class CombatAiPersonalityBehavior
         float exposure = assessment.GetValue(CombatAiMetricIndex.SelfExposure);
         if (profile.Kind == CombatAiPersonalityKind.Eccentric)
         {
-            int choice = Mathf.Abs(Mathf.FloorToInt(Time.time / 3f)) % 6;
+            int choice = CombatBattleRandom.Choose(owner, "EccentricObjective", CombatBattleRandom.GetInterval(3f), 6);
             return objective == (CombatObjective)choice ? 160f : 0f;
         }
 
@@ -74,7 +75,7 @@ public static class CombatAiPersonalityBehavior
         };
     }
 
-    public static float GetSkillScore(CombatAiPersonalityProfile profile, SkillBase skill)
+    public static float GetSkillScore(Character owner, CombatAiPersonalityProfile profile, SkillBase skill)
     {
         if (profile == null || skill == null) return 0f;
 
@@ -82,7 +83,8 @@ public static class CombatAiPersonalityBehavior
         bool support = CombatAiSkillClassifier.IsSupport(skill);
         if (profile.Kind == CombatAiPersonalityKind.Eccentric)
         {
-            int choice = Mathf.Abs(skill.Name.GetHashCode() + Mathf.FloorToInt(Time.time / 3f)) % 4;
+            int interval = CombatBattleRandom.GetInterval(3f);
+            int choice = CombatBattleRandom.Choose(owner, "EccentricSkill:" + skill.Name, interval, 4);
             return choice == 0 ? 90f : 0f;
         }
 
