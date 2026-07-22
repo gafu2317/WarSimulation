@@ -106,10 +106,9 @@ public sealed class CombatNormalAttackSkillTests
             farTarget.Health.Initialize(maxHP: 200);
             typeof(Character).GetProperty("INT").SetValue(owner, 10);
 
-            nearTargetGo.transform.position = ownerGo.transform.position + Vector3.forward * 1f;
-            farTargetGo.transform.position = ownerGo.transform.position + Vector3.forward * 7f;
-
             var skill = new WandBoltSkill();
+            nearTargetGo.transform.position = ownerGo.transform.position + Vector3.forward;
+            farTargetGo.transform.position = ownerGo.transform.position + Vector3.forward * skill.MaxRange;
             CombatSkillEvaluationResult nearResult = CombatSkillEvaluator.Evaluate(
                 skill,
                 CombatSkillEvaluationRequest.ForTarget(owner, nearTarget));

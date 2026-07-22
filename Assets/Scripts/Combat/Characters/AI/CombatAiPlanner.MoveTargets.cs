@@ -359,14 +359,7 @@ public static partial class CombatAiPlanner
 
     private static bool IsFrontlineAlly(CombatAiContext context, CombatCharacterIntel ally)
     {
-        if (!ally.HasObjective ||
-            (ally.Objective != CombatObjective.AttackEnemy && ally.Objective != CombatObjective.DestroyEnemyStone))
-        {
-            return false;
-        }
-
-        if (ally.IntendedTarget != null || ally.HasIntendedDestination) return true;
-        return HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 10f);
+        return CombatAiPositioning.IsAdvancingAlly(context, ally);
     }
 
     private static CombatMoveTarget CreateBibleSupportTarget(CombatAiContext context, Character owner, Character ally)

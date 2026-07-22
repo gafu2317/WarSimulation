@@ -364,7 +364,7 @@ public sealed class CombatSkillEvaluatorTests
                 fixture.SecondEnemy = fixture.SecondEnemyGo.AddComponent<Character>();
                 fixture.SecondEnemy.SetTeam(CombatTeam.Enemy);
                 fixture.SecondEnemy.Health.Initialize(30);
-                fixture.SecondEnemyGo.transform.position = fixture.OwnerGo.transform.position + Vector3.right * 2f;
+                fixture.SecondEnemyGo.transform.position = fixture.OwnerGo.transform.position + new Vector3(1f, 0f, 2f);
             }
 
             if (withAlly)

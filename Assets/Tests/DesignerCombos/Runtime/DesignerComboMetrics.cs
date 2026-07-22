@@ -55,6 +55,9 @@ public sealed class DesignerComboMatchResult
     public float AssaulterSurvivalAfterFirstStoneAttack;
     public float ComboBrokenAt = -1f;
     public string ComboBrokenReason;
+    public bool RequiredRoleLost;
+    public float RequiredRoleLostAt = -1f;
+    public float PrimaryMetricAtRequiredRoleLoss;
     public float PrimaryMetricAtBreak;
     public float PrimaryMetricAfterBreak;
     public float MetricRateBeforeBreak;
@@ -62,6 +65,19 @@ public sealed class DesignerComboMatchResult
     public string SurvivalTimes;
     public List<DesignerComboEventRecord> Events = new();
     public string Error;
+}
+
+public static class DesignerComboMetricRules
+{
+    public static bool IsRelationshipAbilityIncrease(CombatStatusEffectSnapshot snapshot)
+    {
+        return snapshot.IsBuff && snapshot.Key != null && snapshot.Key.StartsWith("PersonalityRelationship_", StringComparison.Ordinal);
+    }
+
+    public static bool IsClearMetricRateDrop(float before, float after)
+    {
+        return before > 0f && after <= before * 0.85f;
+    }
 }
 
 public sealed class DesignerComboMetricsCollector : IDisposable
@@ -166,11 +182,11 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         {
             Result.AssaulterSurvivalAfterFirstStoneAttack = Mathf.Max(0f, FindDefeatTime(_comboMembers[_scenario.Kind == DesignerComboKind.DiversionMagicStoneAssault ? 1 : 0]) - Result.FirstMagicStoneAttackAt);
         }
-        if (Result.ComboBrokenAt >= 0f)
+        if (Result.RequiredRoleLostAt >= 0f)
         {
-            Result.PrimaryMetricAfterBreak = Mathf.Max(0f, Result.PrimaryMetric - Result.PrimaryMetricAtBreak);
-            Result.MetricRateBeforeBreak = Result.PrimaryMetricAtBreak / Mathf.Max(0.01f, Result.ComboBrokenAt);
-            Result.MetricRateAfterBreak = Result.PrimaryMetricAfterBreak / Mathf.Max(0.01f, Result.BattleSeconds - Result.ComboBrokenAt);
+            Result.PrimaryMetricAfterBreak = Mathf.Max(0f, Result.PrimaryMetric - Result.PrimaryMetricAtRequiredRoleLoss);
+            Result.MetricRateBeforeBreak = Result.PrimaryMetricAtRequiredRoleLoss / Mathf.Max(0.01f, Result.RequiredRoleLostAt);
+            Result.MetricRateAfterBreak = Result.PrimaryMetricAfterBreak / Mathf.Max(0.01f, Result.BattleSeconds - Result.RequiredRoleLostAt);
         }
         Record("戦闘終了", null, null, Result.PrimaryMetric);
         return Result;
@@ -265,7 +281,7 @@ public sealed class DesignerComboMetricsCollector : IDisposable
             Result.MagicStoneDamage += amount;
             Record("魔石攻撃", attacker, null, amount);
             if (_scenario.Kind == DesignerComboKind.DiversionMagicStoneAssault ||
-                (_scenario.Kind == DesignerComboKind.MagicStoneAssault &&
+                (IsMagicStoneAssault(_scenario.Kind) &&
                  _comboMembers.Count > 1 &&
                  IsActive(_comboMembers[1]) &&
                  HorizontalDistance(attacker, _comboMembers[1]) <= _scenario.LinkDistance))
@@ -348,11 +364,16 @@ public sealed class DesignerComboMetricsCollector : IDisposable
             result.Action.Skill == null ||
             result.Action.Skill.AreaRadius <= 0f) return;
 
+        if (!AllRequiredMembersActive()) return;
+
         var hitTargets = new HashSet<Character>();
         for (int i = 0; i < result.Effects.Count; i++)
         {
             CombatActionEffect effect = result.Effects[i];
-            if (effect.Kind == CombatActionEffectKind.Damage && effect.Target != null)
+            if (effect.Kind == CombatActionEffectKind.Damage &&
+                effect.Target != null &&
+                Contains(_opponents, effect.Target) &&
+                ResolveTarget(effect.Target) == _comboMembers[0])
             {
                 hitTargets.Add(effect.Target);
             }
@@ -395,14 +416,14 @@ public sealed class DesignerComboMetricsCollector : IDisposable
 
         for (int i = 0; i < _comboMembers.Count; i++)
         {
-            CombatStatusEffects effects = _comboMembers[i] != null ? _comboMembers[i].StatusEffects : null;
+            CombatStatusEffects effects = IsActive(_comboMembers[i]) ? _comboMembers[i].StatusEffects : null;
             if (effects == null) continue;
             IReadOnlyList<CombatStatusEffectSnapshot> snapshots = effects.GetActiveEffectSnapshots();
             bool hasRelationshipBuff = false;
             bool hasBuff = false;
             for (int j = 0; j < snapshots.Count; j++)
             {
-                if (snapshots[j].Key.StartsWith("PersonalityRelationship_", StringComparison.Ordinal)) hasRelationshipBuff = true;
+                if (DesignerComboMetricRules.IsRelationshipAbilityIncrease(snapshots[j])) hasRelationshipBuff = true;
                 if (snapshots[j].IsBuff) hasBuff = true;
             }
             if (hasBuff || hasRelationshipBuff) Result.BuffSeconds += delta;
@@ -410,7 +431,7 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         }
 
         if ((_scenario.Kind == DesignerComboKind.LoversFollowUnit ||
-             _scenario.Kind == DesignerComboKind.OppositeGenderEscort) &&
+             IsOppositeGenderEscort(_scenario.Kind)) &&
             Result.RelationshipBuffSeconds >= 1f)
         {
             MarkComboOccurred(null, null, Result.RelationshipBuffSeconds);
@@ -429,29 +450,30 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         {
             Result.MaximumEnemiesTargetingCore = Mathf.Max(Result.MaximumEnemiesTargetingCore, CountTargeting(_comboMembers[0], _opponents));
         }
-        if (_scenario.Kind == DesignerComboKind.DecoySustain && _comboMembers.Count > 0 && CountTargeting(_comboMembers[0], _opponents) >= 2)
+        if (_scenario.Kind == DesignerComboKind.DecoySustain && AllRequiredMembersActive() && CountTargeting(_comboMembers[0], _opponents) >= 2)
         {
             Result.ScenarioSeconds += delta;
         }
 
-        if (_scenario.Kind == DesignerComboKind.DistributedHunt && HaveDistinctTargets(_comboMembers))
+        if (_scenario.Kind == DesignerComboKind.DistributedHunt && AllRequiredMembersActive() && HaveDistinctTargets(_comboMembers))
         {
             Result.ScenarioSeconds += delta;
             _distinctTargetSeconds += delta;
             if (Result.ScenarioSeconds >= 1f) MarkComboOccurred(null, null, Result.ScenarioSeconds);
         }
-        else if (_scenario.Kind == DesignerComboKind.DistributedHunt && HaveMultipleSwordTargets(_comboMembers))
+        else if (_scenario.Kind == DesignerComboKind.DistributedHunt && AllRequiredMembersActive() && HaveMultipleSwordTargets(_comboMembers))
         {
             _overlappingTargetSeconds += delta;
         }
 
-        if (_scenario.Kind == DesignerComboKind.RemoteSupportLoneWolf && _comboMembers.Count > 1 && CountTargeting(_comboMembers[0], _opponents) > 0)
+        if (_scenario.Kind == DesignerComboKind.RemoteSupportLoneWolf && _comboMembers.Count > 1 &&
+            IsActive(_comboMembers[0]) && IsActive(_comboMembers[1]) && CountTargeting(_comboMembers[0], _opponents) > 0)
         {
             if (HorizontalDistance(_comboMembers[0], _comboMembers[1]) > _scenario.LinkDistance) Result.ScenarioSeconds += delta;
         }
 
-        if (_scenario.Kind == DesignerComboKind.FrontlineBreakthrough && _comboMembers.Count > 1 &&
-            IsActive(_comboMembers[1]) &&
+        if (IsFrontlineBreakthrough(_scenario.Kind) && _comboMembers.Count > 1 &&
+            IsActive(_comboMembers[0]) && IsActive(_comboMembers[1]) &&
             ResolveObjective(_comboMembers[0]) == CombatObjective.AttackEnemy &&
             HorizontalDistance(_comboMembers[0], _comboMembers[1]) <= _scenario.LinkDistance)
         {
@@ -487,17 +509,30 @@ public sealed class DesignerComboMetricsCollector : IDisposable
 
     private void DetectBrokenCombo(float now)
     {
-        if (Result.ComboBrokenAt >= 0f) return;
-        int requiredMembers = Mathf.Min(_scenario.Roles.Length, _comboMembers.Count);
-        for (int i = 0; i < requiredMembers; i++)
+        if (!Result.RequiredRoleLost)
         {
-            if (IsActive(_comboMembers[i])) continue;
-            Result.ComboBrokenAt = Mathf.Max(0f, now - _startedAt);
-            Result.ComboBrokenReason = _comboMembers[i] != null ? _comboMembers[i].name + "が離脱" : "構成員が不在";
-            Result.PrimaryMetricAtBreak = ResolvePrimaryMetric();
-            Record("連携崩壊", _comboMembers[i], null, 0f);
-            return;
+            int requiredMembers = Mathf.Min(_scenario.Roles.Length, _comboMembers.Count);
+            for (int i = 0; i < requiredMembers; i++)
+            {
+                if (IsActive(_comboMembers[i])) continue;
+                float lostAt = Mathf.Max(0f, now - _startedAt);
+                float metric = ResolvePrimaryMetric();
+                Result.RequiredRoleLost = true;
+                Result.RequiredRoleLostAt = lostAt;
+                Result.PrimaryMetricAtRequiredRoleLoss = metric;
+                bool firstBreak = Result.ComboBrokenAt < 0f;
+                if (firstBreak)
+                {
+                    Result.ComboBrokenAt = lostAt;
+                    Result.ComboBrokenReason = _comboMembers[i] != null ? _comboMembers[i].name + "が離脱" : "構成員が不在";
+                    Result.PrimaryMetricAtBreak = metric;
+                }
+                Record(firstBreak ? "連携崩壊" : "必要役離脱", _comboMembers[i], null, 0f);
+                break;
+            }
         }
+
+        if (Result.ComboBrokenAt >= 0f) return;
 
         bool separated = IsDistanceBreakConditionMet();
         if (!separated)
@@ -605,11 +640,11 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         {
             DesignerComboKind.BindFollowUp => RoleDistanceExceeds(0, 1, limit),
             DesignerComboKind.PoisonFortress => RoleDistanceExceeds(0, 1, limit),
-            DesignerComboKind.MagicStoneAssault => RoleDistanceExceeds(0, 1, limit),
-            DesignerComboKind.FrontlineBreakthrough => RoleDistanceExceeds(0, 1, limit),
+            DesignerComboKind.MagicStoneAssault or DesignerComboKind.MagicStoneAssaultRosary => RoleDistanceExceeds(0, 1, limit),
+            DesignerComboKind.FrontlineBreakthrough or DesignerComboKind.FrontlineBreakthroughBible => RoleDistanceExceeds(0, 1, limit),
             DesignerComboKind.DecoySustain => RoleDistanceExceeds(0, 1, limit),
             DesignerComboKind.LoversFollowUnit => RoleDistanceExceeds(2, 0, limit) || RoleDistanceExceeds(2, 1, limit),
-            DesignerComboKind.OppositeGenderEscort => RoleDistanceExceeds(0, 1, limit),
+            DesignerComboKind.OppositeGenderEscort or DesignerComboKind.OppositeGenderEscortBible => RoleDistanceExceeds(0, 1, limit),
             _ => false,
         };
     }
@@ -631,15 +666,15 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         {
             DesignerComboKind.BindFollowUp => Result.BoundFollowUpDamage,
             DesignerComboKind.PoisonFortress => Result.PoisonDamage,
-            DesignerComboKind.MagicStoneAssault => Result.MagicStoneDamage,
+            DesignerComboKind.MagicStoneAssault or DesignerComboKind.MagicStoneAssaultRosary => Result.MagicStoneDamage,
             DesignerComboKind.DecoyBombardment => Result.AverageSimultaneousHits,
             DesignerComboKind.DiversionMagicStoneAssault => Result.MagicStoneDamage,
             DesignerComboKind.LoversFollowUnit => Result.RelationshipBuffSeconds,
-            DesignerComboKind.OppositeGenderEscort => Result.RelationshipBuffSeconds,
+            DesignerComboKind.OppositeGenderEscort or DesignerComboKind.OppositeGenderEscortBible => Result.RelationshipBuffSeconds,
             DesignerComboKind.DecoySustain => Result.ScenarioSeconds,
             DesignerComboKind.RemoteSupportLoneWolf => Result.ScenarioSeconds,
             DesignerComboKind.DistributedHunt => Result.ScenarioSeconds,
-            DesignerComboKind.FrontlineBreakthrough => Result.ScenarioSeconds,
+            DesignerComboKind.FrontlineBreakthrough or DesignerComboKind.FrontlineBreakthroughBible => Result.ScenarioSeconds,
             _ => Result.LinkedSeconds,
         };
     }
@@ -658,14 +693,16 @@ public sealed class DesignerComboMetricsCollector : IDisposable
 
     private static Character ResolveTarget(Character character)
     {
+        if (!IsActive(character)) return null;
         CombatAiBrain brain = character != null ? character.GetComponent<CombatAiBrain>() : null;
         if (brain == null) return null;
-        if (brain.LastPlan.SkillTarget != null) return brain.LastPlan.SkillTarget;
-        return brain.LastPlan.MoveTarget.TargetCharacter;
+        Character target = brain.LastPlan.SkillTarget != null ? brain.LastPlan.SkillTarget : brain.LastPlan.MoveTarget.TargetCharacter;
+        return IsActive(target) ? target : null;
     }
 
     private static CombatObjective ResolveObjective(Character character)
     {
+        if (!IsActive(character)) return CombatObjective.Search;
         CombatAiBrain brain = character != null ? character.GetComponent<CombatAiBrain>() : null;
         return brain != null ? brain.LastPlan.Objective : CombatObjective.Search;
     }
@@ -714,7 +751,7 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         for (int i = 0; i < members.Count; i++)
         {
             Character member = members[i];
-            if (member == null || member.EquippedWeapon == null || member.EquippedWeapon.Kind != WeaponKind.Sword) continue;
+            if (!IsActive(member) || member.EquippedWeapon == null || member.EquippedWeapon.Kind != WeaponKind.Sword) continue;
             Character target = ResolveTarget(member);
             if (target == null || !targets.Add(target)) return false;
             swords++;
@@ -729,7 +766,7 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         for (int i = 0; i < members.Count; i++)
         {
             Character member = members[i];
-            if (member != null && member.EquippedWeapon != null && member.EquippedWeapon.Kind == WeaponKind.Sword && ResolveTarget(member) != null) swordsWithTargets++;
+            if (IsActive(member) && member.EquippedWeapon != null && member.EquippedWeapon.Kind == WeaponKind.Sword && ResolveTarget(member) != null) swordsWithTargets++;
         }
         return swordsWithTargets >= 2;
     }
@@ -777,6 +814,32 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         }
 
         return false;
+    }
+
+    private bool AllRequiredMembersActive()
+    {
+        int requiredMembers = Mathf.Min(_scenario.Roles.Length, _comboMembers.Count);
+        if (requiredMembers < _scenario.Roles.Length) return false;
+        for (int i = 0; i < requiredMembers; i++)
+        {
+            if (!IsActive(_comboMembers[i])) return false;
+        }
+        return true;
+    }
+
+    private static bool IsMagicStoneAssault(DesignerComboKind kind)
+    {
+        return kind == DesignerComboKind.MagicStoneAssault || kind == DesignerComboKind.MagicStoneAssaultRosary;
+    }
+
+    private static bool IsFrontlineBreakthrough(DesignerComboKind kind)
+    {
+        return kind == DesignerComboKind.FrontlineBreakthrough || kind == DesignerComboKind.FrontlineBreakthroughBible;
+    }
+
+    private static bool IsOppositeGenderEscort(DesignerComboKind kind)
+    {
+        return kind == DesignerComboKind.OppositeGenderEscort || kind == DesignerComboKind.OppositeGenderEscortBible;
     }
 
 }

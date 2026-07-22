@@ -133,9 +133,15 @@ public sealed class CombatAiRelationshipPersonalityTests
             profile = SetPersonality(owner, CombatAiPersonalityKind.Unstable);
             CombatAiPersonalityRuntime runtime = ownerObject.AddComponent<CombatAiPersonalityRuntime>();
             CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            system.AllyCharacters.Add(owner);
+            system.AllyCharacters.Add(guardian);
+            system.EnemyCharacters.Add(attacker);
+            system.AssignTeamsFromLists();
             CombatEditModeTestUtil.WireVision(guardian.Vision, system);
+            guardian.transform.LookAt(attacker.transform.position);
             guardian.Vision.Initialize();
             guardian.Vision.UpdateVision();
+            runtime.ResetForBattle();
 
             owner.Health.TakeDamage(1, attacker);
 

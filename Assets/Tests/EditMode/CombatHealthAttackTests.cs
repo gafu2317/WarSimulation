@@ -314,7 +314,11 @@ public sealed class CombatHealthAttackTests
 
             systemGo = new GameObject("CombatCharacterSystem");
             systemGo.AddComponent<CombatCharacterSystem>();
-            health.SendMessage("Update");
+            var update = typeof(CombatHealth).GetMethod(
+                "Update",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(update, Is.Not.Null);
+            update.Invoke(health, null);
 
             Assert.That(health.HasRetreatDestination, Is.True);
             Assert.That(health.LifeState, Is.EqualTo(LifeState.Retreating));

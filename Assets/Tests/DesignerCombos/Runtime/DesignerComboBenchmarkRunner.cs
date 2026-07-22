@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,8 +83,9 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 
             for (int i = 0; i < plans.Count; i++)
             {
+                if (plans.Count <= 10) Debug.Log($"[デザイナーズコンボテスト] {i + 1}/{plans.Count}試合目を開始します。", this);
                 yield return RunMatchSafely(scenario, plans[i]);
-                if ((i + 1) % 10 == 0 || i + 1 == plans.Count)
+                if (plans.Count <= 10 || (i + 1) % 10 == 0 || i + 1 == plans.Count)
                 {
                     Debug.Log($"[デザイナーズコンボテスト] {i + 1}/{plans.Count}試合完了", this);
                 }
@@ -194,16 +196,28 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
                 comboTeam);
             collector.Begin();
             float startedAt = Time.time;
-            while (!ended && Time.time - startedAt < _battleTimeoutSeconds)
+            float startedAtRealtime = Time.realtimeSinceStartup;
+            float realtimeTimeout = _battleTimeoutSeconds / Mathf.Max(0.01f, Time.timeScale);
+            while (!ended &&
+                _battleFlow.State == CombatBattleState.Running &&
+                Time.time - startedAt < _battleTimeoutSeconds &&
+                Time.realtimeSinceStartup - startedAtRealtime < realtimeTimeout)
             {
                 collector.Sample();
                 yield return null;
+            }
+
+            if (!ended && (_battleFlow.State == CombatBattleState.Victory || _battleFlow.State == CombatBattleState.Defeat))
+            {
+                ended = true;
+                endState = _battleFlow.State;
             }
 
             bool timedOut = !ended;
             _battleFlow.BattleEnded -= OnBattleEnded;
             if (timedOut)
             {
+                Debug.LogWarning($"[デザイナーズコンボテスト] {plan.Label} seed={plan.Seed} は制限時間で終了しました。", this);
                 _battleFlow.ResetBattle();
                 StopParticipants(comboMembers);
                 StopParticipants(opponents);
@@ -698,7 +712,7 @@ public static class DesignerComboRunRequest
     }
 }
 
-internal static class DesignerComboReportWriter
+public static class DesignerComboReportWriter
 {
     [Serializable]
     private sealed class Report
@@ -713,7 +727,7 @@ internal static class DesignerComboReportWriter
     }
 
     [Serializable]
-    private sealed class Summary
+    public sealed class Summary
     {
         public string Variant;
         public int Matches;
@@ -726,7 +740,7 @@ internal static class DesignerComboReportWriter
     }
 
     [Serializable]
-    private sealed class PairedComparison
+    public sealed class PairedComparison
     {
         public string BaselineVariant;
         public string ComparisonVariant;
@@ -770,7 +784,7 @@ internal static class DesignerComboReportWriter
         return jsonPath;
     }
 
-    private static List<Summary> BuildSummaries(List<DesignerComboMatchResult> results)
+    public static List<Summary> BuildSummaries(List<DesignerComboMatchResult> results)
     {
         var grouped = new Dictionary<string, List<DesignerComboMatchResult>>();
         for (int i = 0; i < results.Count; i++)
@@ -824,7 +838,7 @@ internal static class DesignerComboReportWriter
         return summaries;
     }
 
-    private static List<PairedComparison> BuildPairedComparisons(
+    public static List<PairedComparison> BuildPairedComparisons(
         DesignerComboTestScope scope,
         List<DesignerComboMatchResult> results)
     {
@@ -896,7 +910,7 @@ internal static class DesignerComboReportWriter
     private static string BuildCsv(List<DesignerComboMatchResult> results)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("コンボ,編成,地形,シード,陣営入替,結果,戦闘秒数,主指標,主指標毎秒,連携成立,主指標名,魔石ダメージ,与ダメージ,有効回復量,有効防御量,対象変更,連携秒数,拘束秒数,毒秒数,強化秒数,連携崩壊時刻,連携崩壊理由,崩壊前主指標率,崩壊後主指標率,生存時間,エラー");
+        builder.AppendLine("コンボ,編成,地形,シード,陣営入替,結果,戦闘秒数,主指標,主指標毎秒,連携成立,主指標名,魔石ダメージ,与ダメージ,有効回復量,有効防御量,対象変更,連携秒数,拘束秒数,毒秒数,強化秒数,連携崩壊時刻,連携崩壊理由,必要役離脱時刻,崩壊前主指標率,崩壊後主指標率,生存時間,エラー");
         for (int i = 0; i < results.Count; i++)
         {
             DesignerComboMatchResult r = results[i];
@@ -907,13 +921,13 @@ internal static class DesignerComboReportWriter
                 .Append(r.MagicStoneDamage).Append(',').Append(r.DamageDealt).Append(',').Append(r.EffectiveHealing).Append(',').Append(r.EffectiveDefense).Append(',')
                 .Append(r.TargetChanges).Append(',').Append(Number(r.LinkedSeconds)).Append(',').Append(Number(r.BindSeconds)).Append(',')
                 .Append(Number(r.PoisonSeconds)).Append(',').Append(Number(r.BuffSeconds)).Append(',').Append(Number(r.ComboBrokenAt)).Append(',')
-                .Append(Csv(r.ComboBrokenReason)).Append(',').Append(Number(r.MetricRateBeforeBreak)).Append(',').Append(Number(r.MetricRateAfterBreak)).Append(',')
+                .Append(Csv(r.ComboBrokenReason)).Append(',').Append(Number(r.RequiredRoleLostAt)).Append(',').Append(Number(r.MetricRateBeforeBreak)).Append(',').Append(Number(r.MetricRateAfterBreak)).Append(',')
                 .Append(Csv(r.SurvivalTimes)).Append(',').Append(Csv(r.Error)).AppendLine();
         }
         return builder.ToString();
     }
 
-    private static List<string> BuildEvaluations(
+    public static List<string> BuildEvaluations(
         DesignerComboTestScope scope,
         List<Summary> summaries,
         List<PairedComparison> pairedComparisons,
@@ -968,14 +982,15 @@ internal static class DesignerComboReportWriter
         for (int i = 0; i < results.Count; i++)
         {
             DesignerComboMatchResult result = results[i];
-            if (!result.IsLinkedVariant || result.ComboBrokenAt < 0f || result.MetricRateBeforeBreak <= 0f) continue;
+            if (!result.IsLinkedVariant || !result.RequiredRoleLost || result.RequiredRoleLostAt < 0f || result.MetricRateBeforeBreak <= 0f) continue;
             before += result.MetricRateBeforeBreak;
             after += result.MetricRateAfterBreak;
             broken++;
         }
         if (broken > 0)
         {
-            evaluations.Add((after / broken < before / broken ? "合格" : "不合格") + ": 連携崩壊後に主指標の時間当たり発生量が下がる");
+            bool passed = DesignerComboMetricRules.IsClearMetricRateDrop(before / broken, after / broken);
+            evaluations.Add((passed ? "合格" : "不合格") + ": 必要役の離脱後に主指標の時間当たり発生量が15%以上下がる");
         }
         else
         {
@@ -1040,3 +1055,4 @@ internal static class DesignerComboReportWriter
     private static string Number(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string Csv(string value) => "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
 }
+#endif

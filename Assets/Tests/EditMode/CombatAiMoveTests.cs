@@ -183,7 +183,16 @@ public sealed class CombatAiMoveTests
             CombatAiContext context = CreatePlannerContext(
                 owner,
                 enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
-                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) });
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        ally,
+                        true,
+                        allyGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy,
+                        intendedTarget: enemy),
+                });
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
             CombatAiMoveCandidateEntry intercept = FindMove(snapshot, CombatAiMoveCode.InterceptThreat);
@@ -242,9 +251,7 @@ public sealed class CombatAiMoveTests
                         hasIntendedDestination: true,
                         intendedDestination: frontlineDestination),
                     CreateIntel(backline, true, backlineGo.transform.position),
-                },
-                hasOwnStonePosition: true,
-                ownStonePosition: Vector3.zero);
+                });
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
             CombatAiMoveCandidateEntry supportMove = FindMove(snapshot, CombatAiMoveCode.SupportAlly);
@@ -296,7 +303,7 @@ public sealed class CombatAiMoveTests
                 owner,
                 hasEnemyStonePosition: true,
                 enemyStonePosition: new Vector3(18f, 0f, 0f),
-                highGroundCandidates: new[] { new Vector3(2f, 3f, 0f) });
+                highGroundCandidates: new[] { new Vector3(4f, 3f, 0f) });
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
 
@@ -323,7 +330,7 @@ public sealed class CombatAiMoveTests
                 owner,
                 hasEnemyStonePosition: true,
                 enemyStonePosition: new Vector3(18f, 0f, 0f),
-                highGroundCandidates: new[] { new Vector3(2f, 3f, 0f) });
+                highGroundCandidates: new[] { new Vector3(4f, 3f, 0f) });
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
 
@@ -631,6 +638,96 @@ public sealed class CombatAiMoveTests
         {
             Object.DestroyImmediate(supporterGo);
             Object.DestroyImmediate(attackerGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldFollowsAllySearchingTowardEnemySide()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject allyGo = new GameObject("SearchingAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            Vector3 allyDestination = new Vector3(8f, 0f, 0f);
+            allyGo.transform.position = new Vector3(2f, 0f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        ally,
+                        true,
+                        allyGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.Search,
+                        hasIntendedDestination: true,
+                        intendedDestination: allyDestination),
+                },
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo(CombatAiMoveCode.SupportAlly));
+            Assert.That(snapshot.SelectedMove.Target.Destination, Is.EqualTo(allyDestination));
+        }
+        finally
+        {
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldKeepsSupportingAttackerWhenKillableEnemyIsVisible()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject allyGo = new GameObject("Attacker");
+        GameObject enemyGo = new GameObject("KillableEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30, 1);
+            allyGo.transform.position = new Vector3(2f, 0f, 0f);
+            enemyGo.transform.position = new Vector3(3f, 0f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        ally,
+                        true,
+                        allyGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy,
+                        intendedTarget: enemy),
+                });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo(CombatAiMoveCode.SupportAlly));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(allyGo);
             Object.DestroyImmediate(ownerGo);
         }
     }

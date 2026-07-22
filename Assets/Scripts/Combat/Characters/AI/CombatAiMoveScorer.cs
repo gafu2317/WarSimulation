@@ -452,6 +452,7 @@ public static class CombatAiMoveScorer
             CombatObjective.SupportAlly when code == CombatAiMoveCode.SupportAlly => 42f,
             CombatObjective.SupportAlly when code == CombatAiMoveCode.InterceptThreat => 38f,
             CombatObjective.DefendOwnStone when code == CombatAiMoveCode.InterceptThreat => 38f,
+            CombatObjective.Search when code == CombatAiMoveCode.TakeHighGround => 34f,
             CombatObjective.Search when code == CombatAiMoveCode.SearchLastKnown => 34f,
             CombatObjective.Retreat when code == CombatAiMoveCode.ReturnOwnStone || code == CombatAiMoveCode.MoveForest => 24f,
             _ => 0f,

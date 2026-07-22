@@ -171,6 +171,15 @@ public static class CombatAiObjectiveScorer
     {
         if (context == null) return false;
 
+        WeaponBase ownerWeapon = context.Owner != null ? context.Owner.EquippedWeapon : null;
+        if (objective == CombatObjective.AttackEnemy &&
+            ownerWeapon != null &&
+            ownerWeapon.Kind == WeaponKind.Shield &&
+            HasAdvancingFrontlineAlly(context))
+        {
+            return false;
+        }
+
         bool hasLivingEnemy = false;
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
@@ -254,6 +263,7 @@ public static class CombatAiObjectiveScorer
                 - assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) * 0.35f
                 - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.2f
                 - assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) * 0.28f
+                - (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.5f
                 + (context.HasEnemyStonePosition ? 4f : 0f)
                 + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f),
             CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
@@ -409,27 +419,7 @@ public static class CombatAiObjectiveScorer
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (!ally.CanAct || !ally.HasObjective) continue;
-            if (ally.Objective != CombatObjective.AttackEnemy &&
-                ally.Objective != CombatObjective.DestroyEnemyStone) continue;
-            if (ally.IntendedTarget != null || ally.HasIntendedDestination || IsNearKnownEnemy(context, ally.CurrentPosition))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsNearKnownEnemy(CombatAiContext context, Vector3 position)
-    {
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.IsAlive && enemy.HasKnownPosition && HorizontalDistance(position, enemy.KnownPosition) <= 10f)
-            {
-                return true;
-            }
+            if (CombatAiPositioning.IsAdvancingAlly(context, ally)) return true;
         }
 
         return false;

@@ -468,9 +468,12 @@ public sealed class CombatPhase4SkillTests
             Physics.SyncTransforms();
             typeof(Character).GetProperty("STR").SetValue(owner, 10);
 
-            new SwordSlashSkill().Execute(owner, SkillExecutionContext.ForTarget(enemy));
+            var skill = new SwordSlashSkill();
+            int expectedDamage = Mathf.Max(1, Mathf.RoundToInt(owner.GetEffectiveStat(CombatStat.STR) * 0.65f));
+            skill.Execute(owner, SkillExecutionContext.ForTarget(enemy));
 
-            Assert.That(enemy.Health.HP, Is.EqualTo(26));
+            Assert.That(enemy.Vision.HasRecognitionOf(owner), Is.True);
+            Assert.That(enemy.Health.HP, Is.EqualTo(30 - expectedDamage));
         }
         finally
         {

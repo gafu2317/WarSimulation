@@ -131,10 +131,13 @@ public static class DesignerComboBenchmarkSceneTool
             SceneManager.MoveGameObjectToScene(ownedRoot, scene);
         }
 
-        if (ownedRoot.GetComponent<DesignerComboBenchmarkRunner>() == null)
+        DesignerComboBenchmarkRunner runner = ownedRoot.GetComponent<DesignerComboBenchmarkRunner>();
+        if (runner == null)
         {
-            ownedRoot.AddComponent<DesignerComboBenchmarkRunner>();
+            runner = ownedRoot.AddComponent<DesignerComboBenchmarkRunner>();
         }
+
+        if (runner == null) throw new InvalidOperationException("DesignerComboBenchmarkRunnerを追加できませんでした。Consoleのコンパイルエラーを確認してください。");
 
         EditorSceneManager.MarkSceneDirty(scene);
         if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("専用シーンを保存できませんでした。");

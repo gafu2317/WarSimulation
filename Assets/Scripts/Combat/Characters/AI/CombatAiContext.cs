@@ -85,6 +85,19 @@ public static class CombatAiPositioning
         offset.y = 0f;
         return Mathf.Clamp01(Vector3.Dot(offset, battleAxis) / axisLengthSquared);
     }
+
+    public static bool IsAdvancingAlly(CombatAiContext context, CombatCharacterIntel ally)
+    {
+        if (!ally.CanAct || !ally.HasObjective) return false;
+        if (ally.Objective == CombatObjective.AttackEnemy || ally.Objective == CombatObjective.DestroyEnemyStone)
+        {
+            return true;
+        }
+
+        return ally.Objective == CombatObjective.Search &&
+            ally.HasIntendedDestination &&
+            GetAdvanceProgress(context, ally.IntendedDestination) > GetAdvanceProgress(context, ally.CurrentPosition) + 0.01f;
+    }
 }
 
 public readonly struct CombatCharacterIntel

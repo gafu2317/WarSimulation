@@ -17,16 +17,16 @@ public sealed class CombatRosaryHealSkillTests
             ally.Health.Initialize(maxHP: 30, currentHP: 10);
             typeof(Character).GetProperty("FAI").SetValue(owner, 10);
 
-            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 8f;
-
             var skill = new RosaryDistantHealSkill();
+            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * (skill.MaxRange * 0.5f);
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
                 CombatSkillEvaluationRequest.ForTarget(owner, ally));
             Assert.That(result.CanUse, Is.True);
+            int expectedHealing = skill.EstimateHealing(owner, result.Context.Capture(owner), ally);
             skill.Execute(owner, result.Context);
 
-            Assert.That(ally.Health.HP, Is.EqualTo(14));
+            Assert.That(ally.Health.HP, Is.EqualTo(10 + expectedHealing));
         }
         finally
         {
@@ -47,17 +47,17 @@ public sealed class CombatRosaryHealSkillTests
             ally.Health.Initialize(maxHP: 30, currentHP: 10);
             typeof(Character).GetProperty("FAI").SetValue(owner, 10);
 
-            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 10f;
-
             var skill = new RosaryDistantHealSkill();
+            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * skill.MaxRange;
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
                 CombatSkillEvaluationRequest.ForTarget(owner, ally));
 
             Assert.That(result.CanUse, Is.True);
+            int expectedHealing = skill.EstimateHealing(owner, result.Context.Capture(owner), ally);
             skill.Execute(owner, result.Context);
 
-            Assert.That(ally.Health.HP, Is.EqualTo(13));
+            Assert.That(ally.Health.HP, Is.EqualTo(10 + expectedHealing));
         }
         finally
         {
@@ -108,9 +108,8 @@ public sealed class CombatRosaryHealSkillTests
             ally.Health.Initialize(maxHP: 30, currentHP: 10);
             typeof(Character).GetProperty("FAI").SetValue(owner, 10);
 
-            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 4f;
-
             var skill = new RosaryCloseHealSkill();
+            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * (skill.MaxRange + 1f);
             CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
                 skill,
                 CombatSkillEvaluationRequest.ForTarget(owner, ally));

@@ -117,7 +117,7 @@ public sealed class CombatAiPersonalityBehaviorTests
         {
             Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
             Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
-            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new DamageSkill());
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new DamageBlastSkill());
             profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Innocent);
             CombatAiContext context = CreateContext(owner, enemy);
 
@@ -221,7 +221,7 @@ public sealed class CombatAiPersonalityBehaviorTests
             default);
     }
 
-    private sealed class DamageSkill : SkillBase
+    private sealed class DamageBlastSkill : SkillBase
     {
         public override string Name => "攻撃";
         public override float MaxRange => 6f;

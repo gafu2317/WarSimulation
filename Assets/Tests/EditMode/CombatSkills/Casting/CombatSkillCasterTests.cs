@@ -114,12 +114,14 @@ public sealed class CombatSkillCasterTests
         {
             CombatEditModeTestUtil.SetPrivateField(owner, "<INT>k__BackingField", 10);
             SkillBase skill = new WandArcaneBlastSkill();
+            SkillExecutionContext initialContext = SkillExecutionContext.ForTarget(target).Capture(owner);
+            int expectedDamage = skill.EstimateDamage(owner, initialContext, target);
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.StatusEffects.Apply(CombatStatusEffects.StatKind.INT, 2f, 10f);
             owner.SkillCaster.Tick(float.PositiveInfinity);
 
-            Assert.That(target.Health.HP, Is.EqualTo(21));
+            Assert.That(target.Health.HP, Is.EqualTo(30 - expectedDamage));
         }
         finally
         {

@@ -14,6 +14,9 @@ public enum DesignerComboKind
     LoversFollowUnit,
     OppositeGenderEscort,
     DistributedHunt,
+    MagicStoneAssaultRosary,
+    FrontlineBreakthroughBible,
+    OppositeGenderEscortBible,
 }
 
 public enum DesignerComboTestScope
@@ -131,10 +134,23 @@ public static class DesignerComboScenarioCatalog
                 Roles(Role("強襲役", WeaponKind.Wand, CombatAiPersonalityKind.Reckless), Role("護衛役", WeaponKind.Shield, CombatAiPersonalityKind.Devoted)),
                 Roles(Role("追撃役", WeaponKind.Sword, CombatAiPersonalityKind.BattleJunkie), Role("拘束役", WeaponKind.Grimoire, CombatAiPersonalityKind.Cunning))),
             Scenario(
+                DesignerComboKind.MagicStoneAssaultRosary,
+                "魔石強襲（ロザリオ型）",
+                "強襲役の魔石ダメージ",
+                Roles(Role("強襲役", WeaponKind.Wand, CombatAiPersonalityKind.Reckless), Role("回復役", WeaponKind.Rosary, CombatAiPersonalityKind.Lonely)),
+                Roles(Role("追撃役", WeaponKind.Sword, CombatAiPersonalityKind.BattleJunkie), Role("拘束役", WeaponKind.Grimoire, CombatAiPersonalityKind.Cunning))),
+            Scenario(
                 DesignerComboKind.FrontlineBreakthrough,
                 "前線突破",
                 "支援範囲内での追跡時間",
                 Roles(Role("突破役", WeaponKind.Sword, CombatAiPersonalityKind.BattleJunkie), Role("同行役", WeaponKind.Shield, CombatAiPersonalityKind.HotBlooded)),
+                Roles(Role("分断役", WeaponKind.Grimoire, CombatAiPersonalityKind.Cunning), Role("砲撃役", WeaponKind.Wand, CombatAiPersonalityKind.Calm)),
+                linkDistance: 6f),
+            Scenario(
+                DesignerComboKind.FrontlineBreakthroughBible,
+                "前線突破（聖書型）",
+                "支援範囲内での追跡時間",
+                Roles(Role("突破役", WeaponKind.Sword, CombatAiPersonalityKind.BattleJunkie), Role("同行役", WeaponKind.Bible, CombatAiPersonalityKind.Lonely)),
                 Roles(Role("分断役", WeaponKind.Grimoire, CombatAiPersonalityKind.Cunning), Role("砲撃役", WeaponKind.Wand, CombatAiPersonalityKind.Calm)),
                 linkDistance: 6f),
             Scenario(
@@ -176,6 +192,14 @@ public static class DesignerComboScenarioCatalog
                 "異性護衛",
                 "スケベの能力上昇時間",
                 Roles(Role("護衛役", WeaponKind.Shield, CombatAiPersonalityKind.Devoted), Role("支援役", WeaponKind.Rosary, CombatAiPersonalityKind.Lecherous)),
+                Roles(Role("分断役", WeaponKind.Grimoire, CombatAiPersonalityKind.Cunning), Role("範囲攻撃役", WeaponKind.Wand, CombatAiPersonalityKind.Calm)),
+                scalableRoleIndex: 1,
+                requiresOppositeGenders: true),
+            Scenario(
+                DesignerComboKind.OppositeGenderEscortBible,
+                "異性護衛（聖書型）",
+                "スケベの能力上昇時間",
+                Roles(Role("護衛役", WeaponKind.Shield, CombatAiPersonalityKind.Devoted), Role("支援役", WeaponKind.Bible, CombatAiPersonalityKind.Lecherous)),
                 Roles(Role("分断役", WeaponKind.Grimoire, CombatAiPersonalityKind.Cunning), Role("範囲攻撃役", WeaponKind.Wand, CombatAiPersonalityKind.Calm)),
                 scalableRoleIndex: 1,
                 requiresOppositeGenders: true),

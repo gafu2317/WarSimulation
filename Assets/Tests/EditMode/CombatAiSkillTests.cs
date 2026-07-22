@@ -357,12 +357,15 @@ public sealed class CombatAiSkillTests
             secondEnemy.Health.Initialize(30);
 
             ownerGo.transform.position = Vector3.zero;
-            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
-            secondEnemyGo.transform.position = new Vector3(3f, 0f, 0f);
+            enemyGo.transform.position = new Vector3(0f, 0f, 2f);
+            secondEnemyGo.transform.position = new Vector3(1f, 0f, 3f);
             system.AllyCharacters.Add(owner);
             system.EnemyCharacters.Add(enemy);
             system.EnemyCharacters.Add(secondEnemy);
             system.AssignTeamsFromLists();
+            CombatEditModeTestUtil.WireVision(owner.Vision, system);
+            owner.Vision.Initialize();
+            owner.Vision.UpdateVision();
 
             var areaSkill = new AiPlannerAreaBlastSkill();
             CombatEditModeTestUtil.SetAvailableCombatSkills(owner, areaSkill);
@@ -469,6 +472,60 @@ public sealed class CombatAiSkillTests
         {
             Object.DestroyImmediate(wandGo);
             Object.DestroyImmediate(swordGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldProtectsAdvancingAllyBeforeRearSupporter()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject attackerGo = new GameObject("Attacker");
+        GameObject supporterGo = new GameObject("Supporter");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character attacker = attackerGo.AddComponent<Character>();
+            attacker.Health.Initialize(30);
+            Character supporter = supporterGo.AddComponent<Character>();
+            supporter.Health.Initialize(30);
+            attackerGo.transform.position = new Vector3(4f, 0f, 0f);
+            supporterGo.transform.position = new Vector3(-2f, 0f, 0f);
+            SkillBase guard = CombatSkillFactory.Create(SkillId.Shield_ShoulderGuard);
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, guard);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        attacker,
+                        true,
+                        attackerGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.AttackEnemy),
+                    CreateIntel(
+                        supporter,
+                        true,
+                        supporterGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.SupportAlly),
+                },
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedSkill.Skill, Is.EqualTo(guard));
+            Assert.That(snapshot.SelectedSkill.SkillContext.PrimaryTarget, Is.EqualTo(attacker));
+        }
+        finally
+        {
+            Object.DestroyImmediate(supporterGo);
+            Object.DestroyImmediate(attackerGo);
             Object.DestroyImmediate(ownerGo);
         }
     }

@@ -280,6 +280,7 @@ internal static partial class CombatEditModeTestUtil
         public override SkillTargetKind TargetKind => SkillTargetKind.Area;
         public override float MaxRange => 10f;
         public override float AreaRadius => 2f;
+        public override int EstimateDamage(Character self, SkillExecutionContext context, Character target) => 5;
         public override void Execute(Character self, SkillExecutionContext context) { }
     }
 

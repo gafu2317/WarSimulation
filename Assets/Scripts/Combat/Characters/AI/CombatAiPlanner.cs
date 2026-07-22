@@ -514,7 +514,7 @@ public static partial class CombatAiPlanner
                 score += CombatAiSkillClassifier.IsProtect(skill) ? 24f : 8f;
             }
 
-            score += GetSupportTargetAffinityScore(skill, ally);
+            score += GetSupportTargetAffinityScore(context, skill, ally);
             score -= GetStatusRedundancyPenalty(skill, ally.StatusEffects);
 
             return score;
@@ -918,7 +918,10 @@ public static partial class CombatAiPlanner
         };
     }
 
-    private static float GetSupportTargetAffinityScore(SkillBase skill, CombatCharacterIntel ally)
+    private static float GetSupportTargetAffinityScore(
+        CombatAiContext context,
+        SkillBase skill,
+        CombatCharacterIntel ally)
     {
         if (skill is not IdentifiedSkill identified) return 0f;
 
@@ -928,6 +931,7 @@ public static partial class CombatAiPlanner
             SkillId.Bible_IntBuff when ally.WeaponKind == WeaponKind.Wand || ally.WeaponKind == WeaponKind.Grimoire => 28f,
             SkillId.Bible_FaiBuff when ally.WeaponKind == WeaponKind.Bible || ally.WeaponKind == WeaponKind.Rosary => 28f,
             SkillId.Bible_AgiBuff when ally.WeaponKind == WeaponKind.Sword => 14f,
+            SkillId.Shield_ShoulderGuard when CombatAiPositioning.IsAdvancingAlly(context, ally) => 36f,
             SkillId.Shield_ShoulderGuard when ally.WeaponKind != WeaponKind.Shield => 10f,
             SkillId.Bible_Gotsume when ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Shield => 14f,
             _ => 0f,
