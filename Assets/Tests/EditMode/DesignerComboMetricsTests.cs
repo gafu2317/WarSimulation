@@ -34,6 +34,29 @@ public sealed class DesignerComboMetricsTests
         Assert.That(escort.Roles[1].Personality, Is.EqualTo(CombatAiPersonalityKind.Lecherous));
     }
 
+    [TestCase(DesignerComboTestScope.BehaviorCheck, 5)]
+    [TestCase(DesignerComboTestScope.Comparison, 720)]
+    [TestCase(DesignerComboTestScope.ExtendedComparison, 2400)]
+    [TestCase(DesignerComboTestScope.Counter, 360)]
+    public void EstimateMatchCount_ReturnsPlannedMatchesForTwoRoleCombo(DesignerComboTestScope scope, int expected)
+    {
+        DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.Get(DesignerComboKind.BindFollowUp);
+
+        int count = DesignerComboBenchmarkRunner.EstimateMatchCount(scenario, scope);
+
+        Assert.That(count, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void EstimateMatchCount_ExcludesAddedMembersWhenScalableRoleIsUndefined()
+    {
+        DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.Get(DesignerComboKind.BindFollowUp);
+
+        int count = DesignerComboBenchmarkRunner.EstimateMatchCount(scenario, DesignerComboTestScope.AddedMembers);
+
+        Assert.That(count, Is.Zero);
+    }
+
     [Test]
     public void BuildSummaries_AggregatesOnlyValidMatches()
     {
@@ -168,4 +191,5 @@ public sealed class DesignerComboMetricsTests
             MetricRateAfterBreak = after,
         };
     }
+
 }

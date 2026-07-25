@@ -4,6 +4,11 @@ public static class CombatAiObjectiveScorer
 {
     private const float NumericalAdvantagePerCharacter = 6f;
     private const float MaximumNumericalAdvantageScore = 24f;
+    private const float StoneAssaultRoleBonus = 42f;
+    private const float StoneAssaultCommitmentBonus = 34f;
+    private const float CoveredEnemyAttackPenalty = 20f;
+    private const float MaximumStoneAssaultSelfThreat = 35f;
+    private const float MaximumStoneAssaultOwnStoneThreat = 30f;
     private static readonly CombatObjective[] AllObjectives = (CombatObjective[])System.Enum.GetValues(typeof(CombatObjective));
 
     public static void BuildEntries(
@@ -62,6 +67,11 @@ public static class CombatAiObjectiveScorer
         float bestSituationScore = 0f;
         float bestWeaponScore = 0f;
         float bestPersonalityScore = 0f;
+        bool prefersStoneAssault = ShouldPreferStoneAssault(
+            context,
+            assessment,
+            weapon,
+            previousObjective);
         for (int i = 0; i < AllObjectives.Length; i++)
         {
             CombatObjective objective = AllObjectives[i];
@@ -75,6 +85,13 @@ public static class CombatAiObjectiveScorer
                     objective,
                     focusEnemy,
                     focusCommitmentRemainingSeconds,
+                    previousObjective,
+                    prefersStoneAssault)
+                + GetTeamRoleAdjustment(
+                    context,
+                    assessment,
+                    weapon,
+                    objective,
                     previousObjective);
             float weaponScore = GetWeaponScore(weapon, objective);
             float personalityScore = GetPersonalityScore(context, personalityProfile, assessment, objective);
@@ -89,7 +106,8 @@ public static class CombatAiObjectiveScorer
                     baseScore,
                     situationScore,
                     weaponScore,
-                    personalityScore);
+                    personalityScore,
+                    previousObjective);
                 entries.Add(new CombatAiObjectiveScoreEntry
                 {
                     Objective = objective,
@@ -121,7 +139,8 @@ public static class CombatAiObjectiveScorer
                     bestBaseScore,
                     bestSituationScore,
                     bestWeaponScore,
-                    bestPersonalityScore);
+                    bestPersonalityScore,
+                    previousObjective);
                 selectedReasons.AddRange(selectedBreakdown.ReasonCodes);
             }
         }
@@ -136,7 +155,8 @@ public static class CombatAiObjectiveScorer
         float baseScore,
         float situationScore,
         float weaponScore,
-        float personalityScore)
+        float personalityScore,
+        CombatObjective previousObjective)
     {
         var breakdown = new CombatAiScoreBreakdown
         {
@@ -149,6 +169,19 @@ public static class CombatAiObjectiveScorer
         if (GetNumericalAdvantageAdjustment(context, objective) != 0f)
         {
             AddReason(breakdown, CombatAiReasonCode.NumericalAdvantage);
+        }
+        if ((objective == CombatObjective.AttackEnemy || objective == CombatObjective.DestroyEnemyStone) &&
+            ShouldPreferStoneAssault(
+                context,
+                assessment,
+                context.Owner != null ? context.Owner.EquippedWeapon : null,
+                previousObjective))
+        {
+            AddReason(
+                breakdown,
+                previousObjective == CombatObjective.DestroyEnemyStone
+                    ? CombatAiReasonCode.StoneAssaultCommitment
+                    : CombatAiReasonCode.AllyEngagementCoverage);
         }
         if (weaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
         if (personalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
@@ -312,6 +345,85 @@ public static class CombatAiObjectiveScorer
             CombatObjective.Retreat => advantage * -0.75f,
             _ => 0f,
         };
+    }
+
+    private static float GetTeamRoleAdjustment(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        WeaponBase weapon,
+        CombatObjective objective,
+        CombatObjective previousObjective)
+    {
+        if (!ShouldPreferStoneAssault(context, assessment, weapon, previousObjective)) return 0f;
+
+        if (objective == CombatObjective.DestroyEnemyStone)
+        {
+            return previousObjective == CombatObjective.DestroyEnemyStone
+                ? StoneAssaultCommitmentBonus
+                : StoneAssaultRoleBonus;
+        }
+
+        return objective == CombatObjective.AttackEnemy ? -CoveredEnemyAttackPenalty : 0f;
+    }
+
+    private static bool ShouldPreferStoneAssault(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        WeaponBase weapon,
+        CombatObjective previousObjective)
+    {
+        if (context == null ||
+            assessment == null ||
+            !context.HasEnemyStonePosition ||
+            !IsDamageWeapon(weapon) ||
+            assessment.GetValue(CombatAiMetricIndex.SelfThreat) >= MaximumStoneAssaultSelfThreat ||
+            assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) >= MaximumStoneAssaultOwnStoneThreat)
+        {
+            return false;
+        }
+
+        if (previousObjective == CombatObjective.DestroyEnemyStone)
+        {
+            return !HasHigherPriorityStoneAssaulter(context);
+        }
+
+        return !HasActiveStoneAssaulter(context) && HasStableAllyFrontline(context);
+    }
+
+    private static bool HasActiveStoneAssaulter(CombatAiContext context)
+    {
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.CanAct &&
+                ally.HasObjective &&
+                ally.Objective == CombatObjective.DestroyEnemyStone)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasHigherPriorityStoneAssaulter(CombatAiContext context)
+    {
+        int ownerId = context.Owner != null ? context.Owner.BattleParticipantId : 0;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.CanAct ||
+                !ally.HasObjective ||
+                ally.Objective != CombatObjective.DestroyEnemyStone)
+            {
+                continue;
+            }
+
+            int allyId = ally.Character != null ? ally.Character.BattleParticipantId : 0;
+            if (ownerId == 0 || allyId == 0 || allyId < ownerId) return true;
+        }
+
+        return false;
     }
 
     private static bool IsDamageWeapon(WeaponBase weapon)

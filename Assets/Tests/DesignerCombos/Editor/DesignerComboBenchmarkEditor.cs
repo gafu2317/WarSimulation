@@ -8,10 +8,12 @@ using WarSimulation.Combat.Map;
 public sealed class DesignerComboBenchmarkWindow : EditorWindow
 {
     private DesignerComboKind _combo = DesignerComboKind.BindFollowUp;
+    private bool _runAllCombos;
     private DesignerComboTestScope _scope = DesignerComboTestScope.BehaviorCheck;
     private int _baseSeed = 12000;
     private float _timeoutSeconds = 120f;
     private float _timeScale = 4f;
+    private bool _disableRendering;
 
     [MenuItem("Tools/War Simulation/Designer Combo Tests/Open Test Window")]
     public static void Open()
@@ -22,17 +24,47 @@ public sealed class DesignerComboBenchmarkWindow : EditorWindow
     private void OnGUI()
     {
         EditorGUILayout.LabelField("試験条件", EditorStyles.boldLabel);
-        _combo = (DesignerComboKind)EditorGUILayout.EnumPopup("コンボ", _combo);
+        _runAllCombos = EditorGUILayout.Toggle("全コンボを連続実行", _runAllCombos);
+        using (new EditorGUI.DisabledScope(_runAllCombos))
+        {
+            _combo = (DesignerComboKind)EditorGUILayout.EnumPopup("コンボ", _combo);
+        }
         _scope = (DesignerComboTestScope)EditorGUILayout.EnumPopup("試験範囲", _scope);
         _baseSeed = EditorGUILayout.IntField("基準シード", _baseSeed);
-        _timeoutSeconds = EditorGUILayout.FloatField("一試合の制限秒数", _timeoutSeconds);
+        _timeoutSeconds = EditorGUILayout.FloatField("一試合の最大戦闘秒数", _timeoutSeconds);
+        _disableRendering = EditorGUILayout.Toggle("描画なし高速モード", _disableRendering);
         _timeScale = EditorGUILayout.Slider("時間倍率", _timeScale, 1f, 20f);
 
         DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.Get(_combo);
+        int comboCount = GetRunnableComboCount(_scope, _runAllCombos);
+        int matchCount = GetPlannedMatchCount(_scope, _runAllCombos, scenario);
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("主指標", scenario.PrimaryMetricName);
+        if (_runAllCombos)
+        {
+            EditorGUILayout.LabelField("対象", $"{comboCount}コンボ / 約{matchCount}試合");
+            EditorGUILayout.HelpBox("対象コンボを順番に実行し、結果ファイルをコンボごとに保存します。", MessageType.Info);
+        }
+        else
+        {
+            EditorGUILayout.LabelField("主指標", scenario.PrimaryMetricName);
+            EditorGUILayout.LabelField("予定試合数", $"約{matchCount}試合");
+        }
+        EditorGUILayout.LabelField(
+            "全試合が時間切れの場合",
+            $"理論上約{FormatDuration(matchCount * _timeoutSeconds / Mathf.Max(1f, _timeScale))}");
+        EditorGUILayout.HelpBox(
+            $"最大戦闘秒数はゲーム内時間です。{_timeoutSeconds:0.#}秒・{_timeScale:0.#}倍速なら、時間切れまでの実時間は理論上約{_timeoutSeconds / Mathf.Max(1f, _timeScale):0.#}秒です。低FPS時は長くなります。",
+            MessageType.Info);
+        if (_disableRendering)
+        {
+            EditorGUILayout.HelpBox("実行中はGame画面が真っ暗になります。進捗はConsoleへ出力します。", MessageType.None);
+        }
         EditorGUILayout.HelpBox(GetScopeDescription(_scope), MessageType.Info);
-        if (_scope == DesignerComboTestScope.AddedMembers && scenario.ScalableRoleIndex < 0)
+        if (_scope == DesignerComboTestScope.AddedMembers && _runAllCombos)
+        {
+            EditorGUILayout.HelpBox("人数追加役が未定義のコンボは一括実行から除外します。", MessageType.Warning);
+        }
+        else if (_scope == DesignerComboTestScope.AddedMembers && scenario.ScalableRoleIndex < 0)
         {
             EditorGUILayout.HelpBox("このコンボには人数追加役が定義されていません。", MessageType.Warning);
         }
@@ -41,13 +73,27 @@ public sealed class DesignerComboBenchmarkWindow : EditorWindow
         if (GUILayout.Button("専用シーンを作成または修復")) DesignerComboBenchmarkSceneTool.CreateOrRepair();
 
         using (new EditorGUI.DisabledScope(EditorApplication.isPlaying ||
-            _scope == DesignerComboTestScope.AddedMembers && scenario.ScalableRoleIndex < 0))
+            !_runAllCombos && _scope == DesignerComboTestScope.AddedMembers && scenario.ScalableRoleIndex < 0))
         {
-            if (GUILayout.Button("試験を開始")) StartTest();
+            if (GUILayout.Button(_runAllCombos ? "全コンボの試験を開始" : "試験を開始")) StartTest();
         }
     }
 
     private void StartTest()
+    {
+        StartTest(new DesignerComboRunSettings
+        {
+            Combo = _combo,
+            RunAllCombos = _runAllCombos,
+            DisableRendering = _disableRendering,
+            Scope = _scope,
+            BaseSeed = _baseSeed,
+            BattleTimeoutSeconds = Mathf.Max(10f, _timeoutSeconds),
+            TimeScale = Mathf.Clamp(_timeScale, 1f, 20f),
+        });
+    }
+
+    private static void StartTest(DesignerComboRunSettings settings)
     {
         if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(DesignerComboBenchmarkSceneTool.TestScenePath))
         {
@@ -63,15 +109,44 @@ public sealed class DesignerComboBenchmarkWindow : EditorWindow
             return;
         }
 
-        DesignerComboRunRequest.Store(new DesignerComboRunSettings
-        {
-            Combo = _combo,
-            Scope = _scope,
-            BaseSeed = _baseSeed,
-            BattleTimeoutSeconds = Mathf.Max(10f, _timeoutSeconds),
-            TimeScale = Mathf.Clamp(_timeScale, 1f, 20f),
-        });
+        DesignerComboRunRequest.Store(settings);
         EditorApplication.EnterPlaymode();
+    }
+
+    private static int GetRunnableComboCount(DesignerComboTestScope scope, bool runAllCombos)
+    {
+        if (!runAllCombos) return 1;
+
+        int count = 0;
+        for (int i = 0; i < DesignerComboScenarioCatalog.All.Count; i++)
+        {
+            DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.All[i];
+            if (scope != DesignerComboTestScope.AddedMembers || scenario.ScalableRoleIndex >= 0) count++;
+        }
+        return count;
+    }
+
+    private static int GetPlannedMatchCount(
+        DesignerComboTestScope scope,
+        bool runAllCombos,
+        DesignerComboScenarioDefinition selectedScenario)
+    {
+        if (!runAllCombos) return DesignerComboBenchmarkRunner.EstimateMatchCount(selectedScenario, scope);
+
+        int count = 0;
+        for (int i = 0; i < DesignerComboScenarioCatalog.All.Count; i++)
+        {
+            count += DesignerComboBenchmarkRunner.EstimateMatchCount(DesignerComboScenarioCatalog.All[i], scope);
+        }
+        return count;
+    }
+
+    private static string FormatDuration(float seconds)
+    {
+        TimeSpan duration = TimeSpan.FromSeconds(Mathf.Max(0f, seconds));
+        if (duration.TotalHours >= 1d) return $"{(int)duration.TotalHours}時間{duration.Minutes}分";
+        if (duration.TotalMinutes >= 1d) return $"{duration.Minutes}分{duration.Seconds}秒";
+        return $"{duration.Seconds}秒";
     }
 
     private static T FindInScene<T>(Scene scene) where T : Component
@@ -90,7 +165,7 @@ public sealed class DesignerComboBenchmarkWindow : EditorWindow
         return scope switch
         {
             DesignerComboTestScope.BehaviorCheck => "開けた地形で連携ありを5試合実行します。画面と記録で成立を確認します。",
-            DesignerComboTestScope.Comparison => "3地形、30シード、陣営入替で連携あり・一人ずつ片側解除・通常編成を比較します。",
+            DesignerComboTestScope.Comparison => "3地形、30シード、陣営入替で連携あり・一人ずつ片側解除・通常編成を比較します。基準付近の結果は100シードまで自動延長します。",
             DesignerComboTestScope.ExtendedComparison => "比較試合を各100シードまで増やして再判定します。",
             DesignerComboTestScope.AddedMembers => "最小構成から指定役を3人まで追加し、比較側も同人数にそろえます。",
             DesignerComboTestScope.Counter => "通常の対戦相手と弱点を狙う対抗編成を同条件で比較します。",

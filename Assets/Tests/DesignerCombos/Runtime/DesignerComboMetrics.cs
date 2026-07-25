@@ -23,6 +23,7 @@ public sealed class DesignerComboMatchResult
     public bool SidesSwapped;
     public string Outcome;
     public float BattleSeconds;
+    public float RealSeconds;
     public float PrimaryMetric;
     public float PrimaryMetricPerSecond;
     public string PrimaryMetricName;

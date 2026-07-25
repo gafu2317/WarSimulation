@@ -15,6 +15,8 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 {
     private const string WeaponFolder = "Assets/Data/Map/Weapon";
     [SerializeField] private DesignerComboKind _combo = DesignerComboKind.BindFollowUp;
+    [SerializeField] private bool _runAllCombos;
+    [SerializeField] private bool _disableRendering;
     [SerializeField] private DesignerComboTestScope _scope = DesignerComboTestScope.BehaviorCheck;
     [SerializeField] private int _baseSeed = 12000;
     [SerializeField, Min(10f)] private float _battleTimeoutSeconds = 120f;
@@ -25,17 +27,28 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
     private readonly Dictionary<WeaponKind, WeaponConfig> _weapons = new();
     private readonly Dictionary<CombatAiPersonalityKind, CombatAiPersonalityProfile> _personalities = new();
     private readonly List<DesignerComboMatchResult> _results = new();
+    private readonly List<Camera> _disabledCameras = new();
+    private readonly List<Canvas> _disabledCanvases = new();
+    private readonly List<CharacterAnimationController> _disabledAnimationControllers = new();
     private CombatCharacterSystem _characterSystem;
     private CombatBattleFlow _battleFlow;
     private MapGenerator _mapGenerator;
     private MapGenerationConfig _originalMapConfig;
     private GameObject _runtimeRoot;
     private bool _running;
+    private int _previousVSyncCount;
+    private int _previousTargetFrameRate;
+    private bool _previousRunInBackground;
 
     private void Awake()
     {
         CombatFlow[] flows = FindObjectsByType<CombatFlow>(FindObjectsInactive.Include);
-        for (int i = 0; i < flows.Length; i++) flows[i].enabled = false;
+        for (int i = 0; i < flows.Length; i++)
+        {
+            flows[i].enabled = false;
+            Canvas canvas = flows[i].GetComponentInParent<Canvas>(includeInactive: true);
+            if (canvas != null) canvas.enabled = false;
+        }
     }
 
     private void Start()
@@ -43,6 +56,8 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         if (DesignerComboRunRequest.TryConsume(out DesignerComboRunSettings settings))
         {
             _combo = settings.Combo;
+            _runAllCombos = settings.RunAllCombos;
+            _disableRendering = settings.DisableRendering;
             _scope = settings.Scope;
             _baseSeed = settings.BaseSeed;
             _battleTimeoutSeconds = settings.BattleTimeoutSeconds;
@@ -63,53 +78,151 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
     {
         _running = true;
         float previousTimeScale = Time.timeScale;
-        Time.timeScale = _timeScale;
-        _results.Clear();
+        _previousRunInBackground = Application.runInBackground;
+        Application.runInBackground = true;
+        if (_disableRendering) EnableNoRenderingMode();
 
         if (!TryResolveDependencies(out string error))
         {
             Debug.LogError("[デザイナーズコンボテスト] " + error, this);
+            Time.timeScale = previousTimeScale;
+            DisableNoRenderingMode();
+            Application.runInBackground = _previousRunInBackground;
             _running = false;
             yield break;
         }
 
         try
         {
-            DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.Get(_combo);
-            List<DesignerComboMatchPlan> plans = BuildPlans(scenario, _scope, _baseSeed);
-            int initialPlanCount = plans.Count;
-            bool extensionChecked = false;
-            Debug.Log($"[デザイナーズコンボテスト] {scenario.DisplayName}を{plans.Count}試合実行します。", this);
-
-            for (int i = 0; i < plans.Count; i++)
+            List<DesignerComboScenarioDefinition> scenarios = BuildScenariosToRun();
+            Time.timeScale = _timeScale;
+            Debug.Log($"[デザイナーズコンボテスト] {scenarios.Count}コンボを順番に実行します。", this);
+            for (int i = 0; i < scenarios.Count; i++)
             {
-                if (plans.Count <= 10) Debug.Log($"[デザイナーズコンボテスト] {i + 1}/{plans.Count}試合目を開始します。", this);
-                yield return RunMatchSafely(scenario, plans[i]);
-                if (plans.Count <= 10 || (i + 1) % 10 == 0 || i + 1 == plans.Count)
-                {
-                    Debug.Log($"[デザイナーズコンボテスト] {i + 1}/{plans.Count}試合完了", this);
-                }
-
-                if (!extensionChecked && _scope == DesignerComboTestScope.Comparison && i + 1 == initialPlanCount)
-                {
-                    extensionChecked = true;
-                    if (ShouldExtendComparison(_results))
-                    {
-                        plans.AddRange(BuildComparisonExtensionPlans(scenario, _baseSeed));
-                        Debug.Log($"[デザイナーズコンボテスト] 基準付近のため各100試合まで延長します。合計{plans.Count}試合", this);
-                    }
-                }
+                DesignerComboScenarioDefinition scenario = scenarios[i];
+                Debug.Log($"[デザイナーズコンボテスト] コンボ {i + 1}/{scenarios.Count}: {scenario.DisplayName}", this);
+                yield return RunScenario(scenario, _timeScale);
             }
 
-            string reportPath = DesignerComboReportWriter.Write(scenario, _scope, _results);
-            Debug.Log($"[デザイナーズコンボテスト] 完了: {reportPath}", this);
+            Debug.Log($"[デザイナーズコンボテスト] 全{scenarios.Count}コンボが完了しました。", this);
         }
         finally
         {
             Time.timeScale = previousTimeScale;
+            DisableNoRenderingMode();
+            Application.runInBackground = _previousRunInBackground;
             CleanupTemporaryObjects();
             _running = false;
         }
+    }
+
+    private IEnumerator RunScenario(DesignerComboScenarioDefinition scenario, float timeScale)
+    {
+        _results.Clear();
+        List<DesignerComboMatchPlan> plans = BuildPlans(scenario, _scope, _baseSeed);
+        int initialPlanCount = plans.Count;
+        bool extensionChecked = false;
+        Debug.Log($"[デザイナーズコンボテスト] {scenario.DisplayName}を{plans.Count}試合実行します。", this);
+
+        for (int i = 0; i < plans.Count; i++)
+        {
+            if (plans.Count <= 10) Debug.Log($"[デザイナーズコンボテスト] {i + 1}/{plans.Count}試合目を開始します。", this);
+            yield return RunMatchSafely(scenario, plans[i]);
+            if (plans.Count <= 10 || (i + 1) % 10 == 0 || i + 1 == plans.Count)
+            {
+                Debug.Log($"[デザイナーズコンボテスト] {i + 1}/{plans.Count}試合完了", this);
+            }
+
+            if (!extensionChecked &&
+                _scope == DesignerComboTestScope.Comparison &&
+                i + 1 == initialPlanCount)
+            {
+                extensionChecked = true;
+                if (ShouldExtendComparison(_results))
+                {
+                    plans.AddRange(BuildComparisonExtensionPlans(scenario, _baseSeed));
+                    Debug.Log($"[デザイナーズコンボテスト] 基準付近のため各100試合まで延長します。合計{plans.Count}試合", this);
+                }
+            }
+        }
+
+        string reportPath = DesignerComboReportWriter.Write(scenario, _scope, timeScale, _results);
+        Debug.Log($"[デザイナーズコンボテスト] {scenario.DisplayName} {timeScale:0.#}倍完了: {reportPath}", this);
+    }
+
+    private void EnableNoRenderingMode()
+    {
+        _previousVSyncCount = QualitySettings.vSyncCount;
+        _previousTargetFrameRate = Application.targetFrameRate;
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
+
+        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include);
+        for (int i = 0; i < cameras.Length; i++)
+        {
+            if (!cameras[i].enabled) continue;
+            cameras[i].enabled = false;
+            _disabledCameras.Add(cameras[i]);
+        }
+
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include);
+        for (int i = 0; i < canvases.Length; i++)
+        {
+            if (!canvases[i].enabled) continue;
+            canvases[i].enabled = false;
+            _disabledCanvases.Add(canvases[i]);
+        }
+
+        CharacterAnimationController[] animationControllers =
+            FindObjectsByType<CharacterAnimationController>(FindObjectsInactive.Include);
+        for (int i = 0; i < animationControllers.Length; i++)
+        {
+            if (!animationControllers[i].enabled) continue;
+            animationControllers[i].enabled = false;
+            _disabledAnimationControllers.Add(animationControllers[i]);
+        }
+        Debug.Log("[デザイナーズコンボテスト] 描画なし高速モードを有効にしました。進捗はConsoleで確認してください。", this);
+    }
+
+    private void DisableNoRenderingMode()
+    {
+        if (!_disableRendering) return;
+
+        for (int i = 0; i < _disabledCameras.Count; i++)
+        {
+            if (_disabledCameras[i] != null) _disabledCameras[i].enabled = true;
+        }
+        for (int i = 0; i < _disabledCanvases.Count; i++)
+        {
+            if (_disabledCanvases[i] != null) _disabledCanvases[i].enabled = true;
+        }
+        for (int i = 0; i < _disabledAnimationControllers.Count; i++)
+        {
+            if (_disabledAnimationControllers[i] != null) _disabledAnimationControllers[i].enabled = true;
+        }
+        _disabledCameras.Clear();
+        _disabledCanvases.Clear();
+        _disabledAnimationControllers.Clear();
+        QualitySettings.vSyncCount = _previousVSyncCount;
+        Application.targetFrameRate = _previousTargetFrameRate;
+    }
+
+    private List<DesignerComboScenarioDefinition> BuildScenariosToRun()
+    {
+        if (!_runAllCombos) return new List<DesignerComboScenarioDefinition> { DesignerComboScenarioCatalog.Get(_combo) };
+
+        var scenarios = new List<DesignerComboScenarioDefinition>();
+        for (int i = 0; i < DesignerComboScenarioCatalog.All.Count; i++)
+        {
+            DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.All[i];
+            if (_scope == DesignerComboTestScope.AddedMembers && scenario.ScalableRoleIndex < 0)
+            {
+                Debug.Log($"[デザイナーズコンボテスト] {scenario.DisplayName}は人数追加役が未定義のため除外します。", this);
+                continue;
+            }
+            scenarios.Add(scenario);
+        }
+        return scenarios;
     }
 
     private IEnumerator RunMatchSafely(DesignerComboScenarioDefinition scenario, DesignerComboMatchPlan plan)
@@ -197,11 +310,9 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
             collector.Begin();
             float startedAt = Time.time;
             float startedAtRealtime = Time.realtimeSinceStartup;
-            float realtimeTimeout = _battleTimeoutSeconds / Mathf.Max(0.01f, Time.timeScale);
             while (!ended &&
                 _battleFlow.State == CombatBattleState.Running &&
-                Time.time - startedAt < _battleTimeoutSeconds &&
-                Time.realtimeSinceStartup - startedAtRealtime < realtimeTimeout)
+                Time.time - startedAt < _battleTimeoutSeconds)
             {
                 collector.Sample();
                 yield return null;
@@ -225,6 +336,7 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 
             DesignerComboMatchResult result = collector.Complete(endState, timedOut);
             result.Variant = plan.Label;
+            result.RealSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAtRealtime);
             _results.Add(result);
         }
         finally
@@ -570,6 +682,19 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         return plans;
     }
 
+    public static int EstimateMatchCount(DesignerComboScenarioDefinition scenario, DesignerComboTestScope scope)
+    {
+        return scope switch
+        {
+            DesignerComboTestScope.BehaviorCheck => 5,
+            DesignerComboTestScope.Comparison => 3 * (scenario.Roles.Length + 2) * 30 * 2,
+            DesignerComboTestScope.ExtendedComparison => 3 * (scenario.Roles.Length + 2) * 100 * 2,
+            DesignerComboTestScope.AddedMembers => scenario.ScalableRoleIndex < 0 ? 0 : 3 * 4 * 30 * 2,
+            DesignerComboTestScope.Counter => 3 * 2 * 30 * 2,
+            _ => 0,
+        };
+    }
+
     private static void AddPlans(
         List<DesignerComboMatchPlan> plans,
         DesignerComboVariantKind variant,
@@ -688,6 +813,8 @@ internal readonly struct DesignerComboMatchPlan
 public sealed class DesignerComboRunSettings
 {
     public DesignerComboKind Combo;
+    public bool RunAllCombos;
+    public bool DisableRendering;
     public DesignerComboTestScope Scope;
     public int BaseSeed = 12000;
     public float BattleTimeoutSeconds = 120f;
@@ -719,6 +846,7 @@ public static class DesignerComboReportWriter
     {
         public string Combo;
         public string Scope;
+        public float TimeScale;
         public string CreatedAt;
         public List<DesignerComboMatchResult> Matches;
         public List<Summary> Summaries;
@@ -759,12 +887,14 @@ public static class DesignerComboReportWriter
     public static string Write(
         DesignerComboScenarioDefinition scenario,
         DesignerComboTestScope scope,
+        float timeScale,
         List<DesignerComboMatchResult> results)
     {
         string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
         string directory = Path.Combine(projectRoot, "Logs", "DesignerComboTests");
         Directory.CreateDirectory(directory);
-        string stem = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + "_" + scenario.Kind;
+        string scaleLabel = timeScale.ToString("0.##", CultureInfo.InvariantCulture);
+        string stem = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + "_" + scenario.Kind + "_" + scaleLabel + "x";
         string jsonPath = Path.Combine(directory, stem + ".json");
         string csvPath = Path.Combine(directory, stem + ".csv");
         List<Summary> summaries = BuildSummaries(results);
@@ -773,6 +903,7 @@ public static class DesignerComboReportWriter
         {
             Combo = scenario.DisplayName,
             Scope = scope.ToString(),
+            TimeScale = timeScale,
             CreatedAt = DateTime.Now.ToString("O", CultureInfo.InvariantCulture),
             Matches = results,
             Summaries = summaries,
@@ -910,13 +1041,14 @@ public static class DesignerComboReportWriter
     private static string BuildCsv(List<DesignerComboMatchResult> results)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("コンボ,編成,地形,シード,陣営入替,結果,戦闘秒数,主指標,主指標毎秒,連携成立,主指標名,魔石ダメージ,与ダメージ,有効回復量,有効防御量,対象変更,連携秒数,拘束秒数,毒秒数,強化秒数,連携崩壊時刻,連携崩壊理由,必要役離脱時刻,崩壊前主指標率,崩壊後主指標率,生存時間,エラー");
+        builder.AppendLine("コンボ,編成,地形,シード,陣営入替,結果,戦闘秒数,実時間秒数,主指標,主指標毎秒,連携成立,主指標名,魔石ダメージ,与ダメージ,有効回復量,有効防御量,対象変更,連携秒数,拘束秒数,毒秒数,強化秒数,連携崩壊時刻,連携崩壊理由,必要役離脱時刻,崩壊前主指標率,崩壊後主指標率,生存時間,エラー");
         for (int i = 0; i < results.Count; i++)
         {
             DesignerComboMatchResult r = results[i];
             builder.Append(Csv(r.Combo)).Append(',').Append(Csv(r.Variant)).Append(',').Append(Csv(r.Terrain)).Append(',')
                 .Append(r.Seed).Append(',').Append(r.SidesSwapped).Append(',').Append(Csv(r.Outcome)).Append(',')
-                .Append(Number(r.BattleSeconds)).Append(',').Append(Number(r.PrimaryMetric)).Append(',').Append(Number(r.PrimaryMetricPerSecond)).Append(',')
+                .Append(Number(r.BattleSeconds)).Append(',').Append(Number(r.RealSeconds)).Append(',')
+                .Append(Number(r.PrimaryMetric)).Append(',').Append(Number(r.PrimaryMetricPerSecond)).Append(',')
                 .Append(r.ComboOccurred).Append(',').Append(Csv(r.PrimaryMetricName)).Append(',')
                 .Append(r.MagicStoneDamage).Append(',').Append(r.DamageDealt).Append(',').Append(r.EffectiveHealing).Append(',').Append(r.EffectiveDefense).Append(',')
                 .Append(r.TargetChanges).Append(',').Append(Number(r.LinkedSeconds)).Append(',').Append(Number(r.BindSeconds)).Append(',')
@@ -1055,4 +1187,5 @@ public static class DesignerComboReportWriter
     private static string Number(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string Csv(string value) => "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
 }
+
 #endif

@@ -42,4 +42,6 @@ public enum CombatAiReasonCode
     BodyBlockValuable = 39,
     IncomingEnemyCast = 40,
     NumericalAdvantage = 41,
+    AllyEngagementCoverage = 42,
+    StoneAssaultCommitment = 43,
 }

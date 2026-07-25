@@ -10,6 +10,7 @@ public sealed class CombatAiBrain : MonoBehaviour
 {
     private const float SwordFocusCommitmentSeconds = 2.5f;
     private const float BattleJunkieFocusCommitmentSeconds = 8f;
+    private const float StoneAssaultCommitmentSeconds = 15f;
 
     [SerializeField] private bool _enabled = true;
     [SerializeField, Min(0.05f)] private float _decisionIntervalSeconds = 0.5f;
@@ -24,6 +25,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     private float _nextStoneAttackTime;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
+    private float _stoneAssaultLockedUntilTime;
     private float _personalityPauseUntilTime;
     private MagicStone _cachedEnemyMainStone;
     private readonly List<CombatAiReasonCode> _objectiveReasonCodes = new List<CombatAiReasonCode>();
@@ -81,6 +83,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         _nextStoneAttackTime = 0f;
         _focusedEnemy = null;
         _focusedEnemyLockedUntilTime = 0f;
+        _stoneAssaultLockedUntilTime = 0f;
         _personalityPauseUntilTime = 0f;
         _cachedEnemyMainStone = null;
         LastPlan = CombatAiPlan.None;
@@ -103,6 +106,12 @@ public sealed class CombatAiBrain : MonoBehaviour
         PruneFocusedEnemy(LastContext);
         CombatAiPlan previousPlan = LastPlan;
         CombatObjective previousObjective = previousPlan.Objective;
+        bool keepsStoneAssaultCommitment = previousObjective == CombatObjective.DestroyEnemyStone &&
+            Time.time < _stoneAssaultLockedUntilTime;
+        CombatObjective scoringPreviousObjective = previousObjective == CombatObjective.DestroyEnemyStone &&
+            !keepsStoneAssaultCommitment
+                ? CombatObjective.Search
+                : previousObjective;
         _objectiveReasonCodes.Clear();
         if (_personalityRuntime.TryBuildRevengePlan(out CombatAiPlan revengePlan))
         {
@@ -116,10 +125,31 @@ public sealed class CombatAiBrain : MonoBehaviour
             _owner.PersonalityProfile,
             _focusedEnemy,
             GetFocusCommitmentRemainingSeconds(),
-            previousObjective,
+            scoringPreviousObjective,
             _objectiveReasonCodes);
+        UpdateStoneAssaultCommitment(
+            previousObjective,
+            LastPlan.Objective,
+            keepsStoneAssaultCommitment);
         NotifyPlanSelected(previousPlan, LastPlan);
         return ExecutePlan(LastPlan);
+    }
+
+    private void UpdateStoneAssaultCommitment(
+        CombatObjective previousObjective,
+        CombatObjective nextObjective,
+        bool keptExistingCommitment)
+    {
+        if (nextObjective != CombatObjective.DestroyEnemyStone)
+        {
+            _stoneAssaultLockedUntilTime = 0f;
+            return;
+        }
+
+        if (previousObjective != CombatObjective.DestroyEnemyStone || !keptExistingCommitment)
+        {
+            _stoneAssaultLockedUntilTime = Time.time + StoneAssaultCommitmentSeconds;
+        }
     }
 
     private void NotifyPlanSelected(CombatAiPlan previous, CombatAiPlan next)

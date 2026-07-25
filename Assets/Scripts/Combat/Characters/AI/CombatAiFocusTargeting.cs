@@ -11,8 +11,11 @@ public static class CombatAiFocusTargeting
         CombatObjective objective,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
-        CombatObjective previousObjective)
+        CombatObjective previousObjective,
+        bool suppressEnemyFocus)
     {
+        if (suppressEnemyFocus) return 0f;
+
         if (!HasFocusCommitment(context, weapon, focusEnemy, focusCommitmentRemainingSeconds))
         {
             return 0f;
