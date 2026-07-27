@@ -12,7 +12,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     private const int MaxVisibleRoutes = 3;
 
     public override string InspectorDescription =>
-        "Play中のみ、NavMesh ベイク後に自軍魔石→敵軍魔石の進攻ルートを表示します。直進可なら直進、不可なら橋経由。";
+        "Play中のみ、進攻ルートと橋端点（理想=白 / Sample後=緑 / 入口=水色 / 出口=橙）を表示します。";
 
     [SerializeField] private CombatTeam _attackingTeam = CombatTeam.Ally;
     [SerializeField, Min(0.5f)] private float _stoneSampleRadius = 10f;
@@ -25,8 +25,17 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     [SerializeField] private Color _centerColor = new(1f, 0.85f, 0.1f, 0.95f);
     [SerializeField] private Color _rightColor = new(1f, 0.2f, 0.75f, 0.95f);
 
+    [SerializeField] private bool _showEndpointMarkers = true;
+    [SerializeField, Min(0.1f)] private float _endpointMarkerScale = 1.1f;
+    [SerializeField] private Color _idealEndpointColor = new(1f, 1f, 1f, 0.85f);
+    [SerializeField] private Color _sampledEndpointColor = new(0.2f, 1f, 0.35f, 0.95f);
+    [SerializeField] private Color _enterEndpointColor = new(0.15f, 0.9f, 1f, 1f);
+    [SerializeField] private Color _exitEndpointColor = new(1f, 0.35f, 0.15f, 1f);
+
     private readonly List<LineRenderer> _lines = new();
+    private readonly List<Transform> _endpointMarkers = new();
     private Transform _generatedRoot;
+    private Transform _endpointRoot;
     private int _lastVisibleRouteCount = -1;
     private float _nextRetryTime;
     private bool _loggedBoot;
@@ -106,6 +115,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     private void OnNavMeshCleared()
     {
         HideLines();
+        ClearEndpointMarkers();
         _lastFailureReason = "";
     }
 
@@ -136,9 +146,11 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
             }
 
             HideLines();
+            ClearEndpointMarkers();
             return;
         }
 
+        var endpointDebug = new List<CombatStoneAssaultRoutes.BridgeEndpointDebug>();
         List<CombatStoneAssaultRoutes.Candidate> candidates = CombatStoneAssaultRoutes.BuildCandidates(
             map,
             mapSystem.MapOrigin,
@@ -149,7 +161,8 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
             {
                 WaypointSampleRadius = _waypointSampleRadius,
                 BridgeEndpointMargin = _bridgeEndpointMargin,
-            });
+            },
+            endpointDebug);
         List<CombatStoneAssaultRoutes.Candidate> selected = CombatStoneAssaultRoutes.TakeUpTo(
             candidates,
             MaxVisibleRoutes);
@@ -164,6 +177,8 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
 
             RenderLine(_lines[i], selected[i].Corners, mapSystem);
         }
+
+        RefreshEndpointMarkers(endpointDebug, selected, mapSystem);
 
         if (selected.Count == 0)
         {
@@ -295,6 +310,8 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     private void DestroyGeneratedRoot()
     {
         _lines.Clear();
+        _endpointMarkers.Clear();
+        _endpointRoot = null;
         _lastVisibleRouteCount = -1;
 
         if (_generatedRoot != null)
@@ -317,6 +334,102 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     {
         for (int i = 0; i < _lines.Count; i++) HideLine(_lines[i]);
         _lastVisibleRouteCount = -1;
+    }
+
+    private void RefreshEndpointMarkers(
+        List<CombatStoneAssaultRoutes.BridgeEndpointDebug> endpoints,
+        List<CombatStoneAssaultRoutes.Candidate> selected,
+        CombatMapSystem mapSystem)
+    {
+        ClearEndpointMarkers();
+        if (!_showEndpointMarkers || endpoints == null) return;
+
+        EnsureEndpointRoot();
+        for (int i = 0; i < endpoints.Count; i++)
+        {
+            CombatStoneAssaultRoutes.BridgeEndpointDebug endpoint = endpoints[i];
+            // 理想位置（計算上の端点）= 白、Sample 後 = 緑
+            CreateEndpointMarker(
+                $"Bridge{endpoint.FeatureIndex}_IdealA",
+                GetVisibleRoutePosition(endpoint.IdealA, mapSystem),
+                _idealEndpointColor,
+                _endpointMarkerScale * 0.7f);
+            CreateEndpointMarker(
+                $"Bridge{endpoint.FeatureIndex}_IdealB",
+                GetVisibleRoutePosition(endpoint.IdealB, mapSystem),
+                _idealEndpointColor,
+                _endpointMarkerScale * 0.7f);
+            if (!endpoint.Sampled) continue;
+            CreateEndpointMarker(
+                $"Bridge{endpoint.FeatureIndex}_SampledA",
+                GetVisibleRoutePosition(endpoint.SampledA, mapSystem),
+                _sampledEndpointColor,
+                _endpointMarkerScale);
+            CreateEndpointMarker(
+                $"Bridge{endpoint.FeatureIndex}_SampledB",
+                GetVisibleRoutePosition(endpoint.SampledB, mapSystem),
+                _sampledEndpointColor,
+                _endpointMarkerScale);
+        }
+
+        for (int i = 0; i < selected.Count; i++)
+        {
+            CombatStoneAssaultRoutes.Candidate route = selected[i];
+            if (!route.HasBridgeWaypoints) continue;
+            CreateEndpointMarker(
+                $"{route.Label}_Enter",
+                GetVisibleRoutePosition(route.EnterWorld, mapSystem),
+                _enterEndpointColor,
+                _endpointMarkerScale * 1.25f);
+            CreateEndpointMarker(
+                $"{route.Label}_Exit",
+                GetVisibleRoutePosition(route.ExitWorld, mapSystem),
+                _exitEndpointColor,
+                _endpointMarkerScale * 1.25f);
+        }
+    }
+
+    private void EnsureEndpointRoot()
+    {
+        if (_generatedRoot == null) EnsureLines();
+        if (_endpointRoot != null) return;
+        var root = new GameObject("EndpointMarkers");
+        root.transform.SetParent(_generatedRoot, worldPositionStays: false);
+        _endpointRoot = root.transform;
+    }
+
+    private void CreateEndpointMarker(string name, Vector3 worldPosition, Color color, float scale)
+    {
+        var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        marker.name = name;
+        marker.transform.SetParent(_endpointRoot, worldPositionStays: true);
+        marker.transform.position = worldPosition;
+        marker.transform.localScale = Vector3.one * scale;
+        Collider collider = marker.GetComponent<Collider>();
+        if (collider != null) Destroy(collider);
+        Renderer renderer = marker.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Material material = CreateMaterial(color);
+            renderer.sharedMaterial = material;
+        }
+
+        _endpointMarkers.Add(marker.transform);
+    }
+
+    private void ClearEndpointMarkers()
+    {
+        for (int i = 0; i < _endpointMarkers.Count; i++)
+        {
+            if (_endpointMarkers[i] != null) DestroyRouteObject(_endpointMarkers[i].gameObject);
+        }
+
+        _endpointMarkers.Clear();
+        if (_endpointRoot != null)
+        {
+            DestroyRouteObject(_endpointRoot.gameObject);
+            _endpointRoot = null;
+        }
     }
 
     private static void DestroyRouteObject(GameObject routeObject)

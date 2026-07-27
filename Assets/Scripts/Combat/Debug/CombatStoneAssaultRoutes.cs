@@ -5,7 +5,7 @@ using WarSimulation.Combat.Map;
 
 /// <summary>
 /// 魔石進攻ルート候補。
-/// 直進が通るならそれだけ。通らないときだけ各橋経由を列挙する。
+/// 直進が橋を使わないなら直進のみ。橋を使う（または直進不可）なら各橋経由を列挙する。
 /// </summary>
 public static class CombatStoneAssaultRoutes
 {
@@ -14,6 +14,35 @@ public static class CombatStoneAssaultRoutes
         public string Label;
         public int BridgeFeatureIndex;
         public List<Vector3> Corners;
+        public bool HasBridgeWaypoints;
+        public Vector3 EnterWorld;
+        public Vector3 ExitWorld;
+    }
+
+    public readonly struct BridgeEndpointDebug
+    {
+        public readonly int FeatureIndex;
+        public readonly Vector3 IdealA;
+        public readonly Vector3 IdealB;
+        public readonly Vector3 SampledA;
+        public readonly Vector3 SampledB;
+        public readonly bool Sampled;
+
+        public BridgeEndpointDebug(
+            int featureIndex,
+            Vector3 idealA,
+            Vector3 idealB,
+            Vector3 sampledA,
+            Vector3 sampledB,
+            bool sampled)
+        {
+            FeatureIndex = featureIndex;
+            IdealA = idealA;
+            IdealB = idealB;
+            SampledA = sampledA;
+            SampledB = sampledB;
+            Sampled = sampled;
+        }
     }
 
     public sealed class BuildSettings
@@ -28,13 +57,17 @@ public static class CombatStoneAssaultRoutes
         Vector3 startWorld,
         Vector3 goalWorld,
         int areaMask,
-        BuildSettings settings = null)
+        BuildSettings settings = null,
+        List<BridgeEndpointDebug> endpointDebug = null)
     {
         settings ??= new BuildSettings();
         var candidates = new List<Candidate>();
         if (map == null) return candidates;
 
-        if (TryBuildPath(startWorld, goalWorld, areaMask, out List<Vector3> direct))
+        bool hasDirect = TryBuildPath(startWorld, goalWorld, areaMask, out List<Vector3> direct);
+        // 川越えの最短は「直進1本」に見えるが、実際は橋を1本だけ使う。
+        // その場合は直進で打ち切らず、各橋ルートを列挙する。
+        if (hasDirect && !PathTouchesAnyBridge(direct, map, mapOrigin))
         {
             candidates.Add(new Candidate
             {
@@ -42,21 +75,37 @@ public static class CombatStoneAssaultRoutes
                 BridgeFeatureIndex = -1,
                 Corners = direct,
             });
+            CollectBridgeEndpointDebug(map, mapOrigin, areaMask, settings, endpointDebug);
             return candidates;
         }
 
         for (int featureIndex = 0; featureIndex < map.Features.Count; featureIndex++)
         {
             PlacedFeature bridge = map.Features[featureIndex];
-            if (bridge.Type != FeatureType.Bridge) continue;
+            if (bridge.Type != FeatureType.Bridge || bridge.Scale.z <= 0f) continue;
+
+            GetBridgeEndpointIdeals(bridge, mapOrigin, settings, out Vector3 idealA, out Vector3 idealB);
+            float sampleRadius = GetEndpointSampleRadius(bridge, settings);
+            Vector3 a = idealA;
+            Vector3 b = idealB;
+            bool sampled = TrySamplePosition(idealA, sampleRadius, areaMask, out a) &&
+                TrySamplePosition(idealB, sampleRadius, areaMask, out b);
+            endpointDebug?.Add(new BridgeEndpointDebug(
+                featureIndex,
+                idealA,
+                idealB,
+                a,
+                b,
+                sampled));
+            if (!sampled) continue;
+
             if (!TryBuildBridgeRoute(
-                    mapOrigin,
                     startWorld,
                     goalWorld,
-                    bridge,
+                    a,
+                    b,
                     featureIndex,
                     areaMask,
-                    settings,
                     out Candidate candidate))
             {
                 continue;
@@ -65,8 +114,51 @@ public static class CombatStoneAssaultRoutes
             candidates.Add(candidate);
         }
 
-        candidates.Sort((a, b) => GetLength(a.Corners).CompareTo(GetLength(b.Corners)));
+        if (candidates.Count > 0)
+        {
+            candidates.Sort((a, b) => GetLength(a.Corners).CompareTo(GetLength(b.Corners)));
+            return candidates;
+        }
+
+        if (hasDirect)
+        {
+            candidates.Add(new Candidate
+            {
+                Label = "直進",
+                BridgeFeatureIndex = -1,
+                Corners = direct,
+            });
+        }
+
         return candidates;
+    }
+
+    private static void CollectBridgeEndpointDebug(
+        MapData map,
+        Transform mapOrigin,
+        int areaMask,
+        BuildSettings settings,
+        List<BridgeEndpointDebug> endpointDebug)
+    {
+        if (endpointDebug == null) return;
+        for (int featureIndex = 0; featureIndex < map.Features.Count; featureIndex++)
+        {
+            PlacedFeature bridge = map.Features[featureIndex];
+            if (bridge.Type != FeatureType.Bridge || bridge.Scale.z <= 0f) continue;
+            GetBridgeEndpointIdeals(bridge, mapOrigin, settings, out Vector3 idealA, out Vector3 idealB);
+            float sampleRadius = GetEndpointSampleRadius(bridge, settings);
+            Vector3 a = idealA;
+            Vector3 b = idealB;
+            bool sampled = TrySamplePosition(idealA, sampleRadius, areaMask, out a) &&
+                TrySamplePosition(idealB, sampleRadius, areaMask, out b);
+            endpointDebug.Add(new BridgeEndpointDebug(
+                featureIndex,
+                idealA,
+                idealB,
+                a,
+                b,
+                sampled));
+        }
     }
 
     public static List<Candidate> TakeUpTo(List<Candidate> candidates, int maximumCount)
@@ -106,55 +198,79 @@ public static class CombatStoneAssaultRoutes
     }
 
     private static bool TryBuildBridgeRoute(
-        Transform mapOrigin,
         Vector3 startWorld,
         Vector3 goalWorld,
-        PlacedFeature bridge,
+        Vector3 a,
+        Vector3 b,
         int featureIndex,
         int areaMask,
-        BuildSettings settings,
         out Candidate candidate)
     {
         candidate = null;
-        if (!TryGetBridgeEndpoints(bridge, mapOrigin, settings, areaMask, out Vector3 a, out Vector3 b))
-        {
-            return false;
-        }
 
+        // 全体長ではなく「魔石→入口」が短い向きを優先する。
+        // 入口を対岸に取ると、橋を使わずマップ端迂回の start→enter になりやすい。
         bool ab = TryConnectVia(startWorld, a, b, goalWorld, areaMask, out List<Vector3> abCorners);
         bool ba = TryConnectVia(startWorld, b, a, goalWorld, areaMask, out List<Vector3> baCorners);
         if (!ab && !ba) return false;
+
+        Vector3 enter;
+        Vector3 exit;
+        List<Vector3> corners;
+        if (ab && ba)
+        {
+            bool useAb = PathLength(startWorld, a, areaMask) <= PathLength(startWorld, b, areaMask);
+            corners = useAb ? abCorners : baCorners;
+            enter = useAb ? a : b;
+            exit = useAb ? b : a;
+        }
+        else if (ab)
+        {
+            corners = abCorners;
+            enter = a;
+            exit = b;
+        }
+        else
+        {
+            corners = baCorners;
+            enter = b;
+            exit = a;
+        }
 
         candidate = new Candidate
         {
             Label = "橋" + featureIndex,
             BridgeFeatureIndex = featureIndex,
-            Corners = !ba || (ab && GetLength(abCorners) <= GetLength(baCorners)) ? abCorners : baCorners,
+            Corners = corners,
+            HasBridgeWaypoints = true,
+            EnterWorld = enter,
+            ExitWorld = exit,
         };
         return true;
     }
 
-    private static bool TryGetBridgeEndpoints(
+    private static void GetBridgeEndpointIdeals(
         PlacedFeature bridge,
         Transform mapOrigin,
         BuildSettings settings,
-        int areaMask,
         out Vector3 firstWorld,
         out Vector3 secondWorld)
     {
-        firstWorld = default;
-        secondWorld = default;
         float halfLength = bridge.Scale.z * 0.5f;
-        if (halfLength <= 0f) return false;
-
-        float inset = Mathf.Min(0.75f + settings.BridgeEndpointMargin, halfLength * 0.5f);
         Vector3 along = bridge.Rotation * Vector3.forward;
-        Vector3 deckLift = Vector3.up * Mathf.Max(0.25f, bridge.Scale.y * 0.5f);
-        Vector3 a = ToWorld(mapOrigin, bridge.WorldPosition - along * (halfLength - inset)) + deckLift;
-        Vector3 b = ToWorld(mapOrigin, bridge.WorldPosition + along * (halfLength - inset)) + deckLift;
-        float radius = Mathf.Max(settings.WaypointSampleRadius, bridge.Scale.x);
-        return TrySamplePosition(a, radius, areaMask, out firstWorld) &&
-            TrySamplePosition(b, radius, areaMask, out secondWorld);
+        // 橋の外側の岸（陸）側。デッキ中央ではなく Terrain に載りやすい点。
+        float landOut = halfLength + Mathf.Max(0.5f, settings.BridgeEndpointMargin);
+        Vector3 aLocal = bridge.WorldPosition - along * landOut;
+        Vector3 bLocal = bridge.WorldPosition + along * landOut;
+        aLocal.y = bridge.WorldPosition.y;
+        bLocal.y = bridge.WorldPosition.y;
+        firstWorld = ToWorld(mapOrigin, aLocal);
+        secondWorld = ToWorld(mapOrigin, bLocal);
+    }
+
+    private static float GetEndpointSampleRadius(PlacedFeature bridge, BuildSettings settings)
+    {
+        return Mathf.Max(2f, Mathf.Min(settings.WaypointSampleRadius, Mathf.Max(bridge.Scale.x, 3f)));
     }
 
     private static bool TryConnectVia(
@@ -197,23 +313,82 @@ public static class CombatStoneAssaultRoutes
         return true;
     }
 
+    private static bool PathTouchesAnyBridge(
+        IReadOnlyList<Vector3> corners,
+        MapData map,
+        Transform mapOrigin)
+    {
+        for (int i = 0; i < corners.Count; i++)
+        {
+            if (IsInsideAnyBridge(corners[i], map, mapOrigin)) return true;
+        }
+
+        for (int i = 1; i < corners.Count; i++)
+        {
+            Vector3 a = corners[i - 1];
+            Vector3 b = corners[i];
+            float length = HorizontalDistance(a, b);
+            int samples = Mathf.Max(1, Mathf.CeilToInt(length / 2f));
+            for (int sample = 1; sample < samples; sample++)
+            {
+                if (IsInsideAnyBridge(Vector3.Lerp(a, b, sample / (float)samples), map, mapOrigin))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsInsideAnyBridge(Vector3 world, MapData map, Transform mapOrigin)
+    {
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            PlacedFeature feature = map.Features[i];
+            if (feature.Type != FeatureType.Bridge) continue;
+
+            Vector3 local = Quaternion.Inverse(feature.Rotation) *
+                (world - ToWorld(mapOrigin, feature.WorldPosition));
+            if (Mathf.Abs(local.x) <= feature.Scale.x * 0.5f + 0.5f &&
+                Mathf.Abs(local.z) <= feature.Scale.z * 0.5f + 0.5f)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static Vector3 ToWorld(Transform mapOrigin, Vector3 mapLocal)
     {
         return mapOrigin != null ? mapOrigin.TransformPoint(mapLocal) : mapLocal;
     }
 
+    private static float PathLength(Vector3 start, Vector3 end, int areaMask)
+    {
+        var path = new NavMeshPath();
+        if (!NavMesh.CalculatePath(start, end, areaMask, path) ||
+            path.status != NavMeshPathStatus.PathComplete ||
+            path.corners.Length < 2)
+        {
+            return float.MaxValue;
+        }
+
+        return GetLength(path.corners);
+    }
+
     private static float GetLength(IReadOnlyList<Vector3> corners)
     {
         float length = 0f;
-        for (int i = 1; i < corners.Count; i++)
-        {
-            Vector3 a = corners[i - 1];
-            Vector3 b = corners[i];
-            a.y = 0f;
-            b.y = 0f;
-            length += Vector3.Distance(a, b);
-        }
-
+        for (int i = 1; i < corners.Count; i++) length += HorizontalDistance(corners[i - 1], corners[i]);
         return length;
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
     }
 }
