@@ -24,6 +24,8 @@ public sealed class DesignerComboMatchResult
     public string Outcome;
     public float BattleSeconds;
     public float RealSeconds;
+    public int FrameCount;
+    public float AverageFramesPerSecond;
     public float PrimaryMetric;
     public float PrimaryMetricPerSecond;
     public string PrimaryMetricName;
@@ -87,6 +89,7 @@ public sealed class DesignerComboMetricsCollector : IDisposable
     private readonly IReadOnlyList<Character> _comboMembers;
     private readonly IReadOnlyList<Character> _opponents;
     private readonly CombatTeam _comboTeam;
+    private readonly int _primaryStoneAttackerCount;
     private readonly Dictionary<Character, string> _lastDecisionTargets = new();
     private readonly HashSet<Character> _comboBoundTargets = new();
     private readonly HashSet<Character> _comboPoisonedTargets = new();
@@ -112,12 +115,14 @@ public sealed class DesignerComboMetricsCollector : IDisposable
         bool sidesSwapped,
         IReadOnlyList<Character> comboMembers,
         IReadOnlyList<Character> opponents,
-        CombatTeam comboTeam)
+        CombatTeam comboTeam,
+        int primaryStoneAttackerCount = 1)
     {
         _scenario = scenario;
         _comboMembers = comboMembers;
         _opponents = opponents;
         _comboTeam = comboTeam;
+        _primaryStoneAttackerCount = Mathf.Max(1, primaryStoneAttackerCount);
         Result = new DesignerComboMatchResult
         {
             Combo = scenario.DisplayName,
@@ -682,6 +687,16 @@ public sealed class DesignerComboMetricsCollector : IDisposable
 
     private bool IsPrimaryStoneAttacker(Character attacker)
     {
+        if (IsMagicStoneAssault(_scenario.Kind) && _primaryStoneAttackerCount > 1)
+        {
+            int count = Mathf.Min(_primaryStoneAttackerCount, _comboMembers.Count);
+            for (int i = 0; i < count; i++)
+            {
+                if (_comboMembers[i] == attacker) return true;
+            }
+            return false;
+        }
+
         int roleIndex = _scenario.Kind == DesignerComboKind.DiversionMagicStoneAssault ? 1 : 0;
         return roleIndex < _comboMembers.Count && _comboMembers[roleIndex] == attacker;
     }

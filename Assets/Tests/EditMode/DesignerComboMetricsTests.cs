@@ -1,8 +1,212 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
+using UnityEngine;
+using WarSimulation.Combat.Map;
 
 public sealed class DesignerComboMetricsTests
 {
+    [Test]
+    public void StandaloneArguments_RoundTripEveryRunSetting()
+    {
+        var expected = new DesignerComboRunSettings
+        {
+            Combo = DesignerComboKind.DecoyBombardment,
+            RunAllCombos = true,
+            DisableRendering = true,
+            UseStoneAttackDiagnosticMap = true,
+            DiagnosticAttackRoleCount = 3,
+            Scope = DesignerComboTestScope.Counter,
+            BaseSeed = 34567,
+            BattleTimeoutSeconds = 240f,
+            TimeScale = 4f,
+            OutputDirectory = "/tmp/designer-combo-results",
+            QuitWhenFinished = true,
+        };
+
+        bool parsed = DesignerComboRunRequest.TryReadCommandLine(
+            new[]
+            {
+                "DesignerComboBenchmark",
+                DesignerComboRunRequest.CommandLineArgument,
+                DesignerComboRunRequest.Encode(expected),
+            },
+            out DesignerComboRunSettings actual);
+
+        Assert.That(parsed, Is.True);
+        Assert.That(actual.Combo, Is.EqualTo(expected.Combo));
+        Assert.That(actual.RunAllCombos, Is.EqualTo(expected.RunAllCombos));
+        Assert.That(actual.DisableRendering, Is.EqualTo(expected.DisableRendering));
+        Assert.That(actual.UseStoneAttackDiagnosticMap, Is.EqualTo(expected.UseStoneAttackDiagnosticMap));
+        Assert.That(actual.DiagnosticAttackRoleCount, Is.EqualTo(expected.DiagnosticAttackRoleCount));
+        Assert.That(actual.Scope, Is.EqualTo(expected.Scope));
+        Assert.That(actual.BaseSeed, Is.EqualTo(expected.BaseSeed));
+        Assert.That(actual.BattleTimeoutSeconds, Is.EqualTo(expected.BattleTimeoutSeconds));
+        Assert.That(actual.TimeScale, Is.EqualTo(expected.TimeScale));
+        Assert.That(actual.OutputDirectory, Is.EqualTo(expected.OutputDirectory));
+        Assert.That(actual.QuitWhenFinished, Is.True);
+    }
+
+    [Test]
+    public void FlatStoneAttackDiagnosticMap_HasFlatNormalGroundAndTwoMainStones()
+    {
+        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        try
+        {
+            MapData map = DesignerComboDiagnosticMapFactory.CreateFlatStoneAttackMap(config, 123);
+
+            Assert.That(map.Seed, Is.EqualTo(123));
+            Assert.That(map.Features.Count, Is.EqualTo(2));
+            Assert.That(map.Features[0].Type, Is.EqualTo(FeatureType.OwnMainStone));
+            Assert.That(map.Features[1].Type, Is.EqualTo(FeatureType.EnemyMainStone));
+            for (int z = 0; z < map.Height.Height; z++)
+            {
+                for (int x = 0; x < map.Height.Width; x++)
+                {
+                    Assert.That(map.Height.GetHeight(x, z), Is.EqualTo(config.BaseHeight));
+                    Assert.That(map.GroundStates.GetCell(x, z), Is.EqualTo(GroundState.Normal));
+                }
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
+    [Test]
+    public void AsymmetricStoneDefenseMap_ProtectsOnlyOwnMainStoneSideWithRockBarrier()
+    {
+        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        try
+        {
+            MapData map = DesignerComboDiagnosticMapFactory.CreateAsymmetricStoneDefenseMap(config, 123);
+            float worldSize = config.HeightMapResolution * config.HeightMapCellSize;
+            int rockCount = 0;
+
+            for (int i = 0; i < map.Features.Count; i++)
+            {
+                PlacedFeature feature = map.Features[i];
+                if (feature.Type != FeatureType.Rock) continue;
+                rockCount++;
+                Assert.That(feature.WorldPosition.z, Is.LessThan(worldSize * 0.5f));
+            }
+
+            Assert.That(rockCount, Is.EqualTo(9));
+            Assert.That(map.Features, Has.Exactly(1).Matches<PlacedFeature>(
+                feature => feature.Type == FeatureType.OwnMainStone));
+            Assert.That(map.Features, Has.Exactly(1).Matches<PlacedFeature>(
+                feature => feature.Type == FeatureType.EnemyMainStone));
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
+    [Test]
+    public void RunSettings_DefaultBattleTimeoutIsThreeMinutes()
+    {
+        Assert.That(new DesignerComboRunSettings().BattleTimeoutSeconds, Is.EqualTo(180f));
+    }
+
+    [Test]
+    public void FiveCharacterDiagnosticBaseline_HasTwoAttackersAndThreeUtilityRoles()
+    {
+        List<DesignerComboRoleDefinition> roles =
+            DesignerComboDiagnosticMapFactory.CreateFiveCharacterBaselineRoles(2);
+
+        Assert.That(roles.Count, Is.EqualTo(5));
+        Assert.That(roles[0].Weapon, Is.EqualTo(WeaponKind.Sword));
+        Assert.That(roles[1].Weapon, Is.EqualTo(WeaponKind.Wand));
+        Assert.That(roles[2].Weapon, Is.EqualTo(WeaponKind.Shield));
+        Assert.That(roles[3].Weapon, Is.EqualTo(WeaponKind.Grimoire));
+        Assert.That(roles[4].Weapon, Is.EqualTo(WeaponKind.Rosary));
+        Assert.That(roles, Has.All.Matches<DesignerComboRoleDefinition>(
+            role => role.Personality == CombatAiPersonalityKind.Neutral));
+    }
+
+    [Test]
+    public void FiveCharacterDiagnosticThreeAttackerVariant_ReplacesDisruptorWithSecondSword()
+    {
+        List<DesignerComboRoleDefinition> roles =
+            DesignerComboDiagnosticMapFactory.CreateFiveCharacterBaselineRoles(3);
+
+        Assert.That(roles.Count, Is.EqualTo(5));
+        Assert.That(roles[0].Weapon, Is.EqualTo(WeaponKind.Sword));
+        Assert.That(roles[1].Weapon, Is.EqualTo(WeaponKind.Wand));
+        Assert.That(roles[2].Weapon, Is.EqualTo(WeaponKind.Sword));
+        Assert.That(roles[3].Weapon, Is.EqualTo(WeaponKind.Shield));
+        Assert.That(roles[4].Weapon, Is.EqualTo(WeaponKind.Rosary));
+        Assert.That(roles, Has.All.Matches<DesignerComboRoleDefinition>(
+            role => role.Personality == CombatAiPersonalityKind.Neutral));
+    }
+
+    [Test]
+    public void RuntimeIdentityConfiguration_SetsGenderAndLover()
+    {
+        CharacterData owner = ScriptableObject.CreateInstance<CharacterData>();
+        CharacterData lover = ScriptableObject.CreateInstance<CharacterData>();
+        try
+        {
+            owner.ConfigureIdentity(CharacterGender.Female, lover);
+
+            Assert.That(owner.Gender, Is.EqualTo(CharacterGender.Female));
+            Assert.That(owner.Lover, Is.SameAs(lover));
+        }
+        finally
+        {
+            Object.DestroyImmediate(lover);
+            Object.DestroyImmediate(owner);
+        }
+    }
+
+    [Test]
+    public void RuntimeFeatureCountConfiguration_ClampsAndAppliesCounts()
+    {
+        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        try
+        {
+            config.ConfigureFeatureCounts(6, 50, 2, -1, 1);
+
+            Assert.That(config.ForestClusterCount, Is.EqualTo(6));
+            Assert.That(config.ScatterTreeCount, Is.EqualTo(50));
+            Assert.That(config.CrossMapRiverCount, Is.EqualTo(2));
+            Assert.That(config.LakeCount, Is.Zero);
+            Assert.That(config.BridgesPerRiver, Is.EqualTo(1));
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
+    [Test]
+    public void CharacterPoolOrder_FollowsHierarchyInsteadOfDiscoveryOrder()
+    {
+        GameObject firstObject = new GameObject("First");
+        GameObject secondObject = new GameObject("Second");
+        try
+        {
+            Character first = firstObject.AddComponent<Character>();
+            Character second = secondObject.AddComponent<Character>();
+            var characters = new List<Character> { second, first };
+            MethodInfo compare = typeof(DesignerComboBenchmarkRunner).GetMethod(
+                "CompareCharactersByHierarchy",
+                BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.That(compare, Is.Not.Null);
+            characters.Sort((left, right) => (int)compare.Invoke(null, new object[] { left, right }));
+
+            Assert.That(characters, Is.EqualTo(new[] { first, second }));
+        }
+        finally
+        {
+            Object.DestroyImmediate(secondObject);
+            Object.DestroyImmediate(firstObject);
+        }
+    }
+
     [TestCase(0.85f, false)]
     [TestCase(1.15f, true)]
     public void IsRelationshipAbilityIncrease_DistinguishesDebuffFromBuff(float multiplier, bool expected)
@@ -35,9 +239,9 @@ public sealed class DesignerComboMetricsTests
     }
 
     [TestCase(DesignerComboTestScope.BehaviorCheck, 5)]
-    [TestCase(DesignerComboTestScope.Comparison, 720)]
-    [TestCase(DesignerComboTestScope.ExtendedComparison, 2400)]
-    [TestCase(DesignerComboTestScope.Counter, 360)]
+    [TestCase(DesignerComboTestScope.Comparison, 240)]
+    [TestCase(DesignerComboTestScope.ExtendedComparison, 800)]
+    [TestCase(DesignerComboTestScope.Counter, 120)]
     public void EstimateMatchCount_ReturnsPlannedMatchesForTwoRoleCombo(DesignerComboTestScope scope, int expected)
     {
         DesignerComboScenarioDefinition scenario = DesignerComboScenarioCatalog.Get(DesignerComboKind.BindFollowUp);
@@ -45,6 +249,18 @@ public sealed class DesignerComboMetricsTests
         int count = DesignerComboBenchmarkRunner.EstimateMatchCount(scenario, scope);
 
         Assert.That(count, Is.EqualTo(expected));
+    }
+
+    [TestCase(DesignerComboTestScope.BehaviorCheck, DesignerComboTerrainKind.Open)]
+    [TestCase(DesignerComboTestScope.Comparison, DesignerComboTerrainKind.Production)]
+    [TestCase(DesignerComboTestScope.ExtendedComparison, DesignerComboTerrainKind.Production)]
+    [TestCase(DesignerComboTestScope.AddedMembers, DesignerComboTerrainKind.Production)]
+    [TestCase(DesignerComboTestScope.Counter, DesignerComboTerrainKind.Production)]
+    public void TerrainForScope_UsesProductionSettingsWheneverBattleResultsAreCompared(
+        DesignerComboTestScope scope,
+        DesignerComboTerrainKind expected)
+    {
+        Assert.That(DesignerComboBenchmarkRunner.GetTerrainForScope(scope), Is.EqualTo(expected));
     }
 
     [Test]

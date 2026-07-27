@@ -3,6 +3,8 @@ using UnityEngine;
 
 public static partial class CombatAiPlanner
 {
+    private const float StoneApproachDistance = 2.5f;
+
     private static CombatMoveTarget CreateAttentionSeekerTarget(CombatAiContext context)
     {
         Vector3 enemyCenter = Vector3.zero;
@@ -30,14 +32,42 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateClumsyTarget(CombatAiContext context)
     {
-        int interval = CombatBattleRandom.GetInterval(4f);
+        int interval = CombatBattleRandom.GetDecisionInterval(context.Owner, 4f);
         bool makesMistake = CombatBattleRandom.Choose(context.Owner, "ClumsyMove", interval, 10) == 0;
         return makesMistake ? CreateOwnStoneTarget(context) : CombatMoveTarget.None;
     }
 
     private static CombatMoveTarget CreateEnemyStoneTarget(CombatAiContext context)
     {
-        return context.HasEnemyStonePosition ? CombatMoveTarget.ForPosition(context.EnemyStonePosition) : CombatMoveTarget.None;
+        if (!context.HasEnemyStonePosition || context.Owner == null) return CombatMoveTarget.None;
+
+        Vector3 ownerPosition = context.Owner.transform.position;
+        Vector3 awayFromStone = Flatten(ownerPosition - context.EnemyStonePosition);
+        if (awayFromStone.sqrMagnitude <= 0.01f) awayFromStone = Vector3.back;
+        awayFromStone.Normalize();
+        if (HorizontalDistance(ownerPosition, context.EnemyStonePosition) <= StoneApproachDistance)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        Vector3 bestDestination = default;
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 direction = Quaternion.Euler(0f, i * 45f, 0f) * awayFromStone;
+            Vector3 candidate = context.EnemyStonePosition + direction * StoneApproachDistance;
+            candidate.y = ownerPosition.y;
+            if (!CombatAiMoveScorer.IsReachable(context.Owner, candidate)) continue;
+
+            float distance = HorizontalDistance(ownerPosition, candidate);
+            if (distance >= bestDistance) continue;
+            bestDistance = distance;
+            bestDestination = candidate;
+        }
+
+        return float.IsPositiveInfinity(bestDistance)
+            ? CombatMoveTarget.None
+            : CombatMoveTarget.ForPosition(bestDestination);
     }
 
     private static CombatMoveTarget CreateBridgeWaypointTarget(CombatAiContext context, Vector3 bridgePosition)
@@ -115,7 +145,8 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateEccentricTarget(CombatAiContext context)
     {
-        int choice = CombatBattleRandom.Choose(context.Owner, "EccentricMove", CombatBattleRandom.GetInterval(3f), 3);
+        int interval = CombatBattleRandom.GetDecisionInterval(context.Owner, 3f);
+        int choice = CombatBattleRandom.Choose(context.Owner, "EccentricMove", interval, 3);
         return choice switch
         {
             0 => CreateBestEnemyTarget(context, null, 0f),
@@ -597,8 +628,11 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null) continue;
-            float hpRatio = ally.MaxHP > 0 ? (float)ally.HP / ally.MaxHP : 1f;
+            if (ally.Character == null || !ally.IsAlive) continue;
+            int projectedHP = Mathf.Min(
+                ally.MaxHP,
+                ally.HP + GetAllyPendingHealing(context, ally.Character));
+            float hpRatio = ally.MaxHP > 0 ? projectedHP / (float)ally.MaxHP : 1f;
             float score = (1f - hpRatio) * 60f
                 + (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f) ? 20f : 0f)
                 + CombatAiPositioning.GetAdvanceProgress(context, ally.CurrentPosition) * 10f;

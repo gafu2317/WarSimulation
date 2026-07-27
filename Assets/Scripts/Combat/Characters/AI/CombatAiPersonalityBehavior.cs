@@ -25,7 +25,8 @@ public static class CombatAiPersonalityBehavior
         float exposure = assessment.GetValue(CombatAiMetricIndex.SelfExposure);
         if (profile != null && profile.Kind == CombatAiPersonalityKind.Eccentric)
         {
-            int choice = CombatBattleRandom.Choose(context.Owner, "EccentricObjective", CombatBattleRandom.GetInterval(3f), 6);
+            int interval = CombatBattleRandom.GetDecisionInterval(context.Owner, 3f);
+            int choice = CombatBattleRandom.Choose(context.Owner, "EccentricObjective", interval, 6);
             score += objective == (CombatObjective)choice ? 160f : 0f;
         }
         else if (profile != null)
@@ -127,7 +128,7 @@ public static class CombatAiPersonalityBehavior
                     : 0f;
         if (profile.Kind == CombatAiPersonalityKind.Eccentric)
         {
-            int interval = CombatBattleRandom.GetInterval(3f);
+            int interval = CombatBattleRandom.GetDecisionInterval(owner, 3f);
             int choice = CombatBattleRandom.Choose(owner, "EccentricSkill:" + skill.Name, interval, 4);
             score += choice == 0 ? 90f : 0f;
         }

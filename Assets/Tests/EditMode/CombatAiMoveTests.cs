@@ -7,6 +7,132 @@ using static CombatEditModeTestUtil;
 public sealed class CombatAiMoveTests
 {
     [Test]
+    public void Planner_DoesNotMoveTowardDeadSupportTarget()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject deadAllyGo = new GameObject("DeadAlly");
+        GameObject livingAllyGo = new GameObject("LivingAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            Character deadAlly = deadAllyGo.AddComponent<Character>();
+            deadAlly.Health.Initialize(30);
+            deadAlly.Health.TakeDamage(30);
+            Character livingAlly = livingAllyGo.AddComponent<Character>();
+            livingAlly.Health.Initialize(30, 20);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[]
+                {
+                    CreateIntel(deadAlly, true, deadAllyGo.transform.position),
+                    CreateIntel(livingAlly, true, livingAllyGo.transform.position),
+                });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            CombatAiMoveCandidateEntry supportMove = FindMove(
+                snapshot,
+                CombatAiMoveCode.SupportAlly);
+
+            Assert.That(
+                supportMove.Target.TargetCharacter,
+                Is.SameAs(livingAlly));
+        }
+        finally
+        {
+            Object.DestroyImmediate(livingAllyGo);
+            Object.DestroyImmediate(deadAllyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ExcludesTemporarilyBlockedMoveDestination()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            Vector3 stone = new Vector3(8f, 0f, 0f);
+            Vector3 blocked = new Vector3(5.5f, 0f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: stone,
+                hasBlockedMoveDestination: true,
+                blockedMoveDestination: blocked);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(
+                snapshot.MoveEntries.Exists(entry =>
+                    entry.Code == CombatAiMoveCode.AdvanceEnemyStone),
+                Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_StoneAdvanceTargetsAttackPositionOutsideStoneCenter()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(8f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            CombatAiMoveCandidateEntry advance = FindMove(
+                snapshot,
+                CombatAiMoveCode.AdvanceEnemyStone);
+
+            Assert.That(advance.Target.Destination, Is.EqualTo(new Vector3(5.5f, 0f, 0f)));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Brain_BlocksDestinationAfterRepeatedMoveFailures()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
+            Vector3 destination = new Vector3(8f, 0f, 0f);
+            var plan = new CombatAiPlan(
+                CombatObjective.Search,
+                CombatMoveTarget.ForPosition(destination),
+                null,
+                SkillExecutionContext.None);
+            CombatBattleRandom.Initialize(1);
+            CombatBattleRandom.SetDecisionTick(owner, 1);
+
+            brain.ExecutePlan(plan);
+            brain.ExecutePlan(plan);
+
+            Assert.That(brain.HasBlockedMove, Is.True);
+            Assert.That(brain.BlockedMoveDestination, Is.EqualTo(destination));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_HighGroundScoreDropsWhenAllyIsAlreadySearchingThere()
     {
         GameObject ownerGo = new GameObject("Owner");

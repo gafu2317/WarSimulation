@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
+using Unity.Profiling;
 using WarSimulation.Combat.Map;
 
 public class CombatCharacterSystem : MonoBehaviour
@@ -9,13 +10,26 @@ public class CombatCharacterSystem : MonoBehaviour
     private const float TeamQuarterNavMeshSampleRadius = 2f;
     private const float CharacterSpacingDistance = 1.5f;
     private const float InitialFeatureClearanceDistance = 3f;
+    private static readonly ProfilerMarker CollectAiBrainsMarker = new("CombatAI.CollectBrains");
+    private static readonly ProfilerMarker ScanAiVisionMarker = new("CombatAI.ScanVision");
+    private static readonly ProfilerMarker ShareAiVisionMarker = new("CombatAI.ShareVision");
+    private static readonly ProfilerMarker PrepareAiDecisionsMarker = new("CombatAI.PrepareDecisions");
+    private static readonly ProfilerMarker ExecuteAiDecisionsMarker = new("CombatAI.ExecuteDecisions");
 
+    [SerializeField, Min(0.05f)] private float _aiDecisionIntervalSeconds = 0.5f;
     public List<Character> AllyCharacters = new List<Character>();
     public List<Character> EnemyCharacters = new List<Character>();
 
     [SerializeField] private CombatMapSystem _mapSystem;
 
     private readonly Dictionary<Character, Vector3> _initialPositions = new Dictionary<Character, Vector3>();
+    private readonly List<CombatAiBrain> _orderedAiBrains = new List<CombatAiBrain>();
+    private readonly CombatAiTeamReservations _allyAiReservations = new CombatAiTeamReservations();
+    private readonly CombatAiTeamReservations _enemyAiReservations = new CombatAiTeamReservations();
+    private CombatAiDecisionSchedule _aiDecisionSchedule;
+
+    public int LastSkippedAiDecisionCount { get; private set; }
+    public int TotalSkippedAiDecisionCount { get; private set; }
 
     public IReadOnlyList<Character> GetAlliesOf(Character character)
     {
@@ -120,6 +134,56 @@ public class CombatCharacterSystem : MonoBehaviour
         AssignBattleParticipantIds();
         ResetCharactersForBattle(AllyCharacters);
         ResetCharactersForBattle(EnemyCharacters);
+        ResetAiDecisionSchedule(Time.time);
+    }
+
+    public int TickAiDecisionsNow(float currentTime)
+    {
+        EnsureAiDecisionSchedule();
+        if (!_aiDecisionSchedule.TryConsume(currentTime, out int skippedDecisionCount))
+        {
+            LastSkippedAiDecisionCount = 0;
+            return 0;
+        }
+
+        LastSkippedAiDecisionCount = skippedDecisionCount;
+        TotalSkippedAiDecisionCount += skippedDecisionCount;
+        using (CollectAiBrainsMarker.Auto()) CollectOrderedAiBrains();
+        using (ScanAiVisionMarker.Auto()) ScanAiVision();
+        using (ShareAiVisionMarker.Auto()) ShareAiVision();
+        _allyAiReservations.Clear();
+        _enemyAiReservations.Clear();
+
+        int preparedCount = 0;
+        using (PrepareAiDecisionsMarker.Auto())
+        {
+            for (int i = 0; i < _orderedAiBrains.Count; i++)
+            {
+                CombatAiBrain brain = _orderedAiBrains[i];
+                Character owner = brain.GetComponent<Character>();
+                CombatAiTeamReservations reservations = owner.Team == CombatTeam.Ally
+                    ? _allyAiReservations
+                    : _enemyAiReservations;
+                if (brain.PrepareScheduledDecision(reservations, true))
+                {
+                    preparedCount++;
+                    if (brain.TryGetPreparedPlan(out CombatAiPlan plan))
+                    {
+                        reservations.Reserve(owner, plan);
+                    }
+                }
+            }
+        }
+
+        using (ExecuteAiDecisionsMarker.Auto())
+        {
+            for (int i = 0; i < _orderedAiBrains.Count; i++)
+            {
+                _orderedAiBrains[i].ExecutePreparedDecision();
+            }
+        }
+
+        return preparedCount;
     }
 
     public void SnapAllCharactersToNavMesh(float searchRadius = 10f)
@@ -392,6 +456,14 @@ public class CombatCharacterSystem : MonoBehaviour
     {
         CollectCharactersFromScene();
         AssignTeamsFromLists();
+        ResetAiDecisionSchedule(Time.time);
+    }
+
+    private void Update()
+    {
+        if (!CombatBattleFlow.AllowsCombatActions) return;
+
+        TickAiDecisionsNow(Time.time);
     }
 
 #if UNITY_EDITOR
@@ -431,6 +503,80 @@ public class CombatCharacterSystem : MonoBehaviour
     {
         AssignBattleParticipantIds(AllyCharacters, 1);
         AssignBattleParticipantIds(EnemyCharacters, -1);
+    }
+
+    private void ResetAiDecisionSchedule(float startTime)
+    {
+        _aiDecisionSchedule = new CombatAiDecisionSchedule(_aiDecisionIntervalSeconds);
+        _aiDecisionSchedule.Reset(startTime);
+        LastSkippedAiDecisionCount = 0;
+        TotalSkippedAiDecisionCount = 0;
+    }
+
+    private void EnsureAiDecisionSchedule()
+    {
+        if (_aiDecisionSchedule == null)
+        {
+            ResetAiDecisionSchedule(Time.time);
+        }
+    }
+
+    private void CollectOrderedAiBrains()
+    {
+        _orderedAiBrains.Clear();
+        AddAiBrains(AllyCharacters);
+        AddAiBrains(EnemyCharacters);
+        _orderedAiBrains.Sort(CompareAiBrains);
+    }
+
+    private void AddAiBrains(List<Character> characters)
+    {
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character == null || !character.gameObject.activeInHierarchy) continue;
+
+            CombatAiBrain brain = character.GetComponent<CombatAiBrain>();
+            if (brain != null && brain.isActiveAndEnabled)
+            {
+                _orderedAiBrains.Add(brain);
+            }
+        }
+    }
+
+    private void ScanAiVision()
+    {
+        for (int i = 0; i < _orderedAiBrains.Count; i++)
+        {
+            Character owner = _orderedAiBrains[i].GetComponent<Character>();
+            owner.Vision?.ScanVision();
+        }
+    }
+
+    private void ShareAiVision()
+    {
+        for (int i = 0; i < _orderedAiBrains.Count; i++)
+        {
+            Character owner = _orderedAiBrains[i].GetComponent<Character>();
+            owner.Vision?.PrepareVisionShare();
+        }
+
+        for (int i = 0; i < _orderedAiBrains.Count; i++)
+        {
+            Character owner = _orderedAiBrains[i].GetComponent<Character>();
+            owner.Vision?.ShareVision();
+        }
+    }
+
+    private static int CompareAiBrains(CombatAiBrain left, CombatAiBrain right)
+    {
+        Character leftCharacter = left.GetComponent<Character>();
+        Character rightCharacter = right.GetComponent<Character>();
+        int teamComparison = leftCharacter.Team.CompareTo(rightCharacter.Team);
+        if (teamComparison != 0) return teamComparison;
+
+        return Mathf.Abs(leftCharacter.BattleParticipantId)
+            .CompareTo(Mathf.Abs(rightCharacter.BattleParticipantId));
     }
 
     private static void AssignBattleParticipantIds(List<Character> characters, int teamSign)

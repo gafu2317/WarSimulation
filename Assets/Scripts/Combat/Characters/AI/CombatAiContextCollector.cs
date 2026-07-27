@@ -17,6 +17,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     private readonly List<Vector3> _forestCandidates = new();
     private readonly List<CombatAiPendingDamage> _allyPendingDamage = new();
     private readonly List<CombatAiPendingDamage> _enemyPendingDamage = new();
+    private readonly List<CombatAiPendingHealing> _allyPendingHealing = new();
+    private readonly List<CombatAiPendingHealing> _enemyPendingHealing = new();
 
     public CombatAiContext Collect()
     {
@@ -25,12 +27,25 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
     public CombatAiContext Collect(Character owner)
     {
+        return Collect(owner, null, false, false, default);
+    }
+
+    public CombatAiContext Collect(
+        Character owner,
+        CombatAiTeamReservations reservations,
+        bool perceptionPrepared,
+        bool hasBlockedMoveDestination,
+        Vector3 blockedMoveDestination)
+    {
         ClearBuffers();
 
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
         CombatMapSystem mapSystem = ResolveMapSystem();
         CombatVision vision = owner != null ? owner.Vision : null;
-        vision?.UpdateVision();
+        if (!perceptionPrepared)
+        {
+            vision?.UpdateVision();
+        }
 
         IReadOnlyList<Character> enemies = characterSystem != null && owner != null
             ? characterSystem.GetEnemiesOf(owner)
@@ -39,10 +54,15 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             ? characterSystem.GetAlliesOf(owner)
             : Array.Empty<Character>();
 
-        BuildIntel(owner, enemies, vision, _enemyIntel);
-        BuildIntel(owner, allies, vision, _allyIntel);
+        BuildIntel(owner, enemies, vision, reservations, _enemyIntel);
+        BuildIntel(owner, allies, vision, reservations, _allyIntel);
         CollectPendingDamage(allies, owner, _allyPendingDamage);
         CollectPendingDamage(enemies, null, _enemyPendingDamage);
+        if (owner != null && reservations != null)
+        {
+            reservations.AppendPendingDamage(owner.Team, _allyPendingDamage, _enemyPendingDamage);
+            reservations.AppendPendingHealing(owner.Team, _allyPendingHealing, _enemyPendingHealing);
+        }
 
         Vector3 ownStonePosition = default;
         Vector3 enemyStonePosition = default;
@@ -94,7 +114,11 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             enemyStoneHP,
             enemyStoneMaxHP,
             _allyPendingDamage,
-            _enemyPendingDamage);
+            _enemyPendingDamage,
+            _allyPendingHealing,
+            _enemyPendingHealing,
+            hasBlockedMoveDestination,
+            blockedMoveDestination);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)
@@ -126,6 +150,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         _forestCandidates.Clear();
         _allyPendingDamage.Clear();
         _enemyPendingDamage.Clear();
+        _allyPendingHealing.Clear();
+        _enemyPendingHealing.Clear();
     }
 
     private static void CollectPendingDamage(
@@ -160,6 +186,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         Character owner,
         IReadOnlyList<Character> characters,
         CombatVision vision,
+        CombatAiTeamReservations reservations,
         List<CombatCharacterIntel> destination)
     {
         if (characters == null) return;
@@ -190,8 +217,15 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 ? statusEffectsComponent.GetActiveEffectSnapshots()
                 : Array.Empty<CombatStatusEffectSnapshot>();
             CombatAiBrain brain = character.GetComponent<CombatAiBrain>();
-            bool hasObjective = brain != null && brain.LastContext != null;
-            CombatAiPlan plan = hasObjective ? brain.LastPlan : CombatAiPlan.None;
+            CombatAiPlan reservedPlan = CombatAiPlan.None;
+            bool hasReservedPlan = reservations != null &&
+                reservations.TryGetPlan(character, out reservedPlan);
+            bool hasObjective = hasReservedPlan || brain != null && brain.LastContext != null;
+            CombatAiPlan plan = hasReservedPlan
+                ? reservedPlan
+                : hasObjective
+                    ? brain.LastPlan
+                    : CombatAiPlan.None;
             CombatObjective objective = plan.Objective;
             Character intendedTarget = plan.SkillTarget != null
                 ? plan.SkillTarget

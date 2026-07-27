@@ -33,6 +33,7 @@ public enum DesignerComboTerrainKind
     Open,
     Forest,
     ChokePoint,
+    Production,
 }
 
 public enum DesignerComboVariantKind

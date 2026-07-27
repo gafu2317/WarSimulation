@@ -41,7 +41,8 @@ public class OrbitCameraController : MonoBehaviour
 
     private void Update()
     {
-        if (!_ready || Mouse.current == null) return;
+        if (!_ready) return;
+        if (Mouse.current == null) return;
 
         HandleOrbit();
         HandleZoom();
@@ -85,7 +86,6 @@ public class OrbitCameraController : MonoBehaviour
             return mapSystem.MapLocalToSurfaceWorldPosition(new Vector3(halfW, 0f, halfH));
         }
 
-        Debug.LogWarning("[OrbitCameraController] CombatMapSystem またはマップが見つかりません。原点をピボットに使用します。");
         return Vector3.zero;
     }
 }

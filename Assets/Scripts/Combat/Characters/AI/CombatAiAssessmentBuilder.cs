@@ -118,9 +118,12 @@ public static class CombatAiAssessmentBuilder
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.MaxHP <= 0) continue;
+            if (!ally.IsAlive || ally.MaxHP <= 0) continue;
 
-            float hpRatio = (float)ally.HP / ally.MaxHP;
+            int projectedHP = Mathf.Min(
+                ally.MaxHP,
+                ally.HP + GetPendingHealing(context.AllyPendingHealing, ally.Character));
+            float hpRatio = projectedHP / (float)ally.MaxHP;
             if (hpRatio <= LowHpThreshold)
             {
                 score += 22f;
@@ -455,6 +458,20 @@ public static class CombatAiAssessmentBuilder
         }
 
         return damage;
+    }
+
+    private static int GetPendingHealing(IReadOnlyList<CombatAiPendingHealing> pendingHealing, Character target)
+    {
+        int healing = 0;
+        for (int i = 0; i < pendingHealing.Count; i++)
+        {
+            if (pendingHealing[i].Target == target)
+            {
+                healing += pendingHealing[i].Healing;
+            }
+        }
+
+        return healing;
     }
 
     private static int CountActiveCharactersNear(

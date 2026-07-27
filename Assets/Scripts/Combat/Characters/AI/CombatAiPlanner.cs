@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 public static partial class CombatAiPlanner
@@ -10,8 +11,15 @@ public static partial class CombatAiPlanner
     private const float WandRangeSlack = 0.75f;
     private const float WandEnemyClearanceDistance = 7f;
     private const float SwordRetargetThreshold = 20f;
+    private static readonly ProfilerMarker BuildAssessmentMarker = new("CombatAI.BuildAssessment");
+    private static readonly ProfilerMarker SelectObjectiveMarker = new("CombatAI.SelectObjective");
+    private static readonly ProfilerMarker SelectMoveMarker = new("CombatAI.SelectMove");
+    private static readonly ProfilerMarker SelectSkillMarker = new("CombatAI.SelectSkill");
 
-    private static readonly List<SkillExecutionContext> s_skillContextsBuffer = new List<SkillExecutionContext>();
+    [System.ThreadStatic] private static List<SkillExecutionContext> s_skillContextsBuffer;
+
+    private static List<SkillExecutionContext> SkillContextsBuffer =>
+        s_skillContextsBuffer ??= new List<SkillExecutionContext>();
 
     private static CombatMoveTarget CreatePersonalitySignatureTarget(
         CombatAiContext context,
@@ -77,55 +85,73 @@ public static partial class CombatAiPlanner
         List<CombatAiReasonCode> selectedObjectiveReasons)
     {
         bool captureDebug = snapshot != null;
-        CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context);
-        CombatObjective objective;
-        if (captureDebug)
+        CombatAiAssessment assessment;
+        using (BuildAssessmentMarker.Auto())
         {
-            snapshot.Assessment = assessment;
-            CombatAiObjectiveScorer.BuildEntries(
-                snapshot,
-                personalityProfile,
-                focusEnemy,
-                focusCommitmentRemainingSeconds,
-                previousObjective);
-            objective = snapshot.SelectedObjective != null
-                ? snapshot.SelectedObjective.Objective
-                : CombatObjective.Search;
-            if (selectedObjectiveReasons != null)
+            assessment = CombatAiAssessmentBuilder.Build(context);
+        }
+        CombatObjective objective;
+        using (SelectObjectiveMarker.Auto())
+        {
+            if (captureDebug)
             {
-                selectedObjectiveReasons.Clear();
-                if (snapshot.SelectedObjective?.Breakdown != null)
+                snapshot.Assessment = assessment;
+                CombatAiObjectiveScorer.BuildEntries(
+                    snapshot,
+                    personalityProfile,
+                    focusEnemy,
+                    focusCommitmentRemainingSeconds,
+                    previousObjective);
+                objective = snapshot.SelectedObjective != null
+                    ? snapshot.SelectedObjective.Objective
+                    : CombatObjective.Search;
+                if (selectedObjectiveReasons != null)
                 {
-                    selectedObjectiveReasons.AddRange(snapshot.SelectedObjective.Breakdown.ReasonCodes);
+                    selectedObjectiveReasons.Clear();
+                    if (snapshot.SelectedObjective?.Breakdown != null)
+                    {
+                        selectedObjectiveReasons.AddRange(snapshot.SelectedObjective.Breakdown.ReasonCodes);
+                    }
                 }
             }
-        }
-        else
-        {
-            objective = CombatAiObjectiveScorer.SelectBestObjective(
-                context,
-                assessment,
-                personalityProfile,
-                focusEnemy,
-                focusCommitmentRemainingSeconds,
-                previousObjective,
-                selectedObjectiveReasons);
+            else
+            {
+                objective = CombatAiObjectiveScorer.SelectBestObjective(
+                    context,
+                    assessment,
+                    personalityProfile,
+                    focusEnemy,
+                    focusCommitmentRemainingSeconds,
+                    previousObjective,
+                    selectedObjectiveReasons);
+            }
         }
 
-        CombatMoveTarget moveTarget = SelectBestMove(
-            context, assessment, personalityProfile,
-            objective, focusEnemy, focusCommitmentRemainingSeconds,
-            captureDebug ? snapshot.MoveEntries : null,
-            out CombatAiMoveCandidateEntry selectedMove);
+        CombatMoveTarget moveTarget;
+        CombatAiMoveCandidateEntry selectedMove;
+        using (SelectMoveMarker.Auto())
+        {
+            moveTarget = SelectBestMove(
+                context, assessment, personalityProfile,
+                objective, focusEnemy, focusCommitmentRemainingSeconds,
+                captureDebug ? snapshot.MoveEntries : null,
+                out selectedMove);
+        }
         if (captureDebug) snapshot.SelectedMove = selectedMove;
 
-        SelectBestSkill(
-            context, assessment, personalityProfile,
-            objective, focusEnemy, focusCommitmentRemainingSeconds,
-            captureDebug ? snapshot.SkillEntries : null,
-            out SkillBase bestSkill,
-            out SkillExecutionContext bestSkillContext,
-            out CombatAiSkillCandidateEntry selectedSkill);
+        SkillBase bestSkill;
+        SkillExecutionContext bestSkillContext;
+        CombatAiSkillCandidateEntry selectedSkill;
+        using (SelectSkillMarker.Auto())
+        {
+            SelectBestSkill(
+                context, assessment, personalityProfile,
+                objective, focusEnemy, focusCommitmentRemainingSeconds,
+                captureDebug ? snapshot.SkillEntries : null,
+                out bestSkill,
+                out bestSkillContext,
+                out selectedSkill);
+        }
         if (captureDebug) snapshot.SelectedSkill = selectedSkill;
 
         var plan = new CombatAiPlan(objective, moveTarget, bestSkill, bestSkillContext);
@@ -215,6 +241,17 @@ public static partial class CombatAiPlanner
         ref CombatAiMoveCandidateEntry selectedEntry)
     {
         if (code != CombatAiMoveCode.HoldPosition && !target.HasDestination) return;
+        if (target.HasDestination && context.IsMoveDestinationBlocked(target.Destination)) return;
+        if (target.HasDestination && !CombatAiMoveScorer.IsReachable(owner, target.Destination)) return;
+        if (code == CombatAiMoveCode.AdvanceViaBridge &&
+            context.HasEnemyStonePosition &&
+            !CombatAiMoveScorer.IsReachableVia(
+                owner,
+                target.Destination,
+                context.EnemyStonePosition))
+        {
+            return;
+        }
         CombatAiScoreBreakdown breakdown = entries != null ? new CombatAiScoreBreakdown() : null;
         float score = CombatAiMoveScorer.Score(
             owner, context, assessment, personalityProfile,
@@ -283,10 +320,11 @@ public static partial class CombatAiPlanner
             SkillBase skill = skills[i];
             if (skill == null) continue;
 
-            CombatAiSkillContextBuilder.Build(context, context.Owner, skill, s_skillContextsBuffer);
-            for (int j = 0; j < s_skillContextsBuffer.Count; j++)
+            List<SkillExecutionContext> skillContexts = SkillContextsBuffer;
+            CombatAiSkillContextBuilder.Build(context, context.Owner, skill, skillContexts);
+            for (int j = 0; j < skillContexts.Count; j++)
             {
-                CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, s_skillContextsBuffer[j]);
+                CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, skillContexts[j]);
                 if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
                 CombatAiScoreBreakdown breakdown = entries != null ? new CombatAiScoreBreakdown() : null;
                 float score = ScoreSkillCandidate(
@@ -490,9 +528,11 @@ public static partial class CombatAiPlanner
         if (CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsProtect(skill))
         {
             CombatCharacterIntel ally = FindAllyIntel(context, skillContext.PrimaryTarget);
-            if (ally.MaxHP <= 0) return 0f;
+            if (!ally.IsAlive || ally.MaxHP <= 0) return -80f;
 
-            float hpRatio = (float)ally.HP / ally.MaxHP;
+            int reservedHealing = GetAllyPendingHealing(context, ally.Character);
+            int projectedHP = Mathf.Min(ally.MaxHP, ally.HP + reservedHealing);
+            float hpRatio = projectedHP / (float)ally.MaxHP;
             float missingHpRatio = 1f - hpRatio;
             if (CombatAiSkillClassifier.IsHeal(skill) && missingHpRatio <= 0.05f)
             {
@@ -504,7 +544,7 @@ public static partial class CombatAiPlanner
                 (CombatAiSkillClassifier.IsHeal(skill) ? 8f : 12f);
             if (CombatAiSkillClassifier.IsHeal(skill))
             {
-                int missingHp = Mathf.Max(0, ally.MaxHP - ally.HP);
+                int missingHp = Mathf.Max(0, ally.MaxHP - projectedHP);
                 int healing = skill.EstimateHealing(context.Owner, skillContext, ally.Character);
                 score += ally.MaxHP > 0 ? Mathf.Min(missingHp, healing) / (float)ally.MaxHP * 40f : 0f;
                 score += GetPostHealSurvivalScore(context, ally, healing);
@@ -549,9 +589,12 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || ally.MaxHP <= 0) continue;
+            if (ally.Character == null || !ally.IsAlive || ally.MaxHP <= 0) continue;
             if (HorizontalDistance(skillContext.TargetPoint, ally.CurrentPosition) > skill.AreaRadius) continue;
-            int missingHp = Mathf.Max(0, ally.MaxHP - ally.HP);
+            int projectedHP = Mathf.Min(
+                ally.MaxHP,
+                ally.HP + GetAllyPendingHealing(context, ally.Character));
+            int missingHp = Mathf.Max(0, ally.MaxHP - projectedHP);
             int healing = skill.EstimateHealing(context.Owner, skillContext, ally.Character);
             score += missingHp / (float)ally.MaxHP * 28f;
             score += Mathf.Min(missingHp, healing) / (float)ally.MaxHP * 36f;
@@ -585,7 +628,8 @@ public static partial class CombatAiPlanner
         }
 
         if (incomingDamage <= 0) return 0f;
-        int projectedHp = Mathf.Min(ally.MaxHP, ally.HP + healing) - incomingDamage;
+        int reservedHealing = GetAllyPendingHealing(context, ally.Character);
+        int projectedHp = Mathf.Min(ally.MaxHP, ally.HP + reservedHealing + healing) - incomingDamage;
         if (projectedHp <= 0) return -24f;
         return projectedHp <= ally.MaxHP * 0.3f ? 8f : 20f;
     }
@@ -695,6 +739,21 @@ public static partial class CombatAiPlanner
         }
 
         return damage;
+    }
+
+    private static int GetAllyPendingHealing(CombatAiContext context, Character target)
+    {
+        int healing = 0;
+        for (int i = 0; i < context.AllyPendingHealing.Count; i++)
+        {
+            CombatAiPendingHealing pending = context.AllyPendingHealing[i];
+            if (pending.Target == target)
+            {
+                healing += pending.Healing;
+            }
+        }
+
+        return healing;
     }
 
     private static float GetSelfHpCostPenalty(CombatAiContext context, int hpCost)

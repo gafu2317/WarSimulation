@@ -96,6 +96,7 @@ public sealed class CombatVision : MonoBehaviour
     private Character _lastReceivedFrom;
     private float _lastSharedAt = float.NegativeInfinity;
     private float _lastReceivedAt = float.NegativeInfinity;
+    private bool _hasPreparedShare;
 
     public IReadOnlyList<Character> VisibleEnemies => _visibleEnemies;
     public IReadOnlyList<Character> RememberedEnemies => _rememberedEnemies;
@@ -127,6 +128,7 @@ public sealed class CombatVision : MonoBehaviour
         _lastReceivedFrom = null;
         _lastSharedAt = float.NegativeInfinity;
         _lastReceivedAt = float.NegativeInfinity;
+        _hasPreparedShare = false;
 
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
         if (characterSystem == null || _owner == null) return;
@@ -137,6 +139,13 @@ public sealed class CombatVision : MonoBehaviour
     }
 
     public void UpdateVision()
+    {
+        ScanVision();
+        PrepareVisionShare();
+        ShareVision();
+    }
+
+    public void ScanVision()
     {
         _owner ??= GetComponent<Character>();
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
@@ -174,7 +183,41 @@ public sealed class CombatVision : MonoBehaviour
         }
 
         RebuildRememberedEnemies(enemies);
+    }
+
+    public void ShareVision()
+    {
+        _owner ??= GetComponent<Character>();
+        if (_owner == null) return;
+
+        if (!_hasPreparedShare)
+        {
+            PrepareVisionShare();
+        }
+
         BroadcastMemoriesToAllies();
+        _hasPreparedShare = false;
+    }
+
+    public void PrepareVisionShare()
+    {
+        _memoriesToShare.Clear();
+        foreach (CharacterMemory memory in _memories.Values)
+        {
+            if (memory == null) continue;
+
+            var snapshot = new CharacterMemory(
+                memory.Target,
+                memory.LastSeenPosition,
+                memory.LastSeenTime)
+            {
+                Source = memory.Source,
+                SharedFrom = memory.SharedFrom,
+            };
+            _memoriesToShare.Add(snapshot);
+        }
+
+        _hasPreparedShare = true;
     }
 
     public bool IsVisible(Character target)
@@ -306,7 +349,7 @@ public sealed class CombatVision : MonoBehaviour
         if (!IsWithinFieldOfView(target)) return false;
 
         Vector3 headPos = transform.TransformPoint(_headOffsetFromFoot);
-        Vector3 targetHeadPos = target.TransformPoint(_headOffsetFromFoot);
+        Vector3 targetHeadPos = GetSightTargetPosition(target);
         Vector3 diff = targetHeadPos - headPos;
         float distanceToTarget = diff.magnitude;
 
@@ -344,7 +387,7 @@ public sealed class CombatVision : MonoBehaviour
     {
         if (target == null) return false;
 
-        Vector3 diff = target.TransformPoint(_headOffsetFromFoot) - transform.TransformPoint(_headOffsetFromFoot);
+        Vector3 diff = GetSightTargetPosition(target) - transform.TransformPoint(_headOffsetFromFoot);
         if (diff.sqrMagnitude < Mathf.Epsilon) return true;
 
         Vector3 localDirection = transform.InverseTransformDirection(diff.normalized);
@@ -377,7 +420,7 @@ public sealed class CombatVision : MonoBehaviour
     public bool TryGetSightRay(Transform target, out Vector3 origin, out Vector3 end, out bool blocked)
     {
         origin = transform.TransformPoint(_headOffsetFromFoot);
-        end = target != null ? target.TransformPoint(_headOffsetFromFoot) : origin;
+        end = target != null ? GetSightTargetPosition(target) : origin;
         blocked = false;
         if (target == null) return false;
 
@@ -415,6 +458,13 @@ public sealed class CombatVision : MonoBehaviour
         }
 
         return true;
+    }
+
+    private Vector3 GetSightTargetPosition(Transform target)
+    {
+        return target.GetComponent<Character>() != null
+            ? target.TransformPoint(_headOffsetFromFoot)
+            : target.position;
     }
 
     private int ResolveObstructionLayerMask()
@@ -610,11 +660,6 @@ public sealed class CombatVision : MonoBehaviour
         if (characterSystem == null || _owner == null) return;
 
         _debugCommunicationSnapshots.Clear();
-        _memoriesToShare.Clear();
-        foreach (CharacterMemory memory in _memories.Values)
-        {
-            _memoriesToShare.Add(memory);
-        }
 
         IReadOnlyList<Character> allies = characterSystem.GetAlliesOf(_owner);
         for (int i = 0; i < allies.Count; i++)

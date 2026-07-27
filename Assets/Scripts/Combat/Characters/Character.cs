@@ -181,6 +181,11 @@ public class Character : MonoBehaviour
         // AGIパラメータを基準速度に反映させたい場合は CombatCharacterBody.BaseSpeed を更新する。
     }
 
+    public void SetCharacterDataForBattle(CharacterData characterData)
+    {
+        SetCharacterStatus(characterData, null, null);
+    }
+
     public void ApplyInitialWeaponFromConfig()
     {
         WeaponConfig weaponConfig = _runtimeWeaponConfig != null

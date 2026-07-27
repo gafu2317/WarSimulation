@@ -63,6 +63,16 @@ public sealed class CombatCharacterBody : MonoBehaviour
         return TrySetDestination(worldPosition, true, out resolvedDestination);
     }
 
+    public bool CanReachDestination(Vector3 worldPosition)
+    {
+        if (_agent == null || !_agent.isOnNavMesh) return false;
+
+        return ResolveNavigationSystem().TryResolveDestination(
+            _agent,
+            worldPosition,
+            out _);
+    }
+
     private bool TrySetDestination(
         Vector3 worldPosition,
         bool isRetreat,

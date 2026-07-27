@@ -6,22 +6,23 @@ public static class CombatBattleRandom
     private static readonly Dictionary<string, int> Counters = new();
     private static readonly Dictionary<int, int> DecisionTicks = new();
     private static int _seed;
-    private static float _startedAt;
 
     public static void Initialize(int seed)
     {
         _seed = seed;
-        _startedAt = Time.fixedTime;
         Counters.Clear();
         DecisionTicks.Clear();
     }
 
-    public static int GetInterval(float seconds)
+    public static int GetDecisionInterval(
+        Character owner,
+        float seconds,
+        float decisionIntervalSeconds = 0.5f)
     {
-        float fixedStep = Mathf.Max(0.001f, Time.fixedDeltaTime);
-        int elapsedTicks = Mathf.Max(0, Mathf.FloorToInt((Time.fixedTime - _startedAt) / fixedStep + 0.001f));
-        int intervalTicks = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(0.01f, seconds) / fixedStep));
-        return elapsedTicks / intervalTicks;
+        int ticksPerInterval = Mathf.Max(
+            1,
+            Mathf.CeilToInt(Mathf.Max(0.01f, seconds) / Mathf.Max(0.01f, decisionIntervalSeconds)));
+        return GetDecisionTick(owner) / ticksPerInterval;
     }
 
     public static void SetDecisionTick(Character owner, int decisionTick)

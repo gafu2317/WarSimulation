@@ -168,7 +168,11 @@ public static class CombatAiObjectiveScorer
         AddReasons(assessment, objective, breakdown);
         if (GetNumericalAdvantageAdjustment(context, objective) != 0f)
         {
-            AddReason(breakdown, CombatAiReasonCode.NumericalAdvantage);
+            AddReason(
+                breakdown,
+                GetNumericalBalance(context) >= 0f
+                    ? CombatAiReasonCode.NumericalAdvantage
+                    : CombatAiReasonCode.NumericalDisadvantage);
         }
         if ((objective == CombatObjective.AttackEnemy || objective == CombatObjective.DestroyEnemyStone) &&
             ShouldPreferStoneAssault(
@@ -230,7 +234,7 @@ public static class CombatAiObjectiveScorer
                 (!context.HasEnemyStoneHealth || context.EnemyStoneHP > 0),
             CombatObjective.AttackEnemy => HasAttackTarget(context),
             CombatObjective.DefendOwnStone => hasPossibleEnemy && context.HasOwnStonePosition,
-            CombatObjective.SupportAlly => hasPossibleEnemy && context.AllyIntel.Count > 0,
+            CombatObjective.SupportAlly => hasPossibleEnemy && HasLivingAlly(context),
             CombatObjective.Search => hasPossibleEnemy,
             CombatObjective.Retreat => hasPossibleEnemy,
             _ => false,
@@ -322,7 +326,26 @@ public static class CombatAiObjectiveScorer
 
     private static float GetNumericalAdvantageAdjustment(CombatAiContext context, CombatObjective objective)
     {
-        int livingAllies = context.Owner != null && context.Owner.Health != null && context.Owner.Health.IsAlive ? 1 : 0;
+        float advantage = Mathf.Clamp(
+            GetNumericalBalance(context) * NumericalAdvantagePerCharacter,
+            -MaximumNumericalAdvantageScore,
+            MaximumNumericalAdvantageScore);
+        return objective switch
+        {
+            CombatObjective.AttackEnemy => advantage,
+            CombatObjective.DestroyEnemyStone => advantage * 0.75f,
+            CombatObjective.Retreat => advantage * -0.75f,
+            _ => 0f,
+        };
+    }
+
+    private static int GetNumericalBalance(CombatAiContext context)
+    {
+        int livingAllies = context.Owner != null &&
+            context.Owner.Health != null &&
+            context.Owner.Health.IsAlive
+                ? 1
+                : 0;
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             if (context.AllyIntel[i].IsAlive) livingAllies++;
@@ -334,17 +357,17 @@ public static class CombatAiObjectiveScorer
             if (context.EnemyIntel[i].IsAlive) livingEnemies++;
         }
 
-        float advantage = Mathf.Clamp(
-            (livingAllies - livingEnemies) * NumericalAdvantagePerCharacter,
-            0f,
-            MaximumNumericalAdvantageScore);
-        return objective switch
+        return livingAllies - livingEnemies;
+    }
+
+    private static bool HasLivingAlly(CombatAiContext context)
+    {
+        for (int i = 0; i < context.AllyIntel.Count; i++)
         {
-            CombatObjective.AttackEnemy => advantage,
-            CombatObjective.DestroyEnemyStone => advantage * 0.75f,
-            CombatObjective.Retreat => advantage * -0.75f,
-            _ => 0f,
-        };
+            if (context.AllyIntel[i].IsAlive) return true;
+        }
+
+        return false;
     }
 
     private static float GetTeamRoleAdjustment(

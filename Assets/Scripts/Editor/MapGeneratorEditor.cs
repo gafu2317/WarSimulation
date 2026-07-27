@@ -97,10 +97,32 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             EnsureRenderComponents(gen);
             gen.Render3D(data);
+            // Play 中は CombatNavMeshBuilder.Built → DebugView が描き直す。
+            // ここで消すと Built 後に空になり、再描画されない。
+            if (!Application.isPlaying)
+            {
+                ClearStoneAssaultRouteViews();
+            }
 
             _lastInfo = null;
             BuildMapPreviewFromMap(data);
             BuildNavMeshPreviewFromMap(data, gen);
+        }
+
+        private static void ClearStoneAssaultRouteViews()
+        {
+            CombatStoneAssaultRouteDebugView[] views =
+                Object.FindObjectsByType<CombatStoneAssaultRouteDebugView>(FindObjectsSortMode.None);
+            for (int i = 0; i < views.Length; i++)
+            {
+                if (views[i] == null) continue;
+                Transform root = views[i].transform.Find("GeneratedStoneAssaultRoutes");
+                while (root != null)
+                {
+                    Object.DestroyImmediate(root.gameObject);
+                    root = views[i].transform.Find("GeneratedStoneAssaultRoutes");
+                }
+            }
         }
 
         private void BuildMapPreviewFromMap(MapData data)
@@ -161,6 +183,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             if (bridgeRenderer != null) bridgeRenderer.Clear();
             var featureRenderer = gen.GetComponent<FeatureRenderer>();
             if (featureRenderer != null) featureRenderer.Clear();
+            ClearStoneAssaultRouteViews();
         }
 
         private void ClearTextures()

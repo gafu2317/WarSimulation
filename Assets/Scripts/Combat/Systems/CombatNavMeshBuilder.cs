@@ -1,3 +1,4 @@
+using System;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -6,6 +7,12 @@ using WarSimulation.Combat.Map;
 [DisallowMultipleComponent]
 public sealed class CombatNavMeshBuilder : MonoBehaviour
 {
+    /// <summary>Render3D 後など、現行マップの NavMesh がベイク完了したときに発火する。</summary>
+    public static event Action Built;
+
+    /// <summary>NavMesh データが破棄されたときに発火する。</summary>
+    public static event Action Cleared;
+
     private const float MinRelativeAreaCost = 0.01f;
     private const float MinNavMeshAreaCost = 1f;
     private const string AreaVolumeRootName = "GeneratedNavAreaVolumes";
@@ -73,7 +80,13 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
         _surface.BuildNavMesh();
         ApplyAreaCosts();
 
-        return _surface.navMeshData != null;
+        bool built = _surface.navMeshData != null;
+        if (built)
+        {
+            Built?.Invoke();
+        }
+
+        return built;
     }
 
     public void Clear()
@@ -82,6 +95,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
         _surface.RemoveData();
         _surface.navMeshData = null;
         ClearAreaVolumes();
+        Cleared?.Invoke();
     }
 
     private void EnsureSurface()

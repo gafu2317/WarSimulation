@@ -10,6 +10,12 @@ public class CharacterData : ScriptableObject
     [field: SerializeField] public CharacterGender Gender { private set; get; }
     [field: SerializeField] public CharacterData Lover { private set; get; }
 
+    public void ConfigureIdentity(CharacterGender gender, CharacterData lover)
+    {
+        Gender = gender;
+        Lover = lover;
+    }
+
     // 基礎パラメータ
     [Header("Base Parameters")]
     [field: SerializeField] public int MaxHP { private set; get; }

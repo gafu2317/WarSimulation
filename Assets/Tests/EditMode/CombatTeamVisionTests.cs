@@ -7,6 +7,55 @@ using WarSimulation.Combat.Map;
 public sealed class CombatTeamVisionTests
 {
     [Test]
+    public void CombatVision_PreparedShareDoesNotRelayNewerMemoryFromTheSamePhase()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject senderGo = new GameObject("Sender");
+        GameObject receiverGo = new GameObject("Receiver");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character sender = senderGo.AddComponent<Character>();
+            Character receiver = receiverGo.AddComponent<Character>();
+            Character enemy = enemyGo.AddComponent<Character>();
+            system.SetParticipants(new[] { sender, receiver }, new[] { enemy });
+            sender.Vision.Initialize();
+            receiver.Vision.Initialize();
+            Vector3 preparedPosition = new Vector3(2f, 0f, 3f);
+            Vector3 newerPosition = new Vector3(8f, 0f, 9f);
+
+            sender.Vision.ReceiveSharedMemory(
+                receiver,
+                new List<CharacterMemory>
+                {
+                    new CharacterMemory(enemy, preparedPosition, Time.time - 0.5f),
+                });
+            sender.Vision.PrepareVisionShare();
+            sender.Vision.ReceiveSharedMemory(
+                receiver,
+                new List<CharacterMemory>
+                {
+                    new CharacterMemory(enemy, newerPosition, Time.time),
+                });
+
+            sender.Vision.ShareVision();
+
+            Assert.That(
+                receiver.Vision.TryGetLastKnownPosition(enemy, out Vector3 receivedPosition),
+                Is.True);
+            Assert.That(receivedPosition, Is.EqualTo(preparedPosition));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(receiverGo);
+            Object.DestroyImmediate(senderGo);
+            Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
     public void CharacterSystem_AssignsTeamsFromLists()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");

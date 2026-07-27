@@ -20,6 +20,10 @@ public sealed class CombatAiContext
     public IReadOnlyList<Vector3> ForestCandidates { get; }
     public IReadOnlyList<CombatAiPendingDamage> AllyPendingDamage { get; }
     public IReadOnlyList<CombatAiPendingDamage> EnemyPendingDamage { get; }
+    public IReadOnlyList<CombatAiPendingHealing> AllyPendingHealing { get; }
+    public IReadOnlyList<CombatAiPendingHealing> EnemyPendingHealing { get; }
+    public bool HasBlockedMoveDestination { get; }
+    public Vector3 BlockedMoveDestination { get; }
 
     public CombatAiContext(
         Character owner,
@@ -37,7 +41,11 @@ public sealed class CombatAiContext
         int enemyStoneHP = 0,
         int enemyStoneMaxHP = 0,
         IReadOnlyList<CombatAiPendingDamage> allyPendingDamage = null,
-        IReadOnlyList<CombatAiPendingDamage> enemyPendingDamage = null)
+        IReadOnlyList<CombatAiPendingDamage> enemyPendingDamage = null,
+        IReadOnlyList<CombatAiPendingHealing> allyPendingHealing = null,
+        IReadOnlyList<CombatAiPendingHealing> enemyPendingHealing = null,
+        bool hasBlockedMoveDestination = false,
+        Vector3 blockedMoveDestination = default)
     {
         Owner = owner;
         EnemyIntel = enemyIntel ?? Array.Empty<CombatCharacterIntel>();
@@ -55,6 +63,32 @@ public sealed class CombatAiContext
         ForestCandidates = forestCandidates ?? Array.Empty<Vector3>();
         AllyPendingDamage = allyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();
         EnemyPendingDamage = enemyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();
+        AllyPendingHealing = allyPendingHealing ?? Array.Empty<CombatAiPendingHealing>();
+        EnemyPendingHealing = enemyPendingHealing ?? Array.Empty<CombatAiPendingHealing>();
+        HasBlockedMoveDestination = hasBlockedMoveDestination;
+        BlockedMoveDestination = blockedMoveDestination;
+    }
+
+    public bool IsMoveDestinationBlocked(Vector3 destination)
+    {
+        if (!HasBlockedMoveDestination) return false;
+
+        destination.y = 0f;
+        Vector3 blocked = BlockedMoveDestination;
+        blocked.y = 0f;
+        return Vector3.Distance(destination, blocked) <= 2f;
+    }
+}
+
+public readonly struct CombatAiPendingHealing
+{
+    public Character Target { get; }
+    public int Healing { get; }
+
+    public CombatAiPendingHealing(Character target, int healing)
+    {
+        Target = target;
+        Healing = Mathf.Max(0, healing);
     }
 }
 

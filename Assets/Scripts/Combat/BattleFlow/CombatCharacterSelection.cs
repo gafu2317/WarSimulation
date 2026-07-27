@@ -18,6 +18,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
 
+    public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
+
     public void Initialize(
         IReadOnlyList<Character> allyCandidates,
         IReadOnlyList<Character> enemyCandidates,

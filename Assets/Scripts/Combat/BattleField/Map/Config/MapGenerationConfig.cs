@@ -351,5 +351,19 @@ namespace WarSimulation.Combat.Map
         /// <see cref="HeightMapCellSize"/> と常に等しい値を返す。
         /// </summary>
         public float GroundStateGridCellSize => HeightMapCellSize;
+
+        public void ConfigureFeatureCounts(
+            int forestClusterCount,
+            int scatterTreeCount,
+            int crossMapRiverCount,
+            int lakeCount,
+            int bridgesPerRiver)
+        {
+            _forestClusterCount = Mathf.Max(0, forestClusterCount);
+            _scatterTreeCount = Mathf.Max(0, scatterTreeCount);
+            _crossMapRiverCount = Mathf.Max(0, crossMapRiverCount);
+            _lakeCount = Mathf.Max(0, lakeCount);
+            _bridgesPerRiver = Mathf.Max(0, bridgesPerRiver);
+        }
     }
 }

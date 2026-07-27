@@ -44,4 +44,5 @@ public enum CombatAiReasonCode
     NumericalAdvantage = 41,
     AllyEngagementCoverage = 42,
     StoneAssaultCommitment = 43,
+    NumericalDisadvantage = 45,
 }

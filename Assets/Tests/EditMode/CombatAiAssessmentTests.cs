@@ -7,6 +7,36 @@ using static CombatEditModeTestUtil;
 public sealed class CombatAiAssessmentTests
 {
     [Test]
+    public void Assessment_IgnoresDeadAllyWhenEvaluatingFragility()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject allyGo = new GameObject("DeadAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            ally.Health.TakeDamage(30);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) });
+
+            CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context);
+
+            Assert.That(
+                assessment.GetValue(CombatAiMetricIndex.AllyFragility),
+                Is.Zero);
+        }
+        finally
+        {
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Assessment_IgnoresEnemyWithoutKnownPosition()
     {
         GameObject ownerGo = new GameObject("Owner");

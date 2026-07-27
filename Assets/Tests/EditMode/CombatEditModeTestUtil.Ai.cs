@@ -123,8 +123,12 @@ internal static partial class CombatEditModeTestUtil
         int enemyStoneMaxHP = 0,
         IReadOnlyList<CombatAiPendingDamage> allyPendingDamage = null,
         IReadOnlyList<CombatAiPendingDamage> enemyPendingDamage = null,
+        IReadOnlyList<CombatAiPendingHealing> allyPendingHealing = null,
+        IReadOnlyList<CombatAiPendingHealing> enemyPendingHealing = null,
         IReadOnlyList<Vector3> bridgePositions = null,
-        IReadOnlyList<Vector3> forestCandidates = null)
+        IReadOnlyList<Vector3> forestCandidates = null,
+        bool hasBlockedMoveDestination = false,
+        Vector3 blockedMoveDestination = default)
     {
         return new CombatAiContext(
             owner,
@@ -142,7 +146,11 @@ internal static partial class CombatEditModeTestUtil
             enemyStoneHP,
             enemyStoneMaxHP,
             allyPendingDamage,
-            enemyPendingDamage);
+            enemyPendingDamage,
+            allyPendingHealing,
+            enemyPendingHealing,
+            hasBlockedMoveDestination,
+            blockedMoveDestination);
     }
 
     internal static float FindObjectiveScore(CombatAiDebugSnapshot snapshot, CombatObjective objective)

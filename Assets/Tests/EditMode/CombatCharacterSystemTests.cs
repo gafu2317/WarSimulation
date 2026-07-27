@@ -8,6 +8,59 @@ using WarSimulation.Combat.Map;
 public sealed class CombatCharacterSystemTests
 {
     [Test]
+    public void TickAiDecisionsNow_PlansEveryParticipantBeforeExecutingInParticipantOrder()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        var characterObjects = new List<GameObject>();
+        var selectedParticipantIds = new List<int>();
+
+        try
+        {
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            Character allyA = CreateAiCharacter("AllyA", characterObjects);
+            Character allyB = CreateAiCharacter("AllyB", characterObjects);
+            Character enemyA = CreateAiCharacter("EnemyA", characterObjects);
+            Character enemyB = CreateAiCharacter("EnemyB", characterObjects);
+            system.SetParticipants(
+                new[] { allyB, allyA },
+                new[] { enemyB, enemyA });
+            system.ResetCharactersForBattle();
+
+            void Capture(Character owner, CombatAiPlan _, CombatAiPlan __)
+            {
+                selectedParticipantIds.Add(owner.BattleParticipantId);
+            }
+
+            CombatAiDecisionEvents.PlanSelected += Capture;
+            try
+            {
+                int preparedCount = system.TickAiDecisionsNow(Time.time);
+
+                Assert.That(preparedCount, Is.EqualTo(4));
+            }
+            finally
+            {
+                CombatAiDecisionEvents.PlanSelected -= Capture;
+            }
+
+            Assert.That(selectedParticipantIds, Is.EqualTo(new[] { 1, 2, -1, -2 }));
+            Assert.That(allyA.GetComponent<CombatAiBrain>().LastContext.AllyIntel[0].HasObjective, Is.False);
+            Assert.That(allyB.GetComponent<CombatAiBrain>().LastContext.AllyIntel[0].HasObjective, Is.True);
+            Assert.That(enemyA.GetComponent<CombatAiBrain>().LastContext.AllyIntel[0].HasObjective, Is.False);
+            Assert.That(enemyB.GetComponent<CombatAiBrain>().LastContext.AllyIntel[0].HasObjective, Is.True);
+        }
+        finally
+        {
+            for (int i = characterObjects.Count - 1; i >= 0; i--)
+            {
+                Object.DestroyImmediate(characterObjects[i]);
+            }
+
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
+    [Test]
     public void SetParticipants_AppliesEachCharactersWeaponAndPersonalitySetup()
     {
         GameObject systemObject = new GameObject("CharacterSystem");
@@ -214,6 +267,16 @@ public sealed class CombatCharacterSystemTests
         map.AddFeature(new PlacedFeature(FeatureType.Rock, new Vector3(3.5f, 0f, 1.5f)));
         map.AddFeature(new PlacedFeature(FeatureType.Tree, new Vector3(4.5f, 0f, 6.5f)));
         return map;
+    }
+
+    private static Character CreateAiCharacter(string name, List<GameObject> characterObjects)
+    {
+        GameObject characterObject = new GameObject(name);
+        characterObjects.Add(characterObject);
+        Character character = characterObject.AddComponent<Character>();
+        character.Health.Initialize(100);
+        characterObject.AddComponent<CombatAiBrain>();
+        return character;
     }
 
     private static void AssertClearOfSolidFeatures(MapData map, Vector3 position)

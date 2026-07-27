@@ -394,7 +394,7 @@ public sealed class CombatAiObjectiveTests
                 previousObjective: CombatObjective.AttackEnemy);
 
             Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
-            Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(20f, 0f, 0f)));
+            Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(17.5f, 0f, 0f)));
             Assert.That(snapshot.ObjectiveEntries.Exists(entry => entry.Objective == CombatObjective.AttackEnemy), Is.False);
             Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
             Assert.That(snapshot.SkillEntries.Exists(entry => entry.SkillContext.PrimaryTarget == enemy), Is.False);
@@ -520,6 +520,70 @@ public sealed class CombatAiObjectiveTests
         {
             Object.DestroyImmediate(enemyGo);
             Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_NumericalDisadvantageLowersOffenseAndRaisesRetreat()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject enemyGoA = new GameObject("EnemyA");
+        GameObject enemyGoB = new GameObject("EnemyB");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character enemyA = enemyGoA.AddComponent<Character>();
+            enemyA.SetTeam(CombatTeam.Enemy);
+            enemyA.Health.Initialize(30);
+            enemyGoA.transform.position = new Vector3(2f, 0f, 0f);
+            Character enemyB = enemyGoB.AddComponent<Character>();
+            enemyB.SetTeam(CombatTeam.Enemy);
+            enemyB.Health.Initialize(30);
+            enemyGoB.transform.position = new Vector3(3f, 0f, 0f);
+
+            CombatAiContext balanced = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemyA, true, enemyGoA.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+            CombatAiContext disadvantaged = CreatePlannerContext(
+                owner,
+                enemyIntel: new[]
+                {
+                    CreateIntel(enemyA, true, enemyGoA.transform.position),
+                    CreateIntel(
+                        enemyB,
+                        false,
+                        default,
+                        hasDirectSight: false,
+                        hasMemory: false),
+                },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot balancedSnapshot = CombatAiPlanner.BuildDebugSnapshot(balanced, null);
+            CombatAiDebugSnapshot disadvantagedSnapshot = CombatAiPlanner.BuildDebugSnapshot(disadvantaged, null);
+
+            Assert.That(
+                FindObjectiveScore(disadvantagedSnapshot, CombatObjective.AttackEnemy) -
+                FindObjectiveScore(balancedSnapshot, CombatObjective.AttackEnemy),
+                Is.EqualTo(-6f).Within(0.001f));
+            Assert.That(
+                FindObjectiveScore(disadvantagedSnapshot, CombatObjective.DestroyEnemyStone) -
+                FindObjectiveScore(balancedSnapshot, CombatObjective.DestroyEnemyStone),
+                Is.EqualTo(-4.5f).Within(0.001f));
+            Assert.That(
+                FindObjectiveScore(disadvantagedSnapshot, CombatObjective.Retreat) -
+                FindObjectiveScore(balancedSnapshot, CombatObjective.Retreat),
+                Is.EqualTo(4.5f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGoB);
+            Object.DestroyImmediate(enemyGoA);
             Object.DestroyImmediate(ownerGo);
         }
     }

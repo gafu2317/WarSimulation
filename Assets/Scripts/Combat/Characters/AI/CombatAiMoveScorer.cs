@@ -3,6 +3,34 @@ using UnityEngine.AI;
 
 public static class CombatAiMoveScorer
 {
+    public static bool IsReachable(Character owner, Vector3 destination)
+    {
+        if (owner == null) return false;
+
+        NavMeshAgent agent = owner.GetComponent<NavMeshAgent>();
+        if (agent == null || !agent.isOnNavMesh) return true;
+
+        CombatCharacterBody body = owner.GetComponent<CombatCharacterBody>();
+        if (body != null)
+        {
+            return body.CanReachDestination(destination);
+        }
+
+        var path = new NavMeshPath();
+        return agent.CalculatePath(destination, path) &&
+            path.status == NavMeshPathStatus.PathComplete &&
+            path.corners.Length >= 2;
+    }
+
+    public static bool IsReachableVia(
+        Character owner,
+        Vector3 waypoint,
+        Vector3 destination)
+    {
+        if (!IsReachable(owner, waypoint)) return false;
+        return IsReachable(owner, destination);
+    }
+
     public static float Score(
         Character owner,
         CombatAiContext context,

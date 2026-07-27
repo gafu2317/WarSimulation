@@ -252,7 +252,7 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
         if (distance > guardSkill.MaxRange) return false;
 
         CombatVision vision = ally.Vision;
-        vision?.UpdateVision();
+        vision?.ScanVision();
         return vision == null || vision.IsVisible(attacker);
     }
 

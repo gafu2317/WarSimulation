@@ -4,6 +4,32 @@ using UnityEngine;
 public sealed class CombatBattleRandomTests
 {
     [Test]
+    public void DecisionIntervalUsesCentralDecisionTicks()
+    {
+        GameObject characterGo = new GameObject("TestCharacter");
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            character.SetBattleParticipantId(1);
+            CombatBattleRandom.Initialize(1234);
+
+            CombatBattleRandom.SetDecisionTick(character, 5);
+            Assert.That(
+                CombatBattleRandom.GetDecisionInterval(character, 3f),
+                Is.Zero);
+
+            CombatBattleRandom.SetDecisionTick(character, 6);
+            Assert.That(
+                CombatBattleRandom.GetDecisionInterval(character, 3f),
+                Is.EqualTo(1));
+        }
+        finally
+        {
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
     public void SameSeedProducesSameChoicesAndRolls()
     {
         GameObject characterGo = new GameObject("TestCharacter");

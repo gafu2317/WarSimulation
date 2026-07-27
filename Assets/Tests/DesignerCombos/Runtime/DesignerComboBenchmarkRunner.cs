@@ -1,11 +1,12 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using WarSimulation.Combat.Map;
 
@@ -13,14 +14,18 @@ using WarSimulation.Combat.Map;
 [DisallowMultipleComponent]
 public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 {
-    private const string WeaponFolder = "Assets/Data/Map/Weapon";
+    public const int StoneAttackDiagnosticSeedCount = 5;
+    public const int StoneAttackDiagnosticMatchCount = StoneAttackDiagnosticSeedCount * 2;
+
     [SerializeField] private DesignerComboKind _combo = DesignerComboKind.BindFollowUp;
     [SerializeField] private bool _runAllCombos;
     [SerializeField] private bool _disableRendering;
+    [SerializeField] private bool _useStoneAttackDiagnosticMap;
+    [SerializeField, Range(2, 3)] private int _diagnosticAttackRoleCount = 2;
     [SerializeField] private DesignerComboTestScope _scope = DesignerComboTestScope.BehaviorCheck;
     [SerializeField] private int _baseSeed = 12000;
-    [SerializeField, Min(10f)] private float _battleTimeoutSeconds = 120f;
-    [SerializeField, Range(1f, 20f)] private float _timeScale = 4f;
+    [SerializeField, Min(10f)] private float _battleTimeoutSeconds = DesignerComboRunSettings.DefaultBattleTimeoutSeconds;
+    [SerializeField, Range(1f, 20f)] private float _timeScale = DesignerComboRunSettings.DefaultTimeScale;
 
     private readonly List<Character> _characterPool = new();
     private readonly List<UnityEngine.Object> _temporaryObjects = new();
@@ -39,8 +44,43 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
     private int _previousVSyncCount;
     private int _previousTargetFrameRate;
     private bool _previousRunInBackground;
+    private string _outputDirectory;
+    private bool _quitWhenFinished;
 
     private void Awake()
+    {
+        HideInteractiveCombatUi();
+    }
+
+    private void Start()
+    {
+        HideInteractiveCombatUi();
+        if (DesignerComboRunRequest.TryConsume(out DesignerComboRunSettings settings))
+        {
+            _combo = settings.Combo;
+            _runAllCombos = settings.RunAllCombos;
+            _disableRendering = settings.DisableRendering;
+            _useStoneAttackDiagnosticMap = settings.UseStoneAttackDiagnosticMap;
+            _diagnosticAttackRoleCount = Mathf.Clamp(settings.DiagnosticAttackRoleCount, 2, 3);
+            _scope = settings.Scope;
+            _baseSeed = settings.BaseSeed;
+            _battleTimeoutSeconds = settings.BattleTimeoutSeconds;
+            _timeScale = settings.TimeScale;
+            _outputDirectory = settings.OutputDirectory;
+            _quitWhenFinished = settings.QuitWhenFinished;
+            if (_useStoneAttackDiagnosticMap)
+            {
+                _combo = DesignerComboKind.MagicStoneAssault;
+                _runAllCombos = false;
+                _disableRendering = false;
+                _scope = DesignerComboTestScope.BehaviorCheck;
+            }
+            StartCoroutine(Run());
+            return;
+        }
+    }
+
+    private static void HideInteractiveCombatUi()
     {
         CombatFlow[] flows = FindObjectsByType<CombatFlow>(FindObjectsInactive.Include);
         for (int i = 0; i < flows.Length; i++)
@@ -51,23 +91,6 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        if (DesignerComboRunRequest.TryConsume(out DesignerComboRunSettings settings))
-        {
-            _combo = settings.Combo;
-            _runAllCombos = settings.RunAllCombos;
-            _disableRendering = settings.DisableRendering;
-            _scope = settings.Scope;
-            _baseSeed = settings.BaseSeed;
-            _battleTimeoutSeconds = settings.BattleTimeoutSeconds;
-            _timeScale = settings.TimeScale;
-            StartCoroutine(Run());
-            return;
-        }
-
-    }
-
     [ContextMenu("選択中のデザイナーズコンボテストを開始")]
     public void StartSelectedTest()
     {
@@ -76,10 +99,16 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 
     private IEnumerator Run()
     {
+        if (_useStoneAttackDiagnosticMap && Application.isEditor)
+        {
+            Debug.LogError("[デザイナーズコンボテスト] 地形診断はStandalone Player専用です。Editorでは実行しません。", this);
+            yield break;
+        }
+
         _running = true;
         float previousTimeScale = Time.timeScale;
         _previousRunInBackground = Application.runInBackground;
-        Application.runInBackground = true;
+        Application.runInBackground = false;
         if (_disableRendering) EnableNoRenderingMode();
 
         if (!TryResolveDependencies(out string error))
@@ -89,6 +118,7 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
             DisableNoRenderingMode();
             Application.runInBackground = _previousRunInBackground;
             _running = false;
+            QuitStandalonePlayer(1);
             yield break;
         }
 
@@ -113,13 +143,24 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
             Application.runInBackground = _previousRunInBackground;
             CleanupTemporaryObjects();
             _running = false;
+            QuitStandalonePlayer(0);
+        }
+    }
+
+    private void QuitStandalonePlayer(int exitCode)
+    {
+        if (!Application.isEditor && _quitWhenFinished)
+        {
+            Application.Quit(exitCode);
         }
     }
 
     private IEnumerator RunScenario(DesignerComboScenarioDefinition scenario, float timeScale)
     {
         _results.Clear();
-        List<DesignerComboMatchPlan> plans = BuildPlans(scenario, _scope, _baseSeed);
+        List<DesignerComboMatchPlan> plans = _useStoneAttackDiagnosticMap
+            ? BuildStoneAttackDiagnosticPlans(_baseSeed)
+            : BuildPlans(scenario, _scope, _baseSeed);
         int initialPlanCount = plans.Count;
         bool extensionChecked = false;
         Debug.Log($"[デザイナーズコンボテスト] {scenario.DisplayName}を{plans.Count}試合実行します。", this);
@@ -146,7 +187,12 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
             }
         }
 
-        string reportPath = DesignerComboReportWriter.Write(scenario, _scope, timeScale, _results);
+        string reportPath = DesignerComboReportWriter.Write(
+            scenario,
+            _scope,
+            timeScale,
+            _results,
+            _outputDirectory);
         Debug.Log($"[デザイナーズコンボテスト] {scenario.DisplayName} {timeScale:0.#}倍完了: {reportPath}", this);
     }
 
@@ -270,8 +316,18 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
             UnityEngine.Random.InitState(plan.Seed);
             terrainConfig = CreateTerrainConfig(plan.Terrain);
             _mapGenerator.Config = terrainConfig;
-            MapData map = _mapGenerator.Generate(plan.Seed);
+            MapData map = _useStoneAttackDiagnosticMap
+                ? DesignerComboDiagnosticMapFactory.CreateAsymmetricStoneDefenseMap(terrainConfig, plan.Seed)
+                : _mapGenerator.Generate(plan.Seed);
             if (map == null) throw new InvalidOperationException("マップ生成に失敗しました。");
+            if (_useStoneAttackDiagnosticMap)
+            {
+                CombatMapSystem mapSystem = CombatSceneContext.Instance != null
+                    ? CombatSceneContext.Instance.MapSystem
+                    : FindAnyObjectByType<CombatMapSystem>();
+                if (mapSystem == null) throw new InvalidOperationException("診断マップを設定するCombatMapSystemがありません。");
+                mapSystem.SetCurrentMap(map);
+            }
             _mapGenerator.Clear3D();
             yield return null;
             _mapGenerator.Render3D(map);
@@ -306,10 +362,12 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
                 plan.SidesSwapped,
                 comboMembers,
                 opponents,
-                comboTeam);
+                comboTeam,
+                _useStoneAttackDiagnosticMap ? _diagnosticAttackRoleCount : 1);
             collector.Begin();
             float startedAt = Time.time;
             float startedAtRealtime = Time.realtimeSinceStartup;
+            int startedAtFrame = Time.frameCount;
             while (!ended &&
                 _battleFlow.State == CombatBattleState.Running &&
                 Time.time - startedAt < _battleTimeoutSeconds)
@@ -336,7 +394,14 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 
             DesignerComboMatchResult result = collector.Complete(endState, timedOut);
             result.Variant = plan.Label;
+            if (_useStoneAttackDiagnosticMap)
+            {
+                result.Terrain = DesignerComboDiagnosticMapFactory.AsymmetricStoneDefenseMapName;
+                result.PrimaryMetricName = $"攻撃役{_diagnosticAttackRoleCount}人の魔石ダメージ";
+            }
             result.RealSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAtRealtime);
+            result.FrameCount = Mathf.Max(0, Time.frameCount - startedAtFrame);
+            result.AverageFramesPerSecond = result.FrameCount / Mathf.Max(0.001f, result.RealSeconds);
             _results.Add(result);
         }
         finally
@@ -370,6 +435,7 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         _characterPool.Clear();
         AddUnique(_characterPool, _characterSystem.AllyCharacters);
         AddUnique(_characterPool, _characterSystem.EnemyCharacters);
+        _characterPool.Sort(CompareCharactersByHierarchy);
         if (_characterPool.Count == 0)
         {
             error = "雛形にできるキャラクターがいません。";
@@ -434,6 +500,11 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 
     private List<DesignerComboRoleDefinition> BuildComboRoles(DesignerComboScenarioDefinition scenario, DesignerComboMatchPlan plan)
     {
+        if (_useStoneAttackDiagnosticMap)
+        {
+            return DesignerComboDiagnosticMapFactory.CreateFiveCharacterBaselineRoles(_diagnosticAttackRoleCount);
+        }
+
         var roles = new List<DesignerComboRoleDefinition>();
         for (int i = 0; i < scenario.Roles.Length; i++)
         {
@@ -516,15 +587,10 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
             CharacterData data = Instantiate(member.CharacterData);
             data.name = member.CharacterData.name + "_DesignerComboTest";
             _temporaryObjects.Add(data);
-            SerializedObject serialized = new SerializedObject(data);
-            SerializedProperty gender = serialized.FindProperty("<Gender>k__BackingField");
-            if (gender != null) gender.enumValueIndex = i % 2 == 0 ? (int)CharacterGender.Male : (int)CharacterGender.Female;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            SerializedObject character = new SerializedObject(member);
-            SerializedProperty characterData = character.FindProperty("<CharacterData>k__BackingField");
-            if (characterData == null) throw new InvalidOperationException("Characterの戦闘用データを設定できません。");
-            characterData.objectReferenceValue = data;
-            character.ApplyModifiedPropertiesWithoutUndo();
+            data.ConfigureIdentity(
+                i % 2 == 0 ? CharacterGender.Male : CharacterGender.Female,
+                null);
+            member.SetCharacterDataForBattle(data);
             member.ConfigureForBattle(weapon, personality);
         }
 
@@ -535,48 +601,30 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
 
     private static void SetLover(CharacterData owner, CharacterData lover)
     {
-        SerializedObject serialized = new SerializedObject(owner);
-        SerializedProperty property = serialized.FindProperty("<Lover>k__BackingField");
-        if (property == null) throw new InvalidOperationException("CharacterDataの恋人情報を設定できません。");
-        property.objectReferenceValue = lover;
-        serialized.ApplyModifiedPropertiesWithoutUndo();
+        if (owner == null) throw new InvalidOperationException("CharacterDataの恋人情報を設定できません。");
+        owner.ConfigureIdentity(owner.Gender, lover);
     }
 
     private MapGenerationConfig CreateTerrainConfig(DesignerComboTerrainKind terrain)
     {
         MapGenerationConfig config = Instantiate(_originalMapConfig);
         config.name = _originalMapConfig.name + "_" + terrain;
-        SerializedObject serialized = new SerializedObject(config);
         switch (terrain)
         {
+            case DesignerComboTerrainKind.Production:
+                break;
             case DesignerComboTerrainKind.Open:
-                SetInt(serialized, "_forestClusterCount", 0);
-                SetInt(serialized, "_scatterTreeCount", 0);
-                SetInt(serialized, "_crossMapRiverCount", 0);
-                SetInt(serialized, "_lakeCount", 0);
+                config.ConfigureFeatureCounts(0, 0, 0, 0, config.BridgesPerRiver);
                 break;
             case DesignerComboTerrainKind.Forest:
-                SetInt(serialized, "_forestClusterCount", 6);
-                SetInt(serialized, "_scatterTreeCount", 50);
-                SetInt(serialized, "_crossMapRiverCount", 0);
+                config.ConfigureFeatureCounts(6, 50, 0, config.LakeCount, config.BridgesPerRiver);
                 break;
             case DesignerComboTerrainKind.ChokePoint:
-                SetInt(serialized, "_forestClusterCount", 0);
-                SetInt(serialized, "_scatterTreeCount", 0);
-                SetInt(serialized, "_crossMapRiverCount", 2);
-                SetInt(serialized, "_bridgesPerRiver", 1);
+                config.ConfigureFeatureCounts(0, 0, 2, config.LakeCount, 1);
                 break;
         }
 
-        serialized.ApplyModifiedPropertiesWithoutUndo();
         return config;
-    }
-
-    private static void SetInt(SerializedObject serialized, string propertyName, int value)
-    {
-        SerializedProperty property = serialized.FindProperty(propertyName);
-        if (property == null) throw new InvalidOperationException($"MapGenerationConfig.{propertyName}がありません。");
-        property.intValue = value;
     }
 
     private void EnsureCharacterPool(int required)
@@ -595,10 +643,14 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
     private void LoadWeapons()
     {
         _weapons.Clear();
-        string[] guids = AssetDatabase.FindAssets("t:WeaponConfig", new[] { WeaponFolder });
-        for (int i = 0; i < guids.Length; i++)
+        CombatCharacterSelection selection =
+            FindAnyObjectByType<CombatCharacterSelection>(FindObjectsInactive.Include);
+        IReadOnlyList<WeaponConfig> options = selection != null
+            ? selection.WeaponOptions
+            : Array.Empty<WeaponConfig>();
+        for (int i = 0; i < options.Count; i++)
         {
-            WeaponConfig config = AssetDatabase.LoadAssetAtPath<WeaponConfig>(AssetDatabase.GUIDToAssetPath(guids[i]));
+            WeaponConfig config = options[i];
             if (config == null || config.Kind == WeaponKind.Unarmed) continue;
             string canonicalName = config.Kind + "WeaponConfig";
             if (!_weapons.ContainsKey(config.Kind) || config.name == canonicalName) _weapons[config.Kind] = config;
@@ -639,6 +691,27 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         }
     }
 
+    private static int CompareCharactersByHierarchy(Character left, Character right)
+    {
+        return string.CompareOrdinal(
+            BuildHierarchyKey(left != null ? left.transform : null),
+            BuildHierarchyKey(right != null ? right.transform : null));
+    }
+
+    private static string BuildHierarchyKey(Transform current)
+    {
+        if (current == null) return string.Empty;
+
+        string key = current.GetSiblingIndex().ToString("D4", CultureInfo.InvariantCulture);
+        while (current.parent != null)
+        {
+            current = current.parent;
+            key = current.GetSiblingIndex().ToString("D4", CultureInfo.InvariantCulture) + "/" + key;
+        }
+
+        return current.gameObject.scene.path + ":" + key;
+    }
+
     private static List<DesignerComboMatchPlan> BuildPlans(
         DesignerComboScenarioDefinition scenario,
         DesignerComboTestScope scope,
@@ -648,37 +721,56 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         int matches = scope == DesignerComboTestScope.ExtendedComparison ? 100 : 30;
         if (scope == DesignerComboTestScope.BehaviorCheck)
         {
-            AddPlans(plans, DesignerComboVariantKind.Linked, "連携あり", DesignerComboTerrainKind.Open, baseSeed, 5, includeSwapped: false);
+            AddPlans(plans, DesignerComboVariantKind.Linked, "連携あり", GetTerrainForScope(scope), baseSeed, 5, includeSwapped: false);
             return plans;
         }
 
-        foreach (DesignerComboTerrainKind terrain in Enum.GetValues(typeof(DesignerComboTerrainKind)))
+        DesignerComboTerrainKind terrain = GetTerrainForScope(scope);
+        int terrainSeed = baseSeed;
+        if (scope == DesignerComboTestScope.Comparison || scope == DesignerComboTestScope.ExtendedComparison)
         {
-            int terrainSeed = baseSeed + (int)terrain * 10000;
-            if (scope == DesignerComboTestScope.Comparison || scope == DesignerComboTestScope.ExtendedComparison)
+            AddPlans(plans, DesignerComboVariantKind.Linked, "連携あり", terrain, terrainSeed, matches, includeSwapped: true);
+            for (int role = 0; role < scenario.Roles.Length; role++)
             {
-                AddPlans(plans, DesignerComboVariantKind.Linked, "連携あり", terrain, terrainSeed, matches, includeSwapped: true);
-                for (int role = 0; role < scenario.Roles.Length; role++)
-                {
-                    AddPlans(plans, DesignerComboVariantKind.Ablated, "片側解除:" + scenario.Roles[role].Id, terrain, terrainSeed, matches, includeSwapped: true, ablatedRole: role);
-                }
-                AddPlans(plans, DesignerComboVariantKind.Normal, "通常編成", terrain, terrainSeed, matches, includeSwapped: true);
+                AddPlans(plans, DesignerComboVariantKind.Ablated, "片側解除:" + scenario.Roles[role].Id, terrain, terrainSeed, matches, includeSwapped: true, ablatedRole: role);
             }
-            else if (scope == DesignerComboTestScope.Counter)
+            AddPlans(plans, DesignerComboVariantKind.Normal, "通常編成", terrain, terrainSeed, matches, includeSwapped: true);
+        }
+        else if (scope == DesignerComboTestScope.Counter)
+        {
+            AddPlans(plans, DesignerComboVariantKind.Linked, "対抗前", terrain, terrainSeed, matches, includeSwapped: true);
+            AddPlans(plans, DesignerComboVariantKind.Counter, "対抗:シナリオ固有", terrain, terrainSeed, matches, includeSwapped: true);
+        }
+        else if (scope == DesignerComboTestScope.AddedMembers)
+        {
+            if (scenario.ScalableRoleIndex < 0) throw new InvalidOperationException($"{scenario.DisplayName}には人数追加役が定義されていません。");
+            for (int added = 0; added <= 3; added++)
             {
-                AddPlans(plans, DesignerComboVariantKind.Linked, "対抗前", terrain, terrainSeed, matches, includeSwapped: true);
-                AddPlans(plans, DesignerComboVariantKind.Counter, "対抗:シナリオ固有", terrain, terrainSeed, matches, includeSwapped: true);
-            }
-            else if (scope == DesignerComboTestScope.AddedMembers)
-            {
-                if (scenario.ScalableRoleIndex < 0) throw new InvalidOperationException($"{scenario.DisplayName}には人数追加役が定義されていません。");
-                for (int added = 0; added <= 3; added++)
-                {
-                    AddPlans(plans, DesignerComboVariantKind.Linked, $"追加{added}人", terrain, terrainSeed, matches, includeSwapped: true, addedMembers: added);
-                }
+                AddPlans(plans, DesignerComboVariantKind.Linked, $"追加{added}人", terrain, terrainSeed, matches, includeSwapped: true, addedMembers: added);
             }
         }
 
+        return plans;
+    }
+
+    public static DesignerComboTerrainKind GetTerrainForScope(DesignerComboTestScope scope)
+    {
+        return scope == DesignerComboTestScope.BehaviorCheck
+            ? DesignerComboTerrainKind.Open
+            : DesignerComboTerrainKind.Production;
+    }
+
+    private static List<DesignerComboMatchPlan> BuildStoneAttackDiagnosticPlans(int baseSeed)
+    {
+        var plans = new List<DesignerComboMatchPlan>();
+        AddPlans(
+            plans,
+            DesignerComboVariantKind.Linked,
+            "連携あり",
+            DesignerComboTerrainKind.Open,
+            baseSeed,
+            StoneAttackDiagnosticSeedCount,
+            includeSwapped: true);
         return plans;
     }
 
@@ -687,10 +779,10 @@ public sealed class DesignerComboBenchmarkRunner : MonoBehaviour
         return scope switch
         {
             DesignerComboTestScope.BehaviorCheck => 5,
-            DesignerComboTestScope.Comparison => 3 * (scenario.Roles.Length + 2) * 30 * 2,
-            DesignerComboTestScope.ExtendedComparison => 3 * (scenario.Roles.Length + 2) * 100 * 2,
-            DesignerComboTestScope.AddedMembers => scenario.ScalableRoleIndex < 0 ? 0 : 3 * 4 * 30 * 2,
-            DesignerComboTestScope.Counter => 3 * 2 * 30 * 2,
+            DesignerComboTestScope.Comparison => (scenario.Roles.Length + 2) * 30 * 2,
+            DesignerComboTestScope.ExtendedComparison => (scenario.Roles.Length + 2) * 100 * 2,
+            DesignerComboTestScope.AddedMembers => scenario.ScalableRoleIndex < 0 ? 0 : 4 * 30 * 2,
+            DesignerComboTestScope.Counter => 2 * 30 * 2,
             _ => 0,
         };
     }
@@ -812,30 +904,168 @@ internal readonly struct DesignerComboMatchPlan
 [Serializable]
 public sealed class DesignerComboRunSettings
 {
+    public const float DefaultBattleTimeoutSeconds = 180f;
+    public const float DefaultTimeScale = 16f;
+
     public DesignerComboKind Combo;
     public bool RunAllCombos;
     public bool DisableRendering;
+    public bool UseStoneAttackDiagnosticMap;
+    public int DiagnosticAttackRoleCount = 2;
     public DesignerComboTestScope Scope;
     public int BaseSeed = 12000;
-    public float BattleTimeoutSeconds = 120f;
-    public float TimeScale = 4f;
+    public float BattleTimeoutSeconds = DefaultBattleTimeoutSeconds;
+    public float TimeScale = DefaultTimeScale;
+    public string OutputDirectory;
+    public bool QuitWhenFinished;
+}
+
+public static class DesignerComboDiagnosticMapFactory
+{
+    public const string FlatStoneAttackMapName = "DiagnosticFlatStoneAttack";
+    public const string AsymmetricStoneDefenseMapName = "DiagnosticAsymmetricStoneDefense";
+
+    public static MapData CreateFlatStoneAttackMap(MapGenerationConfig config, int seed)
+    {
+        if (config == null) throw new ArgumentNullException(nameof(config));
+
+        int resolution = config.HeightMapResolution;
+        float cellSize = config.HeightMapCellSize;
+        var height = new HeightMap(resolution, resolution, cellSize);
+        var ground = new GroundStateGrid(resolution, resolution, cellSize);
+        for (int z = 0; z < resolution; z++)
+        {
+            for (int x = 0; x < resolution; x++)
+            {
+                height.SetHeight(x, z, config.BaseHeight);
+            }
+        }
+
+        float worldSize = resolution * cellSize;
+        float centerX = worldSize * 0.5f;
+        var map = new MapData(height, ground, seed);
+        map.AddFeature(new PlacedFeature(
+            FeatureType.OwnMainStone,
+            new Vector3(centerX, config.BaseHeight, worldSize * 0.25f)));
+        map.AddFeature(new PlacedFeature(
+            FeatureType.EnemyMainStone,
+            new Vector3(centerX, config.BaseHeight, worldSize * 0.75f)));
+        return map;
+    }
+
+    public static MapData CreateAsymmetricStoneDefenseMap(MapGenerationConfig config, int seed)
+    {
+        MapData map = CreateFlatStoneAttackMap(config, seed);
+        float worldSize = config.HeightMapResolution * config.HeightMapCellSize;
+        float centerX = worldSize * 0.5f;
+        float barrierZ = worldSize * 0.38f;
+        const int rockCount = 9;
+        const float rockSpacing = 2.7f;
+        float firstX = centerX - (rockCount - 1) * rockSpacing * 0.5f;
+        for (int i = 0; i < rockCount; i++)
+        {
+            map.AddFeature(new PlacedFeature(
+                FeatureType.Rock,
+                new Vector3(firstX + i * rockSpacing, config.BaseHeight, barrierZ)));
+        }
+        return map;
+    }
+
+    public static List<DesignerComboRoleDefinition> CreateFiveCharacterBaselineRoles(int attackRoleCount)
+    {
+        if (attackRoleCount == 2)
+        {
+            return new List<DesignerComboRoleDefinition>
+            {
+                new("近接攻撃役", WeaponKind.Sword, CombatAiPersonalityKind.Neutral),
+                new("遠隔攻撃役", WeaponKind.Wand, CombatAiPersonalityKind.Neutral),
+                new("防御役", WeaponKind.Shield, CombatAiPersonalityKind.Neutral),
+                new("妨害役", WeaponKind.Grimoire, CombatAiPersonalityKind.Neutral),
+                new("回復役", WeaponKind.Rosary, CombatAiPersonalityKind.Neutral),
+            };
+        }
+
+        if (attackRoleCount == 3)
+        {
+            return new List<DesignerComboRoleDefinition>
+            {
+                new("近接攻撃役1", WeaponKind.Sword, CombatAiPersonalityKind.Neutral),
+                new("遠隔攻撃役", WeaponKind.Wand, CombatAiPersonalityKind.Neutral),
+                new("近接攻撃役2", WeaponKind.Sword, CombatAiPersonalityKind.Neutral),
+                new("防御役", WeaponKind.Shield, CombatAiPersonalityKind.Neutral),
+                new("回復役", WeaponKind.Rosary, CombatAiPersonalityKind.Neutral),
+            };
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(attackRoleCount));
+    }
 }
 
 public static class DesignerComboRunRequest
 {
+    public const string CommandLineArgument = "-designerComboSettings";
+#if UNITY_EDITOR
     private const string Key = "WarSimulation.DesignerComboRunRequest";
+#endif
 
     public static void Store(DesignerComboRunSettings settings)
     {
+#if UNITY_EDITOR
         SessionState.SetString(Key, JsonUtility.ToJson(settings));
+#else
+        throw new InvalidOperationException("Playerではコマンドライン引数を使用してください。");
+#endif
     }
 
     public static bool TryConsume(out DesignerComboRunSettings settings)
     {
+#if UNITY_EDITOR
         string json = SessionState.GetString(Key, string.Empty);
         SessionState.EraseString(Key);
         settings = string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<DesignerComboRunSettings>(json);
         return settings != null;
+#else
+        return TryReadCommandLine(Environment.GetCommandLineArgs(), out settings);
+#endif
+    }
+
+    public static string Encode(DesignerComboRunSettings settings)
+    {
+        if (settings == null) throw new ArgumentNullException(nameof(settings));
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonUtility.ToJson(settings)));
+    }
+
+    public static bool TryDecode(string encoded, out DesignerComboRunSettings settings)
+    {
+        settings = null;
+        if (string.IsNullOrWhiteSpace(encoded)) return false;
+
+        try
+        {
+            string json = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+            settings = JsonUtility.FromJson<DesignerComboRunSettings>(json);
+            return settings != null;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    public static bool TryReadCommandLine(IReadOnlyList<string> arguments, out DesignerComboRunSettings settings)
+    {
+        settings = null;
+        if (arguments == null) return false;
+
+        for (int i = 0; i + 1 < arguments.Count; i++)
+        {
+            if (arguments[i] == CommandLineArgument)
+            {
+                return TryDecode(arguments[i + 1], out settings);
+            }
+        }
+
+        return false;
     }
 }
 
@@ -888,10 +1118,10 @@ public static class DesignerComboReportWriter
         DesignerComboScenarioDefinition scenario,
         DesignerComboTestScope scope,
         float timeScale,
-        List<DesignerComboMatchResult> results)
+        List<DesignerComboMatchResult> results,
+        string outputDirectory = null)
     {
-        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-        string directory = Path.Combine(projectRoot, "Logs", "DesignerComboTests");
+        string directory = ResolveOutputDirectory(outputDirectory);
         Directory.CreateDirectory(directory);
         string scaleLabel = timeScale.ToString("0.##", CultureInfo.InvariantCulture);
         string stem = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + "_" + scenario.Kind + "_" + scaleLabel + "x";
@@ -913,6 +1143,15 @@ public static class DesignerComboReportWriter
         File.WriteAllText(jsonPath, JsonUtility.ToJson(report, prettyPrint: true), Encoding.UTF8);
         File.WriteAllText(csvPath, BuildCsv(results), Encoding.UTF8);
         return jsonPath;
+    }
+
+    private static string ResolveOutputDirectory(string outputDirectory)
+    {
+        if (!string.IsNullOrWhiteSpace(outputDirectory)) return Path.GetFullPath(outputDirectory);
+        if (!Application.isEditor) return Path.Combine(Application.persistentDataPath, "DesignerComboTests");
+
+        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+        return Path.Combine(projectRoot, "Logs", "DesignerComboTests");
     }
 
     public static List<Summary> BuildSummaries(List<DesignerComboMatchResult> results)
@@ -1041,13 +1280,14 @@ public static class DesignerComboReportWriter
     private static string BuildCsv(List<DesignerComboMatchResult> results)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("コンボ,編成,地形,シード,陣営入替,結果,戦闘秒数,実時間秒数,主指標,主指標毎秒,連携成立,主指標名,魔石ダメージ,与ダメージ,有効回復量,有効防御量,対象変更,連携秒数,拘束秒数,毒秒数,強化秒数,連携崩壊時刻,連携崩壊理由,必要役離脱時刻,崩壊前主指標率,崩壊後主指標率,生存時間,エラー");
+        builder.AppendLine("コンボ,編成,地形,シード,陣営入替,結果,戦闘秒数,実時間秒数,処理フレーム数,平均FPS,主指標,主指標毎秒,連携成立,主指標名,魔石ダメージ,与ダメージ,有効回復量,有効防御量,対象変更,連携秒数,拘束秒数,毒秒数,強化秒数,連携崩壊時刻,連携崩壊理由,必要役離脱時刻,崩壊前主指標率,崩壊後主指標率,生存時間,エラー");
         for (int i = 0; i < results.Count; i++)
         {
             DesignerComboMatchResult r = results[i];
             builder.Append(Csv(r.Combo)).Append(',').Append(Csv(r.Variant)).Append(',').Append(Csv(r.Terrain)).Append(',')
                 .Append(r.Seed).Append(',').Append(r.SidesSwapped).Append(',').Append(Csv(r.Outcome)).Append(',')
                 .Append(Number(r.BattleSeconds)).Append(',').Append(Number(r.RealSeconds)).Append(',')
+                .Append(r.FrameCount).Append(',').Append(Number(r.AverageFramesPerSecond)).Append(',')
                 .Append(Number(r.PrimaryMetric)).Append(',').Append(Number(r.PrimaryMetricPerSecond)).Append(',')
                 .Append(r.ComboOccurred).Append(',').Append(Csv(r.PrimaryMetricName)).Append(',')
                 .Append(r.MagicStoneDamage).Append(',').Append(r.DamageDealt).Append(',').Append(r.EffectiveHealing).Append(',').Append(r.EffectiveDefense).Append(',')
@@ -1187,5 +1427,3 @@ public static class DesignerComboReportWriter
     private static string Number(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string Csv(string value) => "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
 }
-
-#endif
