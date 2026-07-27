@@ -151,14 +151,7 @@ namespace WarSimulation.Combat.Map
             List<Vector2> placedCenters,
             List<float> placedExtents)
         {
-            shape.Apply(map, placement);
-            map.AddMountain(new MountainRegion(
-                kind,
-                placement.Center,
-                extent,
-                placement.Scale,
-                placement.RotationRad,
-                shape));
+            MountainApplyUtility.Apply(map, kind, shape, placement);
             placedCenters.Add(placement.Center);
             placedExtents.Add(extent);
         }

@@ -67,11 +67,21 @@ public readonly struct TerrainTraversalInfo
     }
 }
 
+public enum CombatMapSource
+{
+    Procedural = 0,
+    Authored = 1,
+}
+
 public class CombatMapSystem : MonoBehaviour
 {
     [SerializeField] private MapGenerator _mapGenerator;
     [SerializeField] private bool _generateMapOnStart = true;
     [SerializeField] private bool _renderGeneratedMapOnStart = true;
+
+    [Header("Map Source")]
+    [SerializeField] private CombatMapSource _mapSource = CombatMapSource.Procedural;
+    [SerializeField] private AuthoredMapDefinition _authoredMap;
 
     [Header("Traversal")]
     [SerializeField, Min(0f)] private float _normalSpeedMultiplier = 1f;
@@ -202,13 +212,50 @@ public class CombatMapSystem : MonoBehaviour
             return null;
         }
 
+        if (_mapSource == CombatMapSource.Authored)
+            return GenerateAuthoredAndSetCurrentMap(render3D);
+
         MapData map = _mapGenerator.Generate();
         SetCurrentMap(map);
         if (render3D && map != null)
-        {
             _mapGenerator.Render3D(map);
+
+        return map;
+    }
+
+    private MapData GenerateAuthoredAndSetCurrentMap(bool render3D)
+    {
+        if (_authoredMap == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatMapSystem)}] Authored map is not assigned.");
+            SetCurrentMap(null);
+            return null;
         }
 
+        if (_authoredMap.SharedConfig == null)
+        {
+            Debug.LogWarning(
+                $"[{nameof(CombatMapSystem)}] Authored map '{_authoredMap.name}' has no SharedConfig.");
+            SetCurrentMap(null);
+            return null;
+        }
+
+        _mapGenerator.Config = _authoredMap.SharedConfig;
+
+        MapData map;
+        try
+        {
+            map = AuthoredMapBuilder.Build(_authoredMap);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex);
+            SetCurrentMap(null);
+            return null;
+        }
+
+        _mapGenerator.ApplyMapData(map, render3D, bakeNavMesh: render3D);
+        SetCurrentMap(map);
         return map;
     }
 

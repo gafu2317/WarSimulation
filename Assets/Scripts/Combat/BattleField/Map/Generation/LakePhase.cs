@@ -60,24 +60,7 @@ namespace WarSimulation.Combat.Map
                 bool freeze = config.LakeFreezeProbability > 0f
                     && rng.NextFloat() < config.LakeFreezeProbability;
 
-                int lakeCountBefore = map.Lakes.Count;
-                shape.Apply(map, new StampPlacement(center));
-
-                // LakeStampShape 側は凍結を知らないので、ここで直近に追加された LakeRegion を
-                // 凍結フラグ付きで差し替える。スタンプが何らかの理由で追加しなかった場合はスキップ。
-                if (freeze && map.Lakes.Count > lakeCountBefore)
-                {
-                    int idx = map.Lakes.Count - 1;
-                    LakeRegion r = map.Lakes[idx];
-                    map.Lakes[idx] = new LakeRegion(
-                        r.Center,
-                        r.Radius,
-                        r.WaterY,
-                        isFrozen: true,
-                        waterTaggedRadius: r.WaterTaggedRadius,
-                        noiseAmplitude: r.NoiseAmplitude,
-                        noiseFrequency: r.NoiseFrequency);
-                }
+                LakeApplyUtility.Apply(map, shape, new StampPlacement(center), freeze);
             }
         }
 

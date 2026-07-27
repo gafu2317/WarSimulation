@@ -1,0 +1,76 @@
+using System.Collections.Generic;
+using System.Reflection;
+using NUnit.Framework;
+using UnityEngine;
+using WarSimulation.Combat.Map;
+
+public sealed class AuthoredMapValidatorTests
+{
+    [Test]
+    public void Validate_DetectsMissingConfigAndShortRiver()
+    {
+        var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        try
+        {
+            List<AuthoredMapValidationIssue> missingConfig = AuthoredMapValidator.Validate(definition);
+            Assert.That(AuthoredMapValidator.HasErrors(missingConfig), Is.True);
+
+            MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+            SetPrivateField(config, "_worldSize", 20f);
+            SetPrivateField(config, "_cellsPerSide", 20);
+            definition.SharedConfig = config;
+            definition.Rivers.Add(new AuthoredRiverPlacement
+            {
+                ControlPoints = new List<Vector2> { new Vector2(1f, 1f) },
+            });
+            definition.Mountains.Add(new AuthoredMountainPlacement
+            {
+                Shape = null,
+                Center = new Vector2(100f, 100f),
+            });
+
+            List<AuthoredMapValidationIssue> issues = AuthoredMapValidator.Validate(definition);
+            Assert.That(issues.Exists(i => i.Message.Contains("River[0]")), Is.True);
+            Assert.That(issues.Exists(i => i.Message.Contains("Mountain[0]")), Is.True);
+            Assert.That(issues.Exists(i => i.IsError && i.Message.Contains("Mountain[0]")), Is.True);
+            Object.DestroyImmediate(config);
+        }
+        finally
+        {
+            Object.DestroyImmediate(definition);
+        }
+    }
+
+    [Test]
+    public void Validate_WarnsWhenMainStonesMissing()
+    {
+        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        try
+        {
+            SetPrivateField(config, "_worldSize", 20f);
+            SetPrivateField(config, "_cellsPerSide", 20);
+            SetPrivateField(config, "_mainStonesPerSide", 1);
+            definition.SharedConfig = config;
+
+            List<AuthoredMapValidationIssue> issues = AuthoredMapValidator.Validate(definition);
+            Assert.That(AuthoredMapValidator.HasErrors(issues), Is.False);
+            Assert.That(issues.Exists(i => !i.IsError && i.Message.Contains("Own main")), Is.True);
+            Assert.That(issues.Exists(i => !i.IsError && i.Message.Contains("Enemy main")), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+            Object.DestroyImmediate(definition);
+        }
+    }
+
+    private static void SetPrivateField<T>(Object target, string fieldName, T value)
+    {
+        FieldInfo field = target.GetType().GetField(
+            fieldName,
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null, $"Missing field {fieldName}");
+        field.SetValue(target, value);
+    }
+}

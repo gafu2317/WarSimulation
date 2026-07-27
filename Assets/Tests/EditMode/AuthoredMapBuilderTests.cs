@@ -1,0 +1,318 @@
+using System.Collections.Generic;
+using System.Reflection;
+using NUnit.Framework;
+using UnityEngine;
+using WarSimulation.Combat.Map;
+
+public sealed class AuthoredMapBuilderTests
+{
+    [Test]
+    public void Build_IsDeterministicForSameDefinition()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            MapData a = AuthoredMapBuilder.Build(definition);
+            MapData b = AuthoredMapBuilder.Build(definition);
+
+            Assert.That(a.Mountains.Count, Is.EqualTo(b.Mountains.Count));
+            Assert.That(a.Rivers.Count, Is.EqualTo(b.Rivers.Count));
+            Assert.That(a.Lakes.Count, Is.EqualTo(b.Lakes.Count));
+            Assert.That(a.Features.Count, Is.EqualTo(b.Features.Count));
+            Assert.That(a.Height.GetHeight(5, 5), Is.EqualTo(b.Height.GetHeight(5, 5)).Within(0.0001f));
+            Assert.That(CountWater(a), Is.EqualTo(CountWater(b)));
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void Build_AppliesOrderedLayersAndRegistersMetadata()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            MapData map = AuthoredMapBuilder.Build(definition);
+
+            Assert.That(map.Height.GetHeight(0, 0), Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(map.Mountains.Count, Is.EqualTo(1));
+            Assert.That(map.Mountains[0].Kind, Is.EqualTo(MountainKind.Large));
+            Assert.That(map.Rivers.Count, Is.EqualTo(1));
+            Assert.That(map.Rivers[0].Cells.Count, Is.GreaterThanOrEqualTo(2));
+            Assert.That(map.Lakes.Count, Is.EqualTo(1));
+            Assert.That(map.Lakes[0].IsFrozen, Is.True);
+            Assert.That(CountWater(map), Is.GreaterThan(0));
+
+            Assert.That(CountFeatures(map, FeatureType.Bridge), Is.EqualTo(2));
+            Assert.That(CountFeatures(map, FeatureType.Tree), Is.GreaterThanOrEqualTo(0));
+            Assert.That(CountFeatures(map, FeatureType.Rock), Is.GreaterThan(0));
+            Assert.That(CountFeatures(map, FeatureType.OwnMainStone), Is.EqualTo(1));
+            Assert.That(CountFeatures(map, FeatureType.EnemyMainStone), Is.EqualTo(1));
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void Build_ThrowsWhenSharedConfigMissing()
+    {
+        var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        try
+        {
+            Assert.That(() => AuthoredMapBuilder.Build(definition), Throws.InvalidOperationException);
+        }
+        finally
+        {
+            Object.DestroyImmediate(definition);
+        }
+    }
+
+    [Test]
+    public void Build_RiverPathMeandersAwayFromStraightChord()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            SetPrivateField(definition.SharedConfig, "_flatRiverMeanderAmplitude", 10f);
+            SetPrivateField(definition.SharedConfig, "_flatRiverMeanderFrequency", 0.08f);
+
+            MapData map = AuthoredMapBuilder.Build(definition);
+            Assert.That(map.Rivers.Count, Is.EqualTo(1));
+
+            IReadOnlyList<Vector2Int> cells = map.Rivers[0].Cells;
+            Assert.That(cells.Count, Is.GreaterThan(2));
+
+            Vector2Int a = cells[0];
+            Vector2Int b = cells[cells.Count - 1];
+            Vector2 ab = new Vector2(b.x - a.x, b.y - a.y);
+            float abLenSq = ab.sqrMagnitude;
+            Assert.That(abLenSq, Is.GreaterThan(0f));
+
+            bool foundOffChord = false;
+            for (int i = 1; i < cells.Count - 1; i++)
+            {
+                Vector2 ap = new Vector2(cells[i].x - a.x, cells[i].y - a.y);
+                float t = Vector2.Dot(ap, ab) / abLenSq;
+                Vector2 closest = new Vector2(a.x, a.y) + ab * t;
+                float dist = Vector2.Distance(new Vector2(cells[i].x, cells[i].y), closest);
+                if (dist > 0.75f)
+                {
+                    foundOffChord = true;
+                    break;
+                }
+            }
+
+            Assert.That(foundOffChord, Is.True, "Expected meander to leave the straight chord between endpoints.");
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void Build_BezierControlBendsRiverAwayFromChordMidpoint()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            // くねりを切って、ベジェ制御点だけの効果を見る
+            SetPrivateField(definition.SharedConfig, "_flatRiverMeanderAmplitude", 0f);
+            AuthoredRiverPlacement river = definition.Rivers[0];
+            river.SetBezier(new Vector2(2f, 12f), new Vector2(12f, 20f), new Vector2(22f, 12f));
+
+            MapData map = AuthoredMapBuilder.Build(definition);
+            IReadOnlyList<Vector2Int> cells = map.Rivers[0].Cells;
+            Assert.That(cells.Count, Is.GreaterThan(2));
+
+            Vector2Int a = cells[0];
+            Vector2Int b = cells[cells.Count - 1];
+            Vector2 ab = new Vector2(b.x - a.x, b.y - a.y);
+            float abLenSq = ab.sqrMagnitude;
+            Assert.That(abLenSq, Is.GreaterThan(0f));
+
+            bool foundNorthOfChord = false;
+            for (int i = 1; i < cells.Count - 1; i++)
+            {
+                Vector2 ap = new Vector2(cells[i].x - a.x, cells[i].y - a.y);
+                float t = Vector2.Dot(ap, ab) / abLenSq;
+                Vector2 closest = new Vector2(a.x, a.y) + ab * t;
+                // 制御点は +Z 側なので、経路も弦より上側に寄るはず
+                if (cells[i].y - closest.y > 1.5f)
+                {
+                    foundNorthOfChord = true;
+                    break;
+                }
+            }
+
+            Assert.That(foundNorthOfChord, Is.True, "Expected bezier control to pull the river off the chord.");
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    private static AuthoredMapDefinition CreateDefinition()
+    {
+        HeightStampShape mountain = CreateHeightStamp();
+        LakeStampShape lake = CreateLakeStamp();
+        RiverShape river = CreateRiverShape();
+        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        SetPrivateField(config, "_worldSize", 24f);
+        SetPrivateField(config, "_cellsPerSide", 24);
+        SetPrivateField(config, "_baseHeight", 0f);
+        SetPrivateField(config, "_riverShape", river);
+        SetPrivateField(config, "_bridgeWidth", 2f);
+        SetPrivateField(config, "_bridgeThickness", 0.25f);
+        SetPrivateField(config, "_bridgeLengthExtraMargin", 1f);
+        SetPrivateField(config, "_bridgeHeightAboveWater", 0.3f);
+        SetPrivateField(config, "_bridgeFeatureExclusionMargin", 1f);
+        SetPrivateField(config, "_mainStonesPerSide", 1);
+        SetPrivateField(config, "_bridgesPerRiver", 2);
+        SetPrivateField(config, "_scatterTreeCount", 0);
+        SetPrivateField(config, "_rockCount", 8);
+        SetPrivateField(config, "_rockPlacementMargin", 1f);
+        SetPrivateField(config, "_rockMinDistance", 1f);
+
+        var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        definition.SharedConfig = config;
+        definition.BuildSeed = 7;
+        definition.Mountains.Add(new AuthoredMountainPlacement
+        {
+            Shape = mountain,
+            Kind = MountainKind.Large,
+            Center = new Vector2(6f, 18f),
+            Scale = Vector2.one,
+        });
+        definition.Rivers.Add(new AuthoredRiverPlacement
+        {
+            Shape = river,
+            ControlPoints = new List<Vector2>
+            {
+                new Vector2(2f, 12f),
+                new Vector2(12f, 12f),
+                new Vector2(22f, 12f),
+            },
+        });
+        definition.Lakes.Add(new AuthoredLakePlacement
+        {
+            Shape = lake,
+            Center = new Vector2(18f, 6f),
+            Scale = Vector2.one,
+            IsFrozen = true,
+        });
+        definition.MagicStones.Add(new AuthoredMagicStonePlacement
+        {
+            Type = FeatureType.OwnMainStone,
+            Center = new Vector2(4f, 3f),
+        });
+        definition.MagicStones.Add(new AuthoredMagicStonePlacement
+        {
+            Type = FeatureType.EnemyMainStone,
+            Center = new Vector2(20f, 20f),
+        });
+        return definition;
+    }
+
+    private static void DestroyDefinition(AuthoredMapDefinition definition)
+    {
+        if (definition == null) return;
+        MapGenerationConfig config = definition.SharedConfig;
+        for (int i = 0; i < definition.Mountains.Count; i++)
+        {
+            if (definition.Mountains[i]?.Shape != null)
+                Object.DestroyImmediate(definition.Mountains[i].Shape);
+        }
+
+        for (int i = 0; i < definition.Lakes.Count; i++)
+        {
+            if (definition.Lakes[i]?.Shape != null)
+                Object.DestroyImmediate(definition.Lakes[i].Shape);
+        }
+
+        HashSet<Object> destroyed = new();
+        for (int i = 0; i < definition.Rivers.Count; i++)
+        {
+            RiverShape shape = definition.Rivers[i]?.Shape;
+            if (shape != null && destroyed.Add(shape))
+                Object.DestroyImmediate(shape);
+        }
+
+        if (config != null)
+        {
+            if (config.RiverShape != null && destroyed.Add(config.RiverShape))
+                Object.DestroyImmediate(config.RiverShape);
+            Object.DestroyImmediate(config);
+        }
+
+        Object.DestroyImmediate(definition);
+    }
+
+    private static HeightStampShape CreateHeightStamp()
+    {
+        var shape = ScriptableObject.CreateInstance<HeightStampShape>();
+        SetPrivateField(shape, "_radius", 2f);
+        SetPrivateField(shape, "_peakDelta", 2f);
+        SetPrivateField(shape, "_noiseAmplitude", 0f);
+        return shape;
+    }
+
+    private static LakeStampShape CreateLakeStamp()
+    {
+        var shape = ScriptableObject.CreateInstance<LakeStampShape>();
+        SetPrivateField(shape, "_radius", 2f);
+        SetPrivateField(shape, "_depthMeters", 1f);
+        SetPrivateField(shape, "_noiseAmplitude", 0f);
+        return shape;
+    }
+
+    private static RiverShape CreateRiverShape()
+    {
+        var shape = ScriptableObject.CreateInstance<RiverShape>();
+        SetPrivateField(shape, "_widthMeters", 1.5f);
+        SetPrivateField(shape, "_depthMeters", 0.8f);
+        SetPrivateField(shape, "_waterTagRatio", 1f);
+        return shape;
+    }
+
+    private static int CountWater(MapData map)
+    {
+        int count = 0;
+        for (int z = 0; z < map.GroundStates.Height; z++)
+        {
+            for (int x = 0; x < map.GroundStates.Width; x++)
+            {
+                if (map.GroundStates.GetCell(x, z) == GroundState.Water)
+                    count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountFeatures(MapData map, FeatureType type)
+    {
+        int count = 0;
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            if (map.Features[i].Type == type)
+                count++;
+        }
+
+        return count;
+    }
+
+    private static void SetPrivateField<T>(Object target, string fieldName, T value)
+    {
+        FieldInfo field = target.GetType().GetField(
+            fieldName,
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(field, Is.Not.Null, $"Missing field {fieldName}");
+        field.SetValue(target, value);
+    }
+}

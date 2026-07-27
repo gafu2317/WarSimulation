@@ -88,7 +88,7 @@ namespace WarSimulation.Combat.Map
 
             IRandom rng = new SystemRandom(seed);
 
-            MapData map = CreateEmptyMap(_config, seed);
+            MapData map = MapDataFactory.CreateEmptyMap(_config, seed);
             map.BridgeFeatureExclusionMargin = _config.BridgeFeatureExclusionMargin;
             _lastPhaseTimings.Clear();
             foreach (IMapGenerationPhase phase in _phases)
@@ -105,12 +105,33 @@ namespace WarSimulation.Combat.Map
             return map;
         }
 
-        public void Render3D(MapData map)
+        /// <summary>
+        /// 既存の MapData（手作りマップなど）を CurrentMap に載せ、必要なら 3D 描画する。
+        /// </summary>
+        public bool ApplyMapData(MapData map, bool render3D = true, bool bakeNavMesh = true)
+        {
+            if (map == null)
+            {
+                Debug.LogWarning($"[{nameof(MapGenerator)}] ApplyMapData called with null MapData.");
+                return false;
+            }
+
+            LastGeneratedMap = map;
+            SetCombatMapSystemCurrentMap(map);
+            if (!render3D)
+                return true;
+            return Render3D(map, bakeNavMesh);
+        }
+
+        public void Render3D(MapData map) => Render3D(map, bakeNavMesh: true);
+
+        /// <returns>NavMesh をベイクした場合に成功したかどうか。ベイクしない場合は true。</returns>
+        public bool Render3D(MapData map, bool bakeNavMesh)
         {
             if (map == null)
             {
                 Debug.LogWarning($"[{nameof(MapGenerator)}] Render3D called with null MapData.");
-                return;
+                return false;
             }
 
             TerrainRenderer terrainRenderer = GetOrAddComponent<TerrainRenderer>();
@@ -132,7 +153,13 @@ namespace WarSimulation.Combat.Map
             featureRenderer.Render(map);
 
             global::CombatNavMeshBuilder navMeshBuilder = GetOrAddComponent<global::CombatNavMeshBuilder>();
-            navMeshBuilder.Build(map);
+            if (!bakeNavMesh)
+            {
+                navMeshBuilder.Clear();
+                return true;
+            }
+
+            return navMeshBuilder.Build(map);
         }
 
         public void Clear3D()
@@ -169,17 +196,5 @@ namespace WarSimulation.Combat.Map
             return gameObject.AddComponent<T>();
         }
 
-        private static MapData CreateEmptyMap(MapGenerationConfig config, int seed)
-        {
-            // HeightMap と GroundStateGrid は同じ解像度・同じセルサイズで持つ。
-            // 旧設計では別解像度に出来たが「認知コストが高い」ため 1 本に統一した。
-            int resolution = config.HeightMapResolution;
-            float cellSize = config.HeightMapCellSize;
-
-            var height = new HeightMap(resolution, resolution, cellSize);
-            var grid = new GroundStateGrid(resolution, resolution, cellSize);
-
-            return new MapData(height, grid, seed);
-        }
     }
 }

@@ -82,12 +82,7 @@ namespace WarSimulation.Combat.Map
 
         private static void CarveRiver(MapData map, MapGenerationConfig config, List<Vector2Int> path)
         {
-            config.RiverShape.Carve(map, path);
-            map.AddRiver(new RiverPath(
-                path,
-                config.RiverShape.WidthMeters,
-                config.RiverShape.DepthMeters,
-                config.RiverShape.WaterTagRatio));
+            RiverBuildUtility.CarveAndRegister(map, config.RiverShape, path);
         }
 
         private static List<Vector2Int> CollectCenterCandidates(MapData map, MapGenerationConfig config)
