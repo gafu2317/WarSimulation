@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class CombatAiObjectiveScorer
@@ -145,7 +146,7 @@ public static class CombatAiObjectiveScorer
             WeaponScore = weaponScore,
             PersonalityScore = personalityScore,
         };
-        AddReasons(assessment, objective, breakdown);
+        AddReasons(context, assessment, objective, breakdown);
         if (GetNumericalAdvantageAdjustment(context, objective) != 0f)
         {
             AddReason(
@@ -273,6 +274,7 @@ public static class CombatAiObjectiveScorer
                 - (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence))
                     * GetDestroyStoneConfidencePenalty(weapon)
                 + (context.HasEnemyStonePosition ? 4f : 0f)
+                + (CanAttackEnemyStoneWithoutMoving(context) ? 52f : 0f)
                 + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f),
             CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.2f
@@ -301,13 +303,40 @@ public static class CombatAiObjectiveScorer
             + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.15f
             - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.35f;
 
+        // その場で魔石を殴れるなら、近い敵がいても魔石破壊を優先する。
+        if (CanAttackEnemyStoneWithoutMoving(context))
+        {
+            score -= 56f;
+        }
         // 攻撃職は「本当に近い敵」のときだけ敵攻撃へ切り替える。遠距離の既知敵では魔石を優先する。
-        if (IsAssaultWeapon(weapon) && !HasCloseEngagementThreat(context, weapon))
+        else if (IsAssaultWeapon(weapon) && !HasCloseEngagementThreat(context, weapon))
         {
             score -= 48f;
         }
 
         return score;
+    }
+
+    private static bool CanAttackEnemyStoneWithoutMoving(CombatAiContext context)
+    {
+        if (context?.Owner == null || !context.HasEnemyStonePosition) return false;
+        if (context.HasEnemyStoneHealth && context.EnemyStoneHP <= 0) return false;
+
+        float distance = HorizontalDistance(
+            context.Owner.transform.position,
+            context.EnemyStonePosition);
+        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
+        CombatSkillCooldowns cooldowns = context.Owner.SkillCooldowns;
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null || !skill.CanTargetMagicStone) continue;
+            if (!CombatAiSkillClassifier.IsDamage(skill)) continue;
+            if (cooldowns != null && !cooldowns.IsReady(skill)) continue;
+            if (distance <= skill.MaxRange) return true;
+        }
+
+        return false;
     }
 
     private static float GetDestroyStoneConfidencePenalty(WeaponBase weapon)
@@ -643,7 +672,11 @@ public static class CombatAiObjectiveScorer
         return CombatAiPersonalityBehavior.GetObjectiveScore(context, personalityProfile, assessment, objective);
     }
 
-    private static void AddReasons(CombatAiAssessment assessment, CombatObjective objective, CombatAiScoreBreakdown breakdown)
+    private static void AddReasons(
+        CombatAiContext context,
+        CombatAiAssessment assessment,
+        CombatObjective objective,
+        CombatAiScoreBreakdown breakdown)
     {
         switch (objective)
         {
@@ -660,7 +693,11 @@ public static class CombatAiObjectiveScorer
                 if (assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 25f) AddReason(breakdown, CombatAiReasonCode.AllyFragilityHigh);
                 break;
             case CombatObjective.DestroyEnemyStone:
-                if (assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 25f) AddReason(breakdown, CombatAiReasonCode.EnemyStoneReachable);
+                if (assessment.GetValue(CombatAiMetricIndex.EnemyStoneReachability) > 25f
+                    || CanAttackEnemyStoneWithoutMoving(context))
+                {
+                    AddReason(breakdown, CombatAiReasonCode.EnemyStoneReachable);
+                }
                 if (assessment.GetValue(CombatAiMetricIndex.EnemyThreatLevel) > 45f) AddReason(breakdown, CombatAiReasonCode.EnemyThreatHigh);
                 break;
             case CombatObjective.Search:

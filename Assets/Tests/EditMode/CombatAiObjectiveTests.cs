@@ -189,6 +189,38 @@ public sealed class CombatAiObjectiveTests
     }
 
     [Test]
+    public void Planner_SwordPrefersStoneWhenStoneIsAlreadyInMeleeRange()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject enemyGo = new GameObject("NearbyEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(1.5f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_SwordPrefersStoneWhenEnemyIsFarAway()
     {
         GameObject ownerGo = new GameObject("SwordOwner");

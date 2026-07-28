@@ -43,7 +43,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("沼地テクスチャ1枚を貼るワールド寸法（メートル）。")]
         [SerializeField, Min(0.01f)] private float _swampTileSize = 4f;
 
-        [Tooltip("川・湖・凍結湖の地面下地に貼るテクスチャ。水面メッシュ自体の見た目は変更しない。")]
+        [Tooltip("川・湖・凍結湖の地面下地に貼るテクスチャ。川は掘削全幅に塗り、Water タグ幅とは独立。水面メッシュ自体の見た目は変更しない。")]
         [SerializeField] private Texture2D _waterGroundTexture;
 
         [Tooltip("水地面テクスチャ1枚を貼るワールド寸法（メートル）。")]
@@ -221,7 +221,14 @@ namespace WarSimulation.Combat.Map
                     GroundState sampledState = g.GetCell(cellX, cellZ);
                     GroundState s = sampledState;
 
-                    // Water / Swamp / Snow は地面状態を優先。
+                    // 川床の土テクスチャは掘削全幅（WidthMeters）。Water タグ幅（WaterTagRatio）とは独立。
+                    if (RiverCorridorUtility.Contains(map, new Vector2(worldX, worldZ)))
+                    {
+                        alphas[z, x, IndexOfLayer(GroundState.Water)] = 1f;
+                        continue;
+                    }
+
+                    // Water / Swamp / Snow は地面状態を優先（湖など）。
                     if (s == GroundState.Water || s == GroundState.Swamp || s == GroundState.Snow)
                     {
                         alphas[z, x, IndexOfLayer(s)] = 1f;
@@ -426,6 +433,7 @@ namespace WarSimulation.Combat.Map
         /// <summary>
         /// エディタプレビューと同じカラーパレットを採用して 2D / 3D の見た目をそろえる。
         /// Water タグは水面メッシュ下の地面として別レイヤで塗る。
+        /// 川については <see cref="RiverCorridorUtility"/>（掘削全幅）でも同じレイヤを使う。
         /// </summary>
         private static Color GetColorForState(GroundState state) => state switch
         {

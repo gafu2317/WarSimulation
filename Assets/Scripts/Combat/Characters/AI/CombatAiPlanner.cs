@@ -663,9 +663,15 @@ public static partial class CombatAiPlanner
             score += GetDamageAgainstEnemyScore(skill, enemy, predictedDamage, pendingDamage);
         }
 
-        if (!foundCharacterTarget && capturedContext.PrimaryStone != null)
+        // その場で当てられる魔石は、敵キャラも同時ヒットしていても加点する。
+        if (capturedContext.PrimaryStone != null || capturedContext.ResolvedStones.Count > 0)
         {
-            score += 24f;
+            int stoneHits = Mathf.Max(1, capturedContext.ResolvedStones.Count);
+            score += 24f * stoneHits;
+            if (foundCharacterTarget)
+            {
+                score += 12f;
+            }
         }
 
         if (skill.SelfHpCost > 0)
@@ -969,6 +975,8 @@ public static partial class CombatAiPlanner
 
         return objective switch
         {
+            CombatObjective.AttackEnemy when CombatAiSkillClassifier.IsDamage(skill)
+                && evaluation.Context.PrimaryStone != null => 28f,
             CombatObjective.AttackEnemy when CombatAiSkillClassifier.IsDamage(skill) => 18f,
             CombatObjective.AttackEnemy when CombatAiSkillClassifier.IsDebuff(skill) => 14f,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsHeal(skill) => 24f,
