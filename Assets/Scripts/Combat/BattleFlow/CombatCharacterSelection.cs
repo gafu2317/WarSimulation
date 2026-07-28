@@ -6,6 +6,15 @@ using UnityEngine.UI;
 
 public sealed class CombatCharacterSelection : MonoBehaviour
 {
+    private static readonly WeaponKind[] DefaultPartyWeapons =
+    {
+        WeaponKind.Sword,
+        WeaponKind.Sword,
+        WeaponKind.Wand,
+        WeaponKind.Rosary,
+        WeaponKind.Shield,
+    };
+
     [SerializeField] private RectTransform _characterList;
     [SerializeField] private Button _characterItemPrefab;
     [SerializeField] private TMP_Text _selectionCountText;
@@ -35,9 +44,37 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     public void ResetSelection()
     {
-        SetAllSelected(_allyRows, true);
-        SetAllSelected(_enemyRows, true);
+        ApplyDefaultParty(_allyRows);
+        ApplyDefaultParty(_enemyRows);
         Refresh();
+    }
+
+    private void ApplyDefaultParty(List<SelectionRow> rows)
+    {
+        for (int i = 0; i < rows.Count; i++)
+        {
+            SelectionRow row = rows[i];
+            bool selected = i < DefaultPartyWeapons.Length;
+            row.Selected = selected;
+            if (!selected) continue;
+
+            int weaponIndex = FindWeaponIndex(DefaultPartyWeapons[i]);
+            if (weaponIndex >= 0)
+            {
+                row.WeaponIndex = weaponIndex;
+            }
+        }
+    }
+
+    private int FindWeaponIndex(WeaponKind kind)
+    {
+        for (int i = 0; i < _weaponOptions.Count; i++)
+        {
+            WeaponConfig weapon = _weaponOptions[i];
+            if (weapon != null && weapon.Kind == kind) return i;
+        }
+
+        return -1;
     }
 
     private void Awake()
@@ -313,14 +350,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
 
         return count;
-    }
-
-    private static void SetAllSelected(List<SelectionRow> rows, bool selected)
-    {
-        for (int i = 0; i < rows.Count; i++)
-        {
-            rows[i].Selected = selected;
-        }
     }
 
     private static int FindOptionIndex<T>(List<T> options, T value) where T : UnityEngine.Object
