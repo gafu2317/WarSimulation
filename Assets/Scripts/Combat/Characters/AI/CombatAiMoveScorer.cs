@@ -48,11 +48,13 @@ public static class CombatAiMoveScorer
         float baseScore = target.HasDestination ? Mathf.Lerp(24f, 4f, Mathf.Clamp01(distance / 40f)) : 8f;
         float coverBonus = GetCoverBonus(weaponKind, assessment, code);
         float routeRiskPenalty = GetRouteRiskPenalty(context, personalityProfile, code, target);
+        float assaultRouteCongestionPenalty = GetAssaultRouteCongestionPenalty(context, code, target);
         float situationScore = GetSituationScore(assessment, code, objective)
             + GetHighGroundUtilityScore(owner, context, assessment, code, target)
             + CombatAiFocusTargeting.GetMoveScore(context, owner.EquippedWeapon, code, target, focusEnemy, focusCommitmentRemainingSeconds)
             + coverBonus
             - GetAllyDestinationOverlapPenalty(context, code, target)
+            - assaultRouteCongestionPenalty
             - GetSwordIsolationPenalty(context, assessment, weaponKind, code, target)
             - routeRiskPenalty;
         float weaponScore = GetWeaponScore(owner.EquippedWeapon, code);
@@ -69,6 +71,7 @@ public static class CombatAiMoveScorer
             if (personalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
             if (coverBonus > 0f) AddReason(breakdown, CombatAiReasonCode.SelfExposedByEnemy);
             if (routeRiskPenalty >= 12f) AddReason(breakdown, CombatAiReasonCode.RouteRiskHigh);
+            if (assaultRouteCongestionPenalty > 0f) AddReason(breakdown, CombatAiReasonCode.AssaultRouteCongested);
         }
 
         return baseScore + situationScore + weaponScore + personalityScore;
@@ -216,6 +219,120 @@ public static class CombatAiMoveScorer
         }
 
         return Mathf.Min(36f, penalty);
+    }
+
+    private static float GetAssaultRouteCongestionPenalty(
+        CombatAiContext context,
+        string code,
+        CombatMoveTarget target)
+    {
+        if (context == null ||
+            context.Owner == null ||
+            !target.HasAssaultRouteKey ||
+            (code != CombatAiMoveCode.AdvanceViaBridge && code != CombatAiMoveCode.AdvanceEnemyStone))
+        {
+            return 0f;
+        }
+
+        if (!TryFindAssaultRoute(context, target.AssaultRouteKey, out CombatAiAssaultRoute route))
+        {
+            return 0f;
+        }
+
+        const float nearThreshold = 4f;
+        int congestingAllies = 0;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == context.Owner || !ally.CanAct) continue;
+            if (IsAllyUsingAssaultRoute(context, ally, route, nearThreshold))
+            {
+                congestingAllies++;
+            }
+        }
+
+        return Mathf.Min(36f, congestingAllies * 12f);
+    }
+
+    private static bool TryFindAssaultRoute(
+        CombatAiContext context,
+        int routeKey,
+        out CombatAiAssaultRoute route)
+    {
+        for (int i = 0; i < context.AssaultRoutes.Count; i++)
+        {
+            CombatAiAssaultRoute candidate = context.AssaultRoutes[i];
+            if (candidate.BridgeFeatureIndex != routeKey) continue;
+            route = candidate;
+            return true;
+        }
+
+        route = default;
+        return false;
+    }
+
+    private static bool IsAllyUsingAssaultRoute(
+        CombatAiContext context,
+        CombatCharacterIntel ally,
+        CombatAiAssaultRoute route,
+        float nearThreshold)
+    {
+        if (ally.HasIntendedDestination)
+        {
+            if (IsNearAssaultRouteAnchor(context, ally.IntendedDestination, route, nearThreshold))
+            {
+                return true;
+            }
+        }
+
+        if (!CombatAiPositioning.IsAdvancingAlly(context, ally)) return false;
+        return IsNearAssaultRouteCorridor(ally.CurrentPosition, route, nearThreshold);
+    }
+
+    private static bool IsNearAssaultRouteAnchor(
+        CombatAiContext context,
+        Vector3 position,
+        CombatAiAssaultRoute route,
+        float nearThreshold)
+    {
+        if (route.HasBridgeWaypoints)
+        {
+            if (HorizontalDistance(position, route.EnterWorld) <= nearThreshold) return true;
+            if (HorizontalDistance(position, route.ExitWorld) <= nearThreshold) return true;
+            return context.HasEnemyStonePosition &&
+                HorizontalDistance(position, context.EnemyStonePosition) <= nearThreshold + 2.5f &&
+                HorizontalDistance(position, route.ExitWorld) <= nearThreshold + 6f;
+        }
+
+        return context.HasEnemyStonePosition &&
+            HorizontalDistance(position, context.EnemyStonePosition) <= nearThreshold + 2.5f;
+    }
+
+    private static bool IsNearAssaultRouteCorridor(
+        Vector3 position,
+        CombatAiAssaultRoute route,
+        float nearThreshold)
+    {
+        if (!route.HasBridgeWaypoints)
+        {
+            return false;
+        }
+
+        return DistanceToSegmentHorizontal(position, route.EnterWorld, route.ExitWorld) <= nearThreshold;
+    }
+
+    private static float DistanceToSegmentHorizontal(Vector3 point, Vector3 a, Vector3 b)
+    {
+        Vector2 p = new Vector2(point.x, point.z);
+        Vector2 start = new Vector2(a.x, a.z);
+        Vector2 end = new Vector2(b.x, b.z);
+        Vector2 ab = end - start;
+        float lengthSquared = ab.sqrMagnitude;
+        if (lengthSquared <= 0.0001f) return Vector2.Distance(p, start);
+
+        float t = Mathf.Clamp01(Vector2.Dot(p - start, ab) / lengthSquared);
+        Vector2 closest = start + ab * t;
+        return Vector2.Distance(p, closest);
     }
 
     private static float GetSwordIsolationPenalty(

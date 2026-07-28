@@ -42,4 +42,4 @@
 - チーム tick: `CombatCharacterSystem.TickAiDecisionsNow`
 - 診断ログ: `CombatBattleEventLogger`
 - コンボ試験: `Assets/Tests/DesignerCombos/`
-- 進攻ルート: `CombatStoneAssaultRoutes`
+- 進攻ルート: `CombatStoneAssaultRoutes` / `CombatAssaultRouteCache`

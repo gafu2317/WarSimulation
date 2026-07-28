@@ -43,4 +43,5 @@ public enum CombatAiReasonCode
     IncomingEnemyCast = 40,
     NumericalAdvantage = 41,
     NumericalDisadvantage = 45,
+    AssaultRouteCongested = 46,
 }

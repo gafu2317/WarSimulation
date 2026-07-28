@@ -39,6 +39,14 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateEnemyStoneTarget(CombatAiContext context)
     {
+        return CreateEnemyStoneTarget(context, hasAssaultRouteKey: false, assaultRouteKey: 0);
+    }
+
+    private static CombatMoveTarget CreateEnemyStoneTarget(
+        CombatAiContext context,
+        bool hasAssaultRouteKey,
+        int assaultRouteKey)
+    {
         if (!context.HasEnemyStonePosition || context.Owner == null) return CombatMoveTarget.None;
 
         Vector3 ownerPosition = context.Owner.transform.position;
@@ -65,17 +73,50 @@ public static partial class CombatAiPlanner
             bestDestination = candidate;
         }
 
-        return float.IsPositiveInfinity(bestDistance)
-            ? CombatMoveTarget.None
+        if (float.IsPositiveInfinity(bestDistance)) return CombatMoveTarget.None;
+        return hasAssaultRouteKey
+            ? CombatMoveTarget.ForPosition(bestDestination, assaultRouteKey)
             : CombatMoveTarget.ForPosition(bestDestination);
     }
 
-    private static CombatMoveTarget CreateBridgeWaypointTarget(CombatAiContext context, Vector3 bridgePosition)
+    private static void CreateAssaultRouteAdvanceCandidate(
+        CombatAiContext context,
+        CombatAiAssaultRoute route,
+        out string code,
+        out string japanese,
+        out CombatMoveTarget target)
     {
-        if (context == null || context.Owner == null) return CombatMoveTarget.None;
-        return HorizontalDistance(context.Owner.transform.position, bridgePosition) > 2f
-            ? CombatMoveTarget.ForPosition(bridgePosition)
-            : CombatMoveTarget.None;
+        code = CombatAiMoveCode.AdvanceEnemyStone;
+        japanese = "敵魔石へ前進";
+        target = CombatMoveTarget.None;
+        if (context == null || context.Owner == null) return;
+
+        const float arriveThreshold = 2f;
+        Vector3 ownerPosition = context.Owner.transform.position;
+        int routeKey = route.BridgeFeatureIndex;
+
+        if (route.HasBridgeWaypoints)
+        {
+            if (HorizontalDistance(ownerPosition, route.EnterWorld) > arriveThreshold)
+            {
+                code = CombatAiMoveCode.AdvanceViaBridge;
+                japanese = "橋を経由して敵魔石へ前進";
+                target = CombatMoveTarget.ForPosition(route.EnterWorld, routeKey);
+                return;
+            }
+
+            if (HorizontalDistance(ownerPosition, route.ExitWorld) > arriveThreshold)
+            {
+                code = CombatAiMoveCode.AdvanceViaBridge;
+                japanese = "橋を経由して敵魔石へ前進";
+                target = CombatMoveTarget.ForPosition(route.ExitWorld, routeKey);
+                return;
+            }
+        }
+
+        code = CombatAiMoveCode.AdvanceEnemyStone;
+        japanese = "敵魔石へ前進";
+        target = CreateEnemyStoneTarget(context, hasAssaultRouteKey: true, assaultRouteKey: routeKey);
     }
 
     private static CombatMoveTarget CreateOwnStoneTarget(CombatAiContext context)

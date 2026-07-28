@@ -16,6 +16,7 @@ public sealed class CombatAiContext
     public int EnemyStoneHP { get; }
     public int EnemyStoneMaxHP { get; }
     public IReadOnlyList<Vector3> BridgePositions { get; }
+    public IReadOnlyList<CombatAiAssaultRoute> AssaultRoutes { get; }
     public IReadOnlyList<Vector3> HighGroundCandidates { get; }
     public IReadOnlyList<Vector3> ForestCandidates { get; }
     public IReadOnlyList<CombatAiPendingDamage> AllyPendingDamage { get; }
@@ -45,7 +46,8 @@ public sealed class CombatAiContext
         IReadOnlyList<CombatAiPendingHealing> allyPendingHealing = null,
         IReadOnlyList<CombatAiPendingHealing> enemyPendingHealing = null,
         bool hasBlockedMoveDestination = false,
-        Vector3 blockedMoveDestination = default)
+        Vector3 blockedMoveDestination = default,
+        IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null)
     {
         Owner = owner;
         EnemyIntel = enemyIntel ?? Array.Empty<CombatCharacterIntel>();
@@ -59,6 +61,7 @@ public sealed class CombatAiContext
         EnemyStoneHP = enemyStoneHP;
         EnemyStoneMaxHP = enemyStoneMaxHP;
         BridgePositions = bridgePositions ?? Array.Empty<Vector3>();
+        AssaultRoutes = assaultRoutes ?? Array.Empty<CombatAiAssaultRoute>();
         HighGroundCandidates = highGroundCandidates ?? Array.Empty<Vector3>();
         ForestCandidates = forestCandidates ?? Array.Empty<Vector3>();
         AllyPendingDamage = allyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();

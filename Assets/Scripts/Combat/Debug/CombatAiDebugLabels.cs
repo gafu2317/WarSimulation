@@ -103,6 +103,8 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.BodyBlockValuable => Format(nameof(CombatAiReasonCode.BodyBlockValuable), "遮断で味方や魔石を守れる"),
             CombatAiReasonCode.IncomingEnemyCast => Format(nameof(CombatAiReasonCode.IncomingEnemyCast), "敵の詠唱攻撃を受ける見込み"),
             CombatAiReasonCode.NumericalAdvantage => Format(nameof(CombatAiReasonCode.NumericalAdvantage), "数的優勢"),
+            CombatAiReasonCode.NumericalDisadvantage => Format(nameof(CombatAiReasonCode.NumericalDisadvantage), "数的劣勢"),
+            CombatAiReasonCode.AssaultRouteCongested => Format(nameof(CombatAiReasonCode.AssaultRouteCongested), "進攻ルートに味方が偏っている"),
             _ => reason.ToString(),
         };
     }

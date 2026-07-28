@@ -177,11 +177,17 @@ public static partial class CombatAiPlanner
         TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
             CombatAiMoveCode.AdvanceEnemyStone, "敵魔石へ前進", CreateEnemyStoneTarget(context), objective, focusEnemy,
             focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
-        for (int i = 0; i < context.BridgePositions.Count; i++)
+        for (int i = 0; i < context.AssaultRoutes.Count; i++)
         {
+            CombatAiAssaultRoute route = context.AssaultRoutes[i];
+            CreateAssaultRouteAdvanceCandidate(
+                context,
+                route,
+                out string code,
+                out string japanese,
+                out CombatMoveTarget target);
             TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
-                CombatAiMoveCode.AdvanceViaBridge, "橋を経由して敵魔石へ前進",
-                CreateBridgeWaypointTarget(context, context.BridgePositions[i]), objective, focusEnemy,
+                code, japanese, target, objective, focusEnemy,
                 focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         }
         TryScoreMoveCandidate(owner, context, assessment, personalityProfile,

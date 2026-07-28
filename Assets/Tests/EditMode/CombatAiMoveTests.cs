@@ -268,7 +268,14 @@ public sealed class CombatAiMoveTests
                 enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
                 hasEnemyStonePosition: true,
                 enemyStonePosition: new Vector3(10f, 0f, 0f),
-                bridgePositions: new[] { new Vector3(0f, 0f, 10f) });
+                assaultRoutes: new[]
+                {
+                    new CombatAiAssaultRoute(
+                        bridgeFeatureIndex: 0,
+                        hasBridgeWaypoints: true,
+                        enterWorld: new Vector3(0f, 0f, 10f),
+                        exitWorld: new Vector3(2f, 0f, 10f)),
+                });
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
             float directScore = FindMoveScore(snapshot, CombatAiMoveCode.AdvanceEnemyStone);
@@ -282,6 +289,86 @@ public sealed class CombatAiMoveTests
             Object.DestroyImmediate(enemyGo);
             Object.DestroyImmediate(ownerGo);
         }
+    }
+
+    [Test]
+    public void Planner_AssaultRouteSoftSplitPenalizesCrowdedRoute()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        GameObject allyGo = new GameObject("Ally");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            ally.EquipWeapon(new Sword());
+            allyGo.transform.position = new Vector3(-2f, 0f, 0f);
+
+            Vector3 routeAEnter = new Vector3(0f, 0f, 12f);
+            Vector3 routeBEnter = new Vector3(12f, 0f, 0f);
+            CombatAiAssaultRoute[] routes =
+            {
+                new CombatAiAssaultRoute(0, true, routeAEnter, new Vector3(0f, 0f, 14f)),
+                new CombatAiAssaultRoute(1, true, routeBEnter, new Vector3(14f, 0f, 0f)),
+            };
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        ally,
+                        true,
+                        allyGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.DestroyEnemyStone,
+                        hasIntendedDestination: true,
+                        intendedDestination: routeAEnter),
+                },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 20f),
+                assaultRoutes: routes);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            float crowdedScore = FindMoveScoreNear(snapshot, CombatAiMoveCode.AdvanceViaBridge, routeAEnter);
+            float openScore = FindMoveScoreNear(snapshot, CombatAiMoveCode.AdvanceViaBridge, routeBEnter);
+
+            Assert.That(openScore, Is.GreaterThan(crowdedScore));
+            Assert.That(
+                FindMoveNear(snapshot, CombatAiMoveCode.AdvanceViaBridge, routeAEnter)
+                    .Breakdown.ReasonCodes,
+                Does.Contain(CombatAiReasonCode.AssaultRouteCongested));
+            AssertPlanMatchesDebugSnapshot(context, null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    private static float FindMoveScoreNear(CombatAiDebugSnapshot snapshot, string code, Vector3 destination)
+    {
+        return FindMoveNear(snapshot, code, destination).Breakdown.Total;
+    }
+
+    private static CombatAiMoveCandidateEntry FindMoveNear(
+        CombatAiDebugSnapshot snapshot,
+        string code,
+        Vector3 destination)
+    {
+        for (int i = 0; i < snapshot.MoveEntries.Count; i++)
+        {
+            CombatAiMoveCandidateEntry entry = snapshot.MoveEntries[i];
+            if (entry.Code != code || !entry.Target.HasDestination) continue;
+            Vector3 delta = entry.Target.Destination - destination;
+            delta.y = 0f;
+            if (delta.sqrMagnitude <= 0.01f) return entry;
+        }
+
+        Assert.Fail($"移動候補が見つかりません: {code} near {destination}");
+        return null;
     }
 
     [Test]

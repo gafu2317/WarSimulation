@@ -34,6 +34,7 @@ public sealed class CombatAiContextCollectorTests
             Assert.That(context.EnemyStonePosition, Is.EqualTo(new Vector3(8f, 0f, 8f)));
             Assert.That(context.Weather, Is.EqualTo(CombatMapSystem.Weather.Rainy));
             Assert.That(context.BridgePositions, Does.Contain(new Vector3(3f, 0f, 3f)));
+            Assert.That(context.AssaultRoutes, Is.Empty);
             Assert.That(context.HighGroundCandidates, Does.Contain(new Vector3(6f, 4f, 5f)));
             Assert.That(context.HighGroundCandidates, Does.Contain(new Vector3(9f, 2f, 9f)));
             Assert.That(context.ForestCandidates.Count, Is.GreaterThan(0));

@@ -117,6 +117,7 @@ public class CombatMapSystem : MonoBehaviour
     public void SetCurrentMap(MapData map)
     {
         CurrentMap = map;
+        CombatAssaultRouteCache.Invalidate();
         UpdateTerrainHeightRange(map);
         InitializeMagicStoneSystem(map);
     }

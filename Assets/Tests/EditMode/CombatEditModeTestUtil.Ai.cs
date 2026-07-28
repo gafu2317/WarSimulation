@@ -126,6 +126,7 @@ internal static partial class CombatEditModeTestUtil
         IReadOnlyList<CombatAiPendingHealing> allyPendingHealing = null,
         IReadOnlyList<CombatAiPendingHealing> enemyPendingHealing = null,
         IReadOnlyList<Vector3> bridgePositions = null,
+        IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null,
         IReadOnlyList<Vector3> forestCandidates = null,
         bool hasBlockedMoveDestination = false,
         Vector3 blockedMoveDestination = default)
@@ -150,7 +151,8 @@ internal static partial class CombatEditModeTestUtil
             allyPendingHealing,
             enemyPendingHealing,
             hasBlockedMoveDestination,
-            blockedMoveDestination);
+            blockedMoveDestination,
+            assaultRoutes);
     }
 
     internal static float FindObjectiveScore(CombatAiDebugSnapshot snapshot, CombatObjective objective)

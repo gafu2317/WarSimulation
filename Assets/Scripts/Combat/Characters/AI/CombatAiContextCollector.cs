@@ -13,6 +13,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     private readonly List<CombatCharacterIntel> _enemyIntel = new();
     private readonly List<CombatCharacterIntel> _allyIntel = new();
     private readonly List<Vector3> _bridgePositions = new();
+    private readonly List<CombatAiAssaultRoute> _assaultRoutes = new();
     private readonly List<Vector3> _highGroundCandidates = new();
     private readonly List<Vector3> _forestCandidates = new();
     private readonly List<CombatAiPendingDamage> _allyPendingDamage = new();
@@ -93,6 +94,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         }
 
         CollectTerrainCandidates(mapSystem);
+        CollectAssaultRoutes(owner, mapSystem);
         bool hasEnemyStoneHealth = TryGetEnemyStoneHealth(
             owner,
             out int enemyStoneHP,
@@ -118,7 +120,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             _allyPendingHealing,
             _enemyPendingHealing,
             hasBlockedMoveDestination,
-            blockedMoveDestination);
+            blockedMoveDestination,
+            _assaultRoutes);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)
@@ -146,6 +149,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         _enemyIntel.Clear();
         _allyIntel.Clear();
         _bridgePositions.Clear();
+        _assaultRoutes.Clear();
         _highGroundCandidates.Clear();
         _forestCandidates.Clear();
         _allyPendingDamage.Clear();
@@ -333,6 +337,19 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                     _bridgePositions.Add(position);
                     break;
             }
+        }
+    }
+
+    private void CollectAssaultRoutes(Character owner, CombatMapSystem mapSystem)
+    {
+        _assaultRoutes.Clear();
+        if (owner == null || mapSystem == null) return;
+
+        CombatAssaultRouteCache.EnsureBuilt(mapSystem);
+        IReadOnlyList<CombatAiAssaultRoute> cached = CombatAssaultRouteCache.GetRoutes(owner.Team);
+        for (int i = 0; i < cached.Count; i++)
+        {
+            _assaultRoutes.Add(cached[i]);
         }
     }
 
