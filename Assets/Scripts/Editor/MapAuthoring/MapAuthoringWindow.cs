@@ -14,6 +14,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         GroundPatch,
         Forest,
         River,
+        Bridge,
         MagicStone,
     }
 
@@ -25,6 +26,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         GroundPatch,
         Forest,
         River,
+        Bridge,
         MagicStone,
     }
 
@@ -35,6 +37,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private const string DefaultConfigPath = "Assets/Data/Map/Map/Configs/MapGenerationConfig.asset";
         private const float RightPanelWidth = 300f;
         private const float PickRadiusMeters = 3f;
+        private const float BridgeSnapRadiusMeters = 8f;
         private const double PreviewDebounceSeconds = 0.2;
 
         private AuthoredMapDefinition _definition;
@@ -61,6 +64,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private string _status;
         private Vector2 _paletteScroll;
         private Vector2 _listScroll;
+        private Vector2 _panelScroll;
         private bool _dragging;
         private bool _bakeNavMeshOnApply;
 
@@ -157,6 +161,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 DrawToolToggle(MapAuthoringTool.GroundPatch, "沼・雪");
                 DrawToolToggle(MapAuthoringTool.Forest, "森");
                 DrawToolToggle(MapAuthoringTool.River, "川");
+                DrawToolToggle(MapAuthoringTool.Bridge, "橋");
                 DrawToolToggle(MapAuthoringTool.MagicStone, "魔石");
                 GUILayout.FlexibleSpace();
                 if (!string.IsNullOrEmpty(_status))
@@ -219,7 +224,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             GUI.Label(
                 new Rect(rect.x + 8f, rect.y + 8f, rect.width - 16f, 40f),
-                "真上からの2D編集。スタンプ配置／川は端＋ベジェ制御点／魔石は手動／橋・散布木・岩は SharedConfig 自動／選択で移動／Delete削除",
+                "真上からの2D編集。スタンプ配置／川は端＋ベジェ制御点／橋は川付近クリック（自動スナップ）／魔石は手動／散布木・岩は自動／選択で移動／Delete削除",
                 EditorStyles.whiteLabel);
         }
 
@@ -338,12 +343,35 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 DrawRiverPathOverlay(localDraw, world, i, selectedRiver);
             }
 
+            for (int i = 0; i < _definition.Bridges.Count; i++)
+            {
+                AuthoredBridgePlacement bridge = _definition.Bridges[i];
+                bool selected = _selectionKind == MapAuthoringSelectionKind.Bridge && _selectionIndex == i;
+                Mark(bridge.Center, new Color(0.55f, 0.35f, 0.15f), selected);
+                DrawBridgeOrientation(localDraw, world, bridge, selected);
+            }
+
             for (int i = 0; i < _definition.MagicStones.Count; i++)
             {
                 AuthoredMagicStonePlacement stone = _definition.MagicStones[i];
                 Mark(stone.Center, MagicStoneColor(stone.Type),
                     _selectionKind == MapAuthoringSelectionKind.MagicStone && _selectionIndex == i);
             }
+        }
+
+        private static void DrawBridgeOrientation(
+            Rect localDraw, float world, AuthoredBridgePlacement bridge, bool selected)
+        {
+            float length = bridge.Scale.z > 0.01f ? bridge.Scale.z * 0.5f : 2f;
+            float rad = bridge.RotationDeg * Mathf.Deg2Rad;
+            // Bridge local +Z = 渡り方向。2D では XZ 平面で RotationDeg 周り。
+            var along = new Vector2(Mathf.Sin(rad), Mathf.Cos(rad)) * length;
+            Vector2 a = MapAuthoringPreview2D.MapToGui(localDraw, bridge.Center - along, world);
+            Vector2 b = MapAuthoringPreview2D.MapToGui(localDraw, bridge.Center + along, world);
+            Handles.BeginGUI();
+            Handles.color = selected ? new Color(1f, 0.75f, 0.2f) : new Color(0.7f, 0.45f, 0.2f, 0.9f);
+            Handles.DrawLine(a, b, selected ? 4f : 3f);
+            Handles.EndGUI();
         }
 
         private static Color MagicStoneColor(FeatureType type) => type switch
@@ -481,44 +509,58 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private void DrawRightPanel()
         {
-            using (new EditorGUILayout.VerticalScope(GUILayout.Width(RightPanelWidth)))
+            // Width だけでは子コントロールが親を押し広げられるので Max/Min も固定する。
+            using (new EditorGUILayout.VerticalScope(
+                       GUILayout.Width(RightPanelWidth),
+                       GUILayout.MinWidth(RightPanelWidth),
+                       GUILayout.MaxWidth(RightPanelWidth),
+                       GUILayout.ExpandWidth(false),
+                       GUILayout.ExpandHeight(true)))
             {
-                if (_definition == null)
+                _panelScroll = EditorGUILayout.BeginScrollView(_panelScroll);
+                try
                 {
-                    EditorGUILayout.HelpBox("マップを選ぶか「新規」で作成してください。", MessageType.Info);
-                    return;
-                }
+                    if (_definition == null)
+                    {
+                        EditorGUILayout.HelpBox("マップを選ぶか「新規」で作成してください。", MessageType.Info);
+                        return;
+                    }
 
-                EditorGUI.BeginChangeCheck();
-                MapGenerationConfig config = (MapGenerationConfig)EditorGUILayout.ObjectField(
-                    "共通設定", _definition.SharedConfig, typeof(MapGenerationConfig), false);
-                if (EditorGUI.EndChangeCheck())
+                    EditorGUI.BeginChangeCheck();
+                    MapGenerationConfig config = (MapGenerationConfig)EditorGUILayout.ObjectField(
+                        "共通設定", _definition.SharedConfig, typeof(MapGenerationConfig), false);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        RecordUndo("共通設定を変更");
+                        _definition.SharedConfig = config;
+                        MarkDirty();
+                        QueuePreviewRebuild();
+                    }
+
+                    if (_definition.SharedConfig == null)
+                        EditorGUILayout.HelpBox("共通設定が必要です。", MessageType.Warning);
+
+                    string assetPath = AssetDatabase.GetAssetPath(_definition);
+                    if (!string.IsNullOrEmpty(assetPath))
+                        EditorGUILayout.HelpBox($"保存先\n{assetPath}", MessageType.None);
+
+                    EditorGUILayout.Space(6f);
+                    DrawPalette();
+                    EditorGUILayout.Space(6f);
+                    DrawSelectionInspector();
+                    EditorGUILayout.Space(6f);
+                    DrawPlacementList();
+
+                    EditorGUILayout.Space(6f);
+                    EditorGUILayout.LabelField("状態", EditorStyles.boldLabel);
+                    EditorGUILayout.HelpBox(
+                        string.IsNullOrEmpty(_status) ? "準備完了" : _status,
+                        MessageType.Info);
+                }
+                finally
                 {
-                    RecordUndo("共通設定を変更");
-                    _definition.SharedConfig = config;
-                    MarkDirty();
-                    QueuePreviewRebuild();
+                    EditorGUILayout.EndScrollView();
                 }
-
-                if (_definition.SharedConfig == null)
-                    EditorGUILayout.HelpBox("共通設定が必要です。", MessageType.Warning);
-
-                string assetPath = AssetDatabase.GetAssetPath(_definition);
-                if (!string.IsNullOrEmpty(assetPath))
-                    EditorGUILayout.HelpBox($"保存先\n{assetPath}", MessageType.None);
-
-                EditorGUILayout.Space(6f);
-                DrawPalette();
-                EditorGUILayout.Space(6f);
-                DrawSelectionInspector();
-                EditorGUILayout.Space(6f);
-                DrawPlacementList();
-
-                EditorGUILayout.Space(6f);
-                EditorGUILayout.LabelField("状態", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox(
-                    string.IsNullOrEmpty(_status) ? "準備完了" : _status,
-                    MessageType.Info);
             }
         }
 
@@ -549,9 +591,14 @@ namespace WarSimulation.Combat.Map.EditorOnly
                             : "始点→終点をクリック。作成後、黄色いベジェ制御点をドラッグして弧を調整できます。",
                         MessageType.None);
                     break;
+                case MapAuthoringTool.Bridge:
+                    EditorGUILayout.HelpBox(
+                        "川の近くをクリックするとセルへスナップし、向き・長さを自動設定します。選択後に回転・拡縮を調整できます。",
+                        MessageType.None);
+                    break;
                 case MapAuthoringTool.MagicStone:
                     _selectedMagicStoneType = DrawMagicStoneTypePopup(_selectedMagicStoneType);
-                    EditorGUILayout.HelpBox("クリックで魔石を配置。橋・散布木・岩は SharedConfig の自動配置です。", MessageType.None);
+                    EditorGUILayout.HelpBox("クリックで魔石を配置。散布木・岩は SharedConfig の自動配置です。", MessageType.None);
                     break;
                 default:
                     EditorGUILayout.HelpBox("選択ツール: マーカーをクリックして選択・移動。", MessageType.None);
@@ -737,6 +784,34 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
                     return;
                 }
+                case MapAuthoringSelectionKind.Bridge:
+                {
+                    AuthoredBridgePlacement e = _definition.Bridges[_selectionIndex];
+                    Vector2 center = EditorGUILayout.Vector2Field("位置", e.Center);
+                    float rotation = EditorGUILayout.FloatField("回転", e.RotationDeg);
+                    Vector3 scale = EditorGUILayout.Vector3Field("拡縮 (幅/厚/長さ)", e.Scale);
+                    if (GUILayout.Button("川に合わせて再スナップ"))
+                    {
+                        RecordUndo("橋を再スナップ");
+                        ApplyBridgeSnap(e, e.Center, updateScale: true);
+                        MarkDirty();
+                        QueuePreviewRebuild();
+                        EditorGUI.EndChangeCheck();
+                        return;
+                    }
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        RecordUndo("橋を編集");
+                        e.Center = ClampToMap(center);
+                        e.RotationDeg = rotation;
+                        e.Scale = scale;
+                        MarkDirty();
+                        QueuePreviewRebuild();
+                    }
+
+                    return;
+                }
                 case MapAuthoringSelectionKind.MagicStone:
                 {
                     AuthoredMagicStonePlacement e = _definition.MagicStones[_selectionIndex];
@@ -767,6 +842,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             DrawIndexRow("沼・雪", _definition.GroundPatches.Count, MapAuthoringSelectionKind.GroundPatch);
             DrawIndexRow("森", _definition.Forests.Count, MapAuthoringSelectionKind.Forest);
             DrawIndexRow("川", _definition.Rivers.Count, MapAuthoringSelectionKind.River);
+            DrawIndexRow("橋", _definition.Bridges.Count, MapAuthoringSelectionKind.Bridge);
             DrawIndexRow("魔石", _definition.MagicStones.Count, MapAuthoringSelectionKind.MagicStone);
             EditorGUILayout.EndScrollView();
         }
@@ -870,6 +946,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     PlaceRiverEndpoint(mapXZ);
                     return;
 
+                case MapAuthoringTool.Bridge:
+                {
+                    RecordUndo("橋を配置");
+                    var bridge = new AuthoredBridgePlacement();
+                    ApplyBridgeSnap(bridge, mapXZ);
+                    _definition.Bridges.Add(bridge);
+                    SetSelection(MapAuthoringSelectionKind.Bridge, _definition.Bridges.Count - 1);
+                    break;
+                }
+
                 case MapAuthoringTool.MagicStone:
                     if (!AuthoredMapBuilder.IsMagicStoneType(_selectedMagicStoneType))
                     {
@@ -971,6 +1057,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 Consider(control, MapAuthoringSelectionKind.River, i, 2);
             }
 
+            for (int i = 0; i < _definition.Bridges.Count; i++)
+                Consider(_definition.Bridges[i].Center, MapAuthoringSelectionKind.Bridge, i);
             for (int i = 0; i < _definition.MagicStones.Count; i++)
                 Consider(_definition.MagicStones[i].Center, MapAuthoringSelectionKind.MagicStone, i);
 
@@ -1021,6 +1109,12 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     river.SetBezier(start, control, end);
                     break;
                 }
+                case MapAuthoringSelectionKind.Bridge:
+                {
+                    AuthoredBridgePlacement bridge = _definition.Bridges[_selectionIndex];
+                    ApplyBridgeSnap(bridge, mapXZ, updateScale: false);
+                    break;
+                }
                 case MapAuthoringSelectionKind.MagicStone:
                     _definition.MagicStones[_selectionIndex].Center = mapXZ;
                     break;
@@ -1052,6 +1146,9 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     break;
                 case MapAuthoringSelectionKind.River:
                     _definition.Rivers.RemoveAt(_selectionIndex);
+                    break;
+                case MapAuthoringSelectionKind.Bridge:
+                    _definition.Bridges.RemoveAt(_selectionIndex);
                     break;
                 case MapAuthoringSelectionKind.MagicStone:
                     _definition.MagicStones.RemoveAt(_selectionIndex);
@@ -1242,6 +1339,26 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private float GetWorldSize() =>
             _definition?.SharedConfig != null ? _definition.SharedConfig.WorldSize : 60f;
+
+        private void ApplyBridgeSnap(AuthoredBridgePlacement bridge, Vector2 desiredCenter, bool updateScale = true)
+        {
+            desiredCenter = ClampToMap(desiredCenter);
+            BridgeBuildUtility.ResolveAuthoredPlacement(
+                _lastPreviewMap,
+                _definition != null ? _definition.SharedConfig : null,
+                desiredCenter,
+                BridgeSnapRadiusMeters,
+                out Vector2 center,
+                out float rotationDeg,
+                out Vector3 scale);
+            bridge.Center = ClampToMap(center);
+            bridge.RotationDeg = rotationDeg;
+            if (updateScale
+                || bridge.Scale.x <= 0.0001f
+                || bridge.Scale.y <= 0.0001f
+                || bridge.Scale.z <= 0.0001f)
+                bridge.Scale = scale;
+        }
 
         private Vector2 ClampToMap(Vector2 mapXZ)
         {

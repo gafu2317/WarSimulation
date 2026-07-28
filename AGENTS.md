@@ -5,6 +5,7 @@ docsにゲームの内容についてが書いてあるよ
 
 戦闘AIの入口は `./docs/AI/README.md`
 
+
 ## Code Style
 
 - Prefer short, simple code, but do not sacrifice readability, correctness, or consistency with existing project patterns.

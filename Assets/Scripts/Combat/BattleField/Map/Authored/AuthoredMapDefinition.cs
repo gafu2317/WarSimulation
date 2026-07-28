@@ -19,8 +19,8 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private List<AuthoredLakePlacement> _lakes = new();
         [SerializeField] private List<AuthoredGroundPatchPlacement> _groundPatches = new();
         [SerializeField] private List<AuthoredForestPlacement> _forests = new();
-        // 橋・散布木・岩は AuthoredMapBuilder が SharedConfig の自動生成ルールで配置する（リストは未使用・互換用）。
         [SerializeField] private List<AuthoredBridgePlacement> _bridges = new();
+        // 散布木・岩は AuthoredMapBuilder が SharedConfig の自動生成ルールで配置する（リストは未使用・互換用）。
         [SerializeField] private List<AuthoredPointFeaturePlacement> _trees = new();
         [SerializeField] private List<AuthoredPointFeaturePlacement> _rocks = new();
         [SerializeField] private List<AuthoredMagicStonePlacement> _magicStones = new();

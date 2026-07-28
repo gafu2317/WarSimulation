@@ -240,12 +240,10 @@ public sealed class CombatSkillExecutionTests
     }
 
     [Test]
-    public void AiBrain_DestroyEnemyStonePlan_AttacksStoneBeforeReadyCharacterSkill()
+    public void AiBrain_DestroyEnemyStonePlan_UsesSkillTargetingStone()
     {
         GameObject ownerGo = new GameObject("Owner");
-        GameObject targetGo = new GameObject("Target");
         GameObject stoneGo = new GameObject("EnemyMainStone");
-        GameObject obstacleGo = new GameObject("Obstacle");
         GameObject systemGo = new GameObject("MagicStoneSystem");
         try
         {
@@ -257,49 +255,37 @@ public sealed class CombatSkillExecutionTests
 
             MagicStone stone = stoneGo.AddComponent<MagicStone>();
             stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
-            stoneGo.transform.position = new Vector3(0f, 1.5f, 3f);
+            stoneGo.transform.position = new Vector3(0f, 1.5f, 2f);
             stoneGo.transform.localScale = new Vector3(1.2f, 3f, 1.2f);
             stoneGo.AddComponent<BoxCollider>();
-            obstacleGo.transform.position = new Vector3(0f, 1f, 1.5f);
-            obstacleGo.transform.localScale = new Vector3(1f, 2f, 0.5f);
-            obstacleGo.AddComponent<BoxCollider>();
             Physics.SyncTransforms();
 
             Character owner = ownerGo.AddComponent<Character>();
             owner.SetTeam(CombatTeam.Ally);
             owner.Health.Initialize(maxHP: 30);
-            owner.EquipWeapon(new Sword(range: 2f, strBonus: 12));
+            owner.EquipWeapon(new Sword(range: 3f, strBonus: 12));
             ownerGo.AddComponent<CombatVision>();
-            ownerGo.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
-            Character target = targetGo.AddComponent<Character>();
-            target.SetTeam(CombatTeam.Enemy);
-            target.Health.Initialize(maxHP: 30);
-            targetGo.transform.position = Vector3.forward;
-            SkillBase skill = new IdentifiedSkill(new AiBrainTestAttackSkill(), SkillId.Sword_Slash);
-
+            SkillBase skill = new IdentifiedSkill(new SwordSlashSkill(), SkillId.Sword_Slash);
             CombatAiBrain brain = ownerGo.AddComponent<CombatAiBrain>();
             var plan = new CombatAiPlan(
                 CombatObjective.DestroyEnemyStone,
                 CombatMoveTarget.ForPosition(stoneGo.transform.position),
                 skill,
-                SkillExecutionContext.ForTarget(target));
+                SkillExecutionContext.ForTarget(stone));
 
+            Assert.That(system.TryGetHP(1, out int hpBefore), Is.True);
             bool acted = brain.ExecutePlan(plan);
 
             Assert.That(acted, Is.True);
-            Assert.That(brain.LastStoneDamage, Is.GreaterThan(0));
-            Assert.That(target.Health.HP, Is.EqualTo(30));
-            Assert.That(owner.SkillCooldowns.IsReady(skill), Is.True);
-            Assert.That(system.TryGetHP(1, out int hp), Is.True);
-            Assert.That(hp, Is.LessThan(500));
+            Assert.That(system.TryGetHP(1, out int hpAfter), Is.True);
+            Assert.That(hpAfter, Is.LessThan(hpBefore));
+            Assert.That(owner.SkillCooldowns.IsReady(skill), Is.False);
         }
         finally
         {
             Object.DestroyImmediate(systemGo);
-            Object.DestroyImmediate(obstacleGo);
             Object.DestroyImmediate(stoneGo);
-            Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(ownerGo);
         }
     }

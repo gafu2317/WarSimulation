@@ -39,6 +39,7 @@ namespace WarSimulation.Combat.Map
             ValidateLakes(definition.Lakes, world, issues);
             ValidateGroundPatches(definition.GroundPatches, world, issues);
             ValidateForests(definition.Forests, world, issues);
+            ValidateBridges(definition.Bridges, world, issues);
             ValidateMagicStones(definition.MagicStones, config, world, issues);
             return issues;
         }
@@ -184,6 +185,26 @@ namespace WarSimulation.Combat.Map
                     issues.Add(Error($"Forest[{i}] Shape is missing."));
                 if (!IsInsideMap(entry.Center, world))
                     issues.Add(Error($"Forest[{i}] center is outside the map."));
+            }
+        }
+
+        private static void ValidateBridges(
+            List<AuthoredBridgePlacement> bridges,
+            float world,
+            List<AuthoredMapValidationIssue> issues)
+        {
+            if (bridges == null) return;
+            for (int i = 0; i < bridges.Count; i++)
+            {
+                AuthoredBridgePlacement entry = bridges[i];
+                if (entry == null)
+                {
+                    issues.Add(Error($"Bridge[{i}] is null."));
+                    continue;
+                }
+
+                if (!IsInsideMap(entry.Center, world))
+                    issues.Add(Error($"Bridge[{i}] center is outside the map."));
             }
         }
 

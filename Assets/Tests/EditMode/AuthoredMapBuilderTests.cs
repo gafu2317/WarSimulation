@@ -45,7 +45,7 @@ public sealed class AuthoredMapBuilderTests
             Assert.That(map.Lakes[0].IsFrozen, Is.True);
             Assert.That(CountWater(map), Is.GreaterThan(0));
 
-            Assert.That(CountFeatures(map, FeatureType.Bridge), Is.EqualTo(2));
+            Assert.That(CountFeatures(map, FeatureType.Bridge), Is.EqualTo(1));
             Assert.That(CountFeatures(map, FeatureType.Tree), Is.GreaterThanOrEqualTo(0));
             Assert.That(CountFeatures(map, FeatureType.Rock), Is.GreaterThan(0));
             Assert.That(CountFeatures(map, FeatureType.OwnMainStone), Is.EqualTo(1));
@@ -205,6 +205,12 @@ public sealed class AuthoredMapBuilderTests
             Center = new Vector2(18f, 6f),
             Scale = Vector2.one,
             IsFrozen = true,
+        });
+        definition.Bridges.Add(new AuthoredBridgePlacement
+        {
+            Center = new Vector2(12f, 12f),
+            RotationDeg = 0f,
+            Scale = new Vector3(2f, 0.25f, 3f),
         });
         definition.MagicStones.Add(new AuthoredMagicStonePlacement
         {

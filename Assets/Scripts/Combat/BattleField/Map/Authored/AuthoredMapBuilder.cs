@@ -26,10 +26,10 @@ namespace WarSimulation.Combat.Map
             ApplyLakes(map, definition.Lakes);
             ApplyGroundPatches(map, definition.GroundPatches);
             ApplyForests(map, definition.Forests);
+            ApplyBridges(map, definition.Bridges, config);
 
-            // 橋・散布木・岩は自動生成と同じルール。魔石だけ手作り配置。
+            // 散布木・岩は自動生成と同じルール。魔石は手作り配置。
             IRandom rng = new SystemRandom(definition.BuildSeed);
-            BridgeBuildUtility.PlaceAutoBridges(map, config);
             new TreeScatterPhase().Execute(map, rng, config);
             new RockPhase().Execute(map, rng, config);
             ApplyMagicStones(map, definition.MagicStones);
@@ -140,6 +140,34 @@ namespace WarSimulation.Combat.Map
             }
         }
 
+        private static void ApplyBridges(
+            MapData map,
+            List<AuthoredBridgePlacement> bridges,
+            MapGenerationConfig config)
+        {
+            if (bridges == null) return;
+
+            float defaultDepth = config.RiverShape != null ? config.RiverShape.DepthMeters : 0.6f;
+            Vector3 fallbackScale = BridgeBuildUtility.DefaultBridgeScale(config, riverWidthMeters: 0f);
+
+            for (int i = 0; i < bridges.Count; i++)
+            {
+                AuthoredBridgePlacement entry = bridges[i];
+                if (entry == null) continue;
+
+                Vector3 scale = IsValidScale(entry.Scale)
+                    ? entry.Scale
+                    : fallbackScale;
+                float depth = BridgeBuildUtility.FindNearestRiverDepth(map, entry.Center, defaultDepth);
+                float y = BridgeBuildUtility.ResolveBridgeY(config, depth);
+                map.AddFeature(new PlacedFeature(
+                    FeatureType.Bridge,
+                    new Vector3(entry.Center.x, y, entry.Center.y),
+                    Quaternion.Euler(0f, entry.RotationDeg, 0f),
+                    scale));
+            }
+        }
+
         private static void ApplyMagicStones(MapData map, List<AuthoredMagicStonePlacement> stones)
         {
             if (stones == null) return;
@@ -154,6 +182,9 @@ namespace WarSimulation.Combat.Map
                     Quaternion.identity));
             }
         }
+
+        private static bool IsValidScale(Vector3 scale) =>
+            scale.x > 0.0001f && scale.y > 0.0001f && scale.z > 0.0001f;
 
         public static bool IsMagicStoneType(FeatureType type) =>
             type == FeatureType.OwnMainStone
