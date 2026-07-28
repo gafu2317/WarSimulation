@@ -22,7 +22,7 @@ namespace WarSimulation.Combat.Map
         public float DepthMeters { get; }
 
         /// <summary>
-        /// 互換用。Water タグは掘削全幅と同じ（<see cref="RiverShape"/> 参照）。
+        /// 掘削幅に対する Water タグ半径の比率（速度低下用）。見た目・NavMesh コスト帯とは独立。
         /// </summary>
         public float WaterTagRatio { get; }
 
@@ -30,7 +30,7 @@ namespace WarSimulation.Combat.Map
             IReadOnlyList<Vector2Int> cells,
             float widthMeters,
             float depthMeters,
-            float waterTagRatio = 0.6f)
+            float waterTagRatio = 0.8f)
         {
             Cells = cells ?? throw new ArgumentNullException(nameof(cells));
             WidthMeters = widthMeters;

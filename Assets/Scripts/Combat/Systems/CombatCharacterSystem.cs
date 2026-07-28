@@ -7,7 +7,6 @@ using WarSimulation.Combat.Map;
 public class CombatCharacterSystem : MonoBehaviour
 {
     private const float FlatCellMaxSlopeDeg = 8f;
-    private const float TeamQuarterNavMeshSampleRadius = 2f;
     private const float CharacterSpacingDistance = 1.5f;
     private const float InitialFeatureClearanceDistance = 3f;
     private static readonly ProfilerMarker CollectAiBrainsMarker = new("CombatAI.CollectBrains");
@@ -219,7 +218,7 @@ public class CombatCharacterSystem : MonoBehaviour
         {
             if (character == null) continue;
             if (NavMesh.SamplePosition(character.transform.position, out NavMeshHit hit, radius, NavMesh.AllAreas))
-                character.transform.position = hit.position;
+                PlaceCharacter(character, hit.position);
         }
     }
 
@@ -230,41 +229,32 @@ public class CombatCharacterSystem : MonoBehaviour
         MapData map)
     {
         if (characters == null || characters.Count == 0) return true;
-        if (!TryGetMainStonePositionForTeam(team, out Vector3 anchorPosition))
-        {
+        if (!TryGetMainStonePositionForTeam(team, out Vector3 anchorPosition)) return false;
+        if (!TryCollectFlatPositionsNearAnchor(mapSystem, map, anchorPosition, out List<Vector3> candidates))
             return false;
-        }
 
-        if (!TryCollectFlatPositionsNearAnchor(mapSystem, map, anchorPosition, out List<Vector3> candidates) ||
-            candidates.Count == 0)
-        {
-            return false;
-        }
-
-        var destinations = new List<Vector3>(characters.Count);
+        var placed = new List<Vector3>(characters.Count);
         for (int i = 0; i < characters.Count; i++)
         {
             Character character = characters[i];
             if (character == null) continue;
 
-            if (!TrySelectCandidateWithSpacing(candidates, destinations, out Vector3 destination))
+            Vector3 destination = default;
+            bool found = false;
+            for (int c = 0; c < candidates.Count; c++)
             {
-                return false;
+                if (!HasEnoughSpacing(candidates[c], placed)) continue;
+                destination = candidates[c];
+                found = true;
+                break;
             }
 
-            destinations.Add(destination);
+            if (!found) return false;
+            PlaceCharacter(character, destination);
+            placed.Add(destination);
         }
 
-        int destinationIndex = 0;
-        for (int i = 0; i < characters.Count; i++)
-        {
-            Character character = characters[i];
-            if (character == null) continue;
-
-            PlaceCharacter(character, destinations[destinationIndex++]);
-        }
-
-        return destinations.Count > 0;
+        return placed.Count > 0;
     }
 
     private static bool TryCollectFlatPositionsNearAnchor(
@@ -274,7 +264,6 @@ public class CombatCharacterSystem : MonoBehaviour
         out List<Vector3> candidates)
     {
         candidates = new List<Vector3>();
-
         GroundStateGrid ground = map.GroundStates;
         HeightMap height = map.Height;
 
@@ -285,52 +274,19 @@ public class CombatCharacterSystem : MonoBehaviour
                 if (ground.GetCell(x, z) == GroundState.Water) continue;
                 if (height.IsCliffFaceCell(x, z)) continue;
 
-                Vector3 mapLocalPosition = GetCellCenterLocalPosition(ground, x, z);
-                if (height.SampleSlopeDeg(mapLocalPosition) > FlatCellMaxSlopeDeg) continue;
+                Vector3 mapLocal = GetCellCenterLocalPosition(ground, x, z);
+                if (height.SampleSlopeDeg(mapLocal) > FlatCellMaxSlopeDeg) continue;
 
-                Vector3 worldPosition = mapSystem.MapLocalToSurfaceWorldPosition(mapLocalPosition);
+                Vector3 worldPosition = mapSystem.MapLocalToSurfaceWorldPosition(mapLocal);
                 if (!IsClearOfSolidFeatures(mapSystem, map, worldPosition)) continue;
-
-                if (NavMesh.SamplePosition(worldPosition, out NavMeshHit hit, TeamQuarterNavMeshSampleRadius, NavMesh.AllAreas))
-                {
-                    if (IsClearOfSolidFeatures(mapSystem, map, hit.position))
-                    {
-                        candidates.Add(hit.position);
-                    }
-                    continue;
-                }
 
                 candidates.Add(worldPosition);
             }
         }
 
         candidates.Sort((a, b) =>
-        {
-            float distanceA = HorizontalDistanceSqr(anchorPosition, a);
-            float distanceB = HorizontalDistanceSqr(anchorPosition, b);
-            return distanceA.CompareTo(distanceB);
-        });
-
+            HorizontalDistanceSqr(anchorPosition, a).CompareTo(HorizontalDistanceSqr(anchorPosition, b)));
         return candidates.Count > 0;
-    }
-
-    private static bool TrySelectCandidateWithSpacing(
-        List<Vector3> candidates,
-        List<Vector3> placedPositions,
-        out Vector3 selected)
-    {
-        for (int i = 0; i < candidates.Count; i++)
-        {
-            Vector3 candidate = candidates[i];
-            if (HasEnoughSpacing(candidate, placedPositions))
-            {
-                selected = candidate;
-                return true;
-            }
-        }
-
-        selected = default;
-        return false;
     }
 
     private static bool IsClearOfSolidFeatures(
@@ -350,9 +306,7 @@ public class CombatCharacterSystem : MonoBehaviour
                 ? origin.TransformPoint(feature.WorldPosition)
                 : feature.WorldPosition;
             if (HorizontalDistanceSqr(worldPosition, featurePosition) < clearanceSqr)
-            {
                 return false;
-            }
         }
 
         return true;
@@ -360,13 +314,11 @@ public class CombatCharacterSystem : MonoBehaviour
 
     private static bool HasEnoughSpacing(Vector3 candidate, List<Vector3> placedPositions)
     {
+        float minSqr = CharacterSpacingDistance * CharacterSpacingDistance;
         for (int i = 0; i < placedPositions.Count; i++)
         {
-            if (HorizontalDistanceSqr(candidate, placedPositions[i]) <
-                CharacterSpacingDistance * CharacterSpacingDistance)
-            {
+            if (HorizontalDistanceSqr(candidate, placedPositions[i]) < minSqr)
                 return false;
-            }
         }
 
         return true;
@@ -387,17 +339,12 @@ public class CombatCharacterSystem : MonoBehaviour
 
     private static void PlaceCharacter(Character character, Vector3 worldPosition)
     {
-        CombatCharacterBody body = character.GetComponent<CombatCharacterBody>();
-        body?.Stop();
-
+        character.GetComponent<CombatCharacterBody>()?.Stop();
         NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
         if (agent != null && agent.isOnNavMesh)
-        {
             agent.Warp(worldPosition);
-            return;
-        }
-
-        character.transform.position = worldPosition;
+        else
+            character.transform.position = worldPosition;
     }
 
     private void CaptureCurrentPositions(List<Character> characters)
