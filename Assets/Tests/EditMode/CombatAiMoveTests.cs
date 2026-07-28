@@ -530,7 +530,7 @@ public sealed class CombatAiMoveTests
     }
 
     [Test]
-    public void Planner_RangedSearchPrefersHighGroundWhenEnemyInfoIsMissing()
+    public void Planner_WandCommitsToKnownEnemyStone()
     {
         GameObject ownerGo = new GameObject("WandOwner");
         try
@@ -547,8 +547,8 @@ public sealed class CombatAiMoveTests
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
 
-            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.Search));
-            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo(CombatAiMoveCode.TakeHighGround));
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo(CombatAiMoveCode.AdvanceEnemyStone));
         }
         finally
         {
@@ -851,6 +851,53 @@ public sealed class CombatAiMoveTests
         {
             Object.DestroyImmediate(supporterGo);
             Object.DestroyImmediate(attackerGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_ShieldPrefersFollowingWandOverSearch()
+    {
+        GameObject ownerGo = new GameObject("ShieldOwner");
+        GameObject wandGo = new GameObject("WandAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Shield());
+            Character wand = wandGo.AddComponent<Character>();
+            wand.Health.Initialize(30);
+            wand.EquipWeapon(new Wand());
+            wandGo.transform.position = new Vector3(4f, 0f, 0f);
+            Vector3 wandDestination = new Vector3(16f, 0f, 0f);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[]
+                {
+                    CreateIntel(
+                        wand,
+                        true,
+                        wandGo.transform.position,
+                        hasObjective: true,
+                        objective: CombatObjective.DestroyEnemyStone,
+                        hasIntendedDestination: true,
+                        intendedDestination: wandDestination),
+                },
+                hasOwnStonePosition: true,
+                ownStonePosition: Vector3.zero,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+            Assert.That(snapshot.ObjectiveEntries.Exists(entry => entry.Objective == CombatObjective.Search), Is.False);
+            Assert.That(snapshot.SelectedMove.Code, Is.EqualTo(CombatAiMoveCode.SupportAlly));
+            Assert.That(snapshot.SelectedMove.Target.Destination, Is.EqualTo(wandDestination));
+        }
+        finally
+        {
+            Object.DestroyImmediate(wandGo);
             Object.DestroyImmediate(ownerGo);
         }
     }

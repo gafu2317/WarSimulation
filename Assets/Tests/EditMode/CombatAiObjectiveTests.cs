@@ -189,6 +189,95 @@ public sealed class CombatAiObjectiveTests
     }
 
     [Test]
+    public void Planner_SwordPrefersStoneWhenEnemyIsFarAway()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject enemyGo = new GameObject("DistantEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(15f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_WandPrefersStoneWhenEnemyIsOnlyAtLongRange()
+    {
+        GameObject ownerGo = new GameObject("WandOwner");
+        GameObject enemyGo = new GameObject("LongRangeEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Wand());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(22f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_BibleKeepsSearchingWhenEnemyStoneIsKnown()
+    {
+        GameObject ownerGo = new GameObject("BibleOwner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Bible());
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.Search));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_GrimoireChoosesAttackEnemyWhenEnemyIsKnown()
     {
         GameObject ownerGo = new GameObject("GrimoireOwner");

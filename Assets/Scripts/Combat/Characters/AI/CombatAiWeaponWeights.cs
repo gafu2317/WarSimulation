@@ -111,7 +111,7 @@ public sealed class CombatAiWeaponWeightsEntry
                 _objectives.AttackEnemy = 24f;
                 _objectives.DestroyEnemyStone = 22f;
                 _objectives.DefendOwnStone = 4f;
-                _objectives.Search = -4f;
+                _objectives.Search = -14f;
                 _objectives.SupportAlly = -14f;
 
                 _moves.PursueEnemy = 22f;
@@ -126,13 +126,13 @@ public sealed class CombatAiWeaponWeightsEntry
                 break;
             case WeaponKind.Shield:
                 _objectives.DefendOwnStone = 28f;
-                _objectives.SupportAlly = 18f;
+                _objectives.SupportAlly = 24f;
                 _objectives.AttackEnemy = 8f;
                 _objectives.DestroyEnemyStone = 4f;
-                _objectives.Search = -6f;
+                _objectives.Search = -12f;
 
                 _moves.ReturnOwnStone = 22f;
-                _moves.SupportAlly = 20f;
+                _moves.SupportAlly = 24f;
                 _moves.PursueEnemy = 4f;
 
                 _skills.Damage = 4f;
@@ -140,8 +140,8 @@ public sealed class CombatAiWeaponWeightsEntry
                 break;
             case WeaponKind.Wand:
                 _objectives.AttackEnemy = 24f;
-                _objectives.DestroyEnemyStone = 12f;
-                _objectives.Search = 10f;
+                _objectives.DestroyEnemyStone = 22f;
+                _objectives.Search = -8f;
                 _objectives.Retreat = 8f;
                 _objectives.SupportAlly = -12f;
                 _objectives.DefendOwnStone = -6f;
@@ -149,7 +149,7 @@ public sealed class CombatAiWeaponWeightsEntry
                 _moves.TakeHighGround = 20f;
                 _moves.MoveForest = 12f;
                 _moves.PursueEnemy = -10f;
-                _moves.AdvanceEnemyStone = 6f;
+                _moves.AdvanceEnemyStone = 16f;
 
                 _skills.Damage = 20f;
                 _skills.Protect = -10f;
@@ -157,16 +157,17 @@ public sealed class CombatAiWeaponWeightsEntry
                 break;
             case WeaponKind.Grimoire:
                 _objectives.AttackEnemy = 22f;
-                _objectives.DestroyEnemyStone = 16f;
-                _objectives.Search = 8f;
+                _objectives.DestroyEnemyStone = 8f;
+                _objectives.Search = 10f;
                 _objectives.Retreat = 8f;
-                _objectives.SupportAlly = -10f;
+                _objectives.SupportAlly = -6f;
                 _objectives.DefendOwnStone = -6f;
 
                 _moves.TakeHighGround = 10f;
                 _moves.MoveForest = 12f;
                 _moves.PursueEnemy = -4f;
-                _moves.AdvanceEnemyStone = 8f;
+                _moves.AdvanceEnemyStone = 4f;
+                _moves.SearchLastKnown = 8f;
 
                 _skills.Damage = 8f;
                 _skills.Debuff = 24f;
