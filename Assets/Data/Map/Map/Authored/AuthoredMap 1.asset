@@ -17,34 +17,78 @@ MonoBehaviour:
   _mountains:
   - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
     Kind: 1
-    Center: {x: 47.694016, y: 54.412415}
+    Center: {x: 28.27051, y: 54.14634}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
   _rivers:
   - Shape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
     ControlPoints:
-    - {x: 21.485586, y: 60}
-    - {x: 24.532711, y: 25.233646}
-    - {x: 46.89579, y: 0}
+    - {x: 0, y: 32.993347}
+    - {x: 35.18847, y: 18.492239}
+    - {x: 60, y: 41.90687}
   _lakes:
   - Shape: {fileID: 11400000, guid: c4f281a6b9d347e2a1d8e5c7f2b30986, type: 2}
-    Center: {x: 16.16408, y: 15.033259}
+    Center: {x: 37.45011, y: 9.312637}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
     IsFrozen: 0
-  _groundPatches: []
-  _forests: []
+  _groundPatches:
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 30.798225, y: 3.4589803}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 10.310421, y: 39.379154}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 7.1175165, y: 39.51219}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 4.0576496, y: 42.572063}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 25.609756, y: 5.5875816}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 34.789356, y: 2.1286047}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  _forests:
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 51.152996, y: 4.3902435}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 31.330376, y: 52.150776}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 8.980044, y: 11.042129}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 54.345898, y: 51.618626}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 40.909092, y: 41.640797}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
   _bridges:
-  - Center: {x: 20.35, y: 42.55}
-    RotationDeg: 90
+  - Center: {x: 27.25, y: 28.45}
+    RotationDeg: -26.565052
     Scale: {x: 2, y: 0.2, z: 5}
-  - Center: {x: 39.05, y: 8.05}
-    RotationDeg: 63.43495
+  - Center: {x: 55.350002, y: 34.350002}
+    RotationDeg: -26.565052
     Scale: {x: 2, y: 0.2, z: 5}
   _trees: []
   _rocks: []
   _magicStones:
   - Type: 0
-    Center: {x: 44.634148, y: 25.676275}
+    Center: {x: 52.217297, y: 19.290464}
   - Type: 2
-    Center: {x: 8.314856, y: 28.33703}
+    Center: {x: 10.842572, y: 39.778267}
