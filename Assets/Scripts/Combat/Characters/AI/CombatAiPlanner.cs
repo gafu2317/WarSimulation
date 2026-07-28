@@ -383,7 +383,8 @@ public static partial class CombatAiPlanner
     {
         float baseScore = GetSkillBaseScore(skill, objective);
         float weaponScore = GetSkillWeaponScore(context.Owner.EquippedWeapon, skill);
-        float personalityScore = GetSkillPersonalityScore(context.Owner, personalityProfile, skill, objective);
+        float personalityScore = CombatAiPersonalityBehavior.GetSkillScore(
+            context.Owner, personalityProfile, skill, objective);
         float situationScore = GetSkillSituationScore(context, assessment, skill, evaluation, objective)
             + CombatAiFocusTargeting.GetSkillScore(
                 context,
@@ -476,11 +477,6 @@ public static partial class CombatAiPlanner
         return CombatAiWeaponWeights.GetSkillWeight(weapon.Kind, skill);
     }
 
-    private static float GetSkillPersonalityScore(Character owner, CombatAiPersonalityProfile personalityProfile, SkillBase skill, CombatObjective objective)
-    {
-        return CombatAiPersonalityBehavior.GetSkillScore(owner, personalityProfile, skill, objective);
-    }
-
     private static float GetSkillSituationScore(
         CombatAiContext context,
         CombatAiAssessment assessment,
@@ -491,7 +487,7 @@ public static partial class CombatAiPlanner
         if (skill == null) return 0f;
         if (!evaluation.CanUse) return UnselectableScore;
 
-        float score = evaluation.CanUse ? 16f : -20f;
+        float score = 16f;
         if (CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsProtect(skill))
         {
             score += assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.25f;

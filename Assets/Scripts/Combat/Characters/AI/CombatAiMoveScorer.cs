@@ -58,7 +58,7 @@ public static class CombatAiMoveScorer
             - GetSwordIsolationPenalty(context, assessment, weaponKind, code, target)
             - routeRiskPenalty;
         float weaponScore = GetWeaponScore(owner.EquippedWeapon, code);
-        float personalityScore = GetPersonalityScore(personalityProfile, code, objective);
+        float personalityScore = CombatAiPersonalityBehavior.GetMoveScore(personalityProfile, code, objective);
 
         if (breakdown != null)
         {
@@ -421,20 +421,10 @@ public static class CombatAiMoveScorer
     private static float GetWeaponScore(WeaponBase weapon, string code)
     {
         WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
-        if (code == CombatAiMoveCode.InterceptThreat)
-        {
-            return kind == WeaponKind.Shield ? 28f : -40f;
-        }
-
         float score = CombatAiWeaponWeights.GetMoveWeight(kind, code);
         return code == CombatAiMoveCode.TakeHighGround && weapon != null
             ? score + weapon.SeekHighGroundBias * 0.4f
             : score;
-    }
-
-    private static float GetPersonalityScore(CombatAiPersonalityProfile personalityProfile, string code, CombatObjective objective)
-    {
-        return CombatAiPersonalityBehavior.GetMoveScore(personalityProfile, code, objective);
     }
 
     private static void AddReasons(string code, CombatAiScoreBreakdown breakdown)

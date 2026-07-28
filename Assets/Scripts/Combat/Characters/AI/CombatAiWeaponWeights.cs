@@ -80,6 +80,7 @@ public sealed class CombatAiWeaponWeightsEntry
             CombatAiMoveCode.ReturnOwnStone => _moves.ReturnOwnStone,
             CombatAiMoveCode.PursueEnemy => _moves.PursueEnemy,
             CombatAiMoveCode.SupportAlly => _moves.SupportAlly,
+            CombatAiMoveCode.InterceptThreat => _moves.InterceptThreat,
             CombatAiMoveCode.TakeHighGround => _moves.TakeHighGround,
             CombatAiMoveCode.MoveForest => _moves.MoveForest,
             CombatAiMoveCode.SearchLastKnown => _moves.SearchLastKnown,
@@ -104,12 +105,13 @@ public sealed class CombatAiWeaponWeightsEntry
         _objectives = new CombatAiObjectiveWeights();
         _moves = new CombatAiMoveWeights();
         _skills = new CombatAiSkillWeights();
+        _moves.InterceptThreat = kind == WeaponKind.Shield ? 28f : -40f;
 
         switch (kind)
         {
             case WeaponKind.Sword:
                 _objectives.AttackEnemy = 24f;
-                _objectives.DestroyEnemyStone = 22f;
+                _objectives.DestroyEnemyStone = 36f;
                 _objectives.DefendOwnStone = 4f;
                 _objectives.Search = -14f;
                 _objectives.SupportAlly = -14f;
@@ -140,7 +142,7 @@ public sealed class CombatAiWeaponWeightsEntry
                 break;
             case WeaponKind.Wand:
                 _objectives.AttackEnemy = 24f;
-                _objectives.DestroyEnemyStone = 22f;
+                _objectives.DestroyEnemyStone = 36f;
                 _objectives.Search = -8f;
                 _objectives.Retreat = 8f;
                 _objectives.SupportAlly = -12f;
@@ -224,6 +226,7 @@ public sealed class CombatAiMoveWeights
     public float ReturnOwnStone;
     public float PursueEnemy;
     public float SupportAlly;
+    public float InterceptThreat;
     public float TakeHighGround;
     public float MoveForest;
     public float SearchLastKnown;

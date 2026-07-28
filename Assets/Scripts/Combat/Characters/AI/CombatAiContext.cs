@@ -135,6 +135,22 @@ public static class CombatAiPositioning
             ally.HasIntendedDestination &&
             GetAdvanceProgress(context, ally.IntendedDestination) > GetAdvanceProgress(context, ally.CurrentPosition) + 0.01f;
     }
+
+    public static bool IsAssaultWeaponKind(WeaponKind kind)
+    {
+        return kind == WeaponKind.Sword || kind == WeaponKind.Wand;
+    }
+
+    public static bool IsAssaultWeapon(WeaponBase weapon)
+    {
+        return weapon != null && IsAssaultWeaponKind(weapon.Kind);
+    }
+
+    /// <summary>盾の追従・体当たり保護の対象: 双剣／杖、または前進中の味方。</summary>
+    public static bool IsFrontlineFollowAlly(CombatAiContext context, CombatCharacterIntel ally)
+    {
+        return IsAssaultWeaponKind(ally.WeaponKind) || IsAdvancingAlly(context, ally);
+    }
 }
 
 public readonly struct CombatCharacterIntel

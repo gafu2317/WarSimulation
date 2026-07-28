@@ -78,7 +78,8 @@ public static class CombatAiObjectiveScorer
                     focusCommitmentRemainingSeconds,
                     previousObjective);
             float weaponScore = GetWeaponScore(weapon, objective);
-            float personalityScore = GetPersonalityScore(context, personalityProfile, assessment, objective);
+            float personalityScore = CombatAiPersonalityBehavior.GetObjectiveScore(
+                context, personalityProfile, assessment, objective);
             float score = baseScore + situationScore + weaponScore + personalityScore;
 
             if (entries != null)
@@ -174,8 +175,6 @@ public static class CombatAiObjectiveScorer
 
     private static bool IsObjectiveSelectable(CombatAiContext context, CombatObjective objective)
     {
-        if (context == null) return false;
-
         WeaponBase ownerWeapon = context.Owner != null ? context.Owner.EquippedWeapon : null;
         if (ownerWeapon != null && ownerWeapon.Kind == WeaponKind.Shield)
         {
@@ -217,8 +216,6 @@ public static class CombatAiObjectiveScorer
 
     private static bool HasAttackTarget(CombatAiContext context)
     {
-        if (context == null) return false;
-
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
@@ -257,7 +254,7 @@ public static class CombatAiObjectiveScorer
         WeaponBase weapon,
         CombatObjective objective)
     {
-        bool assaultWeapon = IsAssaultWeapon(weapon);
+        bool assaultWeapon = CombatAiPositioning.IsAssaultWeapon(weapon);
         float score = objective switch
         {
             CombatObjective.AttackEnemy => GetAttackEnemySituationScore(context, assessment, weapon),
@@ -274,7 +271,7 @@ public static class CombatAiObjectiveScorer
                 - (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence))
                     * GetDestroyStoneConfidencePenalty(weapon)
                 + (context.HasEnemyStonePosition ? 4f : 0f)
-                + (CanAttackEnemyStoneWithoutMoving(context) ? 52f : 0f)
+                + (assaultWeapon && CanAttackEnemyStoneWithoutMoving(context) ? 52f : 0f)
                 + UnityEngine.Mathf.Max(0f, 8f - assessment.GetValue(CombatAiMetricIndex.AllyFragility) * 0.1f),
             CombatObjective.Search => (100f - assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence)) * 0.55f
                 + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.2f
@@ -303,13 +300,13 @@ public static class CombatAiObjectiveScorer
             + assessment.GetValue(CombatAiMetricIndex.TerrainAdvantage) * 0.15f
             - assessment.GetValue(CombatAiMetricIndex.SelfThreat) * 0.35f;
 
-        // その場で魔石を殴れるなら、近い敵がいても魔石破壊を優先する。
-        if (CanAttackEnemyStoneWithoutMoving(context))
+        // 攻撃職が、その場で魔石を殴れるなら近い敵がいても魔石破壊を優先する。
+        if (CombatAiPositioning.IsAssaultWeapon(weapon) && CanAttackEnemyStoneWithoutMoving(context))
         {
             score -= 56f;
         }
         // 攻撃職は「本当に近い敵」のときだけ敵攻撃へ切り替える。遠距離の既知敵では魔石を優先する。
-        else if (IsAssaultWeapon(weapon) && !HasCloseEngagementThreat(context, weapon))
+        else if (CombatAiPositioning.IsAssaultWeapon(weapon) && !HasCloseEngagementThreat(context, weapon))
         {
             score -= 48f;
         }
@@ -342,13 +339,7 @@ public static class CombatAiObjectiveScorer
     private static float GetDestroyStoneConfidencePenalty(WeaponBase weapon)
     {
         // 攻撃職は敵未確認でも魔石前進を捨てにくくする。支援職は従来どおり索敵寄り。
-        return IsAssaultWeapon(weapon) ? 0.15f : 0.5f;
-    }
-
-    private static bool IsAssaultWeapon(WeaponBase weapon)
-    {
-        if (weapon == null) return false;
-        return weapon.Kind == WeaponKind.Sword || weapon.Kind == WeaponKind.Wand;
+        return CombatAiPositioning.IsAssaultWeapon(weapon) ? 0.15f : 0.5f;
     }
 
     private static bool HasCloseEngagementThreat(CombatAiContext context, WeaponBase weapon)
@@ -429,37 +420,6 @@ public static class CombatAiObjectiveScorer
         return false;
     }
 
-    private static bool HasStableAllyFrontline(CombatAiContext context)
-    {
-        for (int i = 0; i < context.AllyIntel.Count; i++)
-        {
-            CombatCharacterIntel ally = context.AllyIntel[i];
-            if (!ally.CanAct || ally.MaxHP <= 0 || ally.HP / (float)ally.MaxHP < 0.5f) continue;
-            if (!ally.HasObjective ||
-                (ally.Objective != CombatObjective.AttackEnemy && ally.Objective != CombatObjective.DefendOwnStone))
-            {
-                continue;
-            }
-
-            if (IsLivingEnemy(context, ally.IntendedTarget))
-            {
-                return true;
-            }
-
-            for (int j = 0; j < context.EnemyIntel.Count; j++)
-            {
-                CombatCharacterIntel enemy = context.EnemyIntel[j];
-                if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
-                if (HorizontalDistance(ally.CurrentPosition, enemy.KnownPosition) <= 8f)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     private static float GetWeaponSituationAdjustment(
         CombatAiContext context,
         CombatAiAssessment assessment,
@@ -489,8 +449,6 @@ public static class CombatAiObjectiveScorer
             CombatObjective.AttackEnemy when HasCloseEngagementThreat(context, context.Owner != null ? context.Owner.EquippedWeapon : null)
                 && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 30f
                 && assessment.GetValue(CombatAiMetricIndex.SelfThreat) < 35f => 16f,
-            CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
-                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 24f => 14f,
             CombatObjective.DefendOwnStone when assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 28f => 12f,
             _ => 0f,
         };
@@ -523,44 +481,21 @@ public static class CombatAiObjectiveScorer
 
     private static bool HasPreferredEscortAlly(CombatAiContext context)
     {
-        if (context == null) return false;
-
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
             if (!ally.CanAct || ally.Character == context.Owner) continue;
-            if (IsPreferredEscortWeapon(ally.WeaponKind)) return true;
+            if (CombatAiPositioning.IsAssaultWeaponKind(ally.WeaponKind)) return true;
         }
 
         return false;
-    }
-
-    private static bool IsPreferredEscortWeapon(WeaponKind kind)
-    {
-        return kind == WeaponKind.Sword || kind == WeaponKind.Wand;
     }
 
     private static bool HasAdvancingFrontlineAlly(CombatAiContext context)
     {
-        if (context == null) return false;
-
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
-            CombatCharacterIntel ally = context.AllyIntel[i];
-            if (CombatAiPositioning.IsAdvancingAlly(context, ally)) return true;
-        }
-
-        return false;
-    }
-
-    private static bool IsLivingEnemy(CombatAiContext context, Character character)
-    {
-        if (character == null) return false;
-
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character == character) return enemy.IsAlive;
+            if (CombatAiPositioning.IsAdvancingAlly(context, context.AllyIntel[i])) return true;
         }
 
         return false;
@@ -579,8 +514,6 @@ public static class CombatAiObjectiveScorer
             CombatObjective.AttackEnemy when HasCloseEngagementThreat(context, context.Owner != null ? context.Owner.EquippedWeapon : null)
                 && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 28f
                 && assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) > 35f => 14f,
-            CombatObjective.DestroyEnemyStone when context.HasEnemyStonePosition
-                && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 24f => 14f,
             _ => 0f,
         };
     }
@@ -609,13 +542,15 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        bool stableFrontline = assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 18f && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 16f;
+        bool stableFrontline = assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 18f
+            && assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) < 16f;
         return objective switch
         {
             CombatObjective.SupportAlly when context.AllyIntel.Count > 0
                 && assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 12f => 18f,
             CombatObjective.DefendOwnStone when context.HasOwnStonePosition
-                && (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 18f || assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 20f) => 14f,
+                && (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 18f
+                    || assessment.GetValue(CombatAiMetricIndex.AllyFragility) > 20f) => 14f,
             CombatObjective.AttackEnemy when stableFrontline
                 && assessment.GetValue(CombatAiMetricIndex.ReachableEnemyValue) > 26f => 6f,
             CombatObjective.DestroyEnemyStone when stableFrontline
@@ -630,7 +565,8 @@ public static class CombatAiObjectiveScorer
         CombatAiAssessment assessment,
         CombatObjective objective)
     {
-        bool stableLine = assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 16f && assessment.GetValue(CombatAiMetricIndex.SelfThreat) < 20f;
+        bool stableLine = assessment.GetValue(CombatAiMetricIndex.AllyFragility) < 16f
+            && assessment.GetValue(CombatAiMetricIndex.SelfThreat) < 20f;
         return objective switch
         {
             CombatObjective.SupportAlly when context.AllyIntel.Count > 0
@@ -661,15 +597,6 @@ public static class CombatAiObjectiveScorer
         }
 
         return count;
-    }
-
-    private static float GetPersonalityScore(
-        CombatAiContext context,
-        CombatAiPersonalityProfile personalityProfile,
-        CombatAiAssessment assessment,
-        CombatObjective objective)
-    {
-        return CombatAiPersonalityBehavior.GetObjectiveScore(context, personalityProfile, assessment, objective);
     }
 
     private static void AddReasons(

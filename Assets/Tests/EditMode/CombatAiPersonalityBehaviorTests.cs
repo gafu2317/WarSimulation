@@ -97,7 +97,11 @@ public sealed class CombatAiPersonalityBehaviorTests
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
             Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
-            Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(20f, 0f, 0f)));
+            Assert.That(plan.MoveTarget.HasDestination, Is.True);
+            Assert.That(
+                Vector3.Distance(plan.MoveTarget.Destination, new Vector3(20f, 0f, 0f)),
+                Is.EqualTo(2.5f).Within(0.01f));
+            Assert.That(plan.MoveTarget.Destination.x, Is.LessThan(20f));
         }
         finally
         {

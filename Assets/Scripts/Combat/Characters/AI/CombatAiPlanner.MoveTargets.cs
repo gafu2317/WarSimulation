@@ -260,7 +260,7 @@ public static partial class CombatAiPlanner
             for (int j = 0; j < context.AllyIntel.Count; j++)
             {
                 CombatCharacterIntel ally = context.AllyIntel[j];
-                if (!ally.CanAct || !IsFrontlineAlly(context, ally)) continue;
+                if (!ally.CanAct || !CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) continue;
                 TrySelectBodyBlockPosition(owner, enemy, ally.CurrentPosition, GetProtectedAllyValue(context, ally), ref bestValue, ref bestPosition);
             }
 
@@ -303,9 +303,7 @@ public static partial class CombatAiPlanner
     {
         if (ally.MaxHP <= 0) return 20f;
         float missingHpRatio = 1f - ally.HP / (float)ally.MaxHP;
-        float escortWeaponBonus = ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Wand
-            ? 15f
-            : 0f;
+        float escortWeaponBonus = CombatAiPositioning.IsAssaultWeaponKind(ally.WeaponKind) ? 15f : 0f;
         float stoneAssaultBonus = ally.HasObjective && ally.Objective == CombatObjective.DestroyEnemyStone
             ? 12f
             : 0f;
@@ -383,7 +381,7 @@ public static partial class CombatAiPlanner
         CombatCharacterIntel ally = FindBestShieldProtectTarget(context, owner);
         if (ally.Character == null) return CombatMoveTarget.None;
 
-        bool isFrontline = IsFrontlineAlly(context, ally);
+        bool isFrontline = CombatAiPositioning.IsFrontlineFollowAlly(context, ally);
         Vector3 allyPos = isFrontline && ally.HasIntendedDestination
             ? ally.IntendedDestination
             : ally.CurrentPosition;
@@ -422,7 +420,7 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || !ally.CanAct || !IsShieldFollowCandidate(context, ally)) continue;
+            if (ally.Character == null || !ally.CanAct || !CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) continue;
 
             float score = GetProtectedAllyValue(context, ally);
             if (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f)) score += 20f;
@@ -433,23 +431,6 @@ public static partial class CombatAiPlanner
         }
 
         return best;
-    }
-
-    private static bool IsShieldFollowCandidate(CombatAiContext context, CombatCharacterIntel ally)
-    {
-        if (ally.WeaponKind == WeaponKind.Sword || ally.WeaponKind == WeaponKind.Wand)
-        {
-            return true;
-        }
-
-        return CombatAiPositioning.IsAdvancingAlly(context, ally);
-    }
-
-    private static bool IsFrontlineAlly(CombatAiContext context, CombatCharacterIntel ally)
-    {
-        return CombatAiPositioning.IsAdvancingAlly(context, ally)
-            || ally.WeaponKind == WeaponKind.Sword
-            || ally.WeaponKind == WeaponKind.Wand;
     }
 
     private static CombatMoveTarget CreateBibleSupportTarget(CombatAiContext context, Character owner, Character ally)
