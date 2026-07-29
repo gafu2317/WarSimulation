@@ -224,6 +224,23 @@ public class CombatMapSystem : MonoBehaviour
         return map;
     }
 
+    public MapData ApplyAuthoredMap(AuthoredMapDefinition definition, bool render3D = true)
+    {
+        if (definition == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatMapSystem)}] Authored map definition is null.");
+            SetCurrentMap(null);
+            return null;
+        }
+
+        _mapSource = CombatMapSource.Authored;
+        _authoredMap = definition;
+        if (render3D && _mapGenerator != null)
+            _mapGenerator.Clear3D();
+
+        return GenerateAuthoredAndSetCurrentMap(render3D);
+    }
+
     private MapData GenerateAuthoredAndSetCurrentMap(bool render3D)
     {
         if (_authoredMap == null)
@@ -237,6 +254,13 @@ public class CombatMapSystem : MonoBehaviour
         {
             Debug.LogWarning(
                 $"[{nameof(CombatMapSystem)}] Authored map '{_authoredMap.name}' has no SharedConfig.");
+            SetCurrentMap(null);
+            return null;
+        }
+
+        if (_mapGenerator == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatMapSystem)}] MapGenerator is not assigned.");
             SetCurrentMap(null);
             return null;
         }

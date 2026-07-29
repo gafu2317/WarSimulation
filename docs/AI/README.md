@@ -32,6 +32,7 @@
 | 読むもの | 内容 |
 |---|---|
 | [診断ログ](診断ログ.md) | バトルログの読み方 |
+| [自動戦闘デバッグ](自動戦闘デバッグ.md) | マップと編成を指定した連戦 |
 | [進攻ルート](進攻ルート.md) | 魔石間ルート候補の生成 |
 | [進攻ルートとソフト分散](進攻ルートとソフト分散.md) | AI がルートを使い分ける方針 |
 
@@ -40,4 +41,5 @@
 - 判断本体: `Assets/Scripts/Combat/Characters/AI/`
 - チーム tick: `CombatCharacterSystem.TickAiDecisionsNow`
 - 診断ログ: `CombatBattleEventLogger`
+- 自動戦闘: `Assets/Scripts/Combat/Debug/AutoBattle/`
 - 進攻ルート: `CombatStoneAssaultRoutes` / `CombatAssaultRouteCache`
