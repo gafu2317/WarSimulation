@@ -11,8 +11,6 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 {
     public override string InspectorDescription => "戦闘開始から終了まで、AI判断・HP変化・定期状態をログファイルへ記録します。";
 
-    private const string LogDirectoryName = "Logs/CombatBattles";
-
     [SerializeField] private bool _enabled = true;
     [SerializeField, Min(1f)] private float _snapshotIntervalSeconds = 10f;
 
@@ -27,6 +25,8 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     private CombatMagicStoneSystem _magicStoneSystem;
     private CombatCharacterSystem _characterSystem;
     private CombatBattleFlow _battleFlow;
+
+    public string CurrentLogFilePath => _logFilePath;
 
     private void Awake()
     {
@@ -83,9 +83,9 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
         string directoryPath = GetLogDirectoryPath();
         Directory.CreateDirectory(directoryPath);
-        string fileName = "battle_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log";
+        string fileName = "battle_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + ".log";
         _logFilePath = Path.Combine(directoryPath, fileName);
-        _writer = new StreamWriter(_logFilePath, append: false, Encoding.UTF8);
+        _writer = new StreamWriter(_logFilePath, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         string weatherLabel = ResolveWeatherLabel();
         WriteLine(_formatter.FormatBattleHeader(_logFilePath, weatherLabel));
@@ -100,7 +100,10 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
         float duration = Mathf.Max(0f, Time.time - _battleStartTime);
         TryGetBattleSnapshot(out int ownStoneHp, out int ownStoneMaxHp, out int enemyStoneHp, out int enemyStoneMaxHp, out int allyAlive, out int enemyAlive);
-        WriteLine(_formatter.FormatBattleEnd(duration, outcome, ownStoneHp, enemyStoneHp, allyAlive, enemyAlive));
+        string outcomeLabel = outcome == CombatBattleState.WaitingToStart
+            ? "Timeout"
+            : outcome.ToString();
+        WriteLine(_formatter.FormatBattleEnd(duration, outcomeLabel, ownStoneHp, enemyStoneHp, allyAlive, enemyAlive));
         UnsubscribeCharacterHealth();
         CloseLog();
     }
@@ -344,8 +347,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
     private static string GetLogDirectoryPath()
     {
-        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-        return Path.Combine(projectRoot, LogDirectoryName.Replace('/', Path.DirectorySeparatorChar));
+        return CombatDebugPaths.GetLogsDirectory("CombatBattles");
     }
 
     private void WriteLine(string line)

@@ -150,7 +150,7 @@ public sealed class CombatBattleLogFormatter
 
     public string FormatBattleEnd(
         float battleTimeSeconds,
-        CombatBattleState outcome,
+        string outcome,
         int ownStoneHp,
         int enemyStoneHp,
         int allyAliveCount,

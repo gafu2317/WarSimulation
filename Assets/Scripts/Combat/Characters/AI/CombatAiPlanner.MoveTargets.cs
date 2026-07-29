@@ -3,7 +3,8 @@ using UnityEngine;
 
 public static partial class CombatAiPlanner
 {
-    private const float StoneApproachDistance = 2.5f;
+    // 斬撃射程(2)の内側。ここより遠くで止まるとその場攻撃できない。
+    private const float StoneApproachDistance = 1.7f;
 
     private static CombatMoveTarget CreateAttentionSeekerTarget(CombatAiContext context)
     {

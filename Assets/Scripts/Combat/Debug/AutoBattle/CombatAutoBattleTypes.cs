@@ -33,11 +33,20 @@ public sealed class CombatAutoBattleMatchResult
     public string Outcome;
     public float GameSeconds;
     public float RealSeconds;
+    public string DiagnosticLogPath;
 }
 
 public static class CombatAutoBattleConfigLoader
 {
     public const string CommandLineArgument = "-autoBattleConfig";
+
+    private static string _lastConfigPath;
+
+    public static bool TryGetLastConfigPath(out string path)
+    {
+        path = _lastConfigPath;
+        return !string.IsNullOrEmpty(path);
+    }
 
     public static bool TryLoadFromCommandLine(out CombatAutoBattleConfig config, out string path)
     {
@@ -48,7 +57,9 @@ public static class CombatAutoBattleConfigLoader
         {
             if (!string.Equals(args[i], CommandLineArgument, StringComparison.Ordinal)) continue;
             path = args[i + 1];
-            return TryLoadFromFile(path, out config);
+            if (!TryLoadFromFile(path, out config)) return false;
+            _lastConfigPath = path;
+            return true;
         }
 
         return false;
@@ -61,7 +72,9 @@ public static class CombatAutoBattleConfigLoader
 
         string json = File.ReadAllText(path);
         config = JsonUtility.FromJson<CombatAutoBattleConfig>(json);
-        return config != null;
+        if (config == null) return false;
+        _lastConfigPath = path;
+        return true;
     }
 }
 
@@ -112,20 +125,12 @@ public static class CombatAutoBattleReportWriter
 
         string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
         string path = Path.Combine(directory, timestamp + ".json");
-        File.WriteAllText(path, JsonUtility.ToJson(report, prettyPrint: true), Encoding.UTF8);
+        File.WriteAllText(path, JsonUtility.ToJson(report, prettyPrint: true), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         return path;
     }
 
     private static string ResolveOutputDirectory()
     {
-        string cwd = Directory.GetCurrentDirectory();
-        if (Directory.Exists(Path.Combine(cwd, "Assets")))
-            return Path.Combine(cwd, "Logs", "AutoBattles");
-
-        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-        if (!string.IsNullOrEmpty(projectRoot) && Directory.Exists(Path.Combine(projectRoot, "Assets")))
-            return Path.Combine(projectRoot, "Logs", "AutoBattles");
-
-        return Path.Combine(Application.persistentDataPath, "AutoBattles");
+        return CombatDebugPaths.GetLogsDirectory("AutoBattles");
     }
 }

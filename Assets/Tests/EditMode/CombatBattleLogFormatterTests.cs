@@ -56,7 +56,7 @@ public sealed class CombatBattleLogFormatterTests
 
         string line = formatter.FormatBattleEnd(
             182.1f,
-            CombatBattleState.Victory,
+            "Victory",
             ownStoneHp: 88,
             enemyStoneHp: 0,
             allyAliveCount: 4,

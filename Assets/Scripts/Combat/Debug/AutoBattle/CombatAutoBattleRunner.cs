@@ -38,14 +38,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private CombatMapSystem _mapSystem;
     private bool _running;
 
-    private void Awake()
-    {
-        HideCombatUi();
-    }
-
     private void Start()
     {
-        HideCombatUi();
         if (!CombatAutoBattleConfigLoader.TryLoadFromCommandLine(out CombatAutoBattleConfig config, out string path))
             return;
 
@@ -71,6 +65,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
 
     private IEnumerator Run()
     {
+        HideCombatUi();
         _running = true;
         float previousTimeScale = Time.timeScale;
         int previousVSync = QualitySettings.vSyncCount;
@@ -103,6 +98,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         {
             CaptureCharacterPools();
             LoadWeapons();
+            EnsureBattleEventLogger();
         }
         catch (Exception ex)
         {
@@ -117,7 +113,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         _results.Clear();
 
         int exitCode = 0;
-        Debug.Log($"[自動戦闘] {_matchCount}試合を開始します。", this);
+        Debug.Log($"[自動戦闘] {_matchCount}試合を開始します。診断ログ: Logs/CombatBattles/", this);
         for (int i = 0; i < _matchCount; i++)
         {
             Exception matchError = null;
@@ -205,6 +201,9 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             throw new InvalidOperationException("戦闘を開始できませんでした。");
         }
 
+        yield return null;
+        string diagnosticLogPath = GetCurrentDiagnosticLogPath();
+
         float startedAt = Time.time;
         float startedAtRealtime = Time.realtimeSinceStartup;
         while (!ended &&
@@ -230,6 +229,9 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             StopCharacters(enemies);
         }
 
+        yield return null;
+        diagnosticLogPath = GetCurrentDiagnosticLogPath() ?? diagnosticLogPath;
+
         _results.Add(new CombatAutoBattleMatchResult
         {
             Index = index,
@@ -242,7 +244,13 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
                     : "敗北",
             GameSeconds = Mathf.Max(0f, Time.time - startedAt),
             RealSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAtRealtime),
+            DiagnosticLogPath = diagnosticLogPath,
         });
+
+        if (!string.IsNullOrEmpty(diagnosticLogPath))
+            Debug.Log($"[自動戦闘] 試合{index + 1} 診断ログ: {diagnosticLogPath}", this);
+        else
+            Debug.LogWarning($"[自動戦闘] 試合{index + 1} の診断ログファイルが見つかりません。CombatBattleEventLogger を確認してください。", this);
     }
 
     private void ApplyConfig(CombatAutoBattleConfig config)
@@ -318,6 +326,33 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
 
         error = null;
         return true;
+    }
+
+    private void EnsureBattleEventLogger()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        CombatBattleEventLogger logger = FindAnyObjectByType<CombatBattleEventLogger>(FindObjectsInactive.Include);
+        if (logger == null)
+        {
+            logger = gameObject.AddComponent<CombatBattleEventLogger>();
+            Debug.Log("[自動戦闘] CombatBattleEventLogger を追加しました。", this);
+        }
+
+        logger.enabled = true;
+#else
+        throw new InvalidOperationException(
+            "自動戦闘の診断ログには Development Build が必要です。Build Player は Development でビルドしてください。");
+#endif
+    }
+
+    private static string GetCurrentDiagnosticLogPath()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        CombatBattleEventLogger logger = FindAnyObjectByType<CombatBattleEventLogger>(FindObjectsInactive.Include);
+        return logger != null ? logger.CurrentLogFilePath : null;
+#else
+        return null;
+#endif
     }
 
     private bool TryValidateSettings(out string error)

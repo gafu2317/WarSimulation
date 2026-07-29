@@ -512,6 +512,14 @@ public static partial class CombatAiPlanner
         }
 
         score += GetSkillTargetScore(context, skill, evaluation.Context);
+        // その場で使える魔石攻撃は、敵単体より優先する。
+        if (evaluation.CanUse &&
+            CombatAiSkillClassifier.IsDamage(skill) &&
+            (evaluation.Context.PrimaryStone != null || evaluation.ResolvedStones.Count > 0))
+        {
+            score += 100f;
+        }
+
         return score;
     }
 

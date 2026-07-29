@@ -64,7 +64,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 row.WeaponIndex = weaponIndex;
             }
 
-            int personalityIndex = FindPersonalityIndex(CombatAiPersonalityKind.Neutral);
+            int personalityIndex = FindStandardPersonalityIndex();
             if (personalityIndex >= 0)
             {
                 row.PersonalityIndex = personalityIndex;
@@ -83,15 +83,23 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return -1;
     }
 
-    private int FindPersonalityIndex(CombatAiPersonalityKind kind)
+    private int FindStandardPersonalityIndex()
     {
+        // Debug assets often omit _kind and default to Neutral, so match by display name.
         for (int i = 0; i < _personalityOptions.Count; i++)
         {
             CombatAiPersonalityProfile personality = _personalityOptions[i];
-            if (personality != null && personality.Kind == kind) return i;
+            if (personality != null && personality.DisplayNameJapanese == "標準")
+            {
+                return i;
+            }
         }
 
-        return -1;
+        CombatAiPersonalityProfile created =
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Neutral);
+        _builtInPersonalityOptions.Add(created);
+        _personalityOptions.Insert(0, created);
+        return 0;
     }
 
     private void Awake()

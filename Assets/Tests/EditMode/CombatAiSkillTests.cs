@@ -572,4 +572,54 @@ public sealed class CombatAiSkillTests
             Object.DestroyImmediate(ownerGo);
         }
     }
+
+    [Test]
+    public void Planner_PrefersInRangeEnemyStoneOverNearbyEnemy()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject enemyGo = new GameObject("NearbyEnemy");
+        GameObject stoneGo = new GameObject("EnemyMainStone");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            SkillBase slash = CombatSkillFactory.Create(SkillId.Sword_Slash);
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, slash);
+
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(1.5f, 0f, 1.2f);
+
+            MagicStone stone = stoneGo.AddComponent<MagicStone>();
+            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
+            stoneGo.transform.position = new Vector3(0f, 0f, 1.2f);
+            stoneGo.AddComponent<BoxCollider>();
+            Physics.SyncTransforms();
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: stoneGo.transform.position,
+                hasEnemyStoneHealth: true,
+                enemyStoneHP: 100,
+                enemyStoneMaxHP: 100);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+            Assert.That(snapshot.SelectedSkill.Skill, Is.EqualTo(slash));
+            Assert.That(snapshot.SelectedSkill.SkillContext.PrimaryStone, Is.EqualTo(stone));
+            Assert.That(snapshot.SelectedSkill.SkillContext.PrimaryTarget, Is.Null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(stoneGo);
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
 }
