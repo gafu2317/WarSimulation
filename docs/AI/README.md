@@ -32,7 +32,6 @@
 | 読むもの | 内容 |
 |---|---|
 | [診断ログ](診断ログ.md) | バトルログの読み方 |
-| [コンボテスト](コンボテスト.md) | コンボ検証の手順 |
 | [進攻ルート](進攻ルート.md) | 魔石間ルート候補の生成 |
 | [進攻ルートとソフト分散](進攻ルートとソフト分散.md) | AI がルートを使い分ける方針 |
 
@@ -41,5 +40,4 @@
 - 判断本体: `Assets/Scripts/Combat/Characters/AI/`
 - チーム tick: `CombatCharacterSystem.TickAiDecisionsNow`
 - 診断ログ: `CombatBattleEventLogger`
-- コンボ試験: `Assets/Tests/DesignerCombos/`
 - 進攻ルート: `CombatStoneAssaultRoutes` / `CombatAssaultRouteCache`
