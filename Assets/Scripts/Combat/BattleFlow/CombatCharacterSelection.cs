@@ -63,6 +63,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             {
                 row.WeaponIndex = weaponIndex;
             }
+
+            int personalityIndex = FindPersonalityIndex(CombatAiPersonalityKind.Neutral);
+            if (personalityIndex >= 0)
+            {
+                row.PersonalityIndex = personalityIndex;
+            }
         }
     }
 
@@ -72,6 +78,17 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             WeaponConfig weapon = _weaponOptions[i];
             if (weapon != null && weapon.Kind == kind) return i;
+        }
+
+        return -1;
+    }
+
+    private int FindPersonalityIndex(CombatAiPersonalityKind kind)
+    {
+        for (int i = 0; i < _personalityOptions.Count; i++)
+        {
+            CombatAiPersonalityProfile personality = _personalityOptions[i];
+            if (personality != null && personality.Kind == kind) return i;
         }
 
         return -1;

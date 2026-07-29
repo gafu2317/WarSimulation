@@ -66,7 +66,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private Vector2 _listScroll;
         private Vector2 _panelScroll;
         private bool _dragging;
-        private bool _bakeNavMeshOnApply;
 
         private List<HeightStampShape> _mountainStamps = new();
         private List<LakeStampShape> _lakeStamps = new();
@@ -147,8 +146,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     ReloadStampPalette();
 
                 GUILayout.FlexibleSpace();
-                _bakeNavMeshOnApply = GUILayout.Toggle(
-                    _bakeNavMeshOnApply, "NavMeshも焼く", EditorStyles.toolbarButton, GUILayout.Width(100f));
                 if (GUILayout.Button("シーンへ3D反映", EditorStyles.toolbarButton, GUILayout.Width(110f)))
                     ApplyToScene3D();
             }
@@ -1182,27 +1179,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 if (generator.Config == null)
                     generator.Config = _definition.SharedConfig;
 
-                _status = _bakeNavMeshOnApply
-                    ? "シーンへ反映中…（3D描画 → NavMeshベイク）"
-                    : "シーンへ反映中…（3D描画のみ）";
+                _status = "シーンへ反映中…（3D描画 → NavMeshベイク）";
                 Repaint();
 
                 MapData map = AuthoredMapBuilder.Build(_definition);
                 EnsureRenderComponents(generator);
-                bool ok = generator.ApplyMapData(map, render3D: true, bakeNavMesh: _bakeNavMeshOnApply);
+                bool ok = generator.ApplyMapData(map, render3D: true, bakeNavMesh: true);
 
-                if (!_bakeNavMeshOnApply)
-                {
-                    _status = "シーンへ3D反映完了（NavMeshは焼いていません）";
-                }
-                else if (ok)
-                {
-                    _status = "シーンへ3D反映完了 / NavMeshベイク完了";
-                }
-                else
-                {
-                    _status = "シーンへ3D反映はしたが、NavMeshベイクに失敗しました";
-                }
+                _status = ok
+                    ? "シーンへ3D反映完了 / NavMeshベイク完了"
+                    : "シーンへ3D反映はしたが、NavMeshベイクに失敗しました";
             }
             catch (System.Exception ex)
             {

@@ -27,7 +27,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
     public static List<CombatAiPersonalityProfile> CreateBuiltInProfiles()
     {
         var profiles = new List<CombatAiPersonalityProfile>();
-        for (int value = (int)CombatAiPersonalityKind.AttentionSeeker;
+        for (int value = (int)CombatAiPersonalityKind.Neutral;
              value <= (int)CombatAiPersonalityKind.Unstable;
              value++)
         {
