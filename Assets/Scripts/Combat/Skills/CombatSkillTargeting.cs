@@ -207,10 +207,8 @@ public static class CombatSkillTargeting
         if (owner == null || stone == null || stone.FeatureIndex < 0) return false;
         if (!IsEnemyStoneType(owner.Team, stone.FeatureType)) return false;
 
-        CombatVision vision = owner.Vision;
-        vision?.UpdateVision();
-        if (vision != null && !vision.HasLineOfSight(stone.transform)) return false;
-
+        // 敵魔石の位置は戦闘開始から既知。候補列挙に認識・FOVは不要。
+        // 実際に撃つときの視線（向き）は Evaluator 側で要求し、未達なら実行前に向く。
         CombatMagicStoneSystem system = CombatMagicStoneSystemResolver.Resolve();
         return system == null ||
             !system.TryGetState(stone.FeatureIndex, out MagicStoneRuntimeState state) ||

@@ -13,6 +13,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
     [SerializeField] private bool _enabled = true;
     [SerializeField, Min(1f)] private float _snapshotIntervalSeconds = 10f;
+    [SerializeField, Min(1)] private int _maxRetainedLogFiles = 50;
 
     private readonly CombatBattleLogFormatter _formatter = new CombatBattleLogFormatter();
     private readonly List<CombatHealth> _subscribedHealth = new List<CombatHealth>();
@@ -83,9 +84,12 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
         string directoryPath = GetLogDirectoryPath();
         Directory.CreateDirectory(directoryPath);
+        PruneOldLogFiles(directoryPath);
         string fileName = "battle_" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff") + ".log";
         _logFilePath = Path.Combine(directoryPath, fileName);
         _writer = new StreamWriter(_logFilePath, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        Debug.Log($"[診断ログ] 書き込み開始: {fileName}\n{_logFilePath}", this);
 
         string weatherLabel = ResolveWeatherLabel();
         WriteLine(_formatter.FormatBattleHeader(_logFilePath, weatherLabel));
@@ -105,7 +109,10 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
             : outcome.ToString();
         WriteLine(_formatter.FormatBattleEnd(duration, outcomeLabel, ownStoneHp, enemyStoneHp, allyAlive, enemyAlive));
         UnsubscribeCharacterHealth();
+        string closedPath = _logFilePath;
         CloseLog();
+        if (!string.IsNullOrEmpty(closedPath))
+            Debug.Log($"[診断ログ] 書き込み終了: {Path.GetFileName(closedPath)} outcome={outcomeLabel}", this);
     }
 
     private void MaybeWriteSnapshot()
@@ -348,6 +355,28 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     private static string GetLogDirectoryPath()
     {
         return CombatDebugPaths.GetLogsDirectory("CombatBattles");
+    }
+
+    private void PruneOldLogFiles(string directoryPath)
+    {
+        if (_maxRetainedLogFiles < 1 || !Directory.Exists(directoryPath)) return;
+
+        string[] files = Directory.GetFiles(directoryPath, "battle_*.log");
+        if (files.Length < _maxRetainedLogFiles) return;
+
+        Array.Sort(files, (left, right) => File.GetLastWriteTimeUtc(left).CompareTo(File.GetLastWriteTimeUtc(right)));
+        int removeCount = files.Length - _maxRetainedLogFiles + 1;
+        for (int i = 0; i < removeCount; i++)
+        {
+            try
+            {
+                File.Delete(files[i]);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[診断ログ] 古いログを削除できませんでした: {files[i]}\n{ex.Message}", this);
+            }
+        }
     }
 
     private void WriteLine(string line)

@@ -35,6 +35,7 @@ public sealed class CombatSkillCaster : MonoBehaviour
         if (_owner == null || _owner.Health == null) return false;
         if (!CombatBattleFlow.AllowsCombatActions || !_owner.Health.CanAct) return false;
 
+        FaceStoneTargets(context);
         context = context.Capture(_owner);
         CombatSkillActionInfo action = CombatSkillActionEvents.Start(_owner, skill, context);
         if (skill.CastTimeSeconds <= 0f)
@@ -51,6 +52,26 @@ public sealed class CombatSkillCaster : MonoBehaviour
         _owner.StopMoving();
         CombatSkillCastEvents.RaiseCastStarted(_owner, skill, skill.CastTimeSeconds);
         return true;
+    }
+
+    private void FaceStoneTargets(SkillExecutionContext context)
+    {
+        if (_owner == null) return;
+
+        if (context.PrimaryStone != null)
+        {
+            _owner.FaceHorizontalToward(context.PrimaryStone.transform.position);
+            return;
+        }
+
+        if (context.ResolvedStones != null && context.ResolvedStones.Count > 0 && context.ResolvedStones[0] != null)
+        {
+            _owner.FaceHorizontalToward(context.ResolvedStones[0].transform.position);
+            return;
+        }
+
+        if (context.HasTargetPoint && context.ResolvedStones != null && context.ResolvedStones.Count > 0)
+            _owner.FaceHorizontalToward(context.TargetPoint);
     }
 
     public void Tick(float now)

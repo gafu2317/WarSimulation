@@ -62,7 +62,8 @@ public static partial class CombatAiPlanner
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
-        List<CombatAiReasonCode> selectedObjectiveReasons = null)
+        List<CombatAiReasonCode> selectedObjectiveReasons = null,
+        float objectiveCommitmentRemainingSeconds = 0f)
     {
         if (context == null || context.Owner == null) return CombatAiPlan.None;
         return BuildPlanCore(
@@ -71,6 +72,7 @@ public static partial class CombatAiPlanner
             focusEnemy,
             focusCommitmentRemainingSeconds,
             previousObjective,
+            objectiveCommitmentRemainingSeconds,
             null,
             selectedObjectiveReasons);
     }
@@ -81,6 +83,7 @@ public static partial class CombatAiPlanner
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective,
+        float objectiveCommitmentRemainingSeconds,
         CombatAiDebugSnapshot snapshot,
         List<CombatAiReasonCode> selectedObjectiveReasons)
     {
@@ -101,7 +104,8 @@ public static partial class CombatAiPlanner
                     personalityProfile,
                     focusEnemy,
                     focusCommitmentRemainingSeconds,
-                    previousObjective);
+                    previousObjective,
+                    objectiveCommitmentRemainingSeconds);
                 objective = snapshot.SelectedObjective != null
                     ? snapshot.SelectedObjective.Objective
                     : CombatObjective.Search;
@@ -123,7 +127,8 @@ public static partial class CombatAiPlanner
                     focusEnemy,
                     focusCommitmentRemainingSeconds,
                     previousObjective,
-                    selectedObjectiveReasons);
+                    selectedObjectiveReasons,
+                    objectiveCommitmentRemainingSeconds);
             }
         }
 
@@ -412,7 +417,8 @@ public static partial class CombatAiPlanner
         CombatAiPersonalityProfile personalityProfile,
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
-        CombatObjective previousObjective = CombatObjective.Search)
+        CombatObjective previousObjective = CombatObjective.Search,
+        float objectiveCommitmentRemainingSeconds = 0f)
     {
         if (context == null || context.Owner == null)
         {
@@ -430,6 +436,7 @@ public static partial class CombatAiPlanner
             focusEnemy,
             focusCommitmentRemainingSeconds,
             previousObjective,
+            objectiveCommitmentRemainingSeconds,
             snapshot,
             null);
         return snapshot;

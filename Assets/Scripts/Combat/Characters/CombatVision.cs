@@ -337,6 +337,16 @@ public sealed class CombatVision : MonoBehaviour
     public bool HasLineOfSight(Transform target)
     {
         if (target == null) return false;
+        if (!IsWithinFieldOfView(target)) return false;
+        return HasUnobstructedSight(target);
+    }
+
+    /// <summary>
+    /// FOVを無視した遮蔽チェック。敵魔石は位置既知なので計画時はこちらを使い、撃つ直前に向いてから本視線を取る。
+    /// </summary>
+    public bool HasUnobstructedSight(Transform target)
+    {
+        if (target == null) return false;
         Character targetCharacter = target.GetComponent<Character>();
         if (targetCharacter != null &&
             targetCharacter != _owner &&
@@ -345,8 +355,6 @@ public sealed class CombatVision : MonoBehaviour
         {
             return false;
         }
-
-        if (!IsWithinFieldOfView(target)) return false;
 
         Vector3 headPos = transform.TransformPoint(_headOffsetFromFoot);
         Vector3 targetHeadPos = GetSightTargetPosition(target);

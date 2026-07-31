@@ -349,6 +349,21 @@ public class Character : MonoBehaviour
         _agent.ResetPath();
     }
 
+    /// <summary>水平方向だけ目標へ向く。魔石攻撃前の視線合わせに使う。</summary>
+    public void FaceHorizontalToward(Vector3 worldPosition)
+    {
+        Vector3 delta = worldPosition - transform.position;
+        delta.y = 0f;
+        if (delta.sqrMagnitude < 0.0001f) return;
+
+        Quaternion rotation = Quaternion.LookRotation(delta.normalized, Vector3.up);
+        transform.rotation = rotation;
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.nextPosition = transform.position;
+        }
+    }
+
     // ==========================================
     // 視界・記憶関連メソッド
     // ==========================================

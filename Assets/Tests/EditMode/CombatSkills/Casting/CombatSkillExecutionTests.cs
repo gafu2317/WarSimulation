@@ -290,6 +290,66 @@ public sealed class CombatSkillExecutionTests
         }
     }
 
+    [Test]
+    public void WandBolt_StonePositionAlwaysKnown_FacesThenDamages()
+    {
+        GameObject ownerGo = new GameObject("WandOwner");
+        GameObject stoneGo = new GameObject("EnemyMainStone");
+        GameObject systemGo = new GameObject("MagicStoneSystem");
+        try
+        {
+            CombatMagicStoneSystem system = systemGo.AddComponent<CombatMagicStoneSystem>();
+            var map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), seed: 1);
+            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, Vector3.zero));
+            map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, Vector3.forward));
+            system.Initialize(map);
+
+            MagicStone stone = stoneGo.AddComponent<MagicStone>();
+            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
+            stoneGo.transform.position = new Vector3(0f, 1.5f, 8f);
+            stoneGo.AddComponent<BoxCollider>();
+
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.SetTeam(CombatTeam.Ally);
+            owner.Health.Initialize(maxHP: 30);
+            owner.EquipWeapon(new Wand());
+            ownerGo.transform.position = Vector3.zero;
+            ownerGo.transform.rotation = Quaternion.LookRotation(Vector3.back);
+            CombatVision vision = ownerGo.AddComponent<CombatVision>();
+            Physics.SyncTransforms();
+
+            // 位置は戦闘開始から既知 → 向きに関係なく候補に載る
+            Assert.That(CombatSkillTargeting.IsValidEnemyStone(owner, stone), Is.True);
+
+            SkillBase skill = new IdentifiedSkill(new WandBoltSkill(), SkillId.Wand_Bolt);
+            SkillExecutionContext stoneContext = SkillExecutionContext.ForTarget(stone);
+
+            // 計画可否は遮蔽のみ（背を向けていても可）。撃つには向き＋視線が必要。
+            CombatSkillEvaluationResult facingAway = CombatSkillEvaluator.Evaluate(owner, skill, stoneContext);
+            Assert.That(facingAway.CanUse, Is.True, facingAway.FailureReason);
+            vision.UpdateVision();
+            Assert.That(vision.HasLineOfSight(stone.transform), Is.False);
+
+            owner.FaceHorizontalToward(stone.transform.position);
+            vision.UpdateVision();
+            Assert.That(vision.HasLineOfSight(stone.transform), Is.True);
+
+            CombatSkillEvaluationResult facingStone = CombatSkillEvaluator.Evaluate(owner, skill, stoneContext);
+            Assert.That(facingStone.CanUse, Is.True, facingStone.FailureReason);
+
+            Assert.That(system.TryGetHP(1, out int hpBefore), Is.True);
+            skill.Execute(owner, facingStone.Context);
+            Assert.That(system.TryGetHP(1, out int hpAfter), Is.True);
+            Assert.That(hpAfter, Is.LessThan(hpBefore));
+        }
+        finally
+        {
+            Object.DestroyImmediate(systemGo);
+            Object.DestroyImmediate(stoneGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
     private sealed class AiBrainTestAttackSkill : SkillBase
     {
         public override string Name => "AiBrainTestSlash";

@@ -10,6 +10,7 @@ public sealed class CombatAiBrain : MonoBehaviour
 {
     private const float SwordFocusCommitmentSeconds = 2.5f;
     private const float BattleJunkieFocusCommitmentSeconds = 8f;
+    private const float ObjectiveCommitmentSeconds = 5f;
     private static readonly ProfilerMarker CollectContextMarker = new("CombatAI.CollectContext");
     private static readonly ProfilerMarker RefreshPersonalityMarker = new("CombatAI.RefreshPersonality");
     private static readonly ProfilerMarker BuildPlanMarker = new("CombatAI.BuildPlan");
@@ -23,6 +24,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     private CombatAiPersonalityRuntime _personalityRuntime;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
+    private float _objectiveCommittedUntilTime;
     private float _personalityPauseUntilTime;
     private readonly List<CombatAiReasonCode> _objectiveReasonCodes = new List<CombatAiReasonCode>();
     private CombatAiPlan _preparedPreviousPlan;
@@ -111,6 +113,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         _focusedEnemy = null;
         _focusedEnemyLockedUntilTime = 0f;
+        _objectiveCommittedUntilTime = 0f;
         _personalityPauseUntilTime = 0f;
         LastPlan = CombatAiPlan.None;
         LastContext = null;
@@ -166,7 +169,8 @@ public sealed class CombatAiBrain : MonoBehaviour
                 _focusedEnemy,
                 GetFocusCommitmentRemainingSeconds(),
                 previousPlan.Objective,
-                _objectiveReasonCodes);
+                _objectiveReasonCodes,
+                GetObjectiveCommitmentRemainingSeconds());
         }
         SetPreparedDecision(previousPlan, nextPlan, nextContext);
         return true;
@@ -185,6 +189,11 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private void NotifyPlanSelected(CombatAiPlan previous, CombatAiPlan next)
     {
+        if (previous.Objective != next.Objective)
+        {
+            _objectiveCommittedUntilTime = Time.time + ObjectiveCommitmentSeconds;
+        }
+
         CombatAiDecisionEvents.RaisePlanSelected(_owner, previous, next);
         CombatAiDecisionEvents.RaiseObjectiveChanged(
             _owner,
@@ -218,6 +227,8 @@ public sealed class CombatAiBrain : MonoBehaviour
         HasLastSkillEvaluation = false;
         if (!_executeSkills || plan.Skill == null) return false;
 
+        TryFaceSkillContext(plan.SkillContext);
+
         CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(
             _owner,
             plan.Skill,
@@ -226,8 +237,47 @@ public sealed class CombatAiBrain : MonoBehaviour
         HasLastSkillEvaluation = true;
 
         if (!evaluation.CanUse) return false;
+        if (!HasFacingLineOfSightForStones(evaluation.Context)) return false;
 
         return _owner.SkillCaster.TryStartCast(plan.Skill, evaluation.Context);
+    }
+
+    private void TryFaceSkillContext(SkillExecutionContext context)
+    {
+        if (_owner == null) return;
+
+        if (context.PrimaryStone != null)
+        {
+            _owner.FaceHorizontalToward(context.PrimaryStone.transform.position);
+            return;
+        }
+
+        if (context.ResolvedStones != null && context.ResolvedStones.Count > 0 && context.ResolvedStones[0] != null)
+            _owner.FaceHorizontalToward(context.ResolvedStones[0].transform.position);
+    }
+
+    private bool HasFacingLineOfSightForStones(SkillExecutionContext context)
+    {
+        CombatVision vision = _owner != null ? _owner.Vision : null;
+        if (vision == null) return true;
+
+        if (context.PrimaryStone != null)
+        {
+            vision.UpdateVision();
+            return vision.HasLineOfSight(context.PrimaryStone.transform);
+        }
+
+        if (context.ResolvedStones == null || context.ResolvedStones.Count == 0) return true;
+
+        vision.UpdateVision();
+        for (int i = 0; i < context.ResolvedStones.Count; i++)
+        {
+            MagicStone stone = context.ResolvedStones[i];
+            if (stone == null) continue;
+            if (!vision.HasLineOfSight(stone.transform)) return false;
+        }
+
+        return true;
     }
 
     private bool TryExecuteMovement(CombatAiPlan plan)
@@ -327,6 +377,11 @@ public sealed class CombatAiBrain : MonoBehaviour
     private float GetFocusCommitmentRemainingSeconds()
     {
         return Mathf.Max(0f, _focusedEnemyLockedUntilTime - Time.time);
+    }
+
+    private float GetObjectiveCommitmentRemainingSeconds()
+    {
+        return Mathf.Max(0f, _objectiveCommittedUntilTime - Time.time);
     }
 
     private void UpdateFocusedEnemy(CombatAiPlan plan)

@@ -514,4 +514,161 @@ public sealed class CombatAiObjectiveTests
             Object.DestroyImmediate(ownerGo);
         }
     }
+
+    [Test]
+    public void Planner_KeepsPreviousObjectiveWhileCommitmentRemains()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot free = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            Assert.That(free.SelectedObjective.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+
+            CombatAiDebugSnapshot held = CombatAiPlanner.BuildDebugSnapshot(
+                context,
+                null,
+                previousObjective: CombatObjective.DestroyEnemyStone,
+                objectiveCommitmentRemainingSeconds: 5f);
+            Assert.That(held.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+
+            CombatAiDebugSnapshot released = CombatAiPlanner.BuildDebugSnapshot(
+                context,
+                null,
+                previousObjective: CombatObjective.DestroyEnemyStone,
+                objectiveCommitmentRemainingSeconds: 0f);
+            Assert.That(released.SelectedObjective.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_CrisisObjectiveBreaksCommitment()
+    {
+        GameObject ownerGo = new GameObject("RosaryOwner");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30, 5);
+            owner.EquipWeapon(new Rosary());
+
+            CombatAiContext context = CreatePlannerContext(owner);
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(
+                context,
+                null,
+                previousObjective: CombatObjective.SupportAlly,
+                objectiveCommitmentRemainingSeconds: 5f);
+
+            Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.Retreat));
+        }
+        finally
+        {
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_AssaultKeepsSupportAndDistantAttackAsCandidatesButHoldsObjective()
+    {
+        GameObject ownerGo = new GameObject("WandOwner");
+        GameObject allyGo = new GameObject("FragileAlly");
+        GameObject enemyGo = new GameObject("DistantEnemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Wand());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.SetTeam(CombatTeam.Ally);
+            ally.Health.Initialize(30, 5);
+            allyGo.transform.position = new Vector3(1f, 0f, 0f);
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(15f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot free = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            Assert.That(free.ObjectiveEntries.Exists(entry => entry.Objective == CombatObjective.SupportAlly), Is.True);
+            Assert.That(free.ObjectiveEntries.Exists(entry => entry.Objective == CombatObjective.AttackEnemy), Is.True);
+
+            CombatAiDebugSnapshot held = CombatAiPlanner.BuildDebugSnapshot(
+                context,
+                null,
+                previousObjective: CombatObjective.DestroyEnemyStone,
+                objectiveCommitmentRemainingSeconds: 5f);
+            Assert.That(held.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
+    public void Planner_SwitchesObjectiveWhenChallengerBeatsMargin()
+    {
+        GameObject ownerGo = new GameObject("SwordOwner");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Sword());
+            Character enemy = enemyGo.AddComponent<Character>();
+            enemy.SetTeam(CombatTeam.Enemy);
+            enemy.Health.Initialize(30);
+            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
+                hasEnemyStonePosition: true,
+                enemyStonePosition: new Vector3(20f, 0f, 0f));
+
+            CombatAiDebugSnapshot baseline = CombatAiPlanner.BuildDebugSnapshot(context, null);
+            float gap = FindObjectiveScore(baseline, CombatObjective.AttackEnemy) -
+                FindObjectiveScore(baseline, CombatObjective.DestroyEnemyStone);
+            Assert.That(gap, Is.GreaterThan(28f), "前提: 近接敵の攻撃が魔石進攻をマージン以上で上回る");
+
+            CombatAiDebugSnapshot fromStone = CombatAiPlanner.BuildDebugSnapshot(
+                context,
+                null,
+                previousObjective: CombatObjective.DestroyEnemyStone);
+
+            Assert.That(fromStone.SelectedObjective.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
 }

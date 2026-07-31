@@ -5,6 +5,10 @@ public static class CombatAiObjectiveScorer
 {
     private const float NumericalAdvantagePerCharacter = 6f;
     private const float MaximumNumericalAdvantageScore = 24f;
+    /// <summary>現目標を維持し、この差を超えたときだけ切替（境界振動の抑制）。</summary>
+    private const float ObjectiveSwitchMargin = 28f;
+    /// <summary>撤退・自石防衛への割り込みにも最低限の差を要求する。</summary>
+    private const float CrisisInterruptMargin = 12f;
     private static readonly CombatObjective[] AllObjectives = (CombatObjective[])System.Enum.GetValues(typeof(CombatObjective));
 
     public static void BuildEntries(
@@ -12,7 +16,8 @@ public static class CombatAiObjectiveScorer
         CombatAiPersonalityProfile personalityProfile,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
-        CombatObjective previousObjective)
+        CombatObjective previousObjective,
+        float objectiveCommitmentRemainingSeconds = 0f)
     {
         snapshot.ObjectiveEntries.Clear();
         CombatObjective selected = EvaluateObjectives(
@@ -22,6 +27,7 @@ public static class CombatAiObjectiveScorer
             focusEnemy,
             focusCommitmentRemainingSeconds,
             previousObjective,
+            objectiveCommitmentRemainingSeconds,
             snapshot.ObjectiveEntries);
         snapshot.SelectedObjective = FindEntry(snapshot.ObjectiveEntries, selected);
     }
@@ -33,7 +39,8 @@ public static class CombatAiObjectiveScorer
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective,
-        System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null)
+        System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null,
+        float objectiveCommitmentRemainingSeconds = 0f)
     {
         return EvaluateObjectives(
             context,
@@ -42,6 +49,7 @@ public static class CombatAiObjectiveScorer
             focusEnemy,
             focusCommitmentRemainingSeconds,
             previousObjective,
+            objectiveCommitmentRemainingSeconds,
             entries: null,
             selectedReasons);
     }
@@ -53,6 +61,7 @@ public static class CombatAiObjectiveScorer
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective,
+        float objectiveCommitmentRemainingSeconds,
         System.Collections.Generic.List<CombatAiObjectiveScoreEntry> entries,
         System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null)
     {
@@ -63,6 +72,12 @@ public static class CombatAiObjectiveScorer
         float bestSituationScore = 0f;
         float bestWeaponScore = 0f;
         float bestPersonalityScore = 0f;
+        float previousScore = float.NegativeInfinity;
+        float previousBaseScore = 0f;
+        float previousSituationScore = 0f;
+        float previousWeaponScore = 0f;
+        float previousPersonalityScore = 0f;
+        bool previousSelectable = false;
         for (int i = 0; i < AllObjectives.Length; i++)
         {
             CombatObjective objective = AllObjectives[i];
@@ -100,6 +115,16 @@ public static class CombatAiObjectiveScorer
                 });
             }
 
+            if (objective == previousObjective)
+            {
+                previousSelectable = true;
+                previousScore = score;
+                previousBaseScore = baseScore;
+                previousSituationScore = situationScore;
+                previousWeaponScore = weaponScore;
+                previousPersonalityScore = personalityScore;
+            }
+
             if (score > bestScore)
             {
                 bestScore = score;
@@ -109,6 +134,22 @@ public static class CombatAiObjectiveScorer
                 bestWeaponScore = weaponScore;
                 bestPersonalityScore = personalityScore;
             }
+        }
+
+        if (previousSelectable &&
+            best != previousObjective &&
+            ShouldKeepPreviousObjective(
+                best,
+                bestScore,
+                previousScore,
+                objectiveCommitmentRemainingSeconds))
+        {
+            best = previousObjective;
+            bestScore = previousScore;
+            bestBaseScore = previousBaseScore;
+            bestSituationScore = previousSituationScore;
+            bestWeaponScore = previousWeaponScore;
+            bestPersonalityScore = previousPersonalityScore;
         }
 
         if (selectedReasons != null)
@@ -129,6 +170,27 @@ public static class CombatAiObjectiveScorer
         }
 
         return best;
+    }
+
+    private static bool ShouldKeepPreviousObjective(
+        CombatObjective challenger,
+        float challengerScore,
+        float previousScore,
+        float objectiveCommitmentRemainingSeconds)
+    {
+        // 危機目標でも僅差では割り込ませない（防衛↔援護の 2〜4 秒往復を抑える）。
+        if (IsCrisisObjective(challenger))
+        {
+            return challengerScore < previousScore + CrisisInterruptMargin;
+        }
+
+        if (objectiveCommitmentRemainingSeconds > 0f) return true;
+        return challengerScore < previousScore + ObjectiveSwitchMargin;
+    }
+
+    private static bool IsCrisisObjective(CombatObjective objective)
+    {
+        return objective == CombatObjective.Retreat || objective == CombatObjective.DefendOwnStone;
     }
 
     private static CombatAiScoreBreakdown CreateBreakdown(

@@ -103,7 +103,17 @@ public abstract class SkillBase
             return TakeDamage(self, context, context.PrimaryTarget, amount);
         }
 
-        return TakeDamage(self, context.PrimaryStone, amount);
+        if (context.PrimaryStone != null)
+        {
+            return TakeDamage(self, context.PrimaryStone, amount);
+        }
+
+        if (context.ResolvedStones.Count > 0)
+        {
+            return TakeDamage(self, context.ResolvedStones[0], amount);
+        }
+
+        return 0;
     }
 
     protected static int TakeDamage(

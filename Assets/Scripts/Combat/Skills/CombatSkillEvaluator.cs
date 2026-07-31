@@ -474,7 +474,16 @@ public static class CombatSkillEvaluator
     {
         if (skill == null || !skill.CanTargetMagicStone) return false;
         if (!CombatSkillTargeting.IsValidEnemyStone(owner, stone)) return false;
-        return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(stone.transform.position), skill.MaxRange);
+        if (!IsInHorizontalRange(Flatten(owner.transform.position), Flatten(stone.transform.position), skill.MaxRange))
+        {
+            return false;
+        }
+
+        // 魔石は位置既知。計画可否は遮蔽のみ（向き＝FOVは不要）。撃つ直前に石へ向いて本視線を確保する。
+        CombatVision vision = owner.Vision;
+        if (vision == null) return true;
+        vision.UpdateVision();
+        return vision.HasUnobstructedSight(stone.transform);
     }
 
     private static bool IsValidAllyTarget(Character owner, SkillBase skill, Character target, bool allowSelf)
