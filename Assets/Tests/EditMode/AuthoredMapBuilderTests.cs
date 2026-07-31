@@ -162,7 +162,7 @@ public sealed class AuthoredMapBuilderTests
         HeightStampShape mountain = CreateHeightStamp();
         LakeStampShape lake = CreateLakeStamp();
         RiverShape river = CreateRiverShape();
-        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
         SetPrivateField(config, "_worldSize", 24f);
         SetPrivateField(config, "_cellsPerSide", 24);
         SetPrivateField(config, "_baseHeight", 0f);
@@ -173,7 +173,6 @@ public sealed class AuthoredMapBuilderTests
         SetPrivateField(config, "_bridgeHeightAboveWater", 0.3f);
         SetPrivateField(config, "_bridgeFeatureExclusionMargin", 1f);
         SetPrivateField(config, "_mainStonesPerSide", 1);
-        SetPrivateField(config, "_bridgesPerRiver", 2);
         SetPrivateField(config, "_scatterTreeCount", 0);
         SetPrivateField(config, "_rockCount", 8);
         SetPrivateField(config, "_rockPlacementMargin", 1f);
@@ -228,7 +227,7 @@ public sealed class AuthoredMapBuilderTests
     private static void DestroyDefinition(AuthoredMapDefinition definition)
     {
         if (definition == null) return;
-        MapGenerationConfig config = definition.SharedConfig;
+        MapConfig config = definition.SharedConfig;
         for (int i = 0; i < definition.Mountains.Count; i++)
         {
             if (definition.Mountains[i]?.Shape != null)

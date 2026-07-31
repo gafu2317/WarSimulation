@@ -3,13 +3,13 @@ using UnityEngine;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// 木の散布フェーズ：<see cref="MapGenerationConfig"/> の個数に応じてマップ全体に
+    /// 木の散布フェーズ：<see cref="MapConfig"/> の個数に応じてマップ全体に
     /// <see cref="FeatureType.Tree"/> をランダム配置する（<see cref="RockPhase"/> と同様の棄却サンプリング）。
     /// 水セル・川幅・崖面・森クラスター領域（<see cref="MapData.ForestRegions"/>）・橋近傍・マップ playable 範囲外・既存の木（クラスター内を含む）からの最小距離を避ける。
     /// </summary>
     public sealed class TreeScatterPhase : IMapGenerationPhase
     {
-        public void Execute(MapData map, IRandom rng, MapGenerationConfig config)
+        public void Execute(MapData map, IRandom rng, MapConfig config)
         {
             if (map == null || rng == null || config == null) return;
             int target = config.ScatterTreeCount;

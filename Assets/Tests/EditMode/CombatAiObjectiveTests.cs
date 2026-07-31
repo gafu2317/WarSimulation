@@ -144,7 +144,7 @@ public sealed class CombatAiObjectiveTests
                 previousObjective: CombatObjective.AttackEnemy);
 
             Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
-            Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(17.5f, 0f, 0f)));
+            Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(18.3f, 0f, 0f)));
             Assert.That(snapshot.ObjectiveEntries.Exists(entry => entry.Objective == CombatObjective.AttackEnemy), Is.False);
             Assert.That(snapshot.SelectedObjective.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
             Assert.That(snapshot.SkillEntries.Exists(entry => entry.SkillContext.PrimaryTarget == enemy), Is.False);
@@ -528,13 +528,13 @@ public sealed class CombatAiObjectiveTests
             Character enemy = enemyGo.AddComponent<Character>();
             enemy.SetTeam(CombatTeam.Enemy);
             enemy.Health.Initialize(30);
-            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+            enemyGo.transform.position = new Vector3(1.5f, 0f, 0f);
 
             CombatAiContext context = CreatePlannerContext(
                 owner,
                 enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
                 hasEnemyStonePosition: true,
-                enemyStonePosition: new Vector3(20f, 0f, 0f));
+                enemyStonePosition: new Vector3(40f, 0f, 0f));
 
             CombatAiDebugSnapshot free = CombatAiPlanner.BuildDebugSnapshot(context, null);
             Assert.That(free.SelectedObjective.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
@@ -645,13 +645,13 @@ public sealed class CombatAiObjectiveTests
             Character enemy = enemyGo.AddComponent<Character>();
             enemy.SetTeam(CombatTeam.Enemy);
             enemy.Health.Initialize(30);
-            enemyGo.transform.position = new Vector3(2f, 0f, 0f);
+            enemyGo.transform.position = new Vector3(1.5f, 0f, 0f);
 
             CombatAiContext context = CreatePlannerContext(
                 owner,
                 enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) },
                 hasEnemyStonePosition: true,
-                enemyStonePosition: new Vector3(20f, 0f, 0f));
+                enemyStonePosition: new Vector3(40f, 0f, 0f));
 
             CombatAiDebugSnapshot baseline = CombatAiPlanner.BuildDebugSnapshot(context, null);
             float gap = FindObjectiveScore(baseline, CombatObjective.AttackEnemy) -

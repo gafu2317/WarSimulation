@@ -15,7 +15,7 @@ public sealed class AuthoredMapValidatorTests
             List<AuthoredMapValidationIssue> missingConfig = AuthoredMapValidator.Validate(definition);
             Assert.That(AuthoredMapValidator.HasErrors(missingConfig), Is.True);
 
-            MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+            MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
             SetPrivateField(config, "_worldSize", 20f);
             SetPrivateField(config, "_cellsPerSide", 20);
             definition.SharedConfig = config;
@@ -44,7 +44,7 @@ public sealed class AuthoredMapValidatorTests
     [Test]
     public void Validate_WarnsWhenMainStonesMissing()
     {
-        MapGenerationConfig config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
         var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
         try
         {

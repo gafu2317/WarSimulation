@@ -4,7 +4,7 @@ namespace WarSimulation.Combat.Map
 {
     /// <summary>
     /// 配置済み橋（<see cref="FeatureType.Bridge"/>）のフットプリント判定。
-    /// BridgePhase / BridgeRenderer と同規約：local +X = 幅、local +Z = 川渡り方向の長さ。
+    /// BridgeRenderer と同規約：local +X = 幅、local +Z = 川渡り方向の長さ。
     /// </summary>
     public static class BridgePlacementUtility
     {

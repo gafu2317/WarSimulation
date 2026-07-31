@@ -106,6 +106,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private void OnEditorUpdate()
         {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating) return;
             if (!_rebuildQueued) return;
             if (EditorApplication.timeSinceStartup < _rebuildAt) return;
             _rebuildQueued = false;
@@ -258,7 +259,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             HeightMap height = _lastPreviewMap.Height;
             Vector2Int startCell = RiverPathRasterizer.WorldToCell(height, start);
             Vector2Int endCell = RiverPathRasterizer.WorldToCell(height, end);
-            MapGenerationConfig config = _definition.SharedConfig;
+            MapConfig config = _definition.SharedConfig;
             int riverIndex = _definition.Rivers != null ? _definition.Rivers.Count : 0;
             float noiseSeed = AuthoredMapBuilder.HashRiverNoiseSeed(
                 _definition.BuildSeed, riverIndex, startCell, endCell);
@@ -524,8 +525,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     }
 
                     EditorGUI.BeginChangeCheck();
-                    MapGenerationConfig config = (MapGenerationConfig)EditorGUILayout.ObjectField(
-                        "共通設定", _definition.SharedConfig, typeof(MapGenerationConfig), false);
+                    MapConfig config = (MapConfig)EditorGUILayout.ObjectField(
+                        "共通設定", _definition.SharedConfig, typeof(MapConfig), false);
                     if (EditorGUI.EndChangeCheck())
                     {
                         RecordUndo("共通設定を変更");
@@ -1167,10 +1168,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return;
             }
 
-            MapGenerator generator = Object.FindAnyObjectByType<MapGenerator>();
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                _status = "コンパイル中です。完了後に再実行してください";
+                return;
+            }
+
+            MapSceneHost generator = Object.FindAnyObjectByType<MapSceneHost>();
             if (generator == null)
             {
-                _status = "シーンに MapGenerator がありません";
+                _status = "シーンに MapSceneHost がありません（旧 MapGenerator 参照が切れていないか確認）";
                 return;
             }
 
@@ -1197,7 +1204,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
         }
 
-        private static void EnsureRenderComponents(MapGenerator gen)
+        private static void EnsureRenderComponents(MapSceneHost gen)
         {
             if (gen.GetComponent<TerrainRenderer>() == null) Undo.AddComponent<TerrainRenderer>(gen.gameObject);
             if (gen.GetComponent<TerrainSkirtRenderer>() == null) Undo.AddComponent<TerrainSkirtRenderer>(gen.gameObject);
@@ -1243,7 +1250,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             EnsureAuthoredFolder();
             string path = AssetDatabase.GenerateUniqueAssetPath($"{DefaultFolder}/AuthoredMap.asset");
             var asset = CreateInstance<AuthoredMapDefinition>();
-            asset.SharedConfig = AssetDatabase.LoadAssetAtPath<MapGenerationConfig>(DefaultConfigPath);
+            asset.SharedConfig = AssetDatabase.LoadAssetAtPath<MapConfig>(DefaultConfigPath);
             AssetDatabase.CreateAsset(asset, path);
             AssetDatabase.SaveAssets();
             _definition = asset;

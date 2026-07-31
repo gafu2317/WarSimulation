@@ -1,7 +1,7 @@
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// MountainPhase が生成した山の区分。
+    /// 山の区分（大山 / 小山）。
     /// </summary>
     public enum MountainKind
     {

@@ -9,8 +9,8 @@ namespace WarSimulation.Combat.Map
     [CreateAssetMenu(menuName = "WarSim/Map/手作りマップ", fileName = "AuthoredMap")]
     public sealed class AuthoredMapDefinition : ScriptableObject
     {
-        [Tooltip("グリッドサイズ・橋寸法・既定の川形状などを共有する設定。自動生成 Config を流用してよい。")]
-        [SerializeField] private MapGenerationConfig _sharedConfig;
+        [Tooltip("グリッドサイズ・橋寸法・既定の川形状・木/岩散布などを共有する設定。")]
+        [SerializeField] private MapConfig _sharedConfig;
 
         [SerializeField] private int _buildSeed;
 
@@ -20,12 +20,12 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private List<AuthoredGroundPatchPlacement> _groundPatches = new();
         [SerializeField] private List<AuthoredForestPlacement> _forests = new();
         [SerializeField] private List<AuthoredBridgePlacement> _bridges = new();
-        // 散布木・岩は AuthoredMapBuilder が SharedConfig の自動生成ルールで配置する（リストは未使用・互換用）。
+        // 散布木・岩は AuthoredMapBuilder が SharedConfig の散布ルールで配置する（リストは未使用・互換用）。
         [SerializeField] private List<AuthoredPointFeaturePlacement> _trees = new();
         [SerializeField] private List<AuthoredPointFeaturePlacement> _rocks = new();
         [SerializeField] private List<AuthoredMagicStonePlacement> _magicStones = new();
 
-        public MapGenerationConfig SharedConfig
+        public MapConfig SharedConfig
         {
             get => _sharedConfig;
             set => _sharedConfig = value;

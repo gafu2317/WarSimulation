@@ -26,7 +26,7 @@ namespace WarSimulation.Combat.Map
                 return issues;
             }
 
-            MapGenerationConfig config = definition.SharedConfig;
+            MapConfig config = definition.SharedConfig;
             if (config == null)
             {
                 issues.Add(Error("SharedConfig is not assigned."));
@@ -81,7 +81,7 @@ namespace WarSimulation.Combat.Map
 
         private static void ValidateRivers(
             List<AuthoredRiverPlacement> rivers,
-            MapGenerationConfig config,
+            MapConfig config,
             float world,
             List<AuthoredMapValidationIssue> issues)
         {
@@ -210,7 +210,7 @@ namespace WarSimulation.Combat.Map
 
         private static void ValidateMagicStones(
             List<AuthoredMagicStonePlacement> stones,
-            MapGenerationConfig config,
+            MapConfig config,
             float world,
             List<AuthoredMapValidationIssue> issues)
         {

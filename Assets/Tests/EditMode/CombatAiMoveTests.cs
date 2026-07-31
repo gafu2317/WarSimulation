@@ -55,7 +55,7 @@ public sealed class CombatAiMoveTests
             Character owner = ownerGo.AddComponent<Character>();
             owner.Health.Initialize(30);
             Vector3 stone = new Vector3(8f, 0f, 0f);
-            Vector3 blocked = new Vector3(5.5f, 0f, 0f);
+            Vector3 blocked = new Vector3(6.3f, 0f, 0f);
             CombatAiContext context = CreatePlannerContext(
                 owner,
                 hasEnemyStonePosition: true,
@@ -94,7 +94,7 @@ public sealed class CombatAiMoveTests
                 snapshot,
                 CombatAiMoveCode.AdvanceEnemyStone);
 
-            Assert.That(advance.Target.Destination, Is.EqualTo(new Vector3(5.5f, 0f, 0f)));
+            Assert.That(advance.Target.Destination, Is.EqualTo(new Vector3(6.3f, 0f, 0f)));
         }
         finally
         {

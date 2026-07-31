@@ -3,14 +3,14 @@ using UnityEngine;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// MapData の空マップ／平坦マップ生成。自動生成と手作りマップで共有する。
+    /// MapData の空マップ／平坦マップ生成。手作りマップ構築で共有する。
     /// </summary>
     public static class MapDataFactory
     {
         /// <summary>
-        /// 解像度だけ揃えた空マップ。高度は 0 のまま（既存の自動生成と同じ）。
+        /// 解像度だけ揃えた空マップ。高度は 0 のまま。
         /// </summary>
-        public static MapData CreateEmptyMap(MapGenerationConfig config, int seed)
+        public static MapData CreateEmptyMap(MapConfig config, int seed)
         {
             if (config == null)
                 throw new System.ArgumentNullException(nameof(config));
@@ -23,9 +23,9 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// 全セルを <see cref="MapGenerationConfig.BaseHeight"/> で埋めた平坦マップ。
+        /// 全セルを <see cref="MapConfig.BaseHeight"/> で埋めた平坦マップ。
         /// </summary>
-        public static MapData CreateFlatMap(MapGenerationConfig config, int seed)
+        public static MapData CreateFlatMap(MapConfig config, int seed)
         {
             MapData map = CreateEmptyMap(config, seed);
             float baseHeight = config.BaseHeight;

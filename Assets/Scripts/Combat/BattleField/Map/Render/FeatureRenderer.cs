@@ -200,7 +200,7 @@ namespace WarSimulation.Combat.Map
             var tree = new GameObject($"Tree_{idx}");
             tree.transform.SetParent(parent, worldPositionStays: false);
             SetVisionObstacleLayer(tree);
-            // PlacedFeature の座標はマップローカル（親 MapGenerator 基準）。ワールド直指定だと親が動いているときだけ地形とズレる。
+            // PlacedFeature の座標はマップローカル（親 MapSceneHost 基準）。ワールド直指定だと親が動いているときだけ地形とズレる。
             tree.transform.localPosition = f.WorldPosition;
             tree.transform.localRotation = f.Rotation;
 

@@ -5,7 +5,7 @@ namespace WarSimulation.Combat.Map
 {
     /// <summary>
     /// 手作りマップ資産を決定的に <see cref="MapData"/> へ展開する。
-    /// 適用順は自動生成パイプラインと同じ依存関係を守る。
+    /// 山→川→湖→地面→森→橋→散布→魔石の順で依存関係を守る。
     /// </summary>
     public static class AuthoredMapBuilder
     {
@@ -17,7 +17,7 @@ namespace WarSimulation.Combat.Map
                 throw new System.InvalidOperationException(
                     $"{nameof(AuthoredMapDefinition)}.{nameof(AuthoredMapDefinition.SharedConfig)} is not assigned.");
 
-            MapGenerationConfig config = definition.SharedConfig;
+            MapConfig config = definition.SharedConfig;
             MapData map = MapDataFactory.CreateFlatMap(config, definition.BuildSeed);
             map.BridgeFeatureExclusionMargin = config.BridgeFeatureExclusionMargin;
 
@@ -28,7 +28,7 @@ namespace WarSimulation.Combat.Map
             ApplyForests(map, definition.Forests);
             ApplyBridges(map, definition.Bridges, config);
 
-            // 散布木・岩は自動生成と同じルール。魔石は手作り配置。
+            // 散布木・岩は SharedConfig のルール。魔石は手作り配置。
             IRandom rng = new SystemRandom(definition.BuildSeed);
             new TreeScatterPhase().Execute(map, rng, config);
             new RockPhase().Execute(map, rng, config);
@@ -50,7 +50,7 @@ namespace WarSimulation.Combat.Map
         private static void ApplyRivers(
             MapData map,
             List<AuthoredRiverPlacement> rivers,
-            MapGenerationConfig config,
+            MapConfig config,
             int buildSeed)
         {
             if (rivers == null) return;
@@ -143,7 +143,7 @@ namespace WarSimulation.Combat.Map
         private static void ApplyBridges(
             MapData map,
             List<AuthoredBridgePlacement> bridges,
-            MapGenerationConfig config)
+            MapConfig config)
         {
             if (bridges == null) return;
 

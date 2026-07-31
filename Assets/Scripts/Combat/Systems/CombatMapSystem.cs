@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using WarSimulation.Combat.Map;
 
 public readonly struct TerrainInfo
@@ -67,20 +68,16 @@ public readonly struct TerrainTraversalInfo
     }
 }
 
-public enum CombatMapSource
-{
-    Procedural = 0,
-    Authored = 1,
-}
-
 public class CombatMapSystem : MonoBehaviour
 {
-    [SerializeField] private MapGenerator _mapGenerator;
-    [SerializeField] private bool _generateMapOnStart = true;
-    [SerializeField] private bool _renderGeneratedMapOnStart = true;
+    [FormerlySerializedAs("_mapGenerator")]
+    [SerializeField] private MapSceneHost _mapSceneHost;
+    [FormerlySerializedAs("_generateMapOnStart")]
+    [SerializeField] private bool _buildMapOnStart = true;
+    [FormerlySerializedAs("_renderGeneratedMapOnStart")]
+    [SerializeField] private bool _renderMapOnStart = true;
 
-    [Header("Map Source")]
-    [SerializeField] private CombatMapSource _mapSource = CombatMapSource.Procedural;
+    [Header("Map")]
     [SerializeField] private AuthoredMapDefinition _authoredMap;
 
     [Header("Traversal")]
@@ -105,13 +102,13 @@ public class CombatMapSystem : MonoBehaviour
     // 風のベクトル（向きと強さの両方を持つ）
     public Vector3 WindVector { private set; get; }
 
-    public Transform MapOrigin => _mapGenerator != null ? _mapGenerator.transform : transform;
+    public Transform MapOrigin => _mapSceneHost != null ? _mapSceneHost.transform : transform;
 
     private void Start()
     {
-        if (!_generateMapOnStart || CurrentMap != null) return;
+        if (!_buildMapOnStart || CurrentMap != null) return;
 
-        GenerateAndSetCurrentMap(_renderGeneratedMapOnStart);
+        BuildAndSetCurrentMap(_renderMapOnStart);
     }
 
     public void SetCurrentMap(MapData map)
@@ -199,29 +196,14 @@ public class CombatMapSystem : MonoBehaviour
         _cachedTerrainMaximumHeight = maximumNormalizedHeight * terrainData.size.y;
     }
 
-    public MapData GenerateAndSetCurrentMap()
+    public MapData BuildAndSetCurrentMap()
     {
-        return GenerateAndSetCurrentMap(render3D: false);
+        return BuildAndSetCurrentMap(render3D: false);
     }
 
-    public MapData GenerateAndSetCurrentMap(bool render3D)
+    public MapData BuildAndSetCurrentMap(bool render3D)
     {
-        if (_mapGenerator == null)
-        {
-            Debug.LogWarning($"[{nameof(CombatMapSystem)}] MapGenerator is not assigned.");
-            SetCurrentMap(null);
-            return null;
-        }
-
-        if (_mapSource == CombatMapSource.Authored)
-            return GenerateAuthoredAndSetCurrentMap(render3D);
-
-        MapData map = _mapGenerator.Generate();
-        SetCurrentMap(map);
-        if (render3D && map != null)
-            _mapGenerator.Render3D(map);
-
-        return map;
+        return BuildAuthoredAndSetCurrentMap(render3D);
     }
 
     public MapData ApplyAuthoredMap(AuthoredMapDefinition definition, bool render3D = true)
@@ -233,15 +215,14 @@ public class CombatMapSystem : MonoBehaviour
             return null;
         }
 
-        _mapSource = CombatMapSource.Authored;
         _authoredMap = definition;
-        if (render3D && _mapGenerator != null)
-            _mapGenerator.Clear3D();
+        if (render3D && _mapSceneHost != null)
+            _mapSceneHost.Clear3D();
 
-        return GenerateAuthoredAndSetCurrentMap(render3D);
+        return BuildAuthoredAndSetCurrentMap(render3D);
     }
 
-    private MapData GenerateAuthoredAndSetCurrentMap(bool render3D)
+    private MapData BuildAuthoredAndSetCurrentMap(bool render3D)
     {
         if (_authoredMap == null)
         {
@@ -258,14 +239,14 @@ public class CombatMapSystem : MonoBehaviour
             return null;
         }
 
-        if (_mapGenerator == null)
+        if (_mapSceneHost == null)
         {
-            Debug.LogWarning($"[{nameof(CombatMapSystem)}] MapGenerator is not assigned.");
+            Debug.LogWarning($"[{nameof(CombatMapSystem)}] MapSceneHost is not assigned.");
             SetCurrentMap(null);
             return null;
         }
 
-        _mapGenerator.Config = _authoredMap.SharedConfig;
+        _mapSceneHost.Config = _authoredMap.SharedConfig;
 
         MapData map;
         try
@@ -279,7 +260,7 @@ public class CombatMapSystem : MonoBehaviour
             return null;
         }
 
-        _mapGenerator.ApplyMapData(map, render3D, bakeNavMesh: render3D);
+        _mapSceneHost.ApplyMapData(map, render3D, bakeNavMesh: render3D);
         SetCurrentMap(map);
         return map;
     }

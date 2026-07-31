@@ -139,6 +139,7 @@ public static class CombatAiObjectiveScorer
         if (previousSelectable &&
             best != previousObjective &&
             ShouldKeepPreviousObjective(
+                previousObjective,
                 best,
                 bestScore,
                 previousScore,
@@ -173,11 +174,18 @@ public static class CombatAiObjectiveScorer
     }
 
     private static bool ShouldKeepPreviousObjective(
+        CombatObjective previous,
         CombatObjective challenger,
         float challengerScore,
         float previousScore,
         float objectiveCommitmentRemainingSeconds)
     {
+        // 索敵はコミット対象外。初回判断を 28pt ヒステリシスで固めない。
+        if (previous == CombatObjective.Search && objectiveCommitmentRemainingSeconds <= 0f)
+        {
+            return false;
+        }
+
         // 危機目標でも僅差では割り込ませない（防衛↔援護の 2〜4 秒往復を抑える）。
         if (IsCrisisObjective(challenger))
         {

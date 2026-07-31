@@ -15,7 +15,7 @@ namespace WarSimulation.Combat.Map
     /// </summary>
     public sealed class RockPhase : IMapGenerationPhase
     {
-        public void Execute(MapData map, IRandom rng, MapGenerationConfig config)
+        public void Execute(MapData map, IRandom rng, MapConfig config)
         {
             if (map == null || rng == null || config == null) return;
             int target = config.RockCount;

@@ -5,7 +5,7 @@ namespace WarSimulation.Combat.Map
 {
     /// <summary>
     /// 1 枚分の戦闘マップを表す純粋データコンテナ。
-    /// 生成処理（Generation 層）が書き込み、Query / Render 層は読み取り専用で参照する。
+    /// Authored / Scatter が書き込み、Query / Render 層は読み取り専用で参照する。
     /// Unity の MonoBehaviour / ScriptableObject には依存しないため、
     /// ユニットテストから直接インスタンス化できる。
     ///
@@ -33,23 +33,9 @@ namespace WarSimulation.Combat.Map
         public int Seed { get; }
 
         /// <summary>
-        /// 木・岩・魔石を橋から除外する余白（メートル）。生成開始時に Config からコピーされる。
+        /// 木・岩・魔石を橋から除外する余白（メートル）。構築時に Config からコピーされる。
         /// </summary>
         public float BridgeFeatureExclusionMargin { get; set; } = 2f;
-
-        /// <summary>
-        /// 直近の山生成で実際に高度スタンプが押された回数（目標は <see cref="MapGenerationConfig.MountainStampTargetTotal"/>）。
-        /// </summary>
-        public int StructureStampPlacedCount { get; set; }
-
-        /// <summary>山生成が試行した候補総数（採用・棄却を含む）。</summary>
-        public int StructureTotalAttempts { get; set; }
-
-        /// <summary>互換用。山先行生成では通常 0。</summary>
-        public int StructureWaterRejects { get; set; }
-
-        /// <summary>候補中心が既存山との距離条件で棄却された回数。</summary>
-        public int StructureDistanceRejects { get; set; }
 
         public MapData(HeightMap height, GroundStateGrid groundStates, int seed)
         {
@@ -62,10 +48,6 @@ namespace WarSimulation.Combat.Map
             Lakes = new List<LakeRegion>();
             Mountains = new List<MountainRegion>();
             ForestRegions = new List<ForestRegion>();
-            StructureStampPlacedCount = 0;
-            StructureTotalAttempts = 0;
-            StructureWaterRejects = 0;
-            StructureDistanceRejects = 0;
         }
 
         public void AddFeature(PlacedFeature feature) => Features.Add(feature);

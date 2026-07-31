@@ -9,7 +9,7 @@ public sealed class TreePlacementPhaseTests
     [Test]
     public void TreeScatter_SkipsRiverCorridorOutsideWaterTag()
     {
-        MapGenerationConfig config = CreateScatterConfig(treeCount: 1);
+        MapConfig config = CreateScatterConfig(treeCount: 1);
 
         try
         {
@@ -35,7 +35,7 @@ public sealed class TreePlacementPhaseTests
     [Test]
     public void TreeScatter_SkipsCliffFaceCell()
     {
-        MapGenerationConfig config = CreateScatterConfig(treeCount: 1);
+        MapConfig config = CreateScatterConfig(treeCount: 1);
 
         try
         {
@@ -61,7 +61,7 @@ public sealed class TreePlacementPhaseTests
     [Test]
     public void TreeScatter_AllowsNormalNonCliffCell()
     {
-        MapGenerationConfig config = CreateScatterConfig(treeCount: 1);
+        MapConfig config = CreateScatterConfig(treeCount: 1);
 
         try
         {
@@ -128,9 +128,9 @@ public sealed class TreePlacementPhaseTests
             waterTagRatio: 0f));
     }
 
-    private static MapGenerationConfig CreateScatterConfig(int treeCount)
+    private static MapConfig CreateScatterConfig(int treeCount)
     {
-        var config = ScriptableObject.CreateInstance<MapGenerationConfig>();
+        var config = ScriptableObject.CreateInstance<MapConfig>();
         SetPrivateField(config, "_worldSize", 10f);
         SetPrivateField(config, "_scatterTreeCount", treeCount);
         SetPrivateField(config, "_scatterTreeMinDistance", 0f);

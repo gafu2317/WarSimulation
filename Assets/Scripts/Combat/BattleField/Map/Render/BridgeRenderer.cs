@@ -9,7 +9,7 @@ namespace WarSimulation.Combat.Map
     /// 生成オブジェクトは「GeneratedBridges」子配下にまとめ、再生成のたびにクリアする。
     ///
     /// スケール規約：local +X = 幅（川沿い）、+Y = 厚み、+Z = 長さ（川を跨ぐ方向）。
-    /// BridgePhase の回転もこの規約で算出されている。
+    /// BridgeRenderer の回転もこの規約で算出されている。
     ///
     /// NavMesh：見た目 Cube は <see cref="NavMeshModifier.ignoreFromBuild"/>、
     /// 上面 Quad のみ Walkable としてベイクする。
@@ -24,7 +24,7 @@ namespace WarSimulation.Combat.Map
 
         [SerializeField, Min(0.01f)] private float _bridgeTextureTiling = 1f;
 
-        public void Render(MapData map, MapGenerationConfig config)
+        public void Render(MapData map, MapConfig config)
         {
             if (map == null || config == null)
             {
