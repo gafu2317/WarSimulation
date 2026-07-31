@@ -10,7 +10,7 @@ namespace WarSimulation.Combat.Map
     [CreateAssetMenu(menuName = "WarSim/Map/Map Config", fileName = "MapConfig")]
     public sealed class MapConfig : ScriptableObject
     {
-        [Header("Grid")]
+        [Header("グリッド")]
         [Tooltip("マップ全体の一辺の長さ（メートル）。Cells Per Side が 2 以上のときはこの幅に対してセルを詰める。")]
         [SerializeField, Min(2f)] private float _worldSize = 60f;
 
@@ -20,7 +20,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("ベースとなる初期高度。すべてのセルがこの値で初期化される。")]
         [SerializeField] private float _baseHeight = 0f;
 
-        [Header("River Defaults")]
+        [Header("川の既定")]
         [Tooltip("川の断面形状を定義する SO。未設定の場合は川の幅・深さフォールバックを使う。")]
         [SerializeField] private RiverShape _riverShape;
 
@@ -30,7 +30,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("川の蛇行周波数。1m 進むごとのノイズ位相。大きいほど細かくうねる。")]
         [SerializeField, Min(0.001f)] private float _flatRiverMeanderFrequency = 0.08f;
 
-        [Header("Bridge")]
+        [Header("橋")]
         [Tooltip("川幅から自動計算した橋の長さに足す余白（メートル）。")]
         [SerializeField, Min(0f)] private float _bridgeLengthExtraMargin = 1f;
 
@@ -46,7 +46,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("橋フットプリント外側の除外余白（メートル）。木・岩・魔石をこの距離内に置かない。")]
         [SerializeField, Min(0f)] private float _bridgeFeatureExclusionMargin = 2f;
 
-        [Header("Tree Scatter")]
+        [Header("木の散布")]
         [Tooltip("森クラスター以外の平地〜山中にばら撒く『単独の木』の本数。0 でスキップ。")]
         [SerializeField, Min(0)] private int _scatterTreeCount = 0;
 
@@ -56,7 +56,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("散布する木の配置マージン。マップ端からこの距離より内側だけに置く。")]
         [SerializeField, Min(0f)] private float _scatterTreePlacementMargin = 1f;
 
-        [Header("Rock Scatter")]
+        [Header("岩の散布")]
         [Tooltip("1 マップあたりに配置する岩の個数。")]
         [SerializeField, Min(0)] private int _rockCount = 30;
 
@@ -69,7 +69,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("マップ高度レンジ（HeightMap min〜max）の上位を岩配置から除外する比率。0.3 = 上位 30% は置かない。")]
         [SerializeField, Range(0f, 1f)] private float _rockTopHeightExclusionRatio = 0.3f;
 
-        [Header("Validation")]
+        [Header("検証")]
         [Tooltip("1 陣営あたりのメイン魔石の個数（Validator の警告閾値）。")]
         [SerializeField, Min(0)] private int _mainStonesPerSide = 1;
 

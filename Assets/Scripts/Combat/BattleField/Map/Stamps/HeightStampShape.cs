@@ -30,7 +30,7 @@ namespace WarSimulation.Combat.Map
         [Tooltip("ノイズの空間周波数（1/メートル）。大きいほど細かい凹凸、小さいほどゆったりしたうねり。")]
         [SerializeField, Min(0.001f)] private float _noiseFrequency = 0.15f;
 
-        [Header("Cliff (急斜面) セクター")]
+        [Header("断崖")]
         [Tooltip("円周のうち『断崖（登れない急斜面）』にする中心角（度）。0 = 断崖なし＝従来どおり全周緩やか。180 = 半円が断崖。")]
         [SerializeField, Range(0f, 360f)] private float _cliffArcDeg = 0f;
 

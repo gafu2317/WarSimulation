@@ -30,10 +30,30 @@ namespace WarSimulation.Combat.Map.EditorOnly
         MagicStone,
     }
 
+    public enum MapAuthoringRightTab
+    {
+        Placement = 0,
+        Shared = 1,
+        Stamps = 2,
+    }
+
+    public enum MapAuthoringStampKind
+    {
+        Mountain = 0,
+        Lake = 1,
+        GroundPatch = 2,
+        Forest = 3,
+        River = 4,
+    }
+
     public sealed class MapAuthoringWindow : EditorWindow
     {
         private const string DefaultFolder = "Assets/Data/Map/Map/Authored";
         private const string StampRoot = "Assets/Data/Map/Map/Stamps";
+        private const string StampHeightFolder = "Assets/Data/Map/Map/Stamps/Height";
+        private const string StampLakeFolder = "Assets/Data/Map/Map/Stamps/Lake";
+        private const string StampBiomeFolder = "Assets/Data/Map/Map/Stamps/Biome";
+        private const string StampRiverFolder = "Assets/Data/Map/Map/Stamps/River";
         private const string DefaultConfigPath = "Assets/Data/Map/Map/Configs/MapGenerationConfig.asset";
         private const float RightPanelWidth = 300f;
         private const float PickRadiusMeters = 3f;
@@ -44,6 +64,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private MapAuthoringTool _tool = MapAuthoringTool.Select;
         private MapAuthoringSelectionKind _selectionKind;
         private int _selectionIndex = -1;
+        private MapAuthoringRightTab _rightTab = MapAuthoringRightTab.Placement;
+        private MapAuthoringStampKind _stampKind = MapAuthoringStampKind.Mountain;
 
         private HeightStampShape _selectedMountain;
         private LakeStampShape _selectedLake;
@@ -65,7 +87,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private Vector2 _paletteScroll;
         private Vector2 _listScroll;
         private Vector2 _panelScroll;
+        private Vector2 _sharedScroll;
+        private Vector2 _stampDetailScroll;
         private bool _dragging;
+        private Editor _sharedConfigEditor;
+        private Editor _stampEditor;
 
         private List<HeightStampShape> _mountainStamps = new();
         private List<LakeStampShape> _lakeStamps = new();
@@ -96,6 +122,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             EditorApplication.update -= OnEditorUpdate;
             DestroyPreview();
             _lastPreviewMap = null;
+            DestroyCachedEditors();
         }
 
         private void OnUndoRedo()
@@ -136,6 +163,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     _definition = next;
                     ClearSelection();
                     ClearPendingRiverStart();
+                    DestroyCachedEditors();
                     QueuePreviewRebuild(immediate: true);
                 }
 
@@ -174,6 +202,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             {
                 _tool = tool;
                 ClearPendingRiverStart();
+                SyncStampKindFromTool();
             }
         }
 
@@ -515,50 +544,415 @@ namespace WarSimulation.Combat.Map.EditorOnly
                        GUILayout.ExpandWidth(false),
                        GUILayout.ExpandHeight(true)))
             {
-                _panelScroll = EditorGUILayout.BeginScrollView(_panelScroll);
-                try
+                if (_definition == null)
                 {
-                    if (_definition == null)
-                    {
-                        EditorGUILayout.HelpBox("マップを選ぶか「新規」で作成してください。", MessageType.Info);
-                        return;
-                    }
-
-                    EditorGUI.BeginChangeCheck();
-                    MapConfig config = (MapConfig)EditorGUILayout.ObjectField(
-                        "共通設定", _definition.SharedConfig, typeof(MapConfig), false);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        RecordUndo("共通設定を変更");
-                        _definition.SharedConfig = config;
-                        MarkDirty();
-                        QueuePreviewRebuild();
-                    }
-
-                    if (_definition.SharedConfig == null)
-                        EditorGUILayout.HelpBox("共通設定が必要です。", MessageType.Warning);
-
-                    string assetPath = AssetDatabase.GetAssetPath(_definition);
-                    if (!string.IsNullOrEmpty(assetPath))
-                        EditorGUILayout.HelpBox($"保存先\n{assetPath}", MessageType.None);
-
-                    EditorGUILayout.Space(6f);
-                    DrawPalette();
-                    EditorGUILayout.Space(6f);
-                    DrawSelectionInspector();
-                    EditorGUILayout.Space(6f);
-                    DrawPlacementList();
-
-                    EditorGUILayout.Space(6f);
-                    EditorGUILayout.LabelField("状態", EditorStyles.boldLabel);
-                    EditorGUILayout.HelpBox(
-                        string.IsNullOrEmpty(_status) ? "準備完了" : _status,
-                        MessageType.Info);
+                    EditorGUILayout.HelpBox("マップを選ぶか「新規」で作成してください。", MessageType.Info);
+                    return;
                 }
-                finally
+
+                _rightTab = (MapAuthoringRightTab)GUILayout.Toolbar(
+                    (int)_rightTab,
+                    new[] { "配置", "共通", "スタンプ" });
+
+                EditorGUILayout.Space(4f);
+                switch (_rightTab)
                 {
-                    EditorGUILayout.EndScrollView();
+                    case MapAuthoringRightTab.Shared:
+                        DrawSharedTab();
+                        break;
+                    case MapAuthoringRightTab.Stamps:
+                        DrawStampsTab();
+                        break;
+                    default:
+                        DrawPlacementTab();
+                        break;
                 }
+            }
+        }
+
+        private void DrawPlacementTab()
+        {
+            _panelScroll = EditorGUILayout.BeginScrollView(_panelScroll);
+            try
+            {
+                string assetPath = AssetDatabase.GetAssetPath(_definition);
+                if (!string.IsNullOrEmpty(assetPath))
+                    EditorGUILayout.HelpBox($"保存先\n{assetPath}", MessageType.None);
+
+                if (_definition.SharedConfig == null)
+                    EditorGUILayout.HelpBox("共通設定が必要です。「共通」タブで割り当ててください。", MessageType.Warning);
+
+                EditorGUILayout.Space(6f);
+                DrawPalette();
+                EditorGUILayout.Space(6f);
+                DrawSelectionInspector();
+                EditorGUILayout.Space(6f);
+                DrawPlacementList();
+
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("状態", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    string.IsNullOrEmpty(_status) ? "準備完了" : _status,
+                    MessageType.Info);
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
+        }
+
+        private void DrawSharedTab()
+        {
+            _sharedScroll = EditorGUILayout.BeginScrollView(_sharedScroll);
+            try
+            {
+                EditorGUI.BeginChangeCheck();
+                MapConfig config = (MapConfig)EditorGUILayout.ObjectField(
+                    "共通設定", _definition.SharedConfig, typeof(MapConfig), false);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    RecordUndo("共通設定を変更");
+                    _definition.SharedConfig = config;
+                    MarkDirty();
+                    DestroyCachedEditors();
+                    QueuePreviewRebuild();
+                }
+
+                if (_definition.SharedConfig == null)
+                {
+                    EditorGUILayout.HelpBox("共通設定が未設定です。", MessageType.Warning);
+                    if (GUILayout.Button("デフォルト設定を割り当て"))
+                        AssignDefaultSharedConfig();
+                    return;
+                }
+
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("パラメータ", EditorStyles.boldLabel);
+                DrawCachedInspector(_definition.SharedConfig, ref _sharedConfigEditor, rebuildPreviewOnChange: true);
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
+        }
+
+        private void DrawStampsTab()
+        {
+            EditorGUI.BeginChangeCheck();
+            _stampKind = (MapAuthoringStampKind)EditorGUILayout.Popup(
+                "種類",
+                (int)_stampKind,
+                new[] { "山", "湖", "沼・雪", "森", "川" });
+            if (EditorGUI.EndChangeCheck())
+                SyncToolFromStampKind();
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("新規"))
+                    CreateStampAsset(_stampKind);
+                using (new EditorGUI.DisabledScope(GetSelectedStampObject() == null))
+                {
+                    if (GUILayout.Button("削除"))
+                        DeleteSelectedStampAsset();
+                }
+            }
+
+            EditorGUILayout.Space(4f);
+            DrawStampKindPalette();
+
+            Object selected = GetSelectedStampObject();
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("選択中のスタンプ", EditorStyles.boldLabel);
+            if (selected == null)
+            {
+                EditorGUILayout.HelpBox("一覧からスタンプを選ぶか「新規」で作成してください。", MessageType.Info);
+                return;
+            }
+
+            EditorGUILayout.LabelField(AssetDatabase.GetAssetPath(selected), EditorStyles.miniLabel);
+            _stampDetailScroll = EditorGUILayout.BeginScrollView(_stampDetailScroll);
+            try
+            {
+                DrawCachedInspector(selected, ref _stampEditor, rebuildPreviewOnChange: true);
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
+        }
+
+        private void DrawStampKindPalette()
+        {
+            switch (_stampKind)
+            {
+                case MapAuthoringStampKind.Mountain:
+                    _selectedMountain = DrawStampList(_mountainStamps, _selectedMountain, s => s.DisplayName);
+                    break;
+                case MapAuthoringStampKind.Lake:
+                    _selectedLake = DrawStampList(_lakeStamps, _selectedLake, s => s.DisplayName);
+                    break;
+                case MapAuthoringStampKind.GroundPatch:
+                    _selectedGround = DrawStampList(_groundStamps, _selectedGround, s => s.DisplayName);
+                    break;
+                case MapAuthoringStampKind.Forest:
+                    _selectedForest = DrawStampList(_forestStamps, _selectedForest, s => s.DisplayName);
+                    break;
+                case MapAuthoringStampKind.River:
+                    _selectedRiver = DrawStampList(_riverStamps, _selectedRiver, s => s.name);
+                    break;
+            }
+        }
+
+        private void DrawCachedInspector(Object target, ref Editor editor, bool rebuildPreviewOnChange)
+        {
+            if (target == null) return;
+
+            if (editor == null || editor.target != target)
+            {
+                if (editor != null)
+                    DestroyImmediate(editor);
+                editor = Editor.CreateEditor(target);
+            }
+
+            if (editor == null) return;
+
+            EditorGUI.BeginChangeCheck();
+            editor.OnInspectorGUI();
+            if (EditorGUI.EndChangeCheck())
+            {
+                EditorUtility.SetDirty(target);
+                if (rebuildPreviewOnChange)
+                    QueuePreviewRebuild();
+            }
+        }
+
+        private void AssignDefaultSharedConfig()
+        {
+            MapConfig config = AssetDatabase.LoadAssetAtPath<MapConfig>(DefaultConfigPath);
+            if (config == null)
+            {
+                _status = $"デフォルト設定が見つかりません\n{DefaultConfigPath}";
+                return;
+            }
+
+            RecordUndo("デフォルト共通設定を割り当て");
+            _definition.SharedConfig = config;
+            MarkDirty();
+            DestroyCachedEditors();
+            QueuePreviewRebuild();
+            _status = "デフォルト共通設定を割り当てました";
+        }
+
+        private void SyncStampKindFromTool()
+        {
+            switch (_tool)
+            {
+                case MapAuthoringTool.Mountain:
+                    _stampKind = MapAuthoringStampKind.Mountain;
+                    break;
+                case MapAuthoringTool.Lake:
+                    _stampKind = MapAuthoringStampKind.Lake;
+                    break;
+                case MapAuthoringTool.GroundPatch:
+                    _stampKind = MapAuthoringStampKind.GroundPatch;
+                    break;
+                case MapAuthoringTool.Forest:
+                    _stampKind = MapAuthoringStampKind.Forest;
+                    break;
+                case MapAuthoringTool.River:
+                    _stampKind = MapAuthoringStampKind.River;
+                    break;
+            }
+        }
+
+        private void SyncToolFromStampKind()
+        {
+            _tool = _stampKind switch
+            {
+                MapAuthoringStampKind.Mountain => MapAuthoringTool.Mountain,
+                MapAuthoringStampKind.Lake => MapAuthoringTool.Lake,
+                MapAuthoringStampKind.GroundPatch => MapAuthoringTool.GroundPatch,
+                MapAuthoringStampKind.Forest => MapAuthoringTool.Forest,
+                MapAuthoringStampKind.River => MapAuthoringTool.River,
+                _ => _tool,
+            };
+            ClearPendingRiverStart();
+        }
+
+        private Object GetSelectedStampObject()
+        {
+            return _stampKind switch
+            {
+                MapAuthoringStampKind.Mountain => _selectedMountain,
+                MapAuthoringStampKind.Lake => _selectedLake,
+                MapAuthoringStampKind.GroundPatch => _selectedGround,
+                MapAuthoringStampKind.Forest => _selectedForest,
+                MapAuthoringStampKind.River => _selectedRiver,
+                _ => null,
+            };
+        }
+
+        private void ClearSelectedStampObject()
+        {
+            switch (_stampKind)
+            {
+                case MapAuthoringStampKind.Mountain:
+                    _selectedMountain = null;
+                    break;
+                case MapAuthoringStampKind.Lake:
+                    _selectedLake = null;
+                    break;
+                case MapAuthoringStampKind.GroundPatch:
+                    _selectedGround = null;
+                    break;
+                case MapAuthoringStampKind.Forest:
+                    _selectedForest = null;
+                    break;
+                case MapAuthoringStampKind.River:
+                    _selectedRiver = null;
+                    break;
+            }
+
+            DestroyCachedEditors();
+        }
+
+        private void CreateStampAsset(MapAuthoringStampKind kind)
+        {
+            EnsureStampFolders();
+            ScriptableObject asset;
+            string folder;
+            string fileName;
+            switch (kind)
+            {
+                case MapAuthoringStampKind.Mountain:
+                    asset = CreateInstance<HeightStampShape>();
+                    folder = StampHeightFolder;
+                    fileName = "HeightStamp";
+                    break;
+                case MapAuthoringStampKind.Lake:
+                    asset = CreateInstance<LakeStampShape>();
+                    folder = StampLakeFolder;
+                    fileName = "LakeStamp";
+                    break;
+                case MapAuthoringStampKind.GroundPatch:
+                    asset = CreateInstance<GroundPatchStampShape>();
+                    folder = StampBiomeFolder;
+                    fileName = "GroundPatchStamp";
+                    break;
+                case MapAuthoringStampKind.Forest:
+                    asset = CreateInstance<ForestClusterStampShape>();
+                    folder = StampBiomeFolder;
+                    fileName = "ForestClusterStamp";
+                    break;
+                case MapAuthoringStampKind.River:
+                    asset = CreateInstance<RiverShape>();
+                    folder = StampRiverFolder;
+                    fileName = "RiverShape";
+                    break;
+                default:
+                    return;
+            }
+
+            string path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{fileName}.asset");
+            AssetDatabase.CreateAsset(asset, path);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            ReloadStampPalette();
+            SelectCreatedStamp(kind, asset);
+            _status = $"スタンプを作成しました\n{path}";
+        }
+
+        private void SelectCreatedStamp(MapAuthoringStampKind kind, ScriptableObject asset)
+        {
+            switch (kind)
+            {
+                case MapAuthoringStampKind.Mountain:
+                    _selectedMountain = asset as HeightStampShape;
+                    break;
+                case MapAuthoringStampKind.Lake:
+                    _selectedLake = asset as LakeStampShape;
+                    break;
+                case MapAuthoringStampKind.GroundPatch:
+                    _selectedGround = asset as GroundPatchStampShape;
+                    break;
+                case MapAuthoringStampKind.Forest:
+                    _selectedForest = asset as ForestClusterStampShape;
+                    break;
+                case MapAuthoringStampKind.River:
+                    _selectedRiver = asset as RiverShape;
+                    break;
+            }
+
+            DestroyCachedEditors();
+        }
+
+        private void DeleteSelectedStampAsset()
+        {
+            Object stamp = GetSelectedStampObject();
+            if (stamp == null) return;
+
+            string path = AssetDatabase.GetAssetPath(stamp);
+            if (string.IsNullOrEmpty(path))
+            {
+                _status = "スタンプのアセットパスが取得できません";
+                return;
+            }
+
+            if (!EditorUtility.DisplayDialog(
+                    "スタンプ削除",
+                    $"次のスタンプを削除しますか？\n{path}\n\n手作りマップから参照されている場合は削除できません。",
+                    "削除",
+                    "キャンセル"))
+            {
+                return;
+            }
+
+            if (MapAuthoringStampUsage.TryFindUsers(stamp, out List<string> users))
+            {
+                _status = $"削除できません。次のマップが参照中です:\n{string.Join("\n", users)}";
+                return;
+            }
+
+            DestroyCachedEditors();
+            ClearSelectedStampObject();
+            if (!AssetDatabase.DeleteAsset(path))
+            {
+                _status = $"削除に失敗しました\n{path}";
+                ReloadStampPalette();
+                return;
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            ReloadStampPalette();
+            QueuePreviewRebuild();
+            _status = $"スタンプを削除しました\n{path}";
+        }
+
+        private static void EnsureStampFolders()
+        {
+            if (!AssetDatabase.IsValidFolder("Assets/Data")) AssetDatabase.CreateFolder("Assets", "Data");
+            if (!AssetDatabase.IsValidFolder("Assets/Data/Map")) AssetDatabase.CreateFolder("Assets/Data", "Map");
+            if (!AssetDatabase.IsValidFolder("Assets/Data/Map/Map")) AssetDatabase.CreateFolder("Assets/Data/Map", "Map");
+            if (!AssetDatabase.IsValidFolder(StampRoot)) AssetDatabase.CreateFolder("Assets/Data/Map/Map", "Stamps");
+            if (!AssetDatabase.IsValidFolder(StampHeightFolder)) AssetDatabase.CreateFolder(StampRoot, "Height");
+            if (!AssetDatabase.IsValidFolder(StampLakeFolder)) AssetDatabase.CreateFolder(StampRoot, "Lake");
+            if (!AssetDatabase.IsValidFolder(StampBiomeFolder)) AssetDatabase.CreateFolder(StampRoot, "Biome");
+            if (!AssetDatabase.IsValidFolder(StampRiverFolder)) AssetDatabase.CreateFolder(StampRoot, "River");
+        }
+
+        private void DestroyCachedEditors()
+        {
+            if (_sharedConfigEditor != null)
+            {
+                DestroyImmediate(_sharedConfigEditor);
+                _sharedConfigEditor = null;
+            }
+
+            if (_stampEditor != null)
+            {
+                DestroyImmediate(_stampEditor);
+                _stampEditor = null;
             }
         }
 

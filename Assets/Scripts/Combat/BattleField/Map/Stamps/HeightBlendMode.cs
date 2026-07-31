@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
@@ -6,12 +8,15 @@ namespace WarSimulation.Combat.Map
     public enum HeightBlendMode
     {
         /// <summary>通常の加算（山・丘の積み増しなど）。</summary>
+        [InspectorName("加算")]
         Add = 0,
 
         /// <summary>既存値と合成後値の最小値を採る（川の掘削など、常に低く保ちたい場合）。</summary>
+        [InspectorName("最小")]
         Min,
 
         /// <summary>既存値と合成後値の最大値を採る（既存地形より高くしたい場合）。</summary>
+        [InspectorName("最大")]
         Max,
     }
 }

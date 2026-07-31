@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
@@ -9,12 +11,15 @@ namespace WarSimulation.Combat.Map
     public enum HeightShapeKind
     {
         /// <summary>円形・滑らかなドーム（smoothstep で減衰）。</summary>
+        [InspectorName("ドーム")]
         Dome = 0,
 
         /// <summary>円錐形・線形減衰。</summary>
+        [InspectorName("円錐")]
         Cone,
 
         /// <summary>尾根状。ローカル X 軸方向に伸び、両端と垂直方向に smoothstep で減衰。</summary>
+        [InspectorName("尾根")]
         Ridge,
     }
 }

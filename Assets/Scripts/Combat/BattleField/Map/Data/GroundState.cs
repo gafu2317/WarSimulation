@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
@@ -7,9 +9,13 @@ namespace WarSimulation.Combat.Map
     /// </summary>
     public enum GroundState
     {
+        [InspectorName("通常")]
         Normal = 0,
+        [InspectorName("沼")]
         Swamp,
+        [InspectorName("雪")]
         Snow,
+        [InspectorName("水")]
         Water,
     }
 }
