@@ -17,7 +17,7 @@ MonoBehaviour:
   _mountains:
   - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
     Kind: 1
-    Center: {x: 45.411766, y: 57.764706}
+    Center: {x: 49.52941, y: 56.82353}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
   _rivers:
@@ -28,7 +28,7 @@ MonoBehaviour:
     - {x: 60, y: 36.117645}
   _lakes:
   - Shape: {fileID: 11400000, guid: c4f281a6b9d347e2a1d8e5c7f2b30986, type: 2}
-    Center: {x: 46.588238, y: 12.588236}
+    Center: {x: 46.47059, y: 14.117646}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
     IsFrozen: 0
@@ -67,7 +67,7 @@ MonoBehaviour:
     RotationDeg: 0
     Scale: {x: 1, y: 1}
   - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
-    Center: {x: 8.980044, y: 11.042129}
+    Center: {x: 10.470589, y: 6.941178}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
   - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
@@ -75,12 +75,12 @@ MonoBehaviour:
     RotationDeg: 0
     Scale: {x: 1, y: 1}
   - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
-    Center: {x: 5.764706, y: 5.411764}
+    Center: {x: 1.4117647, y: 12.117648}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
   _bridges:
-  - Center: {x: 10.25, y: 29.25}
-    RotationDeg: 45
+  - Center: {x: 9.35, y: 29.95}
+    RotationDeg: 26.565052
     Scale: {x: 2, y: 0.2, z: 5}
   - Center: {x: 50.05, y: 28.25}
     RotationDeg: -26.565052
@@ -89,6 +89,6 @@ MonoBehaviour:
   _rocks: []
   _magicStones:
   - Type: 0
-    Center: {x: 28.117647, y: 11.64706}
+    Center: {x: 27.294117, y: 12.470588}
   - Type: 2
-    Center: {x: 23.176472, y: 46.235294}
+    Center: {x: 27.411764, y: 39.647057}
