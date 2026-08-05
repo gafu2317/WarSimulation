@@ -1568,8 +1568,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return;
             }
 
-            MapSceneHost generator = Object.FindAnyObjectByType<MapSceneHost>();
-            if (generator == null)
+            MapSceneHost host = Object.FindAnyObjectByType<MapSceneHost>();
+            if (host == null)
             {
                 _status = "シーンに MapSceneHost がありません（旧 MapGenerator 参照が切れていないか確認）";
                 return;
@@ -1577,36 +1577,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             try
             {
-                if (generator.Config == null)
-                    generator.Config = _definition.SharedConfig;
-
-                _status = "シーンへ反映中…（3D描画 → NavMeshベイク）";
+                _status = "シーンへ反映中…（3D描画 → NavMesh/ルート保存）";
                 Repaint();
-
-                MapData map = AuthoredMapBuilder.Build(_definition);
-                EnsureRenderComponents(generator);
-                bool ok = generator.ApplyMapData(map, render3D: true, bakeNavMesh: true);
-
-                _status = ok
-                    ? "シーンへ3D反映完了 / NavMeshベイク完了"
-                    : "シーンへ3D反映はしたが、NavMeshベイクに失敗しました";
+                AuthoredMapNavBake.BakeAndSave(_definition, host, out string status);
+                _status = status;
             }
             catch (System.Exception ex)
             {
                 Debug.LogException(ex);
                 _status = "シーン反映に失敗しました（Consoleを確認）";
             }
-        }
-
-        private static void EnsureRenderComponents(MapSceneHost gen)
-        {
-            if (gen.GetComponent<TerrainRenderer>() == null) Undo.AddComponent<TerrainRenderer>(gen.gameObject);
-            if (gen.GetComponent<TerrainSkirtRenderer>() == null) Undo.AddComponent<TerrainSkirtRenderer>(gen.gameObject);
-            if (gen.GetComponent<RiverRenderer>() == null) Undo.AddComponent<RiverRenderer>(gen.gameObject);
-            if (gen.GetComponent<LakeRenderer>() == null) Undo.AddComponent<LakeRenderer>(gen.gameObject);
-            if (gen.GetComponent<BridgeRenderer>() == null) Undo.AddComponent<BridgeRenderer>(gen.gameObject);
-            if (gen.GetComponent<FeatureRenderer>() == null) Undo.AddComponent<FeatureRenderer>(gen.gameObject);
-            if (gen.GetComponent<CombatNavMeshBuilder>() == null) Undo.AddComponent<CombatNavMeshBuilder>(gen.gameObject);
         }
 
         private void ReloadStampPalette()

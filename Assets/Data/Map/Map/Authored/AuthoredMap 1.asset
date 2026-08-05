@@ -14,6 +14,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: WarSimulation.Combat::WarSimulation.Combat.Map.AuthoredMapDefinition
   _sharedConfig: {fileID: 11400000, guid: f2fa3155fa7424bf7876ce40c28805c1, type: 2}
   _buildSeed: 0
+  _bakedNavMesh: {fileID: 23800000, guid: 759d55890d1234f83a5a5d22310c6f42, type: 2}
+  _navMeshBakeFingerprint: 1246574358
+  _bakedAllyAssaultRoutes:
+  - BridgeFeatureIndex: 169
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 7.784753, y: 0.07567034, z: 26.819506}
+    ExitLocal: {x: 10.915248, y: 0.00009441376, z: 33.080498}
+  - BridgeFeatureIndex: 170
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 51.615246, y: 0.10660565, z: 25.119505}
+    ExitLocal: {x: 48.484753, y: 0.72168195, z: 31.380495}
+  _bakedEnemyAssaultRoutes:
+  - BridgeFeatureIndex: 169
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 10.915248, y: 0.00009441376, z: 33.080498}
+    ExitLocal: {x: 7.784753, y: 0.07567034, z: 26.819506}
+  - BridgeFeatureIndex: 170
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 48.484753, y: 0.72168195, z: 31.380495}
+    ExitLocal: {x: 51.615246, y: 0.10660565, z: 25.119505}
+  _assaultRouteBakeFingerprint: 1246574358
+  _hasBakedAssaultRoutes: 1
   _mountains:
   - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
     Kind: 1

@@ -4,6 +4,7 @@ using WarSimulation.Combat.Map;
 
 /// <summary>
 /// 進攻ルート候補のキャッシュ。BuildCandidates は重いのでマップ＋NavMesh 準備後に一度だけ作る。
+/// AuthoredMap にベイク済みがあれば hydrate、無ければランタイム列挙。
 /// </summary>
 public static class CombatAssaultRouteCache
 {
@@ -12,6 +13,7 @@ public static class CombatAssaultRouteCache
     private static MapData _cachedMap;
     private static Transform _cachedOrigin;
     private static bool _buildCompleted;
+    private static MapData _rebuildFallbackLoggedForMap;
     private static readonly List<CombatAiAssaultRoute> AllyRoutes = new List<CombatAiAssaultRoute>();
     private static readonly List<CombatAiAssaultRoute> EnemyRoutes = new List<CombatAiAssaultRoute>();
 
@@ -43,7 +45,53 @@ public static class CombatAssaultRouteCache
             return;
         }
 
+        if (TryHydrateFromAuthored(mapSystem.AuthoredMap, map, origin))
+        {
+            Debug.Log(
+                $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Hydrate " +
+                $"(ally={AllyRoutes.Count}, enemy={EnemyRoutes.Count})");
+            return;
+        }
+
+        AuthoredMapDefinition authored = mapSystem.AuthoredMap;
+        if (!ReferenceEquals(_rebuildFallbackLoggedForMap, map))
+        {
+            _rebuildFallbackLoggedForMap = map;
+            if (authored != null)
+            {
+                Debug.LogWarning(
+                    $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Rebuild (runtime fallback). " +
+                    $"hasBakedData={authored.HasBakedAssaultRoutesData} " +
+                    $"storedFp={authored.AssaultRouteBakeFingerprint} " +
+                    $"currentFp={authored.ComputeBakeFingerprint()}");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Rebuild (runtime fallback). AuthoredMap=null");
+            }
+        }
+
         Rebuild(map, origin);
+    }
+
+    public static bool TryHydrateFromAuthored(
+        AuthoredMapDefinition authored,
+        MapData map,
+        Transform mapOrigin)
+    {
+        if (authored == null || map == null || !authored.HasValidBakedAssaultRoutes)
+        {
+            return false;
+        }
+
+        Invalidate();
+        _cachedMap = map;
+        _cachedOrigin = mapOrigin;
+        HydrateTeam(authored.BakedAllyAssaultRoutes, mapOrigin, AllyRoutes);
+        HydrateTeam(authored.BakedEnemyAssaultRoutes, mapOrigin, EnemyRoutes);
+        _buildCompleted = true;
+        return true;
     }
 
     public static void Rebuild(MapData map, Transform mapOrigin)
@@ -77,6 +125,75 @@ public static class CombatAssaultRouteCache
         _buildCompleted = true;
     }
 
+    /// <summary>Editor ベイク用。ワールド座標の候補をマップローカル POD に変換する。</summary>
+    public static List<AuthoredBakedAssaultRoute> BuildBakedRoutesForTeam(
+        MapData map,
+        Transform mapOrigin,
+        Vector3 startWorld,
+        Vector3 goalWorld,
+        int areaMask)
+    {
+        var baked = new List<AuthoredBakedAssaultRoute>();
+        List<CombatStoneAssaultRoutes.Candidate> candidates = CombatStoneAssaultRoutes.BuildCandidates(
+            map,
+            mapOrigin,
+            startWorld,
+            goalWorld,
+            areaMask);
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            CombatStoneAssaultRoutes.Candidate candidate = candidates[i];
+            if (candidate == null) continue;
+            Vector3 enterLocal = ToLocal(mapOrigin, candidate.EnterWorld);
+            Vector3 exitLocal = ToLocal(mapOrigin, candidate.ExitWorld);
+            baked.Add(new AuthoredBakedAssaultRoute(
+                candidate.BridgeFeatureIndex,
+                candidate.HasBridgeWaypoints,
+                enterLocal,
+                exitLocal));
+        }
+
+        return baked;
+    }
+
+    public static bool TryFindMainStoneWorld(
+        MapData map,
+        Transform mapOrigin,
+        FeatureType type,
+        out Vector3 world)
+    {
+        world = default;
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            PlacedFeature feature = map.Features[i];
+            if (feature.Type != type) continue;
+            world = mapOrigin != null
+                ? mapOrigin.TransformPoint(feature.WorldPosition)
+                : feature.WorldPosition;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static void HydrateTeam(
+        IReadOnlyList<AuthoredBakedAssaultRoute> baked,
+        Transform mapOrigin,
+        List<CombatAiAssaultRoute> destination)
+    {
+        destination.Clear();
+        if (baked == null) return;
+        for (int i = 0; i < baked.Count; i++)
+        {
+            AuthoredBakedAssaultRoute route = baked[i];
+            destination.Add(new CombatAiAssaultRoute(
+                route.BridgeFeatureIndex,
+                route.HasBridgeWaypoints,
+                ToWorld(mapOrigin, route.EnterLocal),
+                ToWorld(mapOrigin, route.ExitLocal)));
+        }
+    }
+
     private static void BuildTeamRoutes(
         MapData map,
         Transform mapOrigin,
@@ -104,24 +221,14 @@ public static class CombatAssaultRouteCache
         }
     }
 
-    private static bool TryFindMainStoneWorld(
-        MapData map,
-        Transform mapOrigin,
-        FeatureType type,
-        out Vector3 world)
+    private static Vector3 ToLocal(Transform mapOrigin, Vector3 world)
     {
-        world = default;
-        for (int i = 0; i < map.Features.Count; i++)
-        {
-            PlacedFeature feature = map.Features[i];
-            if (feature.Type != type) continue;
-            world = mapOrigin != null
-                ? mapOrigin.TransformPoint(feature.WorldPosition)
-                : feature.WorldPosition;
-            return true;
-        }
+        return mapOrigin != null ? mapOrigin.InverseTransformPoint(world) : world;
+    }
 
-        return false;
+    private static Vector3 ToWorld(Transform mapOrigin, Vector3 local)
+    {
+        return mapOrigin != null ? mapOrigin.TransformPoint(local) : local;
     }
 }
 

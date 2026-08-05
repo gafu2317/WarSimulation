@@ -104,6 +104,8 @@ public class CombatMapSystem : MonoBehaviour
 
     public Transform MapOrigin => _mapSceneHost != null ? _mapSceneHost.transform : transform;
 
+    public AuthoredMapDefinition AuthoredMap => _authoredMap;
+
     private void Start()
     {
         if (!_buildMapOnStart || CurrentMap != null) return;
@@ -260,8 +262,39 @@ public class CombatMapSystem : MonoBehaviour
             return null;
         }
 
-        _mapSceneHost.ApplyMapData(map, render3D, bakeNavMesh: render3D);
+        UnityEngine.AI.NavMeshData prebakedNavMesh = null;
+        if (render3D)
+        {
+            bool valid = _authoredMap.HasValidBakedNavMesh;
+            int stored = _authoredMap.NavMeshBakeFingerprint;
+            int current = _authoredMap.ComputeBakeFingerprint();
+            if (valid)
+            {
+                prebakedNavMesh = _authoredMap.BakedNavMesh;
+                Debug.Log(
+                    $"[{nameof(CombatMapSystem)}] NavMesh: Load (prebaked). fingerprint={stored}");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[{nameof(CombatMapSystem)}] NavMesh: Build (runtime fallback). " +
+                    $"bakedData={(_authoredMap.BakedNavMesh != null ? "set" : "null")} " +
+                    $"storedFp={stored} currentFp={current}. " +
+                    "MapAuthoring の「シーンへ3D反映」で再ベイクしてください。");
+            }
+        }
+
+        bool navMeshReady = _mapSceneHost.ApplyMapData(
+            map,
+            render3D,
+            bakeNavMesh: render3D,
+            prebakedNavMesh);
         SetCurrentMap(map);
+        if (navMeshReady && render3D)
+        {
+            CombatAssaultRouteCache.EnsureBuilt(this);
+        }
+
         return map;
     }
 

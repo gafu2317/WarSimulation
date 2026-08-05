@@ -70,12 +70,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
         }
 
         EnsureSurface();
-        _surface.collectObjects = CollectObjects.Children;
-        _surface.layerMask = _layerMask;
-        _surface.useGeometry = _geometry;
-        _surface.buildHeightMesh = _buildHeightMesh;
-        _surface.ignoreNavMeshAgent = true;
-        _surface.ignoreNavMeshObstacle = true;
+        ConfigureSurface();
         RebuildAreaVolumes(map);
         _surface.BuildNavMesh();
         ApplyAreaCosts();
@@ -89,6 +84,34 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
         return built;
     }
 
+    /// <summary>
+    /// Editor 事前ベイク済みの NavMeshData を載せる。Area volume 再生成と BuildNavMesh は行わない。
+    /// </summary>
+    public bool Load(NavMeshData bakedNavMesh)
+    {
+        if (bakedNavMesh == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatNavMeshBuilder)}] Load called with null NavMeshData.");
+            return false;
+        }
+
+        EnsureSurface();
+        ConfigureSurface();
+        ClearAreaVolumes();
+        _surface.RemoveData();
+        _surface.navMeshData = bakedNavMesh;
+        _surface.AddData();
+        ApplyAreaCosts();
+
+        bool loaded = _surface.navMeshData != null;
+        if (loaded)
+        {
+            Built?.Invoke();
+        }
+
+        return loaded;
+    }
+
     public void Clear()
     {
         if (_surface == null) return;
@@ -96,6 +119,16 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
         _surface.navMeshData = null;
         ClearAreaVolumes();
         Cleared?.Invoke();
+    }
+
+    private void ConfigureSurface()
+    {
+        _surface.collectObjects = CollectObjects.Children;
+        _surface.layerMask = _layerMask;
+        _surface.useGeometry = _geometry;
+        _surface.buildHeightMesh = _buildHeightMesh;
+        _surface.ignoreNavMeshAgent = true;
+        _surface.ignoreNavMeshObstacle = true;
     }
 
     private void EnsureSurface()

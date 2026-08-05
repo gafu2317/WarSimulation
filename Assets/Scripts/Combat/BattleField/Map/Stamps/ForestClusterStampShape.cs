@@ -44,6 +44,7 @@ namespace WarSimulation.Combat.Map
         public int TreeCount => _treeCount;
         public float TreeMinDistance => _treeMinDistance;
         public float MaxHeight => _maxHeight;
+        public int MaxAttemptsPerTree => _maxAttemptsPerTree;
         public float NoiseAmplitude => _noiseAmplitude;
         public float NoiseFrequency => _noiseFrequency;
 

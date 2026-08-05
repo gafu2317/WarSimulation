@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Scripting.APIUpdating;
 
 namespace WarSimulation.Combat.Map
@@ -22,7 +23,11 @@ namespace WarSimulation.Combat.Map
         /// <summary>
         /// 既存の MapData（手作りマップなど）を CurrentMap に載せ、必要なら 3D 描画する。
         /// </summary>
-        public bool ApplyMapData(MapData map, bool render3D = true, bool bakeNavMesh = true)
+        public bool ApplyMapData(
+            MapData map,
+            bool render3D = true,
+            bool bakeNavMesh = true,
+            NavMeshData prebakedNavMesh = null)
         {
             if (map == null)
             {
@@ -34,13 +39,13 @@ namespace WarSimulation.Combat.Map
             SetCombatMapSystemCurrentMap(map);
             if (!render3D)
                 return true;
-            return Render3D(map, bakeNavMesh);
+            return Render3D(map, bakeNavMesh, prebakedNavMesh);
         }
 
-        public void Render3D(MapData map) => Render3D(map, bakeNavMesh: true);
+        public void Render3D(MapData map) => Render3D(map, bakeNavMesh: true, prebakedNavMesh: null);
 
-        /// <returns>NavMesh をベイクした場合に成功したかどうか。ベイクしない場合は true。</returns>
-        public bool Render3D(MapData map, bool bakeNavMesh)
+        /// <returns>NavMesh を用意できたかどうか。ベイクもロードもしない場合は true。</returns>
+        public bool Render3D(MapData map, bool bakeNavMesh, NavMeshData prebakedNavMesh = null)
         {
             if (map == null)
             {
@@ -67,6 +72,11 @@ namespace WarSimulation.Combat.Map
             featureRenderer.Render(map);
 
             global::CombatNavMeshBuilder navMeshBuilder = GetOrAddComponent<global::CombatNavMeshBuilder>();
+            if (prebakedNavMesh != null)
+            {
+                return navMeshBuilder.Load(prebakedNavMesh);
+            }
+
             if (!bakeNavMesh)
             {
                 navMeshBuilder.Clear();
