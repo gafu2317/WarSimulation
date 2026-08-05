@@ -9,7 +9,8 @@ using UnityEngine;
 public sealed class CombatAiBrain : MonoBehaviour
 {
     private const float SwordFocusCommitmentSeconds = 2.5f;
-    private const float BattleJunkieFocusCommitmentSeconds = 8f;
+    private const float BattleJunkieFocusCommitmentSeconds = 12f;
+    private const float LazyPauseSeconds = 2.4f;
     private const float ObjectiveCommitmentSeconds = 5f;
     private static readonly ProfilerMarker CollectContextMarker = new("CombatAI.CollectContext");
     private static readonly ProfilerMarker RefreshPersonalityMarker = new("CombatAI.RefreshPersonality");
@@ -217,7 +218,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         bool acted = usedSkill || moved;
         if (acted && HasPersonality(CombatAiPersonalityKind.Lazy))
         {
-            _personalityPauseUntilTime = Time.time + 1.5f;
+            _personalityPauseUntilTime = Time.time + LazyPauseSeconds;
         }
         return acted;
     }
@@ -464,7 +465,20 @@ public sealed class CombatAiBrain : MonoBehaviour
     private bool ShouldKeepPersonalityPause()
     {
         if (!HasPersonality(CombatAiPersonalityKind.Lazy) || Time.time >= _personalityPauseUntilTime) return false;
-        return _owner.Health.HP > _owner.Health.MaxHP * 0.4f;
+        if (_owner.Health.HP <= _owner.Health.MaxHP * 0.4f) return false;
+
+        bool hasNearbyAlly = false;
+        Character[] characters = UnityEngine.Object.FindObjectsByType<Character>(FindObjectsInactive.Exclude);
+        for (int i = 0; i < characters.Length; i++)
+        {
+            Character other = characters[i];
+            if (other == null || other == _owner || other.Health == null || !other.Health.IsAlive) continue;
+            float distance = HorizontalDistance(_owner.transform.position, other.transform.position);
+            if (other.Team != _owner.Team && distance <= 4.5f) return false;
+            if (other.Team == _owner.Team && distance <= 8f) hasNearbyAlly = true;
+        }
+
+        return hasNearbyAlly;
     }
 
     private bool HasPersonality(CombatAiPersonalityKind kind)

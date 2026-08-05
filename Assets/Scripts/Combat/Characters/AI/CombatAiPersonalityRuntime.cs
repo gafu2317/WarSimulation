@@ -11,6 +11,7 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
     private const float LecherousNearMultiplier = 1.2f;
     private const float LecherousFarMultiplier = 0.85f;
     private const float RelationshipEffectDuration = 2f;
+    private const float CunningCoverDurationSeconds = 3.5f;
 
     private static readonly UnstableRetaliationSkill RetaliationSkill = new UnstableRetaliationSkill();
 
@@ -20,11 +21,13 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
     private Character _gossipSecond;
     private Character _companion;
     private Character _revengeTarget;
+    private float _cunningCoverUntilTime;
 
     public Character GossipFirst => _gossipFirst;
     public Character GossipSecond => _gossipSecond;
     public Character Companion => _companion;
     public Character RevengeTarget => _revengeTarget;
+    public bool WantsCover => Time.time < _cunningCoverUntilTime;
 
     private void Awake()
     {
@@ -49,6 +52,7 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
         _gossipSecond = null;
         _companion = null;
         _revengeTarget = null;
+        _cunningCoverUntilTime = 0f;
         ClearRelationshipModifiers();
         SubscribeDamage();
     }
@@ -97,6 +101,12 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
             return true;
         }
 
+        if (kind == CombatAiPersonalityKind.Unstable && IsActive(_revengeTarget))
+        {
+            target = CombatMoveTarget.ForCharacter(_revengeTarget);
+            return true;
+        }
+
         return false;
     }
 
@@ -121,6 +131,12 @@ public sealed class CombatAiPersonalityRuntime : MonoBehaviour
     public void NotifyPlanExecuted(CombatAiPlan plan, bool usedSkill)
     {
         if (usedSkill && ReferenceEquals(plan.Skill, RetaliationSkill)) _revengeTarget = null;
+
+        if (_owner == null || _owner.PersonalityProfile == null) return;
+        if (_owner.PersonalityProfile.Kind != CombatAiPersonalityKind.Cunning) return;
+        if (!usedSkill && plan.MoveTarget.Kind == CombatMoveTargetKind.None) return;
+
+        _cunningCoverUntilTime = Time.time + CunningCoverDurationSeconds;
     }
 
     private void RefreshGossiper()

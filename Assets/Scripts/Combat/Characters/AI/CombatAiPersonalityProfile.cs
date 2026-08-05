@@ -62,6 +62,10 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 profile._caution = 1f;
                 profile._riskTolerance = -0.6f;
                 break;
+            case CombatAiPersonalityKind.Clumsy:
+                profile._explorationBias = 0.3f;
+                profile._riskTolerance = 0.4f;
+                break;
             case CombatAiPersonalityKind.Coward:
                 profile._caution = 1f;
                 profile._riskTolerance = -1f;
@@ -78,6 +82,14 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 profile._supportBias = 1f;
                 profile._riskTolerance = 0.5f;
                 break;
+            case CombatAiPersonalityKind.Eccentric:
+                profile._explorationBias = 0.8f;
+                profile._riskTolerance = 0.5f;
+                break;
+            case CombatAiPersonalityKind.Gossiper:
+                profile._supportBias = 0.4f;
+                profile._explorationBias = 0.5f;
+                break;
             case CombatAiPersonalityKind.HotBlooded:
                 profile._aggression = 0.7f;
                 profile._supportBias = 0.4f;
@@ -88,6 +100,10 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 break;
             case CombatAiPersonalityKind.Lazy:
                 profile._caution = 0.2f;
+                break;
+            case CombatAiPersonalityKind.Lecherous:
+                profile._aggression = 0.3f;
+                profile._supportBias = 0.5f;
                 break;
             case CombatAiPersonalityKind.Lonely:
                 profile._supportBias = 0.8f;
@@ -102,6 +118,10 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             case CombatAiPersonalityKind.Reckless:
                 profile._objectiveFocus = 1f;
                 profile._riskTolerance = 1f;
+                break;
+            case CombatAiPersonalityKind.Unstable:
+                profile._aggression = 0.5f;
+                profile._riskTolerance = 0.6f;
                 break;
         }
 

@@ -20,22 +20,59 @@ public static partial class CombatAiPlanner
 
         if (enemyCount == 0) return CombatMoveTarget.None;
         enemyCenter /= enemyCount;
-        Vector3 direction = Flatten(context.Owner.transform.position - enemyCenter);
-        if (direction.sqrMagnitude <= 0.01f) direction = Vector3.back;
-        direction.Normalize();
+
+        Vector3 allyCenter = context.Owner.transform.position;
+        int allyCount = 1;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (!ally.IsAlive) continue;
+            allyCenter += ally.CurrentPosition;
+            allyCount++;
+        }
+
+        allyCenter /= allyCount;
+        // 味方側から見た敵集団の正面（敵の注意を引きやすい位置）。
+        Vector3 front = Flatten(enemyCenter - allyCenter);
+        if (front.sqrMagnitude <= 0.01f) front = Flatten(enemyCenter - context.Owner.transform.position);
+        if (front.sqrMagnitude <= 0.01f) front = Vector3.forward;
+        front.Normalize();
+
         float range = context.Owner.EquippedWeapon != null
             ? Mathf.Max(2.5f, context.Owner.EquippedWeapon.Range * 0.85f)
             : 2.5f;
-        Vector3 destination = enemyCenter + direction * range;
+        Vector3 destination = enemyCenter - front * range;
         destination.y = context.Owner.transform.position.y;
-        return CombatMoveTarget.ForPosition(destination);
+        return HorizontalDistance(context.Owner.transform.position, destination) > 1.25f
+            ? CombatMoveTarget.ForPosition(destination)
+            : CombatMoveTarget.None;
     }
 
     private static CombatMoveTarget CreateClumsyTarget(CombatAiContext context)
     {
         int interval = CombatBattleRandom.GetDecisionInterval(context.Owner, 4f);
-        bool makesMistake = CombatBattleRandom.Choose(context.Owner, "ClumsyMove", interval, 10) == 0;
-        return makesMistake ? CreateOwnStoneTarget(context) : CombatMoveTarget.None;
+        if (CombatBattleRandom.Choose(context.Owner, "ClumsyMove", interval, 8) != 0)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        int mistake = CombatBattleRandom.Choose(context.Owner, "ClumsyMistakeType", interval, 3);
+        return mistake switch
+        {
+            0 => CreateOwnStoneTarget(context),
+            1 => CreateEnemyStoneTarget(context),
+            _ => CreateClumsyOffsetTarget(context),
+        };
+    }
+
+    private static CombatMoveTarget CreateClumsyOffsetTarget(CombatAiContext context)
+    {
+        CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(context, context.Owner.transform.position);
+        Vector3 origin = enemy.Character != null ? enemy.KnownPosition : context.Owner.transform.position;
+        float yaw = CombatBattleRandom.Choose(context.Owner, "ClumsyYaw", CombatBattleRandom.GetDecisionInterval(context.Owner, 4f), 8) * 45f;
+        Vector3 destination = origin + Quaternion.Euler(0f, yaw, 0f) * Vector3.forward * 6f;
+        destination.y = context.Owner.transform.position.y;
+        return CombatMoveTarget.ForPosition(destination);
     }
 
     private static CombatMoveTarget CreateEnemyStoneTarget(CombatAiContext context)
@@ -139,6 +176,209 @@ public static partial class CombatAiPlanner
         return HorizontalDistance(context.Owner.transform.position, destination) > 1.25f
             ? CombatMoveTarget.ForPosition(destination)
             : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateDevotedInterceptTarget(CombatAiContext context)
+    {
+        Character threatenedAlly = null;
+        CombatCharacterIntel threateningEnemy = default;
+        float bestThreat = float.NegativeInfinity;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null || !ally.IsAlive) continue;
+
+            CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(context, ally.CurrentPosition);
+            if (enemy.Character == null) continue;
+
+            float enemyDistance = HorizontalDistance(ally.CurrentPosition, enemy.KnownPosition);
+            if (enemyDistance > 12f) continue;
+
+            float hpRatio = ally.MaxHP > 0 ? ally.HP / (float)ally.MaxHP : 1f;
+            float threat = (12f - enemyDistance) + (1f - hpRatio) * 20f;
+            if (threat <= bestThreat) continue;
+            bestThreat = threat;
+            threatenedAlly = ally.Character;
+            threateningEnemy = enemy;
+        }
+
+        if (threatenedAlly == null || threateningEnemy.Character == null)
+        {
+            return CreateAllyRelativeTarget(context, towardEnemy: true);
+        }
+
+        Vector3 direction = Flatten(threateningEnemy.KnownPosition - threatenedAlly.transform.position);
+        if (direction.sqrMagnitude <= 0.01f) return CombatMoveTarget.None;
+        direction.Normalize();
+        float gap = HorizontalDistance(threatenedAlly.transform.position, threateningEnemy.KnownPosition);
+        Vector3 destination = threatenedAlly.transform.position + direction * Mathf.Min(2.2f, gap * 0.45f);
+        destination.y = context.Owner.transform.position.y;
+        return HorizontalDistance(context.Owner.transform.position, destination) > 1f
+            ? CombatMoveTarget.ForPosition(destination)
+            : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateCowardBehindAllyTarget(CombatAiContext context)
+    {
+        CombatCharacterIntel nearestEnemy = FindNearestKnownEnemyIntel(context, context.Owner.transform.position);
+        if (nearestEnemy.Character == null) return CombatMoveTarget.None;
+        float selfDistance = HorizontalDistance(context.Owner.transform.position, nearestEnemy.KnownPosition);
+        if (selfDistance > 10f) return CombatMoveTarget.None;
+        return CreateAllyRelativeTarget(context, towardEnemy: false);
+    }
+
+    private static CombatMoveTarget CreateDespicableShieldTarget(CombatAiContext context)
+    {
+        Character ally = FindNearestAllyCharacter(context);
+        CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(
+            context,
+            ally != null ? ally.transform.position : context.Owner.transform.position);
+        if (ally == null || enemy.Character == null) return CombatMoveTarget.None;
+
+        // 味方を自分と敵の間に置く（味方の影）。
+        Vector3 direction = Flatten(enemy.KnownPosition - ally.transform.position);
+        if (direction.sqrMagnitude <= 0.01f) return CombatMoveTarget.None;
+        direction.Normalize();
+        Vector3 destination = ally.transform.position - direction * 2.8f;
+        destination.y = context.Owner.transform.position.y;
+        return HorizontalDistance(context.Owner.transform.position, destination) > 1.1f
+            ? CombatMoveTarget.ForPosition(destination)
+            : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateCalmDisengageTarget(CombatAiContext context)
+    {
+        CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(context, context.Owner.transform.position);
+        if (enemy.Character == null) return CombatMoveTarget.None;
+        float distance = HorizontalDistance(context.Owner.transform.position, enemy.KnownPosition);
+        if (distance > 7f) return CombatMoveTarget.None;
+
+        Vector3 away = Flatten(context.Owner.transform.position - enemy.KnownPosition);
+        if (away.sqrMagnitude <= 0.01f) away = Vector3.back;
+        away.Normalize();
+        Vector3 destination = context.Owner.transform.position + away * 4.5f;
+        if (context.HasOwnStonePosition)
+        {
+            Vector3 toStone = Flatten(context.OwnStonePosition - context.Owner.transform.position);
+            if (toStone.sqrMagnitude > 0.01f)
+            {
+                destination = context.Owner.transform.position + (away + toStone.normalized).normalized * 4.5f;
+            }
+        }
+
+        destination.y = context.Owner.transform.position.y;
+        return CombatMoveTarget.ForPosition(destination);
+    }
+
+    private static CombatMoveTarget CreateCautiousApproachTarget(CombatAiContext context)
+    {
+        CombatMoveTarget forest = CreateCoverPositionTarget(context, context.Owner);
+        if (forest.HasDestination) return forest;
+
+        Character ally = FindNearestAllyCharacter(context);
+        CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(context, context.Owner.transform.position);
+        if (ally == null || enemy.Character == null) return CombatMoveTarget.None;
+
+        // 直線突撃せず、味方側から少し遅れて進む。
+        Vector3 toEnemy = Flatten(enemy.KnownPosition - ally.transform.position);
+        if (toEnemy.sqrMagnitude <= 0.01f) return CombatMoveTarget.None;
+        toEnemy.Normalize();
+        Vector3 side = new Vector3(-toEnemy.z, 0f, toEnemy.x);
+        Vector3 destination = ally.transform.position + toEnemy * 1.5f + side * 2.5f;
+        destination.y = context.Owner.transform.position.y;
+        return HorizontalDistance(context.Owner.transform.position, destination) > 1.25f
+            ? CombatMoveTarget.ForPosition(destination)
+            : CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateCunningTarget(CombatAiContext context)
+    {
+        CombatAiPersonalityRuntime runtime = context.Owner.GetComponent<CombatAiPersonalityRuntime>();
+        if (runtime != null && runtime.WantsCover)
+        {
+            CombatMoveTarget cover = CreateCoverPositionTarget(context, context.Owner);
+            if (cover.HasDestination) return cover;
+        }
+
+        return CreateBestEnemyTarget(context, null, 0f);
+    }
+
+    private static CombatMoveTarget CreateHotBloodedChargeTarget(CombatAiContext context)
+    {
+        Character advancingAlly = null;
+        float bestAdvance = float.NegativeInfinity;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null || !ally.IsAlive) continue;
+            float advance = CombatAiPositioning.GetAdvanceProgress(context, ally.CurrentPosition);
+            float nearOwner = HorizontalDistance(context.Owner.transform.position, ally.CurrentPosition);
+            if (nearOwner > 10f) continue;
+            float score = advance * 40f - nearOwner;
+            if (ally.HasObjective && ally.Objective == CombatObjective.AttackEnemy) score += 12f;
+            if (ally.HasObjective && ally.Objective == CombatObjective.DestroyEnemyStone) score += 10f;
+            if (score <= bestAdvance) continue;
+            bestAdvance = score;
+            advancingAlly = ally.Character;
+        }
+
+        if (advancingAlly == null) return CreateBestEnemyTarget(context, null, 0f);
+
+        CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(context, advancingAlly.transform.position);
+        Vector3 destination = advancingAlly.transform.position;
+        if (enemy.Character != null)
+        {
+            Vector3 forward = Flatten(enemy.KnownPosition - advancingAlly.transform.position);
+            if (forward.sqrMagnitude > 0.01f)
+            {
+                destination = advancingAlly.transform.position + forward.normalized * 2f;
+            }
+        }
+
+        destination.y = context.Owner.transform.position.y;
+        return HorizontalDistance(context.Owner.transform.position, destination) > 1.25f
+            ? CombatMoveTarget.ForPosition(destination)
+            : CreateBestEnemyTarget(context, null, 0f);
+    }
+
+    private static CombatMoveTarget CreateLonelyClingTarget(CombatAiContext context)
+    {
+        Character ally = FindNearestAllyCharacter(context);
+        if (ally == null) return CombatMoveTarget.None;
+        float distance = HorizontalDistance(context.Owner.transform.position, ally.transform.position);
+        if (distance <= 2.5f) return CombatMoveTarget.None;
+        return CombatMoveTarget.ForCharacter(ally);
+    }
+
+    private static CombatMoveTarget CreateOverlySeriousTarget(CombatAiContext context)
+    {
+        CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(context, context.Owner.transform.position);
+        if (enemy.Character == null) return CombatMoveTarget.None;
+
+        Vector3 toEnemy = Flatten(enemy.KnownPosition - context.Owner.transform.position);
+        if (toEnemy.sqrMagnitude <= 0.01f) return CombatMoveTarget.ForCharacter(enemy.Character);
+        toEnemy.Normalize();
+        float distance = HorizontalDistance(context.Owner.transform.position, enemy.KnownPosition);
+        Vector3 destination = enemy.KnownPosition - toEnemy * Mathf.Min(2f, distance * 0.35f);
+        destination.y = context.Owner.transform.position.y;
+        return CombatMoveTarget.ForPosition(destination);
+    }
+
+    private static Character FindNearestAllyCharacter(CombatAiContext context)
+    {
+        Character best = null;
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null || !ally.IsAlive) continue;
+            float distance = HorizontalDistance(context.Owner.transform.position, ally.CurrentPosition);
+            if (distance >= bestDistance) continue;
+            bestDistance = distance;
+            best = ally.Character;
+        }
+
+        return best;
     }
 
     private static CombatMoveTarget CreateOrbitTarget(CombatAiContext context)
