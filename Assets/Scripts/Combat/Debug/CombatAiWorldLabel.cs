@@ -10,11 +10,14 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
     [SerializeField, Min(0.4f)] private float _width = 2.4f;
     [SerializeField, Min(0.12f)] private float _height = 0.42f;
     [SerializeField, Min(0.08f)] private float _weaponHeight = 0.26f;
+    [SerializeField, Min(0.08f)] private float _personalityHeight = 0.26f;
     [SerializeField, Min(0.08f)] private float _skillHeight = 0.3f;
     [SerializeField, Min(0f)] private float _stackSpacing = 0.08f;
     [SerializeField, Min(0.01f)] private float _defaultSkillDurationSeconds = 1.2f;
     [SerializeField] private Color _backgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.82f);
     [SerializeField] private Color _weaponBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.76f);
+    [SerializeField] private Color _personalityBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.76f);
+    [SerializeField] private Color _personalityHighlightBackgroundColor = new Color(0.85f, 0.65f, 0.12f, 0.9f);
     [SerializeField] private Color _skillBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.72f);
     [SerializeField] private Color _defaultTextColor = new Color(1f, 0.95f, 0.85f, 1f);
     [SerializeField] private Color _allyTextColor = new Color(0.3f, 0.7f, 1f, 1f);
@@ -35,6 +38,9 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
     private Transform _weaponRoot;
     private Text _weaponText;
     private Image _weaponBackgroundImage;
+    private Transform _personalityRoot;
+    private Text _personalityText;
+    private Image _personalityBackgroundImage;
     private Transform _skillRoot;
     private Text _skillText;
     private Image _skillBackgroundImage;
@@ -46,6 +52,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 
     public string CurrentText => _labelText != null ? _labelText.text : string.Empty;
     public string CurrentWeaponText => _weaponText != null ? _weaponText.text : string.Empty;
+    public string CurrentPersonalityText => _personalityText != null ? _personalityText.text : string.Empty;
     public string CurrentSkillText => _skillText != null ? _skillText.text : string.Empty;
 
     public void SetObjective(CombatObjective objective, bool isActive = true)
@@ -74,6 +81,19 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         _weaponText.color = ResolveLabelTextColor();
         _weaponBackgroundImage.color = _weaponBackgroundColor;
         _weaponRoot.gameObject.SetActive(true);
+    }
+
+    public void SetPersonality(CombatAiPersonalityProfile profile, bool highlighted)
+    {
+        EnsureBuilt();
+        if (_personalityText == null || _personalityBackgroundImage == null || _personalityRoot == null) return;
+
+        _personalityText.text = CombatAiDebugLabels.PersonalityShort(profile);
+        _personalityText.color = ResolveLabelTextColor();
+        _personalityBackgroundImage.color = highlighted
+            ? _personalityHighlightBackgroundColor
+            : _personalityBackgroundColor;
+        _personalityRoot.gameObject.SetActive(true);
     }
 
     public void ShowSkill(string skillName, float durationSeconds = -1f)
@@ -195,7 +215,9 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         _labelRoot = root.transform;
 
         RectTransform canvasRect = root.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = new Vector2(_width * 100f, (_height + _weaponHeight + _skillHeight + (_stackSpacing * 2f)) * 100f);
+        canvasRect.sizeDelta = new Vector2(
+            _width * 100f,
+            (_height + _weaponHeight + _personalityHeight + _skillHeight + (_stackSpacing * 3f)) * 100f);
         canvasRect.anchorMin = new Vector2(0.5f, 0.5f);
         canvasRect.anchorMax = new Vector2(0.5f, 0.5f);
         canvasRect.pivot = new Vector2(0.5f, 0f);
@@ -207,10 +229,14 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         _weaponRoot = CreateWeaponRoot(root.transform);
         _weaponBackgroundImage = CreateBackground(_weaponRoot, "WeaponBackground");
         _weaponText = CreateLabel(_weaponRoot, "WeaponLabel", _weaponHeight, 13, 22);
+        _personalityRoot = CreatePersonalityRoot(root.transform);
+        _personalityBackgroundImage = CreateBackground(_personalityRoot, "PersonalityBackground");
+        _personalityText = CreateLabel(_personalityRoot, "PersonalityLabel", _personalityHeight, 13, 22);
         _skillRoot = CreateSkillRoot(root.transform);
         _skillBackgroundImage = CreateBackground(_skillRoot, "SkillBackground");
         _skillText = CreateLabel(_skillRoot, "SkillLabel", _skillHeight, 14, 24);
         SetWeapon(_character != null ? _character.EquippedWeapon : null);
+        SetPersonality(_character != null ? _character.PersonalityProfile : null, highlighted: false);
         HideSkill();
         UpdateRootVisibleState();
     }
@@ -264,7 +290,20 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 
     private Transform CreateSkillRoot(Transform parent)
     {
-        return CreateRowRoot(parent, "SkillRoot", _skillHeight, _height + _weaponHeight + (_stackSpacing * 2f));
+        return CreateRowRoot(
+            parent,
+            "SkillRoot",
+            _skillHeight,
+            _height + _weaponHeight + _personalityHeight + (_stackSpacing * 3f));
+    }
+
+    private Transform CreatePersonalityRoot(Transform parent)
+    {
+        return CreateRowRoot(
+            parent,
+            "PersonalityRoot",
+            _personalityHeight,
+            _height + _weaponHeight + (_stackSpacing * 2f));
     }
 
     private Transform CreateWeaponRoot(Transform parent)

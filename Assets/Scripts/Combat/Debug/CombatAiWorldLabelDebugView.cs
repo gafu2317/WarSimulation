@@ -4,7 +4,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class CombatAiWorldLabelDebugView : CombatDebugBehaviour
 {
-    public override string InspectorDescription => "AIキャラクターの頭上に、現在の目的・武器・使用スキルを表示します。";
+    public override string InspectorDescription => "AIキャラクターの頭上に、現在の目的・武器・性格・使用スキルを表示します。";
 
     [SerializeField, Min(0.1f)] private float _refreshIntervalSeconds = 1f;
 
@@ -36,8 +36,10 @@ public sealed class CombatAiWorldLabelDebugView : CombatDebugBehaviour
                 entry.Brain.IsAiEnabled &&
                 entry.Character.Health != null &&
                 entry.Character.Health.IsAlive;
+            CombatAiPersonalityProfile personality = entry.Character.PersonalityProfile;
             entry.Label.SetObjective(entry.Brain.LastPlan.Objective, isActive);
             entry.Label.SetWeapon(entry.Character.EquippedWeapon);
+            entry.Label.SetPersonality(personality, CombatAiPersonalityHighlight.Matches(personality));
         }
     }
 

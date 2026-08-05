@@ -26,6 +26,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<SelectionRow> _enemyRows = new();
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
+    private Button _highlightButton;
 
     public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
 
@@ -110,6 +111,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void OnDestroy()
     {
         _startBattleButton?.onClick.RemoveListener(ConfirmSelection);
+        if (_highlightButton != null)
+        {
+            _highlightButton.onClick.RemoveListener(CycleHighlight);
+        }
+
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
         {
             if (_builtInPersonalityOptions[i] != null) Destroy(_builtInPersonalityOptions[i]);
@@ -133,12 +139,19 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_characterList == null || _characterItemPrefab == null || _selectionCountText == null) return;
 
         ConfigureListLayout(_characterList);
+        if (_highlightButton != null)
+        {
+            _highlightButton.onClick.RemoveListener(CycleHighlight);
+            _highlightButton = null;
+        }
+
         for (int i = _characterList.childCount - 1; i >= 0; i--)
         {
             Destroy(_characterList.GetChild(i).gameObject);
         }
 
-        _characterList.sizeDelta = new Vector2(1080f, 520f);
+        _characterList.sizeDelta = new Vector2(1080f, 560f);
+        CreateHighlightButton(_characterList);
         GameObject teamsObject = new GameObject(
             "TeamSelections",
             typeof(RectTransform),
@@ -158,6 +171,33 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RectTransform enemyColumn = CreateTeamColumn(teams, "EnemySelection", "敵");
         BuildRows(allyColumn, allyCandidates, _allyRows);
         BuildRows(enemyColumn, enemyCandidates, _enemyRows);
+    }
+
+    private void CreateHighlightButton(RectTransform parent)
+    {
+        if (_characterItemPrefab == null) return;
+
+        _highlightButton = Instantiate(_characterItemPrefab, parent);
+        _highlightButton.name = "PersonalityHighlightButton";
+        LayoutElement layout = _highlightButton.GetComponent<LayoutElement>() ??
+                               _highlightButton.gameObject.AddComponent<LayoutElement>();
+        layout.preferredWidth = 320f;
+        layout.preferredHeight = 40f;
+        layout.flexibleWidth = 0f;
+        HideIndicator(_highlightButton);
+        _highlightButton.onClick.AddListener(CycleHighlight);
+        RefreshHighlightButton();
+    }
+
+    private void CycleHighlight()
+    {
+        CombatAiPersonalityHighlight.CycleNext();
+        RefreshHighlightButton();
+    }
+
+    private void RefreshHighlightButton()
+    {
+        SetButtonLabel(_highlightButton, $"ハイライト: {CombatAiPersonalityHighlight.DisplayLabel}");
     }
 
     private RectTransform CreateTeamColumn(RectTransform parent, string objectName, string title)
@@ -291,6 +331,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         RefreshRows(_allyRows);
         RefreshRows(_enemyRows);
+        RefreshHighlightButton();
         int allyCount = CountSelected(_allyRows);
         int enemyCount = CountSelected(_enemyRows);
 

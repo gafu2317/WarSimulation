@@ -126,6 +126,11 @@ public static class CombatAiDebugLabels
         return Format(profile.name, profile.DisplayNameJapanese);
     }
 
+    public static string PersonalityShort(CombatAiPersonalityProfile profile)
+    {
+        return profile != null ? profile.DisplayNameJapanese : "なし";
+    }
+
     public static string Weapon(WeaponBase weapon)
     {
         if (weapon == null) return Format("Unarmed", "素手");

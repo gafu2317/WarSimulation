@@ -43,7 +43,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         CombatAiPersonalityProfile profile = CreateInstance<CombatAiPersonalityProfile>();
         profile.hideFlags = HideFlags.DontSave;
         profile._kind = kind;
-        profile._displayNameJapanese = GetDisplayName(kind);
+        profile._displayNameJapanese = GetDisplayNameJapanese(kind);
 
         switch (kind)
         {
@@ -108,7 +108,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         return profile;
     }
 
-    private static string GetDisplayName(CombatAiPersonalityKind kind)
+    public static string GetDisplayNameJapanese(CombatAiPersonalityKind kind)
     {
         return kind switch
         {
