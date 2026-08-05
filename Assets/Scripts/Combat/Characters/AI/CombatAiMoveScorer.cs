@@ -421,10 +421,7 @@ public static class CombatAiMoveScorer
     private static float GetWeaponScore(WeaponBase weapon, string code)
     {
         WeaponKind kind = weapon != null ? weapon.Kind : WeaponKind.Unarmed;
-        float score = CombatAiWeaponWeights.GetMoveWeight(kind, code);
-        return code == CombatAiMoveCode.TakeHighGround && weapon != null
-            ? score + weapon.SeekHighGroundBias * 0.4f
-            : score;
+        return CombatAiWeaponWeights.GetMoveWeight(kind, code);
     }
 
     private static void AddReasons(string code, CombatAiScoreBreakdown breakdown)

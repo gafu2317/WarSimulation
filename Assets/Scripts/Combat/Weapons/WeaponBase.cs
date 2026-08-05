@@ -20,10 +20,6 @@ public class WeaponBase
     public virtual float CooldownSeconds => 1.2f;
     public virtual CombatStat ScalingStat => CombatStat.STR;
 
-    public virtual float ChaseEnemyBias => 0f;
-    public virtual float HideInForestBias => 0f;
-    public virtual float SeekHighGroundBias => 0f;
-    public virtual float FollowMeleeAllyBias => 0f;
     public virtual IReadOnlyList<SkillId> GrantedSkillIds => Array.Empty<SkillId>();
     public virtual int PrimaryStatBonus => GetStatBonus(ScalingStat);
 

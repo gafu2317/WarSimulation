@@ -40,7 +40,7 @@ public sealed class CombatSkillCaster : MonoBehaviour
         CombatSkillActionInfo action = CombatSkillActionEvents.Start(_owner, skill, context);
         if (skill.CastTimeSeconds <= 0f)
         {
-            Execute(action, skill, context, raiseCastCompleted: false);
+            Execute(action, skill, context);
             return true;
         }
 
@@ -50,7 +50,6 @@ public sealed class CombatSkillCaster : MonoBehaviour
         _startedAt = Time.time;
         _completeAt = _startedAt + skill.CastTimeSeconds;
         _owner.StopMoving();
-        CombatSkillCastEvents.RaiseCastStarted(_owner, skill, skill.CastTimeSeconds);
         return true;
     }
 
@@ -96,18 +95,16 @@ public sealed class CombatSkillCaster : MonoBehaviour
         SkillExecutionContext context = _context;
         CombatSkillActionInfo action = _castingAction;
         ResetCast();
-        Execute(action, skill, context, raiseCastCompleted: true);
+        Execute(action, skill, context);
     }
 
     public void ClearCast()
     {
         if (IsCasting)
         {
-            SkillBase skill = CastingSkill;
             CombatSkillActionInfo action = _castingAction;
             ResetCast();
             CombatSkillActionEvents.Cancel(action);
-            CombatSkillCastEvents.RaiseCastCancelled(_owner, skill);
             return;
         }
 
@@ -124,16 +121,11 @@ public sealed class CombatSkillCaster : MonoBehaviour
     private void Execute(
         CombatSkillActionInfo action,
         SkillBase skill,
-        SkillExecutionContext context,
-        bool raiseCastCompleted)
+        SkillExecutionContext context)
     {
         if (_owner == null || skill == null) return;
         CombatSkillActionEvents.Execute(action, () => skill.Execute(_owner, context));
         _owner.SkillCooldowns.StartCooldown(skill);
         CombatSkillUseEvents.RaiseSkillUsed(_owner, skill.Name);
-        if (raiseCastCompleted)
-        {
-            CombatSkillCastEvents.RaiseCastCompleted(_owner, skill);
-        }
     }
 }

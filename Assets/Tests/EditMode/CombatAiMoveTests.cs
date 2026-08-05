@@ -182,7 +182,7 @@ public sealed class CombatAiMoveTests
     }
 
     [Test]
-    public void MoveScorer_HighGroundUsesWeaponSeekBias()
+    public void MoveScorer_HighGroundUsesWeaponKindWeight()
     {
         GameObject ownerGo = new GameObject("Owner");
         try
@@ -194,17 +194,22 @@ public sealed class CombatAiMoveTests
                 owner,
                 highGroundCandidates: new[] { highGround });
 
-            owner.EquipWeapon(new Grimoire(seekHighGroundBias: 0f));
-            float unbiasedScore = FindMoveScore(
+            owner.EquipWeapon(new Sword());
+            float swordScore = FindMoveScore(
                 CombatAiPlanner.BuildDebugSnapshot(context, null),
                 CombatAiMoveCode.TakeHighGround);
 
-            owner.EquipWeapon(new Grimoire(seekHighGroundBias: 50f));
-            float biasedScore = FindMoveScore(
+            owner.EquipWeapon(new Grimoire());
+            float grimoireScore = FindMoveScore(
                 CombatAiPlanner.BuildDebugSnapshot(context, null),
                 CombatAiMoveCode.TakeHighGround);
 
-            Assert.That(biasedScore - unbiasedScore, Is.EqualTo(20f).Within(0.001f));
+            Assert.That(
+                grimoireScore - swordScore,
+                Is.EqualTo(
+                    CombatAiWeaponWeights.GetMoveWeight(WeaponKind.Grimoire, CombatAiMoveCode.TakeHighGround)
+                    - CombatAiWeaponWeights.GetMoveWeight(WeaponKind.Sword, CombatAiMoveCode.TakeHighGround))
+                .Within(0.001f));
         }
         finally
         {

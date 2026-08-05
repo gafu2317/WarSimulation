@@ -40,7 +40,6 @@ public sealed class WeaponConfigTests
             SetField(config, "_range", 9.5f);
             SetField(config, "_cooldownSeconds", 2.1f);
             SetField(config, "_primaryStatBonus", 15);
-            SetField(config, "_hideInForestBias", 42f);
 
             WeaponBase weapon = config.CreateWeapon();
 
@@ -48,7 +47,6 @@ public sealed class WeaponConfigTests
             Assert.That(weapon.Range, Is.EqualTo(9.5f).Within(0.001f));
             Assert.That(weapon.PrimaryStatBonus, Is.EqualTo(15));
             Assert.That(weapon.CooldownSeconds, Is.EqualTo(2.1f).Within(0.001f));
-            Assert.That(weapon.HideInForestBias, Is.EqualTo(42f).Within(0.001f));
         }
         finally
         {
@@ -57,12 +55,14 @@ public sealed class WeaponConfigTests
     }
 
     [Test]
-    public void ApplyKindDefaults_Wand_HasHideInForestBias()
+    public void ApplyKindDefaults_Wand_SetsCombatDefaults()
     {
         WeaponConfig config = CreateConfig(WeaponKind.Wand);
         try
         {
-            Assert.That(config.HideInForestBias, Is.EqualTo(70f).Within(0.001f));
+            Assert.That(config.Range, Is.EqualTo(30f).Within(0.001f));
+            Assert.That(config.CooldownSeconds, Is.EqualTo(1.4f).Within(0.001f));
+            Assert.That(config.PrimaryStatBonus, Is.EqualTo(10));
         }
         finally
         {
@@ -71,12 +71,14 @@ public sealed class WeaponConfigTests
     }
 
     [Test]
-    public void ApplyKindDefaults_Sword_HasChaseEnemyBias()
+    public void ApplyKindDefaults_Sword_SetsCombatDefaults()
     {
         WeaponConfig config = CreateConfig(WeaponKind.Sword);
         try
         {
-            Assert.That(config.ChaseEnemyBias, Is.EqualTo(20f).Within(0.001f));
+            Assert.That(config.Range, Is.EqualTo(2f).Within(0.001f));
+            Assert.That(config.CooldownSeconds, Is.EqualTo(0.9f).Within(0.001f));
+            Assert.That(config.PrimaryStatBonus, Is.EqualTo(12));
         }
         finally
         {
@@ -99,8 +101,8 @@ public sealed class WeaponConfigTests
             character.ApplyInitialWeaponFromConfig();
 
             Assert.That(character.EquippedWeapon, Is.InstanceOf<Grimoire>());
-            Assert.That(character.EquippedWeapon.SeekHighGroundBias, Is.EqualTo(50f).Within(0.001f));
-            Assert.That(character.EquippedWeapon.HideInForestBias, Is.EqualTo(70f).Within(0.001f));
+            Assert.That(character.EquippedWeapon.Range, Is.EqualTo(30f).Within(0.001f));
+            Assert.That(character.EquippedWeapon.PrimaryStatBonus, Is.EqualTo(14));
             Assert.That(character.EquippedWeapon.Kind, Is.EqualTo(WeaponKind.Grimoire));
         }
         finally
