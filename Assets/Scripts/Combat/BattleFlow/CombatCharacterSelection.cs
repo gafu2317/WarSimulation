@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public sealed class CombatCharacterSelection : MonoBehaviour
@@ -27,6 +28,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
     private Button _highlightButton;
+    private Button _detailSettingsButton;
+    private GameObject _allyColumnRoot;
+    private GameObject _enemyColumnRoot;
+    private RectTransform _pickerRoot;
+    private TMP_Text _pickerDescription;
+    private TMP_Text _pickerTitle;
+    private Transform _pickerContent;
+    private bool _detailSettingsOpen;
 
     public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
 
@@ -38,6 +47,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _confirmed = confirmed;
         RemoveNullAndDuplicateOptions(_weaponOptions);
         RemoveNullAndDuplicateOptions(_personalityOptions);
+        DeduplicatePersonalityOptionsByKind();
         AddBuiltInPersonalityOptions();
         RebuildLayout(allyCandidates, enemyCandidates);
         ResetSelection();
@@ -45,6 +55,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     public void ResetSelection()
     {
+        ClosePicker();
+        SetDetailSettingsOpen(false);
         ApplyDefaultParty(_allyRows);
         ApplyDefaultParty(_enemyRows);
         Refresh();
@@ -86,11 +98,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private int FindStandardPersonalityIndex()
     {
-        // Debug assets often omit _kind and default to Neutral, so match by display name.
         for (int i = 0; i < _personalityOptions.Count; i++)
         {
             CombatAiPersonalityProfile personality = _personalityOptions[i];
-            if (personality != null && personality.DisplayNameJapanese == "標準")
+            if (personality != null && personality.Kind == CombatAiPersonalityKind.Neutral)
             {
                 return i;
             }
@@ -113,9 +124,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _startBattleButton?.onClick.RemoveListener(ConfirmSelection);
         if (_highlightButton != null)
         {
-            _highlightButton.onClick.RemoveListener(CycleHighlight);
+            _highlightButton.onClick.RemoveListener(OpenHighlightPicker);
         }
 
+        if (_detailSettingsButton != null)
+        {
+            _detailSettingsButton.onClick.RemoveListener(ToggleDetailSettings);
+        }
+
+        ClosePicker();
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
         {
             if (_builtInPersonalityOptions[i] != null) Destroy(_builtInPersonalityOptions[i]);
@@ -126,8 +143,35 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         if (_builtInPersonalityOptions.Count > 0) return;
 
-        _builtInPersonalityOptions.AddRange(CombatAiPersonalityProfile.CreateBuiltInProfiles());
-        _personalityOptions.AddRange(_builtInPersonalityOptions);
+        List<CombatAiPersonalityProfile> builtIns = CombatAiPersonalityProfile.CreateBuiltInProfiles();
+        for (int i = 0; i < builtIns.Count; i++)
+        {
+            CombatAiPersonalityProfile profile = builtIns[i];
+            if (FindPersonalityByKind(profile.Kind) != null)
+            {
+                Destroy(profile);
+                continue;
+            }
+
+            _builtInPersonalityOptions.Add(profile);
+            _personalityOptions.Add(profile);
+        }
+    }
+
+    private void DeduplicatePersonalityOptionsByKind()
+    {
+        var seen = new HashSet<CombatAiPersonalityKind>();
+        for (int i = 0; i < _personalityOptions.Count;)
+        {
+            CombatAiPersonalityProfile personality = _personalityOptions[i];
+            if (personality == null || !seen.Add(personality.Kind))
+            {
+                _personalityOptions.RemoveAt(i);
+                continue;
+            }
+
+            i++;
+        }
     }
 
     private void RebuildLayout(
@@ -136,14 +180,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         _allyRows.Clear();
         _enemyRows.Clear();
+        _allyColumnRoot = null;
+        _enemyColumnRoot = null;
         if (_characterList == null || _characterItemPrefab == null || _selectionCountText == null) return;
 
         ConfigureListLayout(_characterList);
-        if (_highlightButton != null)
-        {
-            _highlightButton.onClick.RemoveListener(CycleHighlight);
-            _highlightButton = null;
-        }
+        ClearToolbarButtons();
+        ClosePicker();
 
         for (int i = _characterList.childCount - 1; i >= 0; i--)
         {
@@ -151,7 +194,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
 
         _characterList.sizeDelta = new Vector2(1080f, 560f);
-        CreateHighlightButton(_characterList);
+        CreateToolbar(_characterList);
+
         GameObject teamsObject = new GameObject(
             "TeamSelections",
             typeof(RectTransform),
@@ -169,30 +213,91 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         RectTransform allyColumn = CreateTeamColumn(teams, "AllySelection", "味方");
         RectTransform enemyColumn = CreateTeamColumn(teams, "EnemySelection", "敵");
+        _allyColumnRoot = allyColumn.gameObject;
+        _enemyColumnRoot = enemyColumn.gameObject;
         BuildRows(allyColumn, allyCandidates, _allyRows);
         BuildRows(enemyColumn, enemyCandidates, _enemyRows);
+        SetDetailSettingsOpen(false);
     }
 
-    private void CreateHighlightButton(RectTransform parent)
+    private void ClearToolbarButtons()
     {
-        if (_characterItemPrefab == null) return;
+        if (_highlightButton != null)
+        {
+            _highlightButton.onClick.RemoveListener(OpenHighlightPicker);
+            _highlightButton = null;
+        }
 
-        _highlightButton = Instantiate(_characterItemPrefab, parent);
-        _highlightButton.name = "PersonalityHighlightButton";
-        LayoutElement layout = _highlightButton.GetComponent<LayoutElement>() ??
-                               _highlightButton.gameObject.AddComponent<LayoutElement>();
-        layout.preferredWidth = 320f;
-        layout.preferredHeight = 40f;
-        layout.flexibleWidth = 0f;
-        HideIndicator(_highlightButton);
-        _highlightButton.onClick.AddListener(CycleHighlight);
-        RefreshHighlightButton();
+        if (_detailSettingsButton != null)
+        {
+            _detailSettingsButton.onClick.RemoveListener(ToggleDetailSettings);
+            _detailSettingsButton = null;
+        }
     }
 
-    private void CycleHighlight()
+    private void CreateToolbar(RectTransform parent)
     {
-        CombatAiPersonalityHighlight.CycleNext();
+        GameObject toolbarObject = new GameObject(
+            "SelectionToolbar",
+            typeof(RectTransform),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement));
+        RectTransform toolbar = toolbarObject.GetComponent<RectTransform>();
+        toolbar.SetParent(parent, false);
+        HorizontalLayoutGroup layout = toolbarObject.GetComponent<HorizontalLayoutGroup>();
+        layout.spacing = 12f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        toolbarObject.GetComponent<LayoutElement>().preferredHeight = 44f;
+
+        _highlightButton = CreateButton(toolbar, "PersonalityHighlightButton", 400f, 48f, OpenHighlightPicker);
+        _detailSettingsButton = CreateButton(toolbar, "DetailSettingsButton", 220f, 48f, ToggleDetailSettings);
         RefreshHighlightButton();
+        RefreshDetailSettingsButton();
+    }
+
+    private void ToggleDetailSettings()
+    {
+        SetDetailSettingsOpen(!_detailSettingsOpen);
+    }
+
+    private void SetDetailSettingsOpen(bool open)
+    {
+        _detailSettingsOpen = open;
+        if (_allyColumnRoot != null) _allyColumnRoot.SetActive(!open);
+        if (_enemyColumnRoot != null) _enemyColumnRoot.SetActive(open);
+        if (_highlightButton != null) _highlightButton.gameObject.SetActive(!open);
+        RefreshDetailSettingsButton();
+        RefreshSelectionCountText();
+    }
+
+    private void RefreshDetailSettingsButton()
+    {
+        SetButtonLabel(_detailSettingsButton, _detailSettingsOpen ? "閉じる" : "詳細設定");
+    }
+
+    private void OpenHighlightPicker()
+    {
+        OpenPersonalityPicker(
+            "ハイライト性格を選択",
+            selectedIndex: -1,
+            includeNone: true,
+            onSelected: index =>
+            {
+                if (index < 0)
+                {
+                    CombatAiPersonalityHighlight.Set(null);
+                }
+                else
+                {
+                    CombatAiPersonalityProfile profile = GetOption(_personalityOptions, index);
+                    CombatAiPersonalityHighlight.Set(profile != null ? profile.Kind : null);
+                }
+
+                RefreshHighlightButton();
+            });
     }
 
     private void RefreshHighlightButton()
@@ -212,15 +317,17 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        columnObject.GetComponent<LayoutElement>().preferredWidth = 520f;
+        columnObject.GetComponent<LayoutElement>().preferredWidth = 1080f;
 
         TMP_Text header = Instantiate(_selectionCountText, column);
         header.name = $"{objectName}Title";
         header.text = title;
         header.alignment = TextAlignmentOptions.Center;
+        header.fontSize = 28f;
+        header.enableAutoSizing = false;
         LayoutElement headerLayout = header.gameObject.GetComponent<LayoutElement>() ??
                                      header.gameObject.AddComponent<LayoutElement>();
-        headerLayout.preferredHeight = 40f;
+        headerLayout.preferredHeight = 48f;
         return column;
     }
 
@@ -252,32 +359,52 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
-        rowObject.GetComponent<LayoutElement>().preferredHeight = 56f;
+        rowObject.GetComponent<LayoutElement>().preferredHeight = 72f;
 
         var row = new SelectionRow
         {
             Character = character,
             WeaponIndex = FindOptionIndex(_weaponOptions, character.EquippedWeaponConfig),
-            PersonalityIndex = FindOptionIndex(_personalityOptions, character.PersonalityProfile),
-            CharacterButton = CreateButton(rowObject.transform, 200f),
-            WeaponButton = CreateButton(rowObject.transform, 140f),
-            PersonalityButton = CreateButton(rowObject.transform, 160f),
+            PersonalityIndex = FindPersonalityIndex(character.PersonalityProfile),
+            CharacterButton = CreateButton(rowObject.transform, null, 320f, 64f),
+            WeaponButton = CreateButton(rowObject.transform, null, 200f, 64f),
+            PersonalityButton = CreateButton(rowObject.transform, null, 240f, 64f),
         };
 
         row.CharacterButton.onClick.AddListener(() => Toggle(row));
-        row.WeaponButton.onClick.AddListener(() => CycleWeapon(row));
-        row.PersonalityButton.onClick.AddListener(() => CyclePersonality(row));
-        HideIndicator(row.WeaponButton);
-        HideIndicator(row.PersonalityButton);
+        row.WeaponButton.onClick.AddListener(() => OpenWeaponPicker(row));
+        row.PersonalityButton.onClick.AddListener(() => OpenPersonalityPickerForRow(row));
         return row;
     }
 
-    private Button CreateButton(Transform parent, float width)
+    private int FindPersonalityIndex(CombatAiPersonalityProfile profile)
+    {
+        if (profile == null) return FindStandardPersonalityIndex();
+
+        for (int i = 0; i < _personalityOptions.Count; i++)
+        {
+            CombatAiPersonalityProfile option = _personalityOptions[i];
+            if (option != null && option.Kind == profile.Kind) return i;
+        }
+
+        return FindStandardPersonalityIndex();
+    }
+
+    private Button CreateButton(
+        Transform parent,
+        string objectName,
+        float width,
+        float height = -1f,
+        UnityEngine.Events.UnityAction onClick = null)
     {
         Button button = Instantiate(_characterItemPrefab, parent);
+        if (!string.IsNullOrEmpty(objectName)) button.name = objectName;
         LayoutElement layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
         layout.preferredWidth = width;
         layout.flexibleWidth = 0f;
+        if (height > 0f) layout.preferredHeight = height;
+        HideIndicator(button);
+        if (onClick != null) button.onClick.AddListener(onClick);
         return button;
     }
 
@@ -287,22 +414,290 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Refresh();
     }
 
-    private void CycleWeapon(SelectionRow row)
+    private void OpenWeaponPicker(SelectionRow row)
     {
         if (_weaponOptions.Count == 0) return;
-        row.WeaponIndex = (row.WeaponIndex + 1) % _weaponOptions.Count;
-        RefreshRow(row);
+
+        EnsurePicker();
+        ClearPickerOptions();
+        SetPickerTitle("武器を選択");
+        SetPickerDescription("一覧から武器を選んでください。");
+
+        for (int i = 0; i < _weaponOptions.Count; i++)
+        {
+            int index = i;
+            WeaponConfig weapon = _weaponOptions[i];
+            string label = GetWeaponName(weapon);
+            if (index == row.WeaponIndex) label = "■ " + label;
+            AddPickerOption(label, () =>
+            {
+                row.WeaponIndex = index;
+                RefreshRow(row);
+                ClosePicker();
+            });
+        }
+
+        ShowPicker();
     }
 
-    private void CyclePersonality(SelectionRow row)
+    private void OpenPersonalityPickerForRow(SelectionRow row)
     {
-        if (_personalityOptions.Count == 0) return;
-        row.PersonalityIndex = (row.PersonalityIndex + 1) % _personalityOptions.Count;
-        RefreshRow(row);
+        OpenPersonalityPicker(
+            "性格を選択",
+            row.PersonalityIndex,
+            includeNone: false,
+            onSelected: index =>
+            {
+                row.PersonalityIndex = index;
+                RefreshRow(row);
+            });
+    }
+
+    private void OpenPersonalityPicker(
+        string title,
+        int selectedIndex,
+        bool includeNone,
+        Action<int> onSelected)
+    {
+        if (!includeNone && _personalityOptions.Count == 0) return;
+
+        EnsurePicker();
+        ClearPickerOptions();
+        SetPickerTitle(title);
+
+        if (includeNone)
+        {
+            bool isNone = !CombatAiPersonalityHighlight.HasHighlight;
+            const string noneDescription = "性格ハイライトを使いません。";
+            AddPickerOption(
+                isNone ? "■ なし" : "なし",
+                () =>
+                {
+                    onSelected?.Invoke(-1);
+                    ClosePicker();
+                },
+                () => SetPickerDescription(noneDescription));
+        }
+
+        CombatAiPersonalityKind? highlightKind = CombatAiPersonalityHighlight.Kind;
+        for (int i = 0; i < _personalityOptions.Count; i++)
+        {
+            int index = i;
+            CombatAiPersonalityProfile personality = _personalityOptions[i];
+            if (personality == null) continue;
+
+            string name = personality.DisplayNameJapanese;
+            bool selected = includeNone
+                ? highlightKind.HasValue && personality.Kind == highlightKind.Value
+                : index == selectedIndex;
+            string description = personality.BehaviorDescriptionJapanese;
+            AddPickerOption(
+                selected ? "■ " + name : name,
+                () =>
+                {
+                    onSelected?.Invoke(index);
+                    ClosePicker();
+                },
+                () => SetPickerDescription(description));
+        }
+
+        CombatAiPersonalityProfile initial = includeNone
+            ? (highlightKind.HasValue ? FindPersonalityByKind(highlightKind.Value) : null)
+            : GetOption(_personalityOptions, selectedIndex);
+        SetPickerDescription(initial != null
+            ? initial.BehaviorDescriptionJapanese
+            : includeNone
+                ? "性格ハイライトを使いません。"
+                : "性格を選ぶと、ここで挙動の説明が表示されます。");
+        ShowPicker();
+    }
+
+    private CombatAiPersonalityProfile FindPersonalityByKind(CombatAiPersonalityKind kind)
+    {
+        for (int i = 0; i < _personalityOptions.Count; i++)
+        {
+            CombatAiPersonalityProfile option = _personalityOptions[i];
+            if (option != null && option.Kind == kind) return option;
+        }
+
+        return null;
+    }
+
+    private void EnsurePicker()
+    {
+        if (_pickerRoot != null) return;
+
+        RectTransform host = transform as RectTransform;
+        GameObject overlay = new GameObject(
+            "SelectionOptionPicker",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button));
+        _pickerRoot = overlay.GetComponent<RectTransform>();
+        _pickerRoot.SetParent(host != null ? host : transform, false);
+        Stretch(_pickerRoot);
+        Image dim = overlay.GetComponent<Image>();
+        dim.color = new Color(0f, 0f, 0f, 0.55f);
+        Button dismiss = overlay.GetComponent<Button>();
+        dismiss.transition = Selectable.Transition.None;
+        dismiss.onClick.AddListener(ClosePicker);
+
+        GameObject panelObject = new GameObject(
+            "Panel",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(VerticalLayoutGroup),
+            typeof(Button));
+        RectTransform panel = panelObject.GetComponent<RectTransform>();
+        panel.SetParent(_pickerRoot, false);
+        panel.anchorMin = new Vector2(0.5f, 0.5f);
+        panel.anchorMax = new Vector2(0.5f, 0.5f);
+        panel.pivot = new Vector2(0.5f, 0.5f);
+        panel.sizeDelta = new Vector2(720f, 560f);
+        panelObject.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.14f, 0.96f);
+        panelObject.GetComponent<Button>().transition = Selectable.Transition.None;
+        VerticalLayoutGroup panelLayout = panelObject.GetComponent<VerticalLayoutGroup>();
+        panelLayout.padding = new RectOffset(16, 16, 16, 16);
+        panelLayout.spacing = 10f;
+        panelLayout.childControlWidth = true;
+        panelLayout.childControlHeight = true;
+        panelLayout.childForceExpandWidth = true;
+        panelLayout.childForceExpandHeight = false;
+
+        TMP_Text title = Instantiate(_selectionCountText, panel);
+        title.name = "PickerTitle";
+        title.text = "選択";
+        title.alignment = TextAlignmentOptions.Center;
+        title.fontSize = 30f;
+        LayoutElement titleLayout = title.gameObject.GetComponent<LayoutElement>() ??
+                                    title.gameObject.AddComponent<LayoutElement>();
+        titleLayout.preferredHeight = 36f;
+        _pickerTitle = title;
+
+        _pickerDescription = Instantiate(_selectionCountText, panel);
+        _pickerDescription.name = "PickerDescription";
+        _pickerDescription.alignment = TextAlignmentOptions.Left;
+        _pickerDescription.fontSize = 24f;
+        _pickerDescription.enableWordWrapping = true;
+        _pickerDescription.text = string.Empty;
+        LayoutElement descriptionLayout = _pickerDescription.gameObject.GetComponent<LayoutElement>() ??
+                                          _pickerDescription.gameObject.AddComponent<LayoutElement>();
+        descriptionLayout.preferredHeight = 72f;
+
+        GameObject scrollObject = new GameObject(
+            "Scroll",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(ScrollRect),
+            typeof(LayoutElement));
+        RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+        scrollRectTransform.SetParent(panel, false);
+        scrollObject.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.08f, 0.9f);
+        LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
+        scrollLayout.preferredHeight = 380f;
+        scrollLayout.flexibleHeight = 1f;
+
+        GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+        viewport.SetParent(scrollRectTransform, false);
+        Stretch(viewport);
+        viewportObject.GetComponent<Image>().color = Color.white;
+        viewportObject.GetComponent<Mask>().showMaskGraphic = false;
+
+        GameObject contentObject = new GameObject(
+            "Content",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(ContentSizeFitter));
+        RectTransform content = contentObject.GetComponent<RectTransform>();
+        content.SetParent(viewport, false);
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.offsetMin = Vector2.zero;
+        content.offsetMax = Vector2.zero;
+        VerticalLayoutGroup contentLayout = contentObject.GetComponent<VerticalLayoutGroup>();
+        contentLayout.spacing = 6f;
+        contentLayout.padding = new RectOffset(8, 8, 8, 8);
+        contentLayout.childControlWidth = true;
+        contentLayout.childControlHeight = true;
+        contentLayout.childForceExpandWidth = true;
+        contentLayout.childForceExpandHeight = false;
+        ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        _pickerContent = content;
+
+        ScrollRect scroll = scrollObject.GetComponent<ScrollRect>();
+        scroll.viewport = viewport;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+
+        Button closeButton = CreateButton(panel, "ClosePickerButton", 0f, 44f, ClosePicker);
+        closeButton.GetComponent<LayoutElement>().flexibleWidth = 1f;
+        SetButtonLabel(closeButton, "閉じる");
+
+        _pickerRoot.gameObject.SetActive(false);
+    }
+
+    private void ClearPickerOptions()
+    {
+        if (_pickerContent == null) return;
+        for (int i = _pickerContent.childCount - 1; i >= 0; i--)
+        {
+            Destroy(_pickerContent.GetChild(i).gameObject);
+        }
+    }
+
+    private void AddPickerOption(string label, Action onClick, Action onHighlight = null)
+    {
+        if (_pickerContent == null || _characterItemPrefab == null) return;
+
+        Button button = CreateButton(_pickerContent, null, 0f, 56f, () => onClick?.Invoke());
+        button.GetComponent<LayoutElement>().flexibleWidth = 1f;
+        SetButtonLabel(button, label);
+        if (onHighlight != null)
+        {
+            button.gameObject.AddComponent<EventTriggerProxy>().OnHighlighted = onHighlight;
+        }
+    }
+
+    private void SetPickerTitle(string title)
+    {
+        if (_pickerTitle != null) _pickerTitle.text = title;
+    }
+
+    private void SetPickerDescription(string description)
+    {
+        if (_pickerDescription != null)
+        {
+            _pickerDescription.text = description ?? string.Empty;
+        }
+    }
+
+    private void ShowPicker()
+    {
+        if (_pickerRoot == null) return;
+        _pickerRoot.SetAsLastSibling();
+        _pickerRoot.gameObject.SetActive(true);
+    }
+
+    private void ClosePicker()
+    {
+        if (_pickerRoot != null)
+        {
+            _pickerRoot.gameObject.SetActive(false);
+        }
+
+        ClearPickerOptions();
     }
 
     private void ConfirmSelection()
     {
+        ClosePicker();
+        SetDetailSettingsOpen(false);
         List<CombatParticipantSetup> allies = BuildSetups(_allyRows);
         List<CombatParticipantSetup> enemies = BuildSetups(_enemyRows);
         if (allies.Count == 0 || enemies.Count == 0) return;
@@ -332,18 +727,31 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RefreshRows(_allyRows);
         RefreshRows(_enemyRows);
         RefreshHighlightButton();
+        RefreshDetailSettingsButton();
+        RefreshSelectionCountText();
+
         int allyCount = CountSelected(_allyRows);
         int enemyCount = CountSelected(_enemyRows);
-
-        if (_selectionCountText != null)
-        {
-            _selectionCountText.text = $"味方 {allyCount}人 / 敵 {enemyCount}人";
-        }
-
         if (_startBattleButton != null)
         {
             _startBattleButton.interactable = allyCount > 0 && enemyCount > 0 &&
                                               _weaponOptions.Count > 0 && _personalityOptions.Count > 0;
+        }
+    }
+
+    private void RefreshSelectionCountText()
+    {
+        if (_selectionCountText == null) return;
+
+        int allyCount = CountSelected(_allyRows);
+        int enemyCount = CountSelected(_enemyRows);
+        if (_detailSettingsOpen)
+        {
+            _selectionCountText.text = $"詳細設定（敵） 敵 {enemyCount}人";
+        }
+        else
+        {
+            _selectionCountText.text = $"味方 {allyCount}人 / 敵 {enemyCount}人（標準編成）";
         }
     }
 
@@ -359,7 +767,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         SetButtonLabel(row.CharacterButton, $"{(row.Selected ? "■" : "□")} {row.Character.DisplayName}");
         SetButtonLabel(row.WeaponButton, $"武器: {GetWeaponName(GetOption(_weaponOptions, row.WeaponIndex))}");
-        SetButtonLabel(row.PersonalityButton, $"性格: {GetPersonalityName(GetOption(_personalityOptions, row.PersonalityIndex))}");
+        CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);
+        SetButtonLabel(row.PersonalityButton, $"性格: {(personality != null ? personality.DisplayNameJapanese : "未設定")}");
 
         Transform indicator = row.CharacterButton.transform.Find("SelectedIndicator");
         if (indicator != null)
@@ -374,7 +783,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (label != null)
         {
             label.text = value;
-            label.fontSize = 18f;
+            label.fontSize = 26f;
+            label.enableAutoSizing = false;
         }
     }
 
@@ -400,11 +810,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             WeaponKind.Rosary => "ロザリオ",
             _ => "素手",
         };
-    }
-
-    private static string GetPersonalityName(CombatAiPersonalityProfile personality)
-    {
-        return personality != null ? personality.DisplayNameJapanese : "未設定";
     }
 
     private static int CountSelected(List<SelectionRow> rows)
@@ -447,7 +852,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (layout != null)
         {
             layout.enabled = true;
-            layout.spacing = 0f;
+            layout.spacing = 8f;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
@@ -461,6 +866,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
     }
 
+    private static void Stretch(RectTransform rect)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+    }
+
     private sealed class SelectionRow
     {
         public Character Character;
@@ -470,5 +883,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         public int WeaponIndex;
         public int PersonalityIndex;
         public bool Selected;
+    }
+
+    private sealed class EventTriggerProxy : MonoBehaviour, IPointerEnterHandler
+    {
+        public Action OnHighlighted;
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            OnHighlighted?.Invoke();
+        }
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class EditorStyleCameraController : MonoBehaviour
@@ -100,14 +101,20 @@ public class EditorStyleCameraController : MonoBehaviour
     /// </summary>
     private void HandleZoom()
     {
+        if (IsPointerOverUi()) return;
+
         float scrollValue = Mouse.current.scroll.ReadValue().y;
-        
-        if (Mathf.Abs(scrollValue) > 0.01f)
-        {
-            // ホイールの回転量に応じてカメラを前進・後退させる
-            // Note: 環境によってスクロール値の大きさが変わるため、正規化してスピードを掛けています
-            float zoomAmount = Mathf.Sign(scrollValue) * scrollSpeed;
-            transform.Translate(Vector3.forward * zoomAmount * Time.deltaTime, Space.Self);
-        }
+        if (Mathf.Abs(scrollValue) <= 0.01f) return;
+
+        float zoomAmount = Mathf.Sign(scrollValue) * scrollSpeed;
+        transform.Translate(Vector3.forward * zoomAmount * Time.deltaTime, Space.Self);
+    }
+
+    private static bool IsPointerOverUi()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+        if (eventSystem.IsPointerOverGameObject()) return true;
+        return Mouse.current != null && eventSystem.IsPointerOverGameObject(Mouse.current.deviceId);
     }
 }

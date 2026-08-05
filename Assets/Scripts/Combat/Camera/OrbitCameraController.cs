@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -61,11 +62,21 @@ public class OrbitCameraController : MonoBehaviour
 
     private void HandleZoom()
     {
+        if (IsPointerOverUi()) return;
+
         float scroll = Mouse.current.scroll.ReadValue().y;
         if (Mathf.Abs(scroll) < 0.01f) return;
 
         _distance -= Mathf.Sign(scroll) * _zoomSpeed;
         _distance = Mathf.Clamp(_distance, _zoomMin, _zoomMax);
+    }
+
+    private static bool IsPointerOverUi()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+        if (eventSystem.IsPointerOverGameObject()) return true;
+        return Mouse.current != null && eventSystem.IsPointerOverGameObject(Mouse.current.deviceId);
     }
 
     private void ApplyTransform()

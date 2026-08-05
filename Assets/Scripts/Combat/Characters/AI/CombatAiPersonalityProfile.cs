@@ -155,4 +155,54 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             _ => "標準",
         };
     }
+
+    public static string GetBehaviorDescriptionJapanese(CombatAiPersonalityKind kind)
+    {
+        return kind switch
+        {
+            CombatAiPersonalityKind.AttentionSeeker =>
+                "敵集団の正面へ出て、注意を自分へ集めます。",
+            CombatAiPersonalityKind.BattleJunkie =>
+                "一度掴んだ敵を長く追い、魔石や別敵へ切り替えにくくします。",
+            CombatAiPersonalityKind.Calm =>
+                "危険が高まったときだけ、はっきり後退します。",
+            CombatAiPersonalityKind.Cautious =>
+                "直線突撃を避け、森や味方側から迂回して前進します。",
+            CombatAiPersonalityKind.Clumsy =>
+                "普段は通常どおりですが、まれに変な方向や対象へ寄ります。",
+            CombatAiPersonalityKind.Coward =>
+                "敵が近いと攻撃を中断し、味方の後ろへ下がります。",
+            CombatAiPersonalityKind.Cunning =>
+                "行動したあと、森や遮蔽へ引っ込んでから再び戦います。",
+            CombatAiPersonalityKind.Despicable =>
+                "常に味方を盾にし、その影に隠れます。",
+            CombatAiPersonalityKind.Devoted =>
+                "狙われた味方と敵の間に割って入り、身を挺して守ります。",
+            CombatAiPersonalityKind.Eccentric =>
+                "ときどき戦況と無関係な目的や移動へ切り替わります。",
+            CombatAiPersonalityKind.Gossiper =>
+                "恋人二人の間にへばりつき、近くでは能力が上がります。",
+            CombatAiPersonalityKind.HotBlooded =>
+                "近くの味方が前進すると、一緒に前へ出ます。",
+            CombatAiPersonalityKind.Innocent =>
+                "攻撃せず、敵の周囲をぐるぐる回ります。被弾を避けることもあります。",
+            CombatAiPersonalityKind.Lazy =>
+                "動いたあと、しばらくその場でサボります。",
+            CombatAiPersonalityKind.Lecherous =>
+                "異性のそばへ合流し、そこを拠点に戦います。",
+            CombatAiPersonalityKind.Lonely =>
+                "味方から離れるとすぐ合流し、単独行動を避けます。",
+            CombatAiPersonalityKind.LoneWolf =>
+                "味方がいない敵を選び、単独で寄ります。",
+            CombatAiPersonalityKind.OverlySerious =>
+                "森や回り込みを使わず、正面から最短で接近します。",
+            CombatAiPersonalityKind.Reckless =>
+                "途中の敵を無視して、敵魔石へ直進します。",
+            CombatAiPersonalityKind.Unstable =>
+                "庇わなかった味方を覚え、一度だけ報復します。",
+            _ => "特別な偏りはなく、武器の役割どおりに行動します。",
+        };
+    }
+
+    public string BehaviorDescriptionJapanese => GetBehaviorDescriptionJapanese(_kind);
 }
