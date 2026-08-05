@@ -80,12 +80,27 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
             return;
         }
 
+        if (!CombatPlaytestDebugSettings.ShowAssaultRoutes)
+        {
+            enabled = false;
+            return;
+        }
+
         Debug.Log($"[魔石進攻ルート] OnEnable: 購読開始 team={_attackingTeam}", this);
         CombatNavMeshBuilder.Built += OnNavMeshBuilt;
         CombatNavMeshBuilder.Cleared += OnNavMeshCleared;
         _loggedBoot = true;
         _nextRetryTime = 0f;
+        ApplyPlaytestSettings();
         RefreshRoutes();
+    }
+
+    public void ApplyPlaytestSettings()
+    {
+        _attackingTeam = CombatPlaytestDebugSettings.AssaultAttackingTeam;
+        _allowRiverCrossing = CombatPlaytestDebugSettings.AssaultAllowRiverCrossing;
+        _showEndpointMarkers = CombatPlaytestDebugSettings.AssaultShowEndpointMarkers;
+        if (isActiveAndEnabled && Application.isPlaying) RefreshRoutes();
     }
 
     private void OnDisable()

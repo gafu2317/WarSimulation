@@ -1,0 +1,39 @@
+---
+description: After any implementation, review with Grok 4.5 High subagent and fix findings
+alwaysApply: true
+---
+
+# Post-Implementation Review (Mandatory)
+
+Whenever you finish implementing a feature, bug fix, or other code change in this repository, you MUST do the following before declaring the work done:
+
+1. Launch a read-only review subagent via the Task tool with:
+   - `model`: `cursor-grok-4.5-high`
+   - `subagent_type`: `generalPurpose` (or the review-focused agent if one is explicitly available)
+   - A prompt that follows the template below (fill in the concrete goal from the user’s request / this conversation; do not omit it).
+2. Read the subagent’s findings.
+3. Fix every P0–P2 finding that is real and in scope. Fix P3 when cheap and clearly correct.
+4. If fixes were non-trivial, run the same review once more on the corrected diff (again including the concrete goal).
+5. Summarize for the user: what the reviewer found and what you fixed (or that there were no findings).
+
+Do not skip this because the change seemed small. Do not only self-review in place of the subagent.
+
+## Required review prompt template
+
+Use this shape (adapt file list and goal text; keep all sections):
+
+```text
+Perform a defect-first review of the just-implemented change in <repo path>.
+Review the uncommitted diff and/or these touched files: <paths>.
+
+## Intended goal (required)
+<1–5 sentences: what the user wanted to achieve, including must-haves and explicit non-goals from the request.>
+
+## Review focus
+1. Correctness / regressions against the intended goal (P0–P2 first).
+2. Goal fit: flag code, APIs, options, abstractions, docs, or tests that do not serve the intended goal, or that overbuild beyond it. Treat clearly non-essential additions as findings (usually P2/P3) unless they are an existing project convention.
+3. Actionable P0–P3 findings only. No speculative nits.
+4. Do not modify files.
+```
+
+The goal section must be specific (feature behavior, bug symptom, constraints). Vague goals like “improve the code” are not acceptable.

@@ -197,7 +197,7 @@ public sealed class CombatSkillExecutionTests
 
             CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
             label.ShowSkill("斬撃", 0.1f);
-            label.RefreshTransientState(Time.time + 0.2f);
+            label.RefreshTransientState(Time.unscaledTime + 0.2f);
 
             Assert.That(label.CurrentSkillText, Is.Empty);
         }

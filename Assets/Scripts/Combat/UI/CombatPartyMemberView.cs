@@ -6,6 +6,8 @@ using UnityEngine.UI;
 [RequireComponent(typeof(RectTransform))]
 public sealed class CombatPartyMemberView : MonoBehaviour
 {
+    private static readonly Color FocusBackgroundColor = new(1f, 0.85f, 0.1f, 1f);
+
     [SerializeField, Min(0.1f)] private float _skillDisplaySeconds = 2.2f;
     [SerializeField] private CombatCharacterAppearanceView _appearanceView;
     [SerializeField] private TextMeshProUGUI _nameText;
@@ -23,6 +25,10 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     private CombatAiBrain _aiBrain;
     private float _skillHideAtTime = float.NegativeInfinity;
     private bool _showingCastSkill;
+    private Image _backgroundImage;
+    private Color _idleBackgroundColor;
+    private bool _hasIdleBackgroundColor;
+    private Button _focusButton;
 
     public Character BoundCharacter => _character;
     public string CurrentNameText => _nameText != null ? _nameText.text : string.Empty;
@@ -35,16 +41,30 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     private void Awake()
     {
         ResolveReferences();
+        EnsureFocusClickable();
+    }
+
+    private void OnEnable()
+    {
+        CombatPartyFocus.Changed += ApplyFocusVisual;
+        ApplyFocusVisual();
+    }
+
+    private void OnDisable()
+    {
+        CombatPartyFocus.Changed -= ApplyFocusVisual;
     }
 
     private void OnDestroy()
     {
+        CombatPartyFocus.Changed -= ApplyFocusVisual;
         UnbindHealth();
     }
 
     public void Bind(Character character, CombatCharacterAppearanceView.Facing facing)
     {
         ResolveReferences();
+        EnsureFocusClickable();
         UnbindHealth();
 
         _character = character;
@@ -66,6 +86,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         RefreshHealth();
         RefreshWeaponIcon();
         ClearSkill();
+        ApplyFocusVisual();
     }
 
     public void ShowSkill(string skillName, float currentTime)
@@ -226,8 +247,79 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         }
     }
 
+    private void EnsureFocusClickable()
+    {
+        ResolveBackgroundImage();
+        if (_backgroundImage == null)
+        {
+            return;
+        }
+
+        _backgroundImage.raycastTarget = true;
+        if (!_hasIdleBackgroundColor)
+        {
+            _idleBackgroundColor = _backgroundImage.color;
+            _hasIdleBackgroundColor = true;
+        }
+
+        if (_focusButton == null)
+        {
+            _focusButton = GetComponent<Button>();
+            if (_focusButton == null)
+            {
+                _focusButton = gameObject.AddComponent<Button>();
+            }
+
+            _focusButton.transition = Selectable.Transition.None;
+            _focusButton.targetGraphic = _backgroundImage;
+            _focusButton.onClick.RemoveListener(OnFocusClicked);
+            _focusButton.onClick.AddListener(OnFocusClicked);
+        }
+    }
+
+    private void OnFocusClicked()
+    {
+        if (_character == null)
+        {
+            return;
+        }
+
+        CombatPartyFocus.Toggle(_character);
+        CombatCharacterFocusMarker.EnsureFor(_character);
+    }
+
+    private void ApplyFocusVisual()
+    {
+        ResolveBackgroundImage();
+        if (_backgroundImage == null || !_hasIdleBackgroundColor)
+        {
+            return;
+        }
+
+        bool focused = _character != null && _character == CombatPartyFocus.Selected;
+        _backgroundImage.color = focused
+            ? new Color(FocusBackgroundColor.r, FocusBackgroundColor.g, FocusBackgroundColor.b, _idleBackgroundColor.a)
+            : _idleBackgroundColor;
+    }
+
+    private void ResolveBackgroundImage()
+    {
+        if (_backgroundImage != null)
+        {
+            return;
+        }
+
+        Transform background = transform.Find("Background");
+        if (background != null)
+        {
+            _backgroundImage = background.GetComponent<Image>();
+        }
+    }
+
     private void ResolveReferences()
     {
+        ResolveBackgroundImage();
+
         if (_appearanceView == null)
         {
             Transform appearance = transform.Find("Appearance");

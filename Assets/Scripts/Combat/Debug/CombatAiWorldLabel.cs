@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,6 +6,7 @@ using UnityEngine.UI;
 public sealed class CombatAiWorldLabel : MonoBehaviour
 {
     private const string OverlayCanvasName = "CombatAiDebugOverlayCanvas";
+    private const string PreferredFontAssetName = "NotoSansJP-Regular SDF";
 
     [SerializeField] private Vector3 _localOffset = new Vector3(0f, 2.8f, 0f);
     [SerializeField, Min(0.4f)] private float _width = 2.4f;
@@ -31,18 +33,21 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 
     private static Canvas s_overlayCanvas;
     private static RectTransform s_overlayCanvasRect;
+    private static TMP_FontAsset s_resolvedFont;
+    private static Material s_resolvedFontMaterial;
+    private static bool s_resolvedPreferredFont;
     private Transform _labelRoot;
     private Transform _objectiveRoot;
-    private Text _labelText;
+    private TextMeshProUGUI _labelText;
     private Image _backgroundImage;
     private Transform _weaponRoot;
-    private Text _weaponText;
+    private TextMeshProUGUI _weaponText;
     private Image _weaponBackgroundImage;
     private Transform _personalityRoot;
-    private Text _personalityText;
+    private TextMeshProUGUI _personalityText;
     private Image _personalityBackgroundImage;
     private Transform _skillRoot;
-    private Text _skillText;
+    private TextMeshProUGUI _skillText;
     private Image _skillBackgroundImage;
     private Transform _cameraTransform;
     private Character _character;
@@ -81,6 +86,14 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         _weaponText.color = ResolveLabelTextColor();
         _weaponBackgroundImage.color = _weaponBackgroundColor;
         _weaponRoot.gameObject.SetActive(true);
+        RefreshRowLayout();
+    }
+
+    public void SetWeaponVisible(bool visible)
+    {
+        EnsureBuilt();
+        if (_weaponRoot != null) _weaponRoot.gameObject.SetActive(visible);
+        RefreshRowLayout();
     }
 
     public void SetPersonality(CombatAiPersonalityProfile profile, bool highlighted)
@@ -94,6 +107,21 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
             ? _personalityHighlightBackgroundColor
             : _personalityBackgroundColor;
         _personalityRoot.gameObject.SetActive(true);
+        RefreshRowLayout();
+    }
+
+    public void SetPersonalityVisible(bool visible)
+    {
+        EnsureBuilt();
+        if (_personalityRoot != null) _personalityRoot.gameObject.SetActive(visible);
+        RefreshRowLayout();
+    }
+
+    public void SetObjectiveVisible(bool visible)
+    {
+        EnsureBuilt();
+        if (_objectiveRoot != null) _objectiveRoot.gameObject.SetActive(visible);
+        RefreshRowLayout();
     }
 
     public void ShowSkill(string skillName, float durationSeconds = -1f)
@@ -110,10 +138,11 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         _skillText.color = ResolveLabelTextColor();
         _skillBackgroundImage.color = _skillBackgroundColor;
         _skillRoot.gameObject.SetActive(true);
+        RefreshRowLayout();
 
         float lifetime = durationSeconds < 0f ? _defaultSkillDurationSeconds : durationSeconds;
-        _skillExpiresAt = Time.time + Mathf.Max(0f, lifetime);
-        RefreshTransientState(Time.time);
+        _skillExpiresAt = Time.unscaledTime + Mathf.Max(0f, lifetime);
+        RefreshTransientState(Time.unscaledTime);
     }
 
     public void HideSkill()
@@ -128,6 +157,8 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         {
             _skillRoot.gameObject.SetActive(false);
         }
+
+        RefreshRowLayout();
     }
 
     public void SetVisible(bool visible)
@@ -141,7 +172,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         EnsureBuilt();
         if (_labelRoot == null) return;
 
-        RefreshTransientState(Time.time);
+        RefreshTransientState(Time.unscaledTime);
         Camera mainCamera = ResolveActiveCamera();
         if (_cameraTransform == null && mainCamera != null)
         {
@@ -223,21 +254,22 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         canvasRect.pivot = new Vector2(0.5f, 0f);
         canvasRect.anchoredPosition = Vector2.zero;
 
-        _objectiveRoot = CreateRowRoot(root.transform, "ObjectiveRoot", _height, 0f);
+        _objectiveRoot = CreateRowRoot(root.transform, "ObjectiveRoot", _height);
         _backgroundImage = CreateBackground(_objectiveRoot, "ObjectiveBackground");
         _labelText = CreateLabel(_objectiveRoot, "ObjectiveLabel", _height, 16, 32);
-        _weaponRoot = CreateWeaponRoot(root.transform);
+        _weaponRoot = CreateRowRoot(root.transform, "WeaponRoot", _weaponHeight);
         _weaponBackgroundImage = CreateBackground(_weaponRoot, "WeaponBackground");
         _weaponText = CreateLabel(_weaponRoot, "WeaponLabel", _weaponHeight, 13, 22);
-        _personalityRoot = CreatePersonalityRoot(root.transform);
+        _personalityRoot = CreateRowRoot(root.transform, "PersonalityRoot", _personalityHeight);
         _personalityBackgroundImage = CreateBackground(_personalityRoot, "PersonalityBackground");
         _personalityText = CreateLabel(_personalityRoot, "PersonalityLabel", _personalityHeight, 13, 22);
-        _skillRoot = CreateSkillRoot(root.transform);
+        _skillRoot = CreateRowRoot(root.transform, "SkillRoot", _skillHeight);
         _skillBackgroundImage = CreateBackground(_skillRoot, "SkillBackground");
         _skillText = CreateLabel(_skillRoot, "SkillLabel", _skillHeight, 14, 24);
         SetWeapon(_character != null ? _character.EquippedWeapon : null);
         SetPersonality(_character != null ? _character.PersonalityProfile : null, highlighted: false);
         HideSkill();
+        RefreshRowLayout();
         UpdateRootVisibleState();
     }
 
@@ -252,7 +284,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
             s_overlayCanvasRect = existing.GetComponent<RectTransform>();
             if (s_overlayCanvas != null && s_overlayCanvasRect != null)
             {
-                s_overlayCanvas.sortingOrder = 0;
+                s_overlayCanvas.sortingOrder = 50;
                 return;
             }
         }
@@ -260,7 +292,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         var canvasObject = new GameObject(OverlayCanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         s_overlayCanvas = canvasObject.GetComponent<Canvas>();
         s_overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        s_overlayCanvas.sortingOrder = 0;
+        s_overlayCanvas.sortingOrder = 50;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
@@ -274,7 +306,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         s_overlayCanvasRect.offsetMax = Vector2.zero;
     }
 
-    private Transform CreateRowRoot(Transform parent, string objectName, float height, float bottomOffset)
+    private Transform CreateRowRoot(Transform parent, string objectName, float height)
     {
         var rowRoot = new GameObject(objectName, typeof(RectTransform));
         rowRoot.transform.SetParent(parent, false);
@@ -284,31 +316,29 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         rect.anchorMax = new Vector2(1f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0f);
         rect.sizeDelta = new Vector2(0f, height * 100f);
-        rect.anchoredPosition = new Vector2(0f, bottomOffset * 100f);
+        rect.anchoredPosition = Vector2.zero;
         return rowRoot.transform;
     }
 
-    private Transform CreateSkillRoot(Transform parent)
+    private void RefreshRowLayout()
     {
-        return CreateRowRoot(
-            parent,
-            "SkillRoot",
-            _skillHeight,
-            _height + _weaponHeight + _personalityHeight + (_stackSpacing * 3f));
+        float bottomOffset = 0f;
+        bottomOffset = PlaceRow(_objectiveRoot, _height, bottomOffset);
+        bottomOffset = PlaceRow(_weaponRoot, _weaponHeight, bottomOffset);
+        bottomOffset = PlaceRow(_personalityRoot, _personalityHeight, bottomOffset);
+        PlaceRow(_skillRoot, _skillHeight, bottomOffset);
     }
 
-    private Transform CreatePersonalityRoot(Transform parent)
+    private float PlaceRow(Transform rowRoot, float height, float bottomOffset)
     {
-        return CreateRowRoot(
-            parent,
-            "PersonalityRoot",
-            _personalityHeight,
-            _height + _weaponHeight + (_stackSpacing * 2f));
-    }
+        if (rowRoot == null || !rowRoot.gameObject.activeSelf)
+        {
+            return bottomOffset;
+        }
 
-    private Transform CreateWeaponRoot(Transform parent)
-    {
-        return CreateRowRoot(parent, "WeaponRoot", _weaponHeight, _height + _stackSpacing);
+        RectTransform rect = (RectTransform)rowRoot;
+        rect.anchoredPosition = new Vector2(0f, bottomOffset * 100f);
+        return bottomOffset + height + _stackSpacing;
     }
 
     private Image CreateBackground(Transform parent, string objectName)
@@ -329,9 +359,9 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         return image;
     }
 
-    private static Text CreateLabel(Transform parent, string objectName, float height, int minSize, int maxSize)
+    private static TextMeshProUGUI CreateLabel(Transform parent, string objectName, float height, int minSize, int maxSize)
     {
-        var label = new GameObject(objectName, typeof(RectTransform), typeof(Text));
+        var label = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshProUGUI));
         label.transform.SetParent(parent, false);
 
         RectTransform rect = label.GetComponent<RectTransform>();
@@ -340,16 +370,79 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         rect.offsetMin = new Vector2(10f, 4f);
         rect.offsetMax = new Vector2(-10f, height >= 0.35f ? -4f : -2f);
 
-        Text text = label.GetComponent<Text>();
-        text.alignment = TextAnchor.MiddleCenter;
-        text.resizeTextForBestFit = true;
-        text.resizeTextMinSize = minSize;
-        text.resizeTextMaxSize = maxSize;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        TextMeshProUGUI text = label.GetComponent<TextMeshProUGUI>();
+        text.alignment = TextAlignmentOptions.Center;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = minSize;
+        text.fontSizeMax = maxSize;
+        text.enableWordWrapping = true;
+        text.overflowMode = TextOverflowModes.Overflow;
+        text.raycastTarget = false;
+        ApplyResolvedFont(text);
         text.text = CombatAiDebugLabels.ObjectiveShort(CombatObjective.Search);
         return text;
+    }
+
+    private static void ApplyResolvedFont(TextMeshProUGUI text)
+    {
+        if (text == null) return;
+
+        ResolveUiFont();
+        if (s_resolvedFont != null)
+        {
+            text.font = s_resolvedFont;
+            if (s_resolvedFontMaterial != null)
+            {
+                text.fontSharedMaterial = s_resolvedFontMaterial;
+            }
+        }
+    }
+
+    private static void ResolveUiFont()
+    {
+        if (s_resolvedPreferredFont && s_resolvedFont != null) return;
+
+        TextMeshProUGUI preferred = null;
+        TextMeshProUGUI fallback = null;
+        TextMeshProUGUI[] texts = Object.FindObjectsByType<TextMeshProUGUI>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            TextMeshProUGUI candidate = texts[i];
+            if (candidate == null || candidate.font == null) continue;
+
+            fallback ??= candidate;
+            if (candidate.font.name == PreferredFontAssetName ||
+                candidate.font.name.IndexOf("NotoSansJP", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                preferred = candidate;
+                break;
+            }
+        }
+
+        if (preferred != null)
+        {
+            s_resolvedFont = preferred.font;
+            s_resolvedFontMaterial = preferred.fontSharedMaterial;
+            s_resolvedPreferredFont = true;
+            return;
+        }
+
+        if (s_resolvedFont != null) return;
+
+        if (fallback != null)
+        {
+            s_resolvedFont = fallback.font;
+            s_resolvedFontMaterial = fallback.fontSharedMaterial;
+            return;
+        }
+
+        s_resolvedFont = TMP_Settings.defaultFontAsset;
+        if (s_resolvedFont != null)
+        {
+            s_resolvedFontMaterial = s_resolvedFont.material;
+        }
     }
 
     private Color ResolveTextColor(CombatObjective objective)

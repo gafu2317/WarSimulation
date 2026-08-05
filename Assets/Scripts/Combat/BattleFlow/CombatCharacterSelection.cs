@@ -29,6 +29,22 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
     private Button _highlightButton;
     private Button _detailSettingsButton;
+    private Button _debugCharacterRoutesButton;
+    private Button _debugAssaultRoutesButton;
+    private Button _debugAiLabelsButton;
+    private Button _debugVisionButton;
+    private Button _debugCharacterRoutesSettingsButton;
+    private Button _debugAssaultRoutesSettingsButton;
+    private Button _debugAiLabelsSettingsButton;
+    private Button _debugVisionSettingsButton;
+    private RectTransform _headerRoot;
+    private enum DebugSettingsKind
+    {
+        CharacterRoutes,
+        AssaultRoutes,
+        AiLabels,
+        Vision,
+    }
     private GameObject _allyColumnRoot;
     private GameObject _enemyColumnRoot;
     private RectTransform _pickerRoot;
@@ -193,8 +209,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             Destroy(_characterList.GetChild(i).gameObject);
         }
 
-        _characterList.sizeDelta = new Vector2(1080f, 560f);
-        CreateToolbar(_characterList);
+        _characterList.sizeDelta = new Vector2(1080f, 700f);
+        CreateHeaderControls(_characterList);
 
         GameObject teamsObject = new GameObject(
             "TeamSelections",
@@ -209,7 +225,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        teamsObject.GetComponent<LayoutElement>().preferredHeight = 520f;
+        teamsObject.GetComponent<LayoutElement>().preferredHeight = 500f;
 
         RectTransform allyColumn = CreateTeamColumn(teams, "AllySelection", "味方");
         RectTransform enemyColumn = CreateTeamColumn(teams, "EnemySelection", "敵");
@@ -233,29 +249,366 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _detailSettingsButton.onClick.RemoveListener(ToggleDetailSettings);
             _detailSettingsButton = null;
         }
+
+        ClearDebugToggle(_debugCharacterRoutesButton);
+        ClearDebugToggle(_debugAssaultRoutesButton);
+        ClearDebugToggle(_debugAiLabelsButton);
+        ClearDebugToggle(_debugVisionButton);
+        ClearDebugToggle(_debugCharacterRoutesSettingsButton);
+        ClearDebugToggle(_debugAssaultRoutesSettingsButton);
+        ClearDebugToggle(_debugAiLabelsSettingsButton);
+        ClearDebugToggle(_debugVisionSettingsButton);
+        _debugCharacterRoutesButton = null;
+        _debugAssaultRoutesButton = null;
+        _debugAiLabelsButton = null;
+        _debugVisionButton = null;
+        _debugCharacterRoutesSettingsButton = null;
+        _debugAssaultRoutesSettingsButton = null;
+        _debugAiLabelsSettingsButton = null;
+        _debugVisionSettingsButton = null;
+        _headerRoot = null;
     }
 
-    private void CreateToolbar(RectTransform parent)
+    private static void ClearDebugToggle(Button button)
     {
-        GameObject toolbarObject = new GameObject(
-            "SelectionToolbar",
+        if (button == null) return;
+        button.onClick.RemoveAllListeners();
+    }
+
+    private void CreateHeaderControls(RectTransform parent)
+    {
+        GameObject headerObject = new GameObject(
+            "SelectionHeader",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(LayoutElement));
+        _headerRoot = headerObject.GetComponent<RectTransform>();
+        _headerRoot.SetParent(parent, false);
+        VerticalLayoutGroup headerLayout = headerObject.GetComponent<VerticalLayoutGroup>();
+        headerLayout.spacing = 8f;
+        headerLayout.childControlWidth = true;
+        headerLayout.childControlHeight = true;
+        headerLayout.childForceExpandWidth = true;
+        headerLayout.childForceExpandHeight = false;
+        headerObject.GetComponent<LayoutElement>().preferredHeight = 148f;
+
+        RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
+        _highlightButton = CreateButton(actionRow, "PersonalityHighlightButton", 0f, 48f, OpenHighlightPicker, flexibleWidth: 1f);
+        _detailSettingsButton = CreateButton(actionRow, "DetailSettingsButton", 200f, 48f, ToggleDetailSettings);
+        ConfigureToolbarLabel(_highlightButton, 24f);
+        ConfigureToolbarLabel(_detailSettingsButton, 24f);
+        RefreshHighlightButton();
+        RefreshDetailSettingsButton();
+
+        RectTransform debugRow = CreateHorizontalRow(_headerRoot, "DebugRow", 92f, spacing: 10f);
+        CreateDebugControl(
+            debugRow,
+            "CharacterRoutes",
+            () =>
+            {
+                CombatPlaytestDebugSettings.SetShowCharacterRoutes(!CombatPlaytestDebugSettings.ShowCharacterRoutes);
+                RefreshDebugToggleButtons();
+            },
+            () => OpenDebugSettings(DebugSettingsKind.CharacterRoutes),
+            out _debugCharacterRoutesButton,
+            out _debugCharacterRoutesSettingsButton);
+        CreateDebugControl(
+            debugRow,
+            "AssaultRoutes",
+            () =>
+            {
+                CombatPlaytestDebugSettings.SetShowAssaultRoutes(!CombatPlaytestDebugSettings.ShowAssaultRoutes);
+                RefreshDebugToggleButtons();
+            },
+            () => OpenDebugSettings(DebugSettingsKind.AssaultRoutes),
+            out _debugAssaultRoutesButton,
+            out _debugAssaultRoutesSettingsButton);
+        CreateDebugControl(
+            debugRow,
+            "AiLabels",
+            () =>
+            {
+                CombatPlaytestDebugSettings.SetShowAiLabels(!CombatPlaytestDebugSettings.ShowAiLabels);
+                RefreshDebugToggleButtons();
+            },
+            () => OpenDebugSettings(DebugSettingsKind.AiLabels),
+            out _debugAiLabelsButton,
+            out _debugAiLabelsSettingsButton);
+        CreateDebugControl(
+            debugRow,
+            "Vision",
+            () =>
+            {
+                CombatPlaytestDebugSettings.SetShowVision(!CombatPlaytestDebugSettings.ShowVision);
+                RefreshDebugToggleButtons();
+            },
+            () => OpenDebugSettings(DebugSettingsKind.Vision),
+            out _debugVisionButton,
+            out _debugVisionSettingsButton);
+        RefreshDebugToggleButtons();
+    }
+
+    private void CreateDebugControl(
+        RectTransform parent,
+        string objectName,
+        UnityEngine.Events.UnityAction onToggle,
+        UnityEngine.Events.UnityAction onSettings,
+        out Button toggleButton,
+        out Button settingsButton)
+    {
+        GameObject cellObject = new GameObject(
+            objectName + "Cell",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(LayoutElement));
+        RectTransform cell = cellObject.GetComponent<RectTransform>();
+        cell.SetParent(parent, false);
+        VerticalLayoutGroup layout = cellObject.GetComponent<VerticalLayoutGroup>();
+        layout.spacing = 4f;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+        LayoutElement cellLayout = cellObject.GetComponent<LayoutElement>();
+        cellLayout.flexibleWidth = 1f;
+        cellLayout.minWidth = 140f;
+
+        toggleButton = CreateButton(cell, objectName + "Toggle", 0f, 44f, onToggle, flexibleWidth: 1f);
+        settingsButton = CreateButton(cell, objectName + "Settings", 0f, 36f, onSettings, flexibleWidth: 1f);
+        ConfigureToolbarLabel(toggleButton, 20f);
+        ConfigureToolbarLabel(settingsButton, 20f);
+        SetButtonLabel(settingsButton, "設定");
+        ConfigureToolbarLabel(settingsButton, 20f);
+    }
+
+    private static RectTransform CreateHorizontalRow(
+        RectTransform parent,
+        string objectName,
+        float height,
+        float spacing)
+    {
+        GameObject rowObject = new GameObject(
+            objectName,
             typeof(RectTransform),
             typeof(HorizontalLayoutGroup),
             typeof(LayoutElement));
-        RectTransform toolbar = toolbarObject.GetComponent<RectTransform>();
-        toolbar.SetParent(parent, false);
-        HorizontalLayoutGroup layout = toolbarObject.GetComponent<HorizontalLayoutGroup>();
-        layout.spacing = 12f;
+        RectTransform row = rowObject.GetComponent<RectTransform>();
+        row.SetParent(parent, false);
+        HorizontalLayoutGroup layout = rowObject.GetComponent<HorizontalLayoutGroup>();
+        layout.spacing = spacing;
+        layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = false;
-        toolbarObject.GetComponent<LayoutElement>().preferredHeight = 44f;
+        layout.childForceExpandHeight = true;
+        rowObject.GetComponent<LayoutElement>().preferredHeight = height;
+        return row;
+    }
 
-        _highlightButton = CreateButton(toolbar, "PersonalityHighlightButton", 400f, 48f, OpenHighlightPicker);
-        _detailSettingsButton = CreateButton(toolbar, "DetailSettingsButton", 220f, 48f, ToggleDetailSettings);
-        RefreshHighlightButton();
-        RefreshDetailSettingsButton();
+    private void RefreshDebugToggleButtons()
+    {
+        SetButtonLabel(
+            _debugCharacterRoutesButton,
+            FormatDebugToggle("移動の線", CombatPlaytestDebugSettings.ShowCharacterRoutes));
+        SetButtonLabel(
+            _debugAssaultRoutesButton,
+            FormatDebugToggle("魔石ルート", CombatPlaytestDebugSettings.ShowAssaultRoutes));
+        SetButtonLabel(
+            _debugAiLabelsButton,
+            FormatDebugToggle("頭上テキスト", CombatPlaytestDebugSettings.ShowAiLabels));
+        SetButtonLabel(
+            _debugVisionButton,
+            FormatDebugToggle("視界表示", CombatPlaytestDebugSettings.ShowVision));
+        ConfigureToolbarLabel(_debugCharacterRoutesButton, 20f);
+        ConfigureToolbarLabel(_debugAssaultRoutesButton, 20f);
+        ConfigureToolbarLabel(_debugAiLabelsButton, 20f);
+        ConfigureToolbarLabel(_debugVisionButton, 20f);
+    }
+
+    private void OpenDebugSettings(DebugSettingsKind kind)
+    {
+        EnsurePicker();
+        ClearPickerOptions();
+        RebuildDebugSettingsPicker(kind);
+        ShowPicker();
+    }
+
+    private void RebuildDebugSettingsPicker(DebugSettingsKind kind)
+    {
+        ClearPickerOptions();
+        AddPickerOption(
+            "デフォルトに戻す",
+            () =>
+            {
+                ResetDebugSettingsToDefault(kind);
+                RebuildDebugSettingsPicker(kind);
+                RefreshDebugToggleButtons();
+            },
+            () => SetPickerDescription("この項目の詳細設定だけ、最初の状態に戻します。"));
+
+        switch (kind)
+        {
+            case DebugSettingsKind.CharacterRoutes:
+                SetPickerTitle("移動の線 — 詳細設定");
+                SetPickerDescription("キャラがマップ上でどこへ向かっているかを、線で見られます。");
+                AddDebugBoolOption(
+                    "味方キャラの行き先を線で出す",
+                    CombatPlaytestDebugSettings.CharacterRoutesShowAlly,
+                    "味方一人ひとりが、今向かっている場所までの道を線で描きます。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetCharacterRoutesShowAlly(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "敵キャラの行き先を線で出す",
+                    CombatPlaytestDebugSettings.CharacterRoutesShowEnemy,
+                    "敵一人ひとりが、今向かっている場所までの道を線で描きます。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetCharacterRoutesShowEnemy(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                break;
+
+            case DebugSettingsKind.AssaultRoutes:
+                SetPickerTitle("魔石ルート — 詳細設定");
+                SetPickerDescription("魔石から相手の魔石へ向かう、進攻の道候補を見られます。");
+                AddDebugBoolOption(
+                    "味方が敵の魔石へ向かう道を出す",
+                    CombatPlaytestDebugSettings.AssaultAttackingTeam == CombatTeam.Ally,
+                    "味方の魔石を起点に、敵の魔石までの道を出します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetAssaultAttackingTeam(value ? CombatTeam.Ally : CombatTeam.Enemy);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "敵が味方の魔石へ向かう道を出す",
+                    CombatPlaytestDebugSettings.AssaultAttackingTeam == CombatTeam.Enemy,
+                    "敵の魔石を起点に、味方の魔石までの道を出します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetAssaultAttackingTeam(value ? CombatTeam.Enemy : CombatTeam.Ally);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "川を渡る道も候補に含める",
+                    CombatPlaytestDebugSettings.AssaultAllowRiverCrossing,
+                    "通常は川を避けます。ONにすると、川越えの道も候補に入ります。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetAssaultAllowRiverCrossing(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "道の入口と出口を点で示す",
+                    CombatPlaytestDebugSettings.AssaultShowEndpointMarkers,
+                    "ルートの始まり・終わりや橋の近くを、点でわかりやすく示します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetAssaultShowEndpointMarkers(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                break;
+
+            case DebugSettingsKind.AiLabels:
+                SetPickerTitle("頭上テキスト — 詳細設定");
+                SetPickerDescription("キャラの頭上に出す文字の種類を選べます。");
+                AddDebugBoolOption(
+                    "AIが今やろうとしていることを出す",
+                    CombatPlaytestDebugSettings.LabelShowObjective,
+                    "攻撃・回復・魔石破壊など、いま選んでいる行動の目的を出します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetLabelShowObjective(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "持っている武器の名前を出す",
+                    CombatPlaytestDebugSettings.LabelShowWeapon,
+                    "剣・杖・盾など、装備している武器を出します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetLabelShowWeapon(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "性格の名前を出す",
+                    CombatPlaytestDebugSettings.LabelShowPersonality,
+                    "攻撃的・慎重など、そのキャラの性格名を出します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetLabelShowPersonality(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                break;
+
+            case DebugSettingsKind.Vision:
+                SetPickerTitle("視界表示 — 詳細設定");
+                SetPickerDescription("誰が何を見えているかを、線や扇形で見られます。");
+                AddDebugBoolOption(
+                    "見えている相手まで線を引く",
+                    CombatPlaytestDebugSettings.VisionShowLines,
+                    "キャラから、いま視認できている相手へ線を引きます。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetVisionShowLines(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "木や壁に視線が遮られるか確認する",
+                    CombatPlaytestDebugSettings.VisionShowObstructionRays,
+                    "障害物で視線が止まるかを短い線で確認します。線が増えるので、普段はOFFのままで大丈夫です。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetVisionShowObstructionRays(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                AddDebugBoolOption(
+                    "左右にどれくらい見えているか（扇形）を出す",
+                    CombatPlaytestDebugSettings.VisionShowFieldOfView,
+                    "キャラの正面から、左右どれくらいの範囲が見えるかを扇形で出します。",
+                    value =>
+                    {
+                        CombatPlaytestDebugSettings.SetVisionShowFieldOfView(value);
+                        RebuildDebugSettingsPicker(kind);
+                    });
+                break;
+        }
+    }
+
+    private static void ResetDebugSettingsToDefault(DebugSettingsKind kind)
+    {
+        switch (kind)
+        {
+            case DebugSettingsKind.CharacterRoutes:
+                CombatPlaytestDebugSettings.ResetCharacterRouteDetailsToDefault();
+                break;
+            case DebugSettingsKind.AssaultRoutes:
+                CombatPlaytestDebugSettings.ResetAssaultRouteDetailsToDefault();
+                break;
+            case DebugSettingsKind.AiLabels:
+                CombatPlaytestDebugSettings.ResetLabelDetailsToDefault();
+                break;
+            case DebugSettingsKind.Vision:
+                CombatPlaytestDebugSettings.ResetVisionDetailsToDefault();
+                break;
+        }
+    }
+
+    private void AddDebugBoolOption(string label, bool current, string description, Action<bool> setValue)
+    {
+        AddPickerOption(
+            FormatDebugToggle(label, current),
+            () => setValue(!current),
+            () => SetPickerDescription(description));
+    }
+
+    private static string FormatDebugToggle(string label, bool on)
+    {
+        return $"{(on ? "■" : "□")} {label}";
     }
 
     private void ToggleDetailSettings()
@@ -276,6 +629,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void RefreshDetailSettingsButton()
     {
         SetButtonLabel(_detailSettingsButton, _detailSettingsOpen ? "閉じる" : "詳細設定");
+        ConfigureToolbarLabel(_detailSettingsButton, 24f);
     }
 
     private void OpenHighlightPicker()
@@ -303,6 +657,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void RefreshHighlightButton()
     {
         SetButtonLabel(_highlightButton, $"ハイライト: {CombatAiPersonalityHighlight.DisplayLabel}");
+        ConfigureToolbarLabel(_highlightButton, 24f);
     }
 
     private RectTransform CreateTeamColumn(RectTransform parent, string objectName, string title)
@@ -366,10 +721,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             Character = character,
             WeaponIndex = FindOptionIndex(_weaponOptions, character.EquippedWeaponConfig),
             PersonalityIndex = FindPersonalityIndex(character.PersonalityProfile),
-            CharacterButton = CreateButton(rowObject.transform, null, 320f, 64f),
-            WeaponButton = CreateButton(rowObject.transform, null, 200f, 64f),
+            CharacterButton = CreateButton(rowObject.transform, null, 300f, 64f),
+            WeaponButton = CreateButton(rowObject.transform, null, 240f, 64f),
             PersonalityButton = CreateButton(rowObject.transform, null, 240f, 64f),
         };
+
+        ConfigureToolbarLabel(row.CharacterButton, 24f);
+        ConfigureToolbarLabel(row.WeaponButton, 24f);
+        ConfigureToolbarLabel(row.PersonalityButton, 24f);
 
         row.CharacterButton.onClick.AddListener(() => Toggle(row));
         row.WeaponButton.onClick.AddListener(() => OpenWeaponPicker(row));
@@ -395,13 +754,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         string objectName,
         float width,
         float height = -1f,
-        UnityEngine.Events.UnityAction onClick = null)
+        UnityEngine.Events.UnityAction onClick = null,
+        float flexibleWidth = 0f)
     {
         Button button = Instantiate(_characterItemPrefab, parent);
         if (!string.IsNullOrEmpty(objectName)) button.name = objectName;
         LayoutElement layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
         layout.preferredWidth = width;
-        layout.flexibleWidth = 0f;
+        layout.minWidth = flexibleWidth > 0f ? 120f : 0f;
+        layout.flexibleWidth = flexibleWidth;
         if (height > 0f) layout.preferredHeight = height;
         HideIndicator(button);
         if (onClick != null) button.onClick.AddListener(onClick);
@@ -728,6 +1089,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RefreshRows(_enemyRows);
         RefreshHighlightButton();
         RefreshDetailSettingsButton();
+        RefreshDebugToggleButtons();
         RefreshSelectionCountText();
 
         int allyCount = CountSelected(_allyRows);
@@ -780,12 +1142,24 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private static void SetButtonLabel(Button button, string value)
     {
         TMP_Text label = button != null ? button.GetComponentInChildren<TMP_Text>(includeInactive: true) : null;
-        if (label != null)
-        {
-            label.text = value;
-            label.fontSize = 26f;
-            label.enableAutoSizing = false;
-        }
+        if (label == null) return;
+
+        label.text = value;
+        label.enableAutoSizing = false;
+        if (label.fontSize < 1f) label.fontSize = 26f;
+    }
+
+    private static void ConfigureToolbarLabel(Button button, float fontSize)
+    {
+        TMP_Text label = button != null ? button.GetComponentInChildren<TMP_Text>(includeInactive: true) : null;
+        if (label == null) return;
+
+        label.fontSize = fontSize;
+        label.enableAutoSizing = false;
+        label.enableWordWrapping = false;
+        label.overflowMode = TextOverflowModes.Ellipsis;
+        label.alignment = TextAlignmentOptions.Center;
+        label.margin = Vector4.zero;
     }
 
     private static void HideIndicator(Button button)

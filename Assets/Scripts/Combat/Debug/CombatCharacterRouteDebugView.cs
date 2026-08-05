@@ -20,6 +20,12 @@ public sealed class CombatCharacterRouteDebugView : CombatDebugBehaviour
 
     private void OnEnable()
     {
+        if (!CombatPlaytestDebugSettings.ShowCharacterRoutes)
+        {
+            enabled = false;
+            return;
+        }
+
         EnsureGeneratedRoot();
         RefreshCharacters();
     }
@@ -100,6 +106,8 @@ public sealed class CombatCharacterRouteDebugView : CombatDebugBehaviour
         {
             Character character = characters[i];
             if (character == null) continue;
+            if (character.Team == CombatTeam.Ally && !CombatPlaytestDebugSettings.CharacterRoutesShowAlly) continue;
+            if (character.Team == CombatTeam.Enemy && !CombatPlaytestDebugSettings.CharacterRoutesShowEnemy) continue;
 
             CombatCharacterBody body = character.GetComponent<CombatCharacterBody>();
             if (body == null) continue;
@@ -113,6 +121,16 @@ public sealed class CombatCharacterRouteDebugView : CombatDebugBehaviour
             {
                 ApplyStyle(_lines[body], ResolveColor(character));
             }
+        }
+    }
+
+    public void ApplyPlaytestSettings()
+    {
+        if (!isActiveAndEnabled) return;
+        RefreshCharacters();
+        foreach (KeyValuePair<CombatCharacterBody, LineRenderer> pair in _lines)
+        {
+            RenderRoute(pair.Key, pair.Value);
         }
     }
 

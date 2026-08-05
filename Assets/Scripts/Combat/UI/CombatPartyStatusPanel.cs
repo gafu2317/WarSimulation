@@ -77,6 +77,41 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
 
         SyncTeam(allies, _allyViews, isAlly: true);
         SyncTeam(enemies, _enemyViews, isAlly: false);
+        ClearFocusIfMissing(allies, enemies);
+    }
+
+    private static void ClearFocusIfMissing(List<Character> allies, List<Character> enemies)
+    {
+        Character selected = CombatPartyFocus.Selected;
+        if (ReferenceEquals(selected, null))
+        {
+            return;
+        }
+
+        // Unity fake-null after destroy, or character left the synced teams.
+        if (selected == null
+            || (!ContainsCharacter(allies, selected) && !ContainsCharacter(enemies, selected)))
+        {
+            CombatPartyFocus.Clear();
+        }
+    }
+
+    private static bool ContainsCharacter(List<Character> characters, Character character)
+    {
+        if (characters == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < characters.Count; i++)
+        {
+            if (characters[i] == character)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void TickNow(float currentTime)

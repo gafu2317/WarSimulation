@@ -90,6 +90,19 @@ public sealed class CombatBattleFlow : MonoBehaviour
         _state = CombatBattleState.WaitingToStart;
     }
 
+    public void AbortBattle()
+    {
+        CancelTransientBattleArtifacts();
+        CombatSkillActionEvents.ResetBattle();
+        _characterSystem?.ResetCharactersForBattle();
+        if (TryResolveCurrentMap(out MapData map))
+        {
+            _magicStoneSystem?.Initialize(map);
+        }
+
+        _state = CombatBattleState.WaitingToStart;
+    }
+
     [ContextMenu("Start Battle On Current Map")]
     public void StartBattleOnCurrentMap()
     {

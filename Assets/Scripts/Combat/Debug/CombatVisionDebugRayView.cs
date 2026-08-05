@@ -66,12 +66,19 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
 
     private void OnEnable()
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        if (!CombatPlaytestDebugSettings.ShowVision)
+        {
+            enabled = false;
+            return;
+        }
+
         EnsureGeneratedRoot();
         RefreshCharacters();
-#else
-        enabled = false;
-#endif
     }
 
     private void Update()
@@ -123,20 +130,6 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
         AddCharacters(system.AllyCharacters);
         AddCharacters(system.EnemyCharacters);
 
-        var previousSettings = new Dictionary<Character, bool>();
-        var previousObstructionSettings = new Dictionary<Character, bool>();
-        var previousFieldOfViewSettings = new Dictionary<Character, bool>();
-        for (int i = 0; i < _characters.Count; i++)
-        {
-            CombatVisionDebugCharacterSetting setting = _characters[i];
-            if (setting?.Character != null)
-            {
-                previousSettings[setting.Character] = setting.ShowLines;
-                previousObstructionSettings[setting.Character] = setting.ShowObstructionRays;
-                previousFieldOfViewSettings[setting.Character] = setting.ShowFieldOfView;
-            }
-        }
-
         _characters.Clear();
         for (int i = 0; i < _allCharacters.Count; i++)
         {
@@ -144,13 +137,19 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
             _characters.Add(new CombatVisionDebugCharacterSetting
             {
                 Character = character,
-                ShowLines = !previousSettings.TryGetValue(character, out bool showLines) || showLines,
-                ShowObstructionRays = previousObstructionSettings.TryGetValue(character, out bool showRays) && showRays,
-                ShowFieldOfView = !previousFieldOfViewSettings.TryGetValue(character, out bool showFov) || showFov,
+                ShowLines = CombatPlaytestDebugSettings.VisionShowLines,
+                ShowObstructionRays = CombatPlaytestDebugSettings.VisionShowObstructionRays,
+                ShowFieldOfView = CombatPlaytestDebugSettings.VisionShowFieldOfView,
             });
         }
 
         _nextRefreshTime = Time.unscaledTime + _refreshIntervalSeconds;
+    }
+
+    public void ApplyPlaytestSettings()
+    {
+        if (!isActiveAndEnabled) return;
+        RefreshCharacters();
     }
 
     private void AddCharacters(IReadOnlyList<Character> characters)

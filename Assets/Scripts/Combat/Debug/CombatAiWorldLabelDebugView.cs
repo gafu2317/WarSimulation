@@ -13,11 +13,13 @@ public sealed class CombatAiWorldLabelDebugView : CombatDebugBehaviour
 
     private void OnEnable()
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (!CombatPlaytestDebugSettings.ShowAiLabels)
+        {
+            enabled = false;
+            return;
+        }
+
         RefreshEntries();
-#else
-        enabled = false;
-#endif
     }
 
     private void Update()
@@ -36,11 +38,42 @@ public sealed class CombatAiWorldLabelDebugView : CombatDebugBehaviour
                 entry.Brain.IsAiEnabled &&
                 entry.Character.Health != null &&
                 entry.Character.Health.IsAlive;
-            CombatAiPersonalityProfile personality = entry.Character.PersonalityProfile;
-            entry.Label.SetObjective(entry.Brain.LastPlan.Objective, isActive);
-            entry.Label.SetWeapon(entry.Character.EquippedWeapon);
-            entry.Label.SetPersonality(personality, CombatAiPersonalityHighlight.Matches(personality));
+            entry.Label.SetVisible(isActive);
+
+            if (CombatPlaytestDebugSettings.LabelShowObjective)
+            {
+                entry.Label.SetObjectiveVisible(true);
+                entry.Label.SetObjective(entry.Brain.LastPlan.Objective, isActive);
+            }
+            else
+            {
+                entry.Label.SetObjectiveVisible(false);
+            }
+
+            if (CombatPlaytestDebugSettings.LabelShowWeapon)
+            {
+                entry.Label.SetWeapon(entry.Character.EquippedWeapon);
+            }
+            else
+            {
+                entry.Label.SetWeaponVisible(false);
+            }
+
+            if (CombatPlaytestDebugSettings.LabelShowPersonality)
+            {
+                CombatAiPersonalityProfile personality = entry.Character.PersonalityProfile;
+                entry.Label.SetPersonality(personality, CombatAiPersonalityHighlight.Matches(personality));
+            }
+            else
+            {
+                entry.Label.SetPersonalityVisible(false);
+            }
         }
+    }
+
+    public void ApplyPlaytestSettings()
+    {
+        // LabelShow* は Update が毎フレーム反映する。ここでの再構築は不要。
     }
 
     private void OnDisable()
