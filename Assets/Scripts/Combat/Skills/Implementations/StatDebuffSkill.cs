@@ -3,7 +3,6 @@ public sealed class StatDebuffSkill : SkillBase
     private readonly CombatStatusEffects.StatKind _stat;
     private readonly float _debuffMultiplier;
     private readonly float _durationSeconds;
-    private readonly float _maxRange;
     private readonly float _cooldownSeconds;
     private readonly string _name;
 
@@ -11,14 +10,12 @@ public sealed class StatDebuffSkill : SkillBase
         CombatStatusEffects.StatKind stat,
         float debuffMultiplier = 0.7f,
         float durationSeconds = 5f,
-        float maxRange = 35f,
         float cooldownSeconds = 5f,
         string name = null)
     {
         _stat = stat;
         _debuffMultiplier = debuffMultiplier;
         _durationSeconds = durationSeconds;
-        _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
         _name = name ?? $"{stat}デバフ";
     }
@@ -31,7 +28,8 @@ public sealed class StatDebuffSkill : SkillBase
 
     public override float CastTimeSeconds => 1f;
 
-    public override float MaxRange => _maxRange;
+    // 射程制限なし。届くかは認識・視界・射線（CombatSkillEvaluator）で決める。
+    public override float MaxRange => float.PositiveInfinity;
 
     public static string GetEffectKey(CombatStatusEffects.StatKind stat) => $"StatDebuff_{stat}";
 

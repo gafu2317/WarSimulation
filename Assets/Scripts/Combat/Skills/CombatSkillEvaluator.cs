@@ -353,6 +353,11 @@ public static class CombatSkillEvaluator
             return Fail(baseResult, "target out of range");
         }
 
+        if (!HasSightWhenUnlimited(owner, skill, target))
+        {
+            return Fail(baseResult, "no line of sight");
+        }
+
         SkillExecutionContext context = SkillExecutionContext.ForTarget(target);
         return Success(baseResult, context, context.ResolvedTargets, context.ResolvedStones);
     }
@@ -398,6 +403,11 @@ public static class CombatSkillEvaluator
         if (!IsInHorizontalRange(baseResult.OriginPoint, Flatten(target.transform.position), skill.MaxRange))
         {
             return Fail(baseResult, "ally out of range");
+        }
+
+        if (!HasSightWhenUnlimited(owner, skill, target))
+        {
+            return Fail(baseResult, "no line of sight");
         }
 
         SkillExecutionContext context = SkillExecutionContext.ForTarget(target);
@@ -467,7 +477,12 @@ public static class CombatSkillEvaluator
         if (target.Team == owner.Team || !target.Health.IsTargetable) return false;
         CombatVision vision = owner.Vision;
         if (ShouldRequireRecognition(owner, target) && !vision.HasRecognitionOf(target)) return false;
-        return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
+        if (!IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange))
+        {
+            return false;
+        }
+
+        return HasSightWhenUnlimited(owner, skill, target);
     }
 
     private static bool IsValidEnemyTarget(Character owner, SkillBase skill, MagicStone stone)
@@ -495,7 +510,12 @@ public static class CombatSkillEvaluator
         }
 
         if (target.Team != owner.Team || !target.Health.IsAlive) return false;
-        return IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange);
+        if (!IsInHorizontalRange(Flatten(owner.transform.position), Flatten(target.transform.position), skill.MaxRange))
+        {
+            return false;
+        }
+
+        return HasSightWhenUnlimited(owner, skill, target);
     }
 
     private static CombatSkillEvaluationResult Fail(CombatSkillEvaluationResult baseResult, string reason)
@@ -541,6 +561,21 @@ public static class CombatSkillEvaluator
 
         Vector3 delta = Flatten(to) - Flatten(from);
         return delta.sqrMagnitude <= maxRange * maxRange;
+    }
+
+    /// <summary>
+    /// 射程なしスキルは、視界内かつ遮蔽なしの対象にだけ届く（高所の価値）。
+    /// </summary>
+    private static bool HasSightWhenUnlimited(Character owner, SkillBase skill, Character target)
+    {
+        if (skill == null || !float.IsPositiveInfinity(skill.MaxRange)) return true;
+        if (owner == null || target == null) return false;
+
+        CombatVision vision = owner.Vision;
+        if (vision == null) return true;
+
+        vision.UpdateVision();
+        return vision.HasUnobstructedSight(target.transform);
     }
 
     private static Vector3 Flatten(Vector3 value)

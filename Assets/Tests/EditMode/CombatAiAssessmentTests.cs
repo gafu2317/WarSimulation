@@ -207,10 +207,10 @@ public sealed class CombatAiAssessmentTests
             Is.EqualTo(20f));
         Assert.That(
             CombatAiWeaponWeights.GetMoveWeight(WeaponKind.Grimoire, CombatAiMoveCode.TakeHighGround),
-            Is.EqualTo(30f));
+            Is.EqualTo(42f));
         Assert.That(
             CombatAiWeaponWeights.GetMoveWeight(WeaponKind.Bible, CombatAiMoveCode.TakeHighGround),
-            Is.EqualTo(12f));
+            Is.EqualTo(40f));
         Assert.That(
             CombatAiWeaponWeights.GetMoveWeight(WeaponKind.Rosary, CombatAiMoveCode.TakeHighGround),
             Is.EqualTo(20f));

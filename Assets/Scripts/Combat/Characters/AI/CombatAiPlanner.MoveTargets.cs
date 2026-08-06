@@ -681,6 +681,7 @@ public static partial class CombatAiPlanner
         if (owner == null) return 0f;
 
         float range = 0f;
+        bool hasUnlimited = false;
         IReadOnlyList<SkillBase> skills = owner.AvailableCombatSkills;
         CombatSkillCooldowns cooldowns = owner.SkillCooldowns;
         for (int i = 0; i < skills.Count; i++)
@@ -690,7 +691,21 @@ public static partial class CombatAiPlanner
             bool matches = requireSupport
                 ? CombatAiSkillClassifier.IsSupport(skill)
                 : CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill);
-            if (matches) range = Mathf.Max(range, skill.MaxRange);
+            if (!matches) continue;
+            // 射程なし（視界依存）スキルは接近距離の計算に使わない。
+            if (float.IsInfinity(skill.MaxRange))
+            {
+                hasUnlimited = true;
+                continue;
+            }
+
+            range = Mathf.Max(range, skill.MaxRange);
+        }
+
+        // 射程なしスキルは、現在の視界を実効射程として位置取りに使う。
+        if (hasUnlimited && owner.Vision != null)
+        {
+            range = Mathf.Max(range, owner.Vision.CurrentSightRange);
         }
 
         return range;

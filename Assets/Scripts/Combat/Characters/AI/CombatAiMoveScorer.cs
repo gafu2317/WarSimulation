@@ -478,42 +478,63 @@ public static class CombatAiMoveScorer
             return 0f;
         }
 
-        GetUsefulSkillRanges(owner, out float hostileRange, out float supportRange);
-        int currentTargets = CountActionableTargets(context, owner.transform.position, hostileRange, supportRange, false);
-        int highGroundTargets = CountActionableTargets(context, target.Destination, hostileRange, supportRange, true);
+        GetUsefulSkillRanges(owner, out float hostileRange, out float supportRange, out bool hostileUsesSight, out bool supportUsesSight);
+        float currentSight = owner.Vision != null ? owner.Vision.CurrentSightRange : 0f;
+        float destinationSight = owner.Vision != null ? owner.Vision.GetSightRangeAt(target.Destination) : 0f;
+        float currentHostile = ResolveEffectiveRange(hostileRange, hostileUsesSight, currentSight);
+        float destinationHostile = ResolveEffectiveRange(hostileRange, hostileUsesSight, destinationSight);
+        float currentSupport = ResolveEffectiveRange(supportRange, supportUsesSight, currentSight);
+        float destinationSupport = ResolveEffectiveRange(supportRange, supportUsesSight, destinationSight);
+        int currentTargets = CountActionableTargets(context, owner.transform.position, currentHostile, currentSupport, false);
+        int highGroundTargets = CountActionableTargets(context, target.Destination, destinationHostile, destinationSupport, true);
         int actionableGain = Mathf.Max(0, highGroundTargets - currentTargets);
         int intelGain = CountNewIntelTargets(context, target.Destination);
-        float sightGain = GetSightAreaGain(owner, target.Destination);
+        float sightGain = GetSightAreaGain(currentSight, destinationSight);
         float uncertainty = 1f - Mathf.Clamp01(assessment.GetValue(CombatAiMetricIndex.EnemyLocationConfidence) / 100f);
         return Mathf.Min(54f, actionableGain * 18f + intelGain * 10f + sightGain * uncertainty * 36f);
     }
 
-    private static float GetSightAreaGain(Character owner, Vector3 destination)
+    private static float GetSightAreaGain(float currentRange, float destinationRange)
     {
-        CombatVision vision = owner.Vision;
-        if (vision == null) return 0f;
-
-        float currentRange = vision.CurrentSightRange;
-        float destinationRange = vision.GetSightRangeAt(destination);
         if (destinationRange <= currentRange || destinationRange <= Mathf.Epsilon) return 0f;
 
         return 1f - currentRange * currentRange / (destinationRange * destinationRange);
     }
 
-    private static void GetUsefulSkillRanges(Character owner, out float hostileRange, out float supportRange)
+    private static void GetUsefulSkillRanges(
+        Character owner,
+        out float hostileRange,
+        out float supportRange,
+        out bool hostileUsesSight,
+        out bool supportUsesSight)
     {
         hostileRange = owner.EquippedWeapon != null ? owner.EquippedWeapon.Range : 0f;
         supportRange = 0f;
+        hostileUsesSight = false;
+        supportUsesSight = false;
         for (int i = 0; i < owner.AvailableCombatSkills.Count; i++)
         {
             SkillBase skill = owner.AvailableCombatSkills[i];
-            if (skill == null || float.IsInfinity(skill.MaxRange)) continue;
+            if (skill == null) continue;
+            bool unlimited = float.IsInfinity(skill.MaxRange);
             if (CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill))
             {
-                hostileRange = Mathf.Max(hostileRange, skill.MaxRange);
+                if (unlimited) hostileUsesSight = true;
+                else hostileRange = Mathf.Max(hostileRange, skill.MaxRange);
             }
-            if (CombatAiSkillClassifier.IsSupport(skill)) supportRange = Mathf.Max(supportRange, skill.MaxRange);
+            if (CombatAiSkillClassifier.IsSupport(skill))
+            {
+                if (unlimited) supportUsesSight = true;
+                else supportRange = Mathf.Max(supportRange, skill.MaxRange);
+            }
         }
+    }
+
+    private static float ResolveEffectiveRange(float skillRange, bool usesSight, float sightRange)
+    {
+        float range = skillRange;
+        if (usesSight) range = Mathf.Max(range, sightRange);
+        return range;
     }
 
     private static int CountActionableTargets(
@@ -585,6 +606,8 @@ public static class CombatAiMoveScorer
             CombatObjective.SupportAlly when code == CombatAiMoveCode.InterceptThreat => 38f,
             CombatObjective.DefendOwnStone when code == CombatAiMoveCode.InterceptThreat => 38f,
             CombatObjective.Search when code == CombatAiMoveCode.TakeHighGround => 34f,
+            CombatObjective.SupportAlly when code == CombatAiMoveCode.TakeHighGround => 30f,
+            CombatObjective.AttackEnemy when code == CombatAiMoveCode.TakeHighGround => 26f,
             CombatObjective.Search when code == CombatAiMoveCode.SearchLastKnown => 34f,
             CombatObjective.Retreat when code == CombatAiMoveCode.ReturnOwnStone || code == CombatAiMoveCode.MoveForest => 24f,
             _ => 0f,

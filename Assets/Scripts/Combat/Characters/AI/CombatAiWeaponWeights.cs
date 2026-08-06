@@ -165,7 +165,7 @@ public sealed class CombatAiWeaponWeightsEntry
                 _objectives.SupportAlly = -6f;
                 _objectives.DefendOwnStone = -6f;
 
-                _moves.TakeHighGround = 30f;
+                _moves.TakeHighGround = 42f;
                 _moves.MoveForest = 12f;
                 _moves.PursueEnemy = -4f;
                 _moves.AdvanceEnemyStone = 4f;
@@ -185,7 +185,7 @@ public sealed class CombatAiWeaponWeightsEntry
                 _moves.SupportAlly = 24f;
                 _moves.ReturnOwnStone = 12f;
                 _moves.MoveForest = 8f;
-                _moves.TakeHighGround = 12f;
+                _moves.TakeHighGround = 40f;
 
                 _skills.Buff = 24f;
                 _skills.Protect = 24f;

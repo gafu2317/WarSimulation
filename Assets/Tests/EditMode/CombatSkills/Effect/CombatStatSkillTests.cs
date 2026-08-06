@@ -64,7 +64,7 @@ public sealed class CombatStatSkillTests
             Character target = targetGo.AddComponent<Character>();
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward;
 
-            var skill = new StatDebuffSkill(CombatStatusEffects.StatKind.AGI, 0.7f, 5f, maxRange: 7f, cooldownSeconds: 5f);
+            var skill = new StatDebuffSkill(CombatStatusEffects.StatKind.AGI, 0.7f, 5f, cooldownSeconds: 5f);
             skill.Execute(owner, SkillExecutionContext.ForTarget(target));
 
             Assert.That(target.StatusEffects.GetMultiplier(CombatStatusEffects.StatKind.AGI), Is.EqualTo(0.7f).Within(0.001f));
@@ -90,9 +90,9 @@ public sealed class CombatStatSkillTests
     }
 
     [Test]
-    public void StatBuffAndDebuff_DefaultRangesSupportHighGroundPositioning()
+    public void StatBuffAndDebuff_FactorySkillsHaveUnlimitedRange()
     {
-        Assert.That(CombatSkillFactory.Create(SkillId.Bible_StrBuff).MaxRange, Is.EqualTo(35f).Within(0.001f));
-        Assert.That(CombatSkillFactory.Create(SkillId.Grimoire_StrDebuff).MaxRange, Is.EqualTo(35f).Within(0.001f));
+        Assert.That(CombatSkillFactory.Create(SkillId.Bible_StrBuff).MaxRange, Is.EqualTo(float.PositiveInfinity));
+        Assert.That(CombatSkillFactory.Create(SkillId.Grimoire_StrDebuff).MaxRange, Is.EqualTo(float.PositiveInfinity));
     }
 }

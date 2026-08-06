@@ -298,6 +298,49 @@ public sealed class CombatSkillEvaluatorTests
         }
     }
 
+    [Test]
+    public void Evaluate_RejectsUnlimitedRangeAllyBeyondSight()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withAlly: true);
+        try
+        {
+            fixture.AllyGo.transform.position = fixture.OwnerGo.transform.position + Vector3.forward * 50f;
+            var skill = new StatBuffSkill(CombatStatusEffects.StatKind.STR);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, fixture.Ally));
+
+            Assert.That(result.CanUse, Is.False);
+            Assert.That(result.FailureReason, Is.EqualTo("no line of sight"));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Evaluate_AllowsUnlimitedRangeAllyWithinSight()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withAlly: true);
+        try
+        {
+            fixture.AllyGo.transform.position = fixture.OwnerGo.transform.position + Vector3.forward * 5f;
+            var skill = new StatBuffSkill(CombatStatusEffects.StatKind.STR);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, fixture.Ally));
+
+            Assert.That(result.CanUse, Is.True);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
     private sealed class EvaluatorTestSkill : SkillBase
     {
         private readonly SkillTargetKind _targetKind;
