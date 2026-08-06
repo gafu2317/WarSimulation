@@ -271,8 +271,6 @@ public class CombatMapSystem : MonoBehaviour
             if (valid)
             {
                 prebakedNavMesh = _authoredMap.BakedNavMesh;
-                Debug.Log(
-                    $"[{nameof(CombatMapSystem)}] NavMesh: Load (prebaked). fingerprint={stored}");
             }
             else
             {

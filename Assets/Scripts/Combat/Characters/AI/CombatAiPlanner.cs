@@ -23,41 +23,24 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreatePersonalitySignatureTarget(
         CombatAiContext context,
-        CombatAiPersonalityProfile personalityProfile)
+        CombatAiPersonalityProfile personalityProfile,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds)
     {
         if (context == null || context.Owner == null || personalityProfile == null) return CombatMoveTarget.None;
 
         return personalityProfile.Kind switch
         {
             CombatAiPersonalityKind.AttentionSeeker => CreateAttentionSeekerTarget(context),
-            CombatAiPersonalityKind.BattleJunkie => CreateBestEnemyTarget(context, null, 0f),
-            CombatAiPersonalityKind.Calm => CreateCalmDisengageTarget(context),
-            CombatAiPersonalityKind.Cautious => CreateCautiousApproachTarget(context),
-            CombatAiPersonalityKind.Clumsy => CreateClumsyTarget(context),
-            CombatAiPersonalityKind.Coward => CreateCowardBehindAllyTarget(context),
-            CombatAiPersonalityKind.Cunning => CreateCunningTarget(context),
-            CombatAiPersonalityKind.Despicable => CreateDespicableShieldTarget(context),
-            CombatAiPersonalityKind.Devoted => CreateDevotedInterceptTarget(context),
-            CombatAiPersonalityKind.Eccentric => CreateEccentricTarget(context),
-            CombatAiPersonalityKind.Gossiper => CreateRuntimePersonalityTarget(context),
-            CombatAiPersonalityKind.HotBlooded => CreateHotBloodedChargeTarget(context),
-            CombatAiPersonalityKind.Innocent => CreateOrbitTarget(context),
+            CombatAiPersonalityKind.BattleJunkie => CreateBestEnemyTarget(
+                context, focusEnemy, focusCommitmentRemainingSeconds),
+            CombatAiPersonalityKind.Coward => CreateCowardLowAttentionTarget(context),
+            CombatAiPersonalityKind.Cunning => CreateCunningLowRiskStoneTarget(context),
+            CombatAiPersonalityKind.Devoted => CreateDevotedLowHpAllyTarget(context),
             CombatAiPersonalityKind.Lonely => CreateLonelyClingTarget(context),
-            CombatAiPersonalityKind.LoneWolf => CreateLoneWolfTarget(context),
-            CombatAiPersonalityKind.Lecherous => CreateRuntimePersonalityTarget(context),
-            CombatAiPersonalityKind.OverlySerious => CreateOverlySeriousTarget(context),
             CombatAiPersonalityKind.Reckless => CreateEnemyStoneTarget(context),
-            CombatAiPersonalityKind.Unstable => CreateRuntimePersonalityTarget(context),
             _ => CombatMoveTarget.None,
         };
-    }
-
-    private static CombatMoveTarget CreateRuntimePersonalityTarget(CombatAiContext context)
-    {
-        CombatAiPersonalityRuntime runtime = context.Owner.GetComponent<CombatAiPersonalityRuntime>();
-        return runtime != null && runtime.TryGetSignatureTarget(out CombatMoveTarget target)
-            ? target
-            : CombatMoveTarget.None;
     }
 
     public static CombatAiPlan BuildPlan(
@@ -230,7 +213,8 @@ public static partial class CombatAiPlanner
             CombatAiMoveCode.SearchLastKnown, "最終既知地点へ移動", CreateLastKnownEnemyTarget(context), objective, focusEnemy,
             focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
-            CombatAiMoveCode.PersonalitySignature, "性格固有の移動", CreatePersonalitySignatureTarget(context, personalityProfile),
+            CombatAiMoveCode.PersonalitySignature, "性格固有の移動",
+            CreatePersonalitySignatureTarget(context, personalityProfile, focusEnemy, focusCommitmentRemainingSeconds),
             objective, focusEnemy, focusCommitmentRemainingSeconds, entries, ref bestScore, ref bestTarget, ref selectedEntry);
         TryScoreMoveCandidate(owner, context, assessment, personalityProfile,
             CombatAiMoveCode.HoldPosition, "待機", CombatMoveTarget.None, objective, focusEnemy,
@@ -340,7 +324,7 @@ public static partial class CombatAiPlanner
             for (int j = 0; j < skillContexts.Count; j++)
             {
                 CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, skillContexts[j]);
-                if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context)) continue;
+                if (!CanPersonalityUseSkill(personalityProfile, skill, evaluation.Context, context)) continue;
                 CombatAiScoreBreakdown breakdown = entries != null ? new CombatAiScoreBreakdown() : null;
                 float score = ScoreSkillCandidate(
                     context,
@@ -449,13 +433,21 @@ public static partial class CombatAiPlanner
     private static bool CanPersonalityUseSkill(
         CombatAiPersonalityProfile personalityProfile,
         SkillBase skill,
-        SkillExecutionContext context)
+        SkillExecutionContext skillContext,
+        CombatAiContext aiContext)
     {
         if (personalityProfile == null || skill == null) return true;
-        if (personalityProfile.Kind == CombatAiPersonalityKind.Innocent && CombatAiSkillClassifier.IsDamage(skill)) return false;
+        if (personalityProfile.Kind == CombatAiPersonalityKind.Lonely &&
+            !CombatAiPersonalityBehavior.HasNearbyAlly(
+                aiContext,
+                CombatAiPersonalityBehavior.LonelyNearbyAllyRadius))
+        {
+            return false;
+        }
+
         if (personalityProfile.Kind == CombatAiPersonalityKind.Reckless)
         {
-            return CombatAiSkillClassifier.IsDamage(skill) && context.PrimaryStone != null;
+            return CombatAiSkillClassifier.IsDamage(skill) && skillContext.PrimaryStone != null;
         }
 
         return true;

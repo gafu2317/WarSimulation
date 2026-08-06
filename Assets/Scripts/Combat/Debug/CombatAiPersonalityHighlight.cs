@@ -19,19 +19,20 @@ public static class CombatAiPersonalityHighlight
 
     public static void CycleNext()
     {
+        CombatAiPersonalityKind[] kinds = CombatAiPersonalityProfile.BuiltInKinds;
         if (!Kind.HasValue)
         {
-            Kind = CombatAiPersonalityKind.Neutral;
+            Kind = kinds[0];
             return;
         }
 
-        int next = (int)Kind.Value + 1;
-        if (next > (int)CombatAiPersonalityKind.Unstable)
+        int index = System.Array.IndexOf(kinds, Kind.Value);
+        if (index < 0 || index >= kinds.Length - 1)
         {
             Kind = null;
             return;
         }
 
-        Kind = (CombatAiPersonalityKind)next;
+        Kind = kinds[index + 1];
     }
 }

@@ -309,7 +309,6 @@ public class Character : MonoBehaviour
         _vision ??= GetComponent<CombatVision>();
         _vision?.Initialize();
         GetComponent<CombatAiBrain>()?.ResetForBattle();
-        GetComponent<CombatAiPersonalityRuntime>()?.ResetForBattle();
     }
 
     // ==========================================

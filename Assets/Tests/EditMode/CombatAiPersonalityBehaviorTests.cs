@@ -4,25 +4,13 @@ using UnityEngine;
 
 public sealed class CombatAiPersonalityBehaviorTests
 {
-    [TestCase(CombatAiPersonalityKind.AttentionSeeker, 60f)]
-    [TestCase(CombatAiPersonalityKind.BattleJunkie, 92f)]
-    [TestCase(CombatAiPersonalityKind.Calm, -4f)]
-    [TestCase(CombatAiPersonalityKind.Cautious, -8f)]
-    [TestCase(CombatAiPersonalityKind.Clumsy, 0f)]
-    [TestCase(CombatAiPersonalityKind.Coward, -8f)]
-    [TestCase(CombatAiPersonalityKind.Cunning, 14f)]
-    [TestCase(CombatAiPersonalityKind.Despicable, -6.4f)]
-    [TestCase(CombatAiPersonalityKind.Devoted, -12f)]
-    [TestCase(CombatAiPersonalityKind.Gossiper, 0f)]
-    [TestCase(CombatAiPersonalityKind.HotBlooded, 54f)]
-    [TestCase(CombatAiPersonalityKind.Innocent, -120f)]
-    [TestCase(CombatAiPersonalityKind.Lazy, -1.6f)]
-    [TestCase(CombatAiPersonalityKind.Lecherous, 6f)]
-    [TestCase(CombatAiPersonalityKind.Lonely, -40f)]
-    [TestCase(CombatAiPersonalityKind.LoneWolf, 46f)]
-    [TestCase(CombatAiPersonalityKind.OverlySerious, 28f)]
+    [TestCase(CombatAiPersonalityKind.AttentionSeeker, 34f)]
+    [TestCase(CombatAiPersonalityKind.BattleJunkie, 1020f)]
+    [TestCase(CombatAiPersonalityKind.Coward, -56f)]
+    [TestCase(CombatAiPersonalityKind.Cunning, -42.4f)]
+    [TestCase(CombatAiPersonalityKind.Devoted, -20f)]
+    [TestCase(CombatAiPersonalityKind.Lonely, -200f)]
     [TestCase(CombatAiPersonalityKind.Reckless, -200f)]
-    [TestCase(CombatAiPersonalityKind.Unstable, 26f)]
     public void 性格ごとの攻撃目的補正を維持する(CombatAiPersonalityKind kind, float expected)
     {
         GameObject ownerObject = new GameObject("Owner");
@@ -43,35 +31,6 @@ public sealed class CombatAiPersonalityBehaviorTests
                 CombatObjective.AttackEnemy);
 
             Assert.That(score, Is.EqualTo(expected).Within(0.001f));
-        }
-        finally
-        {
-            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
-            UnityEngine.Object.DestroyImmediate(enemyObject);
-            UnityEngine.Object.DestroyImmediate(ownerObject);
-        }
-    }
-
-    [Test]
-    public void 不思議ちゃんの攻撃目的補正はランダム候補だけを加算する()
-    {
-        GameObject ownerObject = new GameObject("Owner");
-        GameObject enemyObject = new GameObject("Enemy");
-        CombatAiPersonalityProfile profile = null;
-        try
-        {
-            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
-            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
-            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Eccentric);
-            CombatAiContext context = CreateContext(owner, enemy);
-
-            float score = CombatAiPersonalityBehavior.GetObjectiveScore(
-                context,
-                profile,
-                CombatAiAssessmentBuilder.Build(context),
-                CombatObjective.AttackEnemy);
-
-            Assert.That(score == -40f || score == 220f, Is.True);
         }
         finally
         {
@@ -112,7 +71,7 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
-    public void 天真爛漫は攻撃せず敵の周囲へ移動する()
+    public void 戦闘狂は敵攻撃目的を選ぶ()
     {
         GameObject ownerObject = new GameObject("Owner");
         GameObject enemyObject = new GameObject("Enemy");
@@ -120,16 +79,13 @@ public sealed class CombatAiPersonalityBehaviorTests
         try
         {
             Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
-            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
-            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new DamageBlastSkill());
-            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Innocent);
-            CombatAiContext context = CreateContext(owner, enemy);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(3f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BattleJunkie);
+            CombatAiContext context = CreateContext(owner, enemy, null, new Vector3(20f, 0f, 0f));
 
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-            Assert.That(plan.Skill, Is.Null);
-            Assert.That(plan.MoveTarget.HasDestination, Is.True);
-            Assert.That(Vector3.Distance(plan.MoveTarget.Destination, enemy.transform.position), Is.GreaterThan(4f));
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
         }
         finally
         {
@@ -140,65 +96,54 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
-    public void 献身的は味方と敵の間へ移動する()
+    public void 献身的は低HPの味方のもとへ移動する()
     {
         GameObject ownerObject = new GameObject("Owner");
-        GameObject allyObject = new GameObject("Ally");
+        GameObject healthyAllyObject = new GameObject("HealthyAlly");
+        GameObject hurtAllyObject = new GameObject("HurtAlly");
         GameObject enemyObject = new GameObject("Enemy");
         CombatAiPersonalityProfile profile = null;
         try
         {
             Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
-            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, new Vector3(4f, 0f, 0f));
-            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(10f, 0f, 0f));
+            Character healthyAlly = CreateCharacter(healthyAllyObject, CombatTeam.Ally, new Vector3(4f, 0f, 0f));
+            Character hurtAlly = CreateCharacter(hurtAllyObject, CombatTeam.Ally, new Vector3(6f, 0f, 0f));
+            hurtAlly.Health.Initialize(30, 10);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(20f, 0f, 0f));
             profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Devoted);
-            CombatAiContext context = CreateContext(owner, enemy, ally);
+            CombatAiContext context = new CombatAiContext(
+                owner,
+                new[] { CreateIntel(enemy) },
+                new[] { CreateIntel(healthyAlly), CreateIntel(hurtAlly) },
+                CombatMapSystem.Weather.Sunny,
+                false,
+                default,
+                false,
+                default,
+                Array.Empty<Vector3>(),
+                Array.Empty<Vector3>(),
+                Array.Empty<Vector3>(),
+                false,
+                0,
+                0);
 
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-            Assert.That(plan.MoveTarget.Destination.x, Is.GreaterThan(ally.transform.position.x));
-            Assert.That(plan.MoveTarget.Destination.x, Is.LessThan(enemy.transform.position.x));
+            Assert.That(plan.MoveTarget.Kind, Is.EqualTo(CombatMoveTargetKind.Character));
+            Assert.That(plan.MoveTarget.TargetCharacter, Is.EqualTo(hurtAlly));
         }
         finally
         {
             if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
             UnityEngine.Object.DestroyImmediate(enemyObject);
-            UnityEngine.Object.DestroyImmediate(allyObject);
+            UnityEngine.Object.DestroyImmediate(hurtAllyObject);
+            UnityEngine.Object.DestroyImmediate(healthyAllyObject);
             UnityEngine.Object.DestroyImmediate(ownerObject);
         }
     }
 
     [Test]
-    public void 卑怯者は味方の影へ移動する()
-    {
-        GameObject ownerObject = new GameObject("Owner");
-        GameObject allyObject = new GameObject("Ally");
-        GameObject enemyObject = new GameObject("Enemy");
-        CombatAiPersonalityProfile profile = null;
-        try
-        {
-            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
-            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, new Vector3(4f, 0f, 0f));
-            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(10f, 0f, 0f));
-            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Despicable);
-            CombatAiContext context = CreateContext(owner, enemy, ally);
-
-            CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
-
-            Assert.That(plan.MoveTarget.HasDestination, Is.True);
-            Assert.That(plan.MoveTarget.Destination.x, Is.LessThan(ally.transform.position.x));
-        }
-        finally
-        {
-            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
-            UnityEngine.Object.DestroyImmediate(enemyObject);
-            UnityEngine.Object.DestroyImmediate(allyObject);
-            UnityEngine.Object.DestroyImmediate(ownerObject);
-        }
-    }
-
-    [Test]
-    public void 臆病者は近くの敵がいると味方の後ろへ下がる()
+    public void 臆病者は味方の後ろへ下がる()
     {
         GameObject ownerObject = new GameObject("Owner");
         GameObject allyObject = new GameObject("Ally");
@@ -256,7 +201,7 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
-    public void 冷静は近接脅威があると後退する()
+    public void 寂しがりは単独時スキルを選ばない()
     {
         GameObject ownerObject = new GameObject("Owner");
         GameObject enemyObject = new GameObject("Enemy");
@@ -265,13 +210,14 @@ public sealed class CombatAiPersonalityBehaviorTests
         {
             Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
             Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(3f, 0f, 0f));
-            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Calm);
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new DamageBlastSkill());
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Lonely);
             CombatAiContext context = CreateContext(owner, enemy);
 
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-            Assert.That(plan.MoveTarget.HasDestination, Is.True);
-            Assert.That(plan.MoveTarget.Destination.x, Is.LessThan(owner.transform.position.x));
+            Assert.That(plan.Skill, Is.Null);
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Search));
         }
         finally
         {
@@ -282,26 +228,49 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
-    public void 一匹狼は味方がいない敵を選ぶ()
+    public void 狡猾は敵魔石目的を選ぶ()
     {
         GameObject ownerObject = new GameObject("Owner");
-        GameObject allyObject = new GameObject("Ally");
-        GameObject crowdedEnemyObject = new GameObject("CrowdedEnemy");
-        GameObject loneEnemyObject = new GameObject("LoneEnemy");
+        GameObject enemyObject = new GameObject("Enemy");
         CombatAiPersonalityProfile profile = null;
         try
         {
             Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
-            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, new Vector3(5f, 0f, 0f));
-            Character crowdedEnemy = CreateCharacter(crowdedEnemyObject, CombatTeam.Enemy, new Vector3(6f, 0f, 0f));
-            Character loneEnemy = CreateCharacter(loneEnemyObject, CombatTeam.Enemy, new Vector3(0f, 0f, 12f));
-            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.LoneWolf);
-            CombatCharacterIntel crowdedIntel = CreateIntel(crowdedEnemy);
-            CombatCharacterIntel loneIntel = CreateIntel(loneEnemy);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(3f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Cunning);
+            CombatAiContext context = CreateContext(owner, enemy, null, new Vector3(20f, 0f, 0f));
+
+            CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        }
+        finally
+        {
+            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(ownerObject);
+        }
+    }
+
+    [Test]
+    public void 目立ちたがり屋はキャラ密集地点へ寄る()
+    {
+        GameObject ownerObject = new GameObject("Owner");
+        GameObject allyAObject = new GameObject("AllyA");
+        GameObject allyBObject = new GameObject("AllyB");
+        GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile profile = null;
+        try
+        {
+            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
+            Character allyA = CreateCharacter(allyAObject, CombatTeam.Ally, new Vector3(10f, 0f, 0f));
+            Character allyB = CreateCharacter(allyBObject, CombatTeam.Ally, new Vector3(11f, 0f, 0f));
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(12f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.AttentionSeeker);
             CombatAiContext context = new CombatAiContext(
                 owner,
-                new[] { crowdedIntel, loneIntel },
-                new[] { CreateIntel(ally) },
+                new[] { CreateIntel(enemy) },
+                new[] { CreateIntel(allyA), CreateIntel(allyB) },
                 CombatMapSystem.Weather.Sunny,
                 false,
                 default,
@@ -317,16 +286,14 @@ public sealed class CombatAiPersonalityBehaviorTests
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
             Assert.That(plan.MoveTarget.HasDestination, Is.True);
-            Assert.That(
-                Vector3.Distance(plan.MoveTarget.Destination, loneEnemy.transform.position),
-                Is.LessThan(Vector3.Distance(plan.MoveTarget.Destination, crowdedEnemy.transform.position)));
+            Assert.That(plan.MoveTarget.Destination.x, Is.GreaterThan(8f));
         }
         finally
         {
             if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
-            UnityEngine.Object.DestroyImmediate(loneEnemyObject);
-            UnityEngine.Object.DestroyImmediate(crowdedEnemyObject);
-            UnityEngine.Object.DestroyImmediate(allyObject);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(allyBObject);
+            UnityEngine.Object.DestroyImmediate(allyAObject);
             UnityEngine.Object.DestroyImmediate(ownerObject);
         }
     }

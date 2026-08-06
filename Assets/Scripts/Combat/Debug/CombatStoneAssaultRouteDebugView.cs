@@ -38,39 +38,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     private Transform _endpointRoot;
     private int _lastVisibleRouteCount = -1;
     private float _nextRetryTime;
-    private bool _loggedBoot;
     private string _lastFailureReason = "";
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void LogViewsAfterSceneLoad()
-    {
-        CombatStoneAssaultRouteDebugView[] views = Object.FindObjectsByType<CombatStoneAssaultRouteDebugView>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
-        Debug.Log(
-            $"[魔石進攻ルート] AfterSceneLoad: シーン内に {views.Length} 個 " +
-            $"(activeInHierarchy 含む検索)",
-            views.Length > 0 ? views[0] : null);
-        for (int i = 0; i < views.Length; i++)
-        {
-            CombatStoneAssaultRouteDebugView view = views[i];
-            Debug.Log(
-                $"[魔石進攻ルート] view[{i}] go={view.gameObject.name}, " +
-                $"activeSelf={view.gameObject.activeSelf}, " +
-                $"activeInHierarchy={view.gameObject.activeInHierarchy}, " +
-                $"enabled={view.enabled}",
-                view);
-        }
-    }
-
-    private void Awake()
-    {
-        if (!Application.isPlaying) return;
-        Debug.Log(
-            $"[魔石進攻ルート] Awake: go={gameObject.name}, " +
-            $"activeInHierarchy={gameObject.activeInHierarchy}, enabled={enabled}",
-            this);
-    }
 
     private void OnEnable()
     {
@@ -86,10 +54,8 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
             return;
         }
 
-        Debug.Log($"[魔石進攻ルート] OnEnable: 購読開始 team={_attackingTeam}", this);
         CombatNavMeshBuilder.Built += OnNavMeshBuilt;
         CombatNavMeshBuilder.Cleared += OnNavMeshCleared;
-        _loggedBoot = true;
         _nextRetryTime = 0f;
         ApplyPlaytestSettings();
         RefreshRoutes();
@@ -136,7 +102,6 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
 
     private void OnNavMeshBuilt()
     {
-        Debug.Log("[魔石進攻ルート] NavMesh Built 受信", this);
         _lastVisibleRouteCount = -1;
         RefreshRoutes();
     }
@@ -156,7 +121,6 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
         {
             if (failureReason != _lastFailureReason)
             {
-                Debug.Log($"[魔石進攻ルート] 待機中: {failureReason}", this);
                 _lastFailureReason = failureReason;
             }
 
@@ -203,12 +167,6 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
                 Debug.LogWarning("[魔石進攻ルート] " + reason, this);
                 _lastFailureReason = reason;
             }
-        }
-        else if (selected.Count != _lastVisibleRouteCount)
-        {
-            Debug.Log(
-                "[魔石進攻ルート] " + string.Join(", ", selected.ConvertAll(route => route.Label)),
-                this);
         }
 
         _lastVisibleRouteCount = selected.Count;

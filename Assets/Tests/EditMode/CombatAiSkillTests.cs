@@ -237,7 +237,7 @@ public sealed class CombatAiSkillTests
             enemy.Health.Initialize(30);
             enemyGo.transform.position = Vector3.forward;
             CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new AiPlannerBasicAttackSkill());
-            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Innocent);
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Lonely);
             CombatAiContext context = CreatePlannerContext(
                 owner,
                 enemyIntel: new[] { CreateIntel(enemy, true, enemyGo.transform.position) });

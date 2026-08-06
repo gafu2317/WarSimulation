@@ -93,8 +93,8 @@ public static class CombatAiMoveScorer
             risk = (risk + remainingRisk) * 0.5f;
         }
 
-        float multiplier = personalityProfile != null && personalityProfile.Kind == CombatAiPersonalityKind.Cautious
-            ? 1.5f
+        float multiplier = personalityProfile != null && personalityProfile.Kind == CombatAiPersonalityKind.Cunning
+            ? 1.75f
             : 0.55f;
         return risk * multiplier;
     }

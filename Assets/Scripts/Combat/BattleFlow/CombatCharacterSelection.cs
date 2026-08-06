@@ -537,7 +537,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 AddDebugBoolOption(
                     "性格の名前を出す",
                     CombatPlaytestDebugSettings.LabelShowPersonality,
-                    "攻撃的・慎重など、そのキャラの性格名を出します。",
+                    "標準・戦闘狂など、そのキャラの性格名を出します。",
                     value =>
                     {
                         CombatPlaytestDebugSettings.SetLabelShowPersonality(value);

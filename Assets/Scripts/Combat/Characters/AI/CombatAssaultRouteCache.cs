@@ -47,9 +47,6 @@ public static class CombatAssaultRouteCache
 
         if (TryHydrateFromAuthored(mapSystem.AuthoredMap, map, origin))
         {
-            Debug.Log(
-                $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Hydrate " +
-                $"(ally={AllyRoutes.Count}, enemy={EnemyRoutes.Count})");
             return;
         }
 

@@ -5,15 +5,12 @@ using UnityEngine;
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Character))]
 [RequireComponent(typeof(CombatAiContextCollector))]
-[RequireComponent(typeof(CombatAiPersonalityRuntime))]
 public sealed class CombatAiBrain : MonoBehaviour
 {
     private const float SwordFocusCommitmentSeconds = 2.5f;
     private const float BattleJunkieFocusCommitmentSeconds = 12f;
-    private const float LazyPauseSeconds = 2.4f;
     private const float ObjectiveCommitmentSeconds = 5f;
     private static readonly ProfilerMarker CollectContextMarker = new("CombatAI.CollectContext");
-    private static readonly ProfilerMarker RefreshPersonalityMarker = new("CombatAI.RefreshPersonality");
     private static readonly ProfilerMarker BuildPlanMarker = new("CombatAI.BuildPlan");
 
     [SerializeField] private bool _enabled = true;
@@ -22,11 +19,9 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private Character _owner;
     private CombatAiContextCollector _contextCollector;
-    private CombatAiPersonalityRuntime _personalityRuntime;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
     private float _objectiveCommittedUntilTime;
-    private float _personalityPauseUntilTime;
     private readonly List<CombatAiReasonCode> _objectiveReasonCodes = new List<CombatAiReasonCode>();
     private CombatAiPlan _preparedPreviousPlan;
     private CombatAiPlan _preparedPlan;
@@ -56,19 +51,6 @@ public sealed class CombatAiBrain : MonoBehaviour
     private void OnEnable()
     {
         ResolveDependencies();
-        if (_owner != null && _owner.Health != null)
-        {
-            _owner.Health.IncomingDamage -= HandleIncomingDamage;
-            _owner.Health.IncomingDamage += HandleIncomingDamage;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (_owner != null && _owner.Health != null)
-        {
-            _owner.Health.IncomingDamage -= HandleIncomingDamage;
-        }
     }
 
     public bool TickNow()
@@ -115,7 +97,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         _focusedEnemy = null;
         _focusedEnemyLockedUntilTime = 0f;
         _objectiveCommittedUntilTime = 0f;
-        _personalityPauseUntilTime = 0f;
         LastPlan = CombatAiPlan.None;
         LastContext = null;
         HasLastSkillEvaluation = false;
@@ -138,7 +119,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         ResolveDependencies();
         if (!CanRun()) return false;
         if (_owner.SkillCaster.IsCasting) return false;
-        if (ShouldKeepPersonalityPause()) return false;
 
         CombatAiContext nextContext;
         using (CollectContextMarker.Auto())
@@ -150,16 +130,10 @@ public sealed class CombatAiBrain : MonoBehaviour
                 IsMoveDestinationBlocked(),
                 _blockedMoveDestination);
         }
-        using (RefreshPersonalityMarker.Auto()) _personalityRuntime.Refresh();
         if (!_owner.Health.CanAct) return false;
         PruneFocusedEnemy(nextContext);
         CombatAiPlan previousPlan = LastPlan;
         _objectiveReasonCodes.Clear();
-        if (_personalityRuntime.TryBuildRevengePlan(out CombatAiPlan revengePlan))
-        {
-            SetPreparedDecision(previousPlan, revengePlan, nextContext);
-            return true;
-        }
 
         CombatAiPlan nextPlan;
         using (BuildPlanMarker.Auto())
@@ -213,14 +187,8 @@ public sealed class CombatAiBrain : MonoBehaviour
         LastPlan = plan;
         bool moved = TryExecuteMovement(plan);
         bool usedSkill = TryExecuteSkill(plan);
-        _personalityRuntime?.NotifyPlanExecuted(plan, usedSkill);
         UpdateFocusedEnemy(plan);
-        bool acted = usedSkill || moved;
-        if (acted && HasPersonality(CombatAiPersonalityKind.Lazy))
-        {
-            _personalityPauseUntilTime = Time.time + LazyPauseSeconds;
-        }
-        return acted;
+        return usedSkill || moved;
     }
 
     private bool TryExecuteSkill(CombatAiPlan plan)
@@ -462,39 +430,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         return CombatBattleFlow.AllowsCombatActions;
     }
 
-    private bool ShouldKeepPersonalityPause()
-    {
-        if (!HasPersonality(CombatAiPersonalityKind.Lazy) || Time.time >= _personalityPauseUntilTime) return false;
-        if (_owner.Health.HP <= _owner.Health.MaxHP * 0.4f) return false;
-
-        bool hasNearbyAlly = false;
-        Character[] characters = UnityEngine.Object.FindObjectsByType<Character>(FindObjectsInactive.Exclude);
-        for (int i = 0; i < characters.Length; i++)
-        {
-            Character other = characters[i];
-            if (other == null || other == _owner || other.Health == null || !other.Health.IsAlive) continue;
-            float distance = HorizontalDistance(_owner.transform.position, other.transform.position);
-            if (other.Team != _owner.Team && distance <= 4.5f) return false;
-            if (other.Team == _owner.Team && distance <= 8f) hasNearbyAlly = true;
-        }
-
-        return hasNearbyAlly;
-    }
-
-    private bool HasPersonality(CombatAiPersonalityKind kind)
-    {
-        return _owner != null && _owner.PersonalityProfile != null && _owner.PersonalityProfile.Kind == kind;
-    }
-
-    private void HandleIncomingDamage(CombatHealth.IncomingDamageContext damage)
-    {
-        if (HasPersonality(CombatAiPersonalityKind.Innocent) && CombatBattleRandom.Roll(_owner, "InnocentAvoidDamage", 0.25f))
-        {
-            damage.IsHandled = true;
-            damage.PreventionSource = CombatEffectSource.Capture(_owner);
-        }
-    }
-
     private void ResolveDependencies()
     {
         if (_owner == null)
@@ -508,15 +443,6 @@ public sealed class CombatAiBrain : MonoBehaviour
             if (_contextCollector == null)
             {
                 _contextCollector = gameObject.AddComponent<CombatAiContextCollector>();
-            }
-        }
-
-        if (_personalityRuntime == null)
-        {
-            _personalityRuntime = GetComponent<CombatAiPersonalityRuntime>();
-            if (_personalityRuntime == null)
-            {
-                _personalityRuntime = gameObject.AddComponent<CombatAiPersonalityRuntime>();
             }
         }
     }
