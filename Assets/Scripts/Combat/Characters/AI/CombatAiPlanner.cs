@@ -34,7 +34,7 @@ public static partial class CombatAiPlanner
             CombatAiPersonalityKind.AttentionSeeker => CreateAttentionSeekerTarget(context),
             CombatAiPersonalityKind.BattleJunkie => CreateBestEnemyTarget(
                 context, focusEnemy, focusCommitmentRemainingSeconds),
-            CombatAiPersonalityKind.Coward => CreateCowardLowAttentionTarget(context),
+            CombatAiPersonalityKind.Coward => CreateCowardRetreatTarget(context),
             CombatAiPersonalityKind.Cunning => CreateCunningLowRiskStoneTarget(context),
             CombatAiPersonalityKind.Devoted => CreateDevotedLowHpAllyTarget(context),
             CombatAiPersonalityKind.Lonely => CreateLonelyClingTarget(context),

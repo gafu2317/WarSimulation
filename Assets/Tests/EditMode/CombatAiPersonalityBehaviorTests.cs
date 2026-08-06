@@ -4,9 +4,9 @@ using UnityEngine;
 
 public sealed class CombatAiPersonalityBehaviorTests
 {
-    [TestCase(CombatAiPersonalityKind.AttentionSeeker, 34f)]
+    [TestCase(CombatAiPersonalityKind.AttentionSeeker, 0f)]
     [TestCase(CombatAiPersonalityKind.BattleJunkie, 1020f)]
-    [TestCase(CombatAiPersonalityKind.Coward, -56f)]
+    [TestCase(CombatAiPersonalityKind.Coward, -208f)]
     [TestCase(CombatAiPersonalityKind.Cunning, -42.4f)]
     [TestCase(CombatAiPersonalityKind.Devoted, -20f)]
     [TestCase(CombatAiPersonalityKind.Lonely, -200f)]
@@ -22,12 +22,10 @@ public sealed class CombatAiPersonalityBehaviorTests
             Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
             profile = CombatAiPersonalityProfile.CreateBuiltInProfile(kind);
             CombatAiContext context = CreateContext(owner, enemy);
-            CombatAiAssessment assessment = CombatAiAssessmentBuilder.Build(context);
 
             float score = CombatAiPersonalityBehavior.GetObjectiveScore(
                 context,
                 profile,
-                assessment,
                 CombatObjective.AttackEnemy);
 
             Assert.That(score, Is.EqualTo(expected).Within(0.001f));
@@ -143,7 +141,7 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
-    public void 臆病者は味方の後ろへ下がる()
+    public void 臆病者は敵がいるとすぐに後退する()
     {
         GameObject ownerObject = new GameObject("Owner");
         GameObject allyObject = new GameObject("Ally");
@@ -159,8 +157,42 @@ public sealed class CombatAiPersonalityBehaviorTests
 
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Retreat));
             Assert.That(plan.MoveTarget.HasDestination, Is.True);
             Assert.That(plan.MoveTarget.Destination.x, Is.LessThan(ally.transform.position.x));
+        }
+        finally
+        {
+            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(allyObject);
+            UnityEngine.Object.DestroyImmediate(ownerObject);
+        }
+    }
+
+    [Test]
+    public void 臆病者は前方の味方へ進まず敵から離れる()
+    {
+        GameObject ownerObject = new GameObject("Owner");
+        GameObject allyObject = new GameObject("Ally");
+        GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile profile = null;
+        try
+        {
+            // 奥にいる臆病者が、中間の味方の後ろへ「前進」しないこと。
+            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
+            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, new Vector3(6f, 0f, 0f));
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(12f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Coward);
+            CombatAiContext context = CreateContext(owner, enemy, ally);
+
+            CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Retreat));
+            Assert.That(plan.MoveTarget.HasDestination, Is.True);
+            Assert.That(
+                plan.MoveTarget.Destination.x,
+                Is.LessThan(owner.transform.position.x + 0.1f));
         }
         finally
         {
@@ -253,7 +285,7 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
-    public void 目立ちたがり屋はキャラ密集地点へ寄る()
+    public void 目立ちたがり屋は密集の重心へ寄る()
     {
         GameObject ownerObject = new GameObject("Owner");
         GameObject allyAObject = new GameObject("AllyA");
@@ -286,7 +318,8 @@ public sealed class CombatAiPersonalityBehaviorTests
             CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
             Assert.That(plan.MoveTarget.HasDestination, Is.True);
-            Assert.That(plan.MoveTarget.Destination.x, Is.GreaterThan(8f));
+            // 密集塊 (10, 11, 12) の重心付近へ向かう。
+            Assert.That(plan.MoveTarget.Destination.x, Is.EqualTo(11f).Within(1.5f));
         }
         finally
         {

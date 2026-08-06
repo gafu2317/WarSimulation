@@ -94,7 +94,7 @@ public static class CombatAiObjectiveScorer
                     previousObjective);
             float weaponScore = GetWeaponScore(weapon, objective);
             float personalityScore = CombatAiPersonalityBehavior.GetObjectiveScore(
-                context, personalityProfile, assessment, objective);
+                context, personalityProfile, objective);
             float score = baseScore + situationScore + weaponScore + personalityScore;
 
             if (entries != null)

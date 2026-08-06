@@ -35,7 +35,7 @@ public class CharacterData : ScriptableObject
     [Tooltip("戦闘狂：何があっても敵への攻撃をやめない。")]
     [field: SerializeField] public float BattleJunkie { private set; get; }
 
-    [Tooltip("臆病者：敵の注意を集めないことを優先する。")]
+    [Tooltip("臆病者：敵がいるとすぐに後退する。")]
     [field: SerializeField] public float Coward { private set; get; }
 
     [Tooltip("狡猾：敵の少ないルートを使って魔石に攻撃する。")]

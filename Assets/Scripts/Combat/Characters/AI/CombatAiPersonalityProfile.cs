@@ -24,7 +24,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
     [SerializeField] private float _objectiveFocus;
     [SerializeField] private float _explorationBias;
     [SerializeField] private float _riskTolerance;
-    [SerializeField] private float _preferredRangeBias;
 
     public string DisplayNameJapanese => _displayNameJapanese;
     public CombatAiPersonalityKind Kind => _kind;
@@ -34,7 +33,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
     public float ObjectiveFocus => _objectiveFocus;
     public float ExplorationBias => _explorationBias;
     public float RiskTolerance => _riskTolerance;
-    public float PreferredRangeBias => _preferredRangeBias;
 
     public static List<CombatAiPersonalityProfile> CreateBuiltInProfiles()
     {
@@ -57,7 +55,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         switch (kind)
         {
             case CombatAiPersonalityKind.AttentionSeeker:
-                profile._aggression = 0.5f;
                 profile._explorationBias = 0.4f;
                 profile._riskTolerance = 0.6f;
                 break;
@@ -115,7 +112,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.BattleJunkie =>
                 "何があっても敵への攻撃をやめません。",
             CombatAiPersonalityKind.Coward =>
-                "敵の注意を集めない位置取りを優先します。",
+                "敵がいるとすぐに後退します。",
             CombatAiPersonalityKind.Cunning =>
                 "敵の少ないルートを使って魔石へ向かいます。",
             CombatAiPersonalityKind.Devoted =>

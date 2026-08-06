@@ -12,7 +12,6 @@ public static class CombatAiPersonalityBehavior
     public static float GetObjectiveScore(
         CombatAiContext context,
         CombatAiPersonalityProfile profile,
-        CombatAiAssessment assessment,
         CombatObjective objective)
     {
         float score = profile != null ? objective switch
@@ -25,18 +24,15 @@ public static class CombatAiPersonalityBehavior
             CombatObjective.Retreat => profile.Caution * 18f - profile.RiskTolerance * 6f,
             _ => 0f,
         } : 0f;
-        float selfThreat = assessment.GetValue(CombatAiMetricIndex.SelfThreat);
-        float exposure = assessment.GetValue(CombatAiMetricIndex.SelfExposure);
         if (profile != null)
         {
+            bool hasKnownEnemy = HasKnownEnemy(context);
             score += profile.Kind switch
             {
-                CombatAiPersonalityKind.AttentionSeeker when objective == CombatObjective.AttackEnemy => 24f,
                 CombatAiPersonalityKind.BattleJunkie when objective == CombatObjective.AttackEnemy => ForcedSelectionScore,
                 CombatAiPersonalityKind.BattleJunkie => ForcedRejectionScore,
-                CombatAiPersonalityKind.Coward when objective == CombatObjective.Retreat && (selfThreat >= 12f || exposure >= 12f) => 96f,
-                CombatAiPersonalityKind.Coward when objective == CombatObjective.AttackEnemy && (selfThreat >= 12f || exposure >= 12f) => -48f,
-                CombatAiPersonalityKind.Coward when objective == CombatObjective.AttackEnemy => -24f,
+                CombatAiPersonalityKind.Coward when objective == CombatObjective.Retreat && hasKnownEnemy => ForcedSelectionScore,
+                CombatAiPersonalityKind.Coward when hasKnownEnemy => ForcedRejectionScore,
                 CombatAiPersonalityKind.Cunning when objective == CombatObjective.DestroyEnemyStone => 160f,
                 CombatAiPersonalityKind.Cunning when objective == CombatObjective.AttackEnemy => -36f,
                 CombatAiPersonalityKind.Devoted when objective == CombatObjective.SupportAlly => 72f,
@@ -68,7 +64,6 @@ public static class CombatAiPersonalityBehavior
             CombatAiMoveCode.ReturnOwnStone => profile.Caution * 10f,
             CombatAiMoveCode.SupportAlly => profile.SupportBias * 14f,
             CombatAiMoveCode.InterceptThreat => profile.SupportBias * 12f + profile.Caution * 4f,
-            CombatAiMoveCode.TakeHighGround => profile.PreferredRangeBias * 10f,
             CombatAiMoveCode.MoveForest => profile.Caution * 8f,
             CombatAiMoveCode.SearchLastKnown => profile.ExplorationBias * 8f + (objective == CombatObjective.Search ? 4f : 0f),
             _ => 0f,
@@ -79,7 +74,7 @@ public static class CombatAiPersonalityBehavior
             {
                 CombatAiPersonalityKind.AttentionSeeker => 130f,
                 CombatAiPersonalityKind.BattleJunkie => 96f,
-                CombatAiPersonalityKind.Coward => 130f,
+                CombatAiPersonalityKind.Coward => ForcedSelectionScore,
                 CombatAiPersonalityKind.Cunning => 90f,
                 CombatAiPersonalityKind.Devoted => 140f,
                 CombatAiPersonalityKind.Lonely => 136f,
@@ -125,7 +120,6 @@ public static class CombatAiPersonalityBehavior
 
         score += profile.Kind switch
         {
-            CombatAiPersonalityKind.AttentionSeeker when damage => 12f,
             CombatAiPersonalityKind.BattleJunkie when damage => 48f,
             CombatAiPersonalityKind.Coward when damage => -24f,
             CombatAiPersonalityKind.Cunning when damage && objective == CombatObjective.DestroyEnemyStone => 28f,
@@ -148,6 +142,18 @@ public static class CombatAiPersonalityBehavior
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    public static bool HasKnownEnemy(CombatAiContext context)
+    {
+        if (context == null) return false;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.IsAlive && enemy.HasKnownPosition) return true;
         }
 
         return false;
