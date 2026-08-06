@@ -135,7 +135,7 @@ public static class CombatPlaytestDebugSettings
 
     private static void SetEnabled<T>(bool enabled) where T : Behaviour
     {
-        T[] behaviours = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        T[] behaviours = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include);
         for (int i = 0; i < behaviours.Length; i++)
         {
             T behaviour = behaviours[i];
@@ -145,7 +145,7 @@ public static class CombatPlaytestDebugSettings
 
     private static void ApplyDetails<T>(Action<T> apply) where T : Behaviour
     {
-        T[] behaviours = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        T[] behaviours = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include);
         for (int i = 0; i < behaviours.Length; i++)
         {
             T behaviour = behaviours[i];

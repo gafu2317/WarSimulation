@@ -36,9 +36,24 @@ public sealed class CombatAutoBattleMatchResult
     public string DiagnosticLogPath;
 }
 
+public static class CombatAutoBattleOutcomes
+{
+    public const string Victory = "Victory";
+    public const string Defeat = "Defeat";
+    public const string Timeout = "Timeout";
+
+    public static string FromBattleState(CombatBattleState state, bool timedOut)
+    {
+        if (timedOut) return Timeout;
+        if (state == CombatBattleState.Victory) return Victory;
+        return Defeat;
+    }
+}
+
 public static class CombatAutoBattleConfigLoader
 {
     public const string CommandLineArgument = "-autoBattleConfig";
+    public const string SweepCommandLineArgument = "-autoBattleSweepConfig";
 
     private static string _lastConfigPath;
 
@@ -52,17 +67,20 @@ public static class CombatAutoBattleConfigLoader
     {
         config = null;
         path = null;
-        string[] args = Environment.GetCommandLineArgs();
-        for (int i = 0; i < args.Length - 1; i++)
-        {
-            if (!string.Equals(args[i], CommandLineArgument, StringComparison.Ordinal)) continue;
-            path = args[i + 1];
-            if (!TryLoadFromFile(path, out config)) return false;
-            _lastConfigPath = path;
-            return true;
-        }
+        if (!TryFindArgument(CommandLineArgument, out path)) return false;
+        if (!TryLoadFromFile(path, out config)) return false;
+        _lastConfigPath = path;
+        return true;
+    }
 
-        return false;
+    public static bool TryLoadSweepFromCommandLine(out CombatCompositionSweepConfig config, out string path)
+    {
+        config = null;
+        path = null;
+        if (!TryFindArgument(SweepCommandLineArgument, out path)) return false;
+        if (!CombatCompositionSweepConfigLoader.TryLoadFromFile(path, out config)) return false;
+        _lastConfigPath = path;
+        return true;
     }
 
     public static bool TryLoadFromFile(string path, out CombatAutoBattleConfig config)
@@ -75,6 +93,20 @@ public static class CombatAutoBattleConfigLoader
         if (config == null) return false;
         _lastConfigPath = path;
         return true;
+    }
+
+    private static bool TryFindArgument(string name, out string value)
+    {
+        value = null;
+        string[] args = Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (!string.Equals(args[i], name, StringComparison.Ordinal)) continue;
+            value = args[i + 1];
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        return false;
     }
 }
 
@@ -92,7 +124,7 @@ public static class CombatAutoBattleReportWriter
         public List<CombatAutoBattleMatchResult> Matches = new();
     }
 
-    public static string Write(IReadOnlyList<CombatAutoBattleMatchResult> matches)
+    public static string Write(IReadOnlyList<CombatAutoBattleMatchResult> matches, string path = null)
     {
         string directory = ResolveOutputDirectory();
         Directory.CreateDirectory(directory);
@@ -107,8 +139,8 @@ public static class CombatAutoBattleReportWriter
             CombatAutoBattleMatchResult match = matches[i];
             gameSeconds += match.GameSeconds;
             realSeconds += match.RealSeconds;
-            if (match.Outcome == "勝利") wins++;
-            else if (match.Outcome == "敗北") losses++;
+            if (match.Outcome == CombatAutoBattleOutcomes.Victory) wins++;
+            else if (match.Outcome == CombatAutoBattleOutcomes.Defeat) losses++;
             else timeouts++;
         }
 
@@ -123,10 +155,23 @@ public static class CombatAutoBattleReportWriter
             Matches = new List<CombatAutoBattleMatchResult>(matches),
         };
 
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
-        string path = Path.Combine(directory, timestamp + ".json");
+        if (string.IsNullOrEmpty(path))
+        {
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+            path = Path.Combine(directory, timestamp + ".json");
+        }
+
         File.WriteAllText(path, JsonUtility.ToJson(report, prettyPrint: true), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         return path;
+    }
+
+    public static string CreateReportPath(string prefix = null)
+    {
+        string directory = ResolveOutputDirectory();
+        Directory.CreateDirectory(directory);
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+        string name = string.IsNullOrEmpty(prefix) ? timestamp + ".json" : prefix + "_" + timestamp + ".json";
+        return Path.Combine(directory, name);
     }
 
     private static string ResolveOutputDirectory()

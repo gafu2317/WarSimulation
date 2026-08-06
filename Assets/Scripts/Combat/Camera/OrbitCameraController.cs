@@ -88,7 +88,7 @@ public class OrbitCameraController : MonoBehaviour
 
     private Vector3 ResolveMapCenter()
     {
-        CombatMapSystem mapSystem = FindFirstObjectByType<CombatMapSystem>();
+        CombatMapSystem mapSystem = FindAnyObjectByType<CombatMapSystem>();
         if (mapSystem != null && mapSystem.CurrentMap != null)
         {
             var map = mapSystem.CurrentMap;

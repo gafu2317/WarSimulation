@@ -115,6 +115,17 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
             Debug.Log($"[診断ログ] 書き込み終了: {Path.GetFileName(closedPath)} outcome={outcomeLabel}", this);
     }
 
+    /// <summary>
+    /// Ends the open battle log as Timeout using the pre-reset snapshot.
+    /// Call before AbortBattle so HP/stones are still battle-end values.
+    /// </summary>
+    public void FlushTimeoutEnd()
+    {
+        if (_writer == null) return;
+        EndLog(CombatBattleState.WaitingToStart);
+        _lastBattleState = CombatBattleState.WaitingToStart;
+    }
+
     private void MaybeWriteSnapshot()
     {
         if (_writer == null || Time.time < _nextSnapshotTime) return;

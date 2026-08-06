@@ -16,7 +16,7 @@ public static class CombatAutoBattlePlayer
     [MenuItem("Tools/War Simulation/Auto Battle/Build Player")]
     public static void Build()
     {
-        BuildPlayer(run: false, configPath: null);
+        BuildPlayer(run: false, configPath: null, sweep: false);
     }
 
     [MenuItem("Tools/War Simulation/Auto Battle/Build And Run With Config...")]
@@ -24,10 +24,23 @@ public static class CombatAutoBattlePlayer
     {
         string configPath = EditorUtility.OpenFilePanel("自動戦闘設定 JSON", Application.dataPath, "json");
         if (string.IsNullOrEmpty(configPath)) return;
-        BuildPlayer(run: true, configPath: configPath);
+        BuildPlayer(run: true, configPath: configPath, sweep: false);
     }
 
-    private static void BuildPlayer(bool run, string configPath)
+    [MenuItem("Tools/War Simulation/Auto Battle/Build And Run Sweep...")]
+    public static void BuildAndRunSweep()
+    {
+        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+        string defaultDir = Path.Combine(projectRoot, "Tools", "AutoBattle");
+        if (!Directory.Exists(defaultDir))
+            defaultDir = Application.dataPath;
+
+        string configPath = EditorUtility.OpenFilePanel("編成探索設定 JSON", defaultDir, "json");
+        if (string.IsNullOrEmpty(configPath)) return;
+        BuildPlayer(run: true, configPath: configPath, sweep: true);
+    }
+
+    private static void BuildPlayer(bool run, string configPath, bool sweep)
     {
         if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneOSX)
         {
@@ -45,7 +58,8 @@ public static class CombatAutoBattlePlayer
             return;
         }
 
-        if (FindInScene<CombatAutoBattleRunner>(scene) == null)
+        CombatAutoBattleRunner runner = FindInScene<CombatAutoBattleRunner>(scene);
+        if (runner == null)
         {
             EditorUtility.DisplayDialog(
                 "Runner がありません",
@@ -80,10 +94,10 @@ public static class CombatAutoBattlePlayer
         Debug.Log($"[自動戦闘] Playerをビルドしました: {applicationPath}");
         if (!run) return;
 
-        Launch(applicationPath, configPath, projectRoot);
+        Launch(applicationPath, configPath, projectRoot, sweep);
     }
 
-    private static void Launch(string applicationPath, string configPath, string projectRoot)
+    private static void Launch(string applicationPath, string configPath, string projectRoot, bool sweep)
     {
         string playerLogDirectory = Path.Combine(projectRoot, "Logs", "AutoBattles");
         Directory.CreateDirectory(playerLogDirectory);
@@ -91,13 +105,17 @@ public static class CombatAutoBattlePlayer
             playerLogDirectory,
             DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_player.log");
 
+        string argumentName = sweep
+            ? CombatAutoBattleConfigLoader.SweepCommandLineArgument
+            : CombatAutoBattleConfigLoader.CommandLineArgument;
+
         string executablePath = ResolveExecutablePath(applicationPath);
         var process = Process.Start(new ProcessStartInfo
         {
             FileName = executablePath,
             Arguments =
                 $"-screen-fullscreen 0 -screen-width 1280 -screen-height 720 -logFile {Quote(logPath)} " +
-                $"{CombatAutoBattleConfigLoader.CommandLineArgument} {Quote(configPath)}",
+                $"{argumentName} {Quote(configPath)}",
             WorkingDirectory = projectRoot,
             UseShellExecute = false,
             CreateNoWindow = false,

@@ -50,23 +50,17 @@ public static class CombatAssaultRouteCache
             return;
         }
 
+        // Procedural / test maps often have no AuthoredMap; only warn when an authored
+        // map is present but baked routes could not be hydrated.
         AuthoredMapDefinition authored = mapSystem.AuthoredMap;
-        if (!ReferenceEquals(_rebuildFallbackLoggedForMap, map))
+        if (authored != null && !ReferenceEquals(_rebuildFallbackLoggedForMap, map))
         {
             _rebuildFallbackLoggedForMap = map;
-            if (authored != null)
-            {
-                Debug.LogWarning(
-                    $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Rebuild (runtime fallback). " +
-                    $"hasBakedData={authored.HasBakedAssaultRoutesData} " +
-                    $"storedFp={authored.AssaultRouteBakeFingerprint} " +
-                    $"currentFp={authored.ComputeBakeFingerprint()}");
-            }
-            else
-            {
-                Debug.LogWarning(
-                    $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Rebuild (runtime fallback). AuthoredMap=null");
-            }
+            Debug.LogWarning(
+                $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Rebuild (runtime fallback). " +
+                $"hasBakedData={authored.HasBakedAssaultRoutesData} " +
+                $"storedFp={authored.AssaultRouteBakeFingerprint} " +
+                $"currentFp={authored.ComputeBakeFingerprint()}");
         }
 
         Rebuild(map, origin);

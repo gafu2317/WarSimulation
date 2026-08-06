@@ -302,7 +302,7 @@ public static class CombatSkillTargeting
             }
         }
 
-        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude);
         if (systems != null)
         {
             for (int i = systems.Length - 1; i >= 0; i--)

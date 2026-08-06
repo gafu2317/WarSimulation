@@ -590,7 +590,7 @@ public sealed class CombatVision : MonoBehaviour
             return _characterSystem;
         }
 
-        CombatCharacterSystem[] systems = FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        CombatCharacterSystem[] systems = FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude);
         if (systems != null)
         {
             for (int i = systems.Length - 1; i >= 0; i--)

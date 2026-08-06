@@ -939,7 +939,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _pickerDescription.name = "PickerDescription";
         _pickerDescription.alignment = TextAlignmentOptions.Left;
         _pickerDescription.fontSize = 24f;
-        _pickerDescription.enableWordWrapping = true;
+        _pickerDescription.textWrappingMode = TextWrappingModes.Normal;
         _pickerDescription.text = string.Empty;
         LayoutElement descriptionLayout = _pickerDescription.gameObject.GetComponent<LayoutElement>() ??
                                           _pickerDescription.gameObject.AddComponent<LayoutElement>();
@@ -1156,7 +1156,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         label.fontSize = fontSize;
         label.enableAutoSizing = false;
-        label.enableWordWrapping = false;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
         label.overflowMode = TextOverflowModes.Ellipsis;
         label.alignment = TextAlignmentOptions.Center;
         label.margin = Vector4.zero;

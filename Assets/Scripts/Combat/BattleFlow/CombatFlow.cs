@@ -222,7 +222,7 @@ public sealed class CombatFlow : MonoBehaviour
         label.alignment = TextAlignmentOptions.Center;
         label.fontSize = 20f;
         label.enableAutoSizing = false;
-        label.enableWordWrapping = false;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
         label.overflowMode = TextOverflowModes.Ellipsis;
         label.color = Color.white;
         label.raycastTarget = false;

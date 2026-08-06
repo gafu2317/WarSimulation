@@ -182,7 +182,7 @@ public sealed class CombatVisionDebugRayView : CombatDebugBehaviour
 
             if (IsMutuallyVisible(observer, target))
             {
-                if (observer.GetInstanceID() > target.GetInstanceID()) continue;
+                if (observer.GetEntityId() > target.GetEntityId()) continue;
 
                 Vector3 midpoint = (observer.transform.position + target.transform.position) * 0.5f;
                 DrawLine(observer.transform.position, midpoint, ResolveColor(observer, target), DirectLineWidth);

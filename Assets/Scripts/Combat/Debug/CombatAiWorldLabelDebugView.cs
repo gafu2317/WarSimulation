@@ -98,7 +98,7 @@ public sealed class CombatAiWorldLabelDebugView : CombatDebugBehaviour
         }
 
         _entries.Clear();
-        CombatAiBrain[] brains = FindObjectsByType<CombatAiBrain>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        CombatAiBrain[] brains = FindObjectsByType<CombatAiBrain>(FindObjectsInactive.Exclude);
         for (int i = 0; i < brains.Length; i++)
         {
             CombatAiBrain brain = brains[i];

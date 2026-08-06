@@ -157,7 +157,7 @@ public abstract class SkillBase
     {
         if (self == null || target == null) return false;
 
-        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        CombatCharacterSystem[] systems = Object.FindObjectsByType<CombatCharacterSystem>(FindObjectsInactive.Exclude);
         for (int i = 0; i < systems.Length; i++)
         {
             CombatCharacterSystem system = systems[i];

@@ -425,7 +425,7 @@ public class CombatCharacterSystem : MonoBehaviour
     {
         AllyCharacters.Clear();
         EnemyCharacters.Clear();
-        Character[] all = FindObjectsByType<Character>(FindObjectsSortMode.None);
+        Character[] all = FindObjectsByType<Character>();
         foreach (Character c in all)
         {
             if (c.Team == CombatTeam.Ally) AllyCharacters.Add(c);

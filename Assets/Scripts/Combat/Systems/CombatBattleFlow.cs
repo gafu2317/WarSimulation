@@ -106,13 +106,18 @@ public sealed class CombatBattleFlow : MonoBehaviour
     [ContextMenu("Start Battle On Current Map")]
     public void StartBattleOnCurrentMap()
     {
+        StartBattleOnCurrentMap(battleSeed: null);
+    }
+
+    public void StartBattleOnCurrentMap(int? battleSeed)
+    {
         if (!TryResolveCurrentMap(out MapData map))
         {
             return;
         }
 
         CancelTransientBattleArtifacts();
-        CombatBattleRandom.Initialize(map.Seed);
+        CombatBattleRandom.Initialize(battleSeed ?? map.Seed);
         _characterSystem?.SnapAllCharactersToNavMesh();
         _characterSystem?.CaptureCurrentPositionsAsInitialPositions();
         _characterSystem?.ResetCharactersForBattle();

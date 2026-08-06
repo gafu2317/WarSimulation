@@ -7,6 +7,10 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 {
     private const string OverlayCanvasName = "CombatAiDebugOverlayCanvas";
     private const string PreferredFontAssetName = "NotoSansJP-Regular SDF";
+    private const string PreferredFontAssetPath =
+        "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset";
+    private const string PreferredSourceFontPath =
+        "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular.ttf";
 
     [SerializeField] private Vector3 _localOffset = new Vector3(0f, 2.8f, 0f);
     [SerializeField, Min(0.4f)] private float _width = 2.4f;
@@ -207,7 +211,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 
     private Camera ResolveActiveCamera()
     {
-        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Exclude);
         for (int i = cameras.Length - 1; i >= 0; i--)
         {
             Camera camera = cameras[i];
@@ -375,7 +379,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         text.enableAutoSizing = true;
         text.fontSizeMin = minSize;
         text.fontSizeMax = maxSize;
-        text.enableWordWrapping = true;
+        text.textWrappingMode = TextWrappingModes.Normal;
         text.overflowMode = TextOverflowModes.Overflow;
         text.raycastTarget = false;
         ApplyResolvedFont(text);
@@ -404,9 +408,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
 
         TextMeshProUGUI preferred = null;
         TextMeshProUGUI fallback = null;
-        TextMeshProUGUI[] texts = Object.FindObjectsByType<TextMeshProUGUI>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
+        TextMeshProUGUI[] texts = Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsInactive.Include);
         for (int i = 0; i < texts.Length; i++)
         {
             TextMeshProUGUI candidate = texts[i];
@@ -429,6 +431,12 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
             return;
         }
 
+        if (TryResolvePreferredFontFromProject())
+        {
+            s_resolvedPreferredFont = true;
+            return;
+        }
+
         if (s_resolvedFont != null) return;
 
         if (fallback != null)
@@ -443,6 +451,32 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         {
             s_resolvedFontMaterial = s_resolvedFont.material;
         }
+    }
+
+    private static bool TryResolvePreferredFontFromProject()
+    {
+#if UNITY_EDITOR
+        TMP_FontAsset saved = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(PreferredFontAssetPath);
+        if (saved != null)
+        {
+            s_resolvedFont = saved;
+            s_resolvedFontMaterial = saved.material;
+            return true;
+        }
+
+        Font source = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(PreferredSourceFontPath);
+        if (source == null) return false;
+
+        TMP_FontAsset created = TMP_FontAsset.CreateFontAsset(source);
+        if (created == null) return false;
+
+        created.name = PreferredFontAssetName;
+        s_resolvedFont = created;
+        s_resolvedFontMaterial = created.material;
+        return true;
+#else
+        return false;
+#endif
     }
 
     private Color ResolveTextColor(CombatObjective objective)
