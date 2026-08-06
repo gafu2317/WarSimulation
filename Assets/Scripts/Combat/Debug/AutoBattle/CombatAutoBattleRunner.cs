@@ -13,7 +13,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     [SerializeField] private CombatAutoBattleRole[] _enemies = CreateDefaultParty();
     [SerializeField, Min(1)] private int _matchCount = 10;
     [SerializeField] private int _baseSeed = 1;
-    [SerializeField, Min(1f)] private float _timeoutSeconds = 180f;
+    [SerializeField, Min(1f)] private float _timeoutSeconds = 480f;
     [SerializeField, Min(0.1f)] private float _timeScale = 16f;
 
     private static CombatAutoBattleRole[] CreateDefaultParty()

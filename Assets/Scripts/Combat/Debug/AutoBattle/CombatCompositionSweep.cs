@@ -21,7 +21,7 @@ public sealed class CombatCompositionSweepConfig
     public int BaseSeed = 12000;
     public int MinPartySize = 4;
     public int MaxPartySize = 6;
-    public float TimeoutSeconds = 180f;
+    public float TimeoutSeconds = 480f;
     public float TimeScale = 16f;
 }
 

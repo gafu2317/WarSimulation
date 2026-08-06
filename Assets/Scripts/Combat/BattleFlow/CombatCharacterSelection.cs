@@ -16,6 +16,16 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         WeaponKind.Shield,
     };
 
+    // Top auto-battle composition vs Neutral: swords BattleJunkie, wand Cunning, rosary Devoted, shield AttentionSeeker.
+    private static readonly CombatAiPersonalityKind[] DefaultEnemyPersonalities =
+    {
+        CombatAiPersonalityKind.BattleJunkie,
+        CombatAiPersonalityKind.BattleJunkie,
+        CombatAiPersonalityKind.Cunning,
+        CombatAiPersonalityKind.Devoted,
+        CombatAiPersonalityKind.AttentionSeeker,
+    };
+
     [SerializeField] private RectTransform _characterList;
     [SerializeField] private Button _characterItemPrefab;
     [SerializeField] private TMP_Text _selectionCountText;
@@ -73,12 +83,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         ClosePicker();
         SetDetailSettingsOpen(false);
-        ApplyDefaultParty(_allyRows);
-        ApplyDefaultParty(_enemyRows);
+        ApplyDefaultParty(_allyRows, useEnemyPersonalities: false);
+        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true);
         Refresh();
     }
 
-    private void ApplyDefaultParty(List<SelectionRow> rows)
+    private void ApplyDefaultParty(List<SelectionRow> rows, bool useEnemyPersonalities)
     {
         for (int i = 0; i < rows.Count; i++)
         {
@@ -93,7 +103,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 row.WeaponIndex = weaponIndex;
             }
 
-            int personalityIndex = FindStandardPersonalityIndex();
+            CombatAiPersonalityKind personalityKind = useEnemyPersonalities && i < DefaultEnemyPersonalities.Length
+                ? DefaultEnemyPersonalities[i]
+                : CombatAiPersonalityKind.Neutral;
+            int personalityIndex = FindOrAddPersonalityIndex(personalityKind);
             if (personalityIndex >= 0)
             {
                 row.PersonalityIndex = personalityIndex;
@@ -114,20 +127,24 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private int FindStandardPersonalityIndex()
     {
+        return FindOrAddPersonalityIndex(CombatAiPersonalityKind.Neutral);
+    }
+
+    private int FindOrAddPersonalityIndex(CombatAiPersonalityKind kind)
+    {
         for (int i = 0; i < _personalityOptions.Count; i++)
         {
             CombatAiPersonalityProfile personality = _personalityOptions[i];
-            if (personality != null && personality.Kind == CombatAiPersonalityKind.Neutral)
+            if (personality != null && personality.Kind == kind)
             {
                 return i;
             }
         }
 
-        CombatAiPersonalityProfile created =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Neutral);
+        CombatAiPersonalityProfile created = CombatAiPersonalityProfile.CreateBuiltInProfile(kind);
         _builtInPersonalityOptions.Add(created);
-        _personalityOptions.Insert(0, created);
-        return 0;
+        _personalityOptions.Add(created);
+        return _personalityOptions.Count - 1;
     }
 
     private void Awake()

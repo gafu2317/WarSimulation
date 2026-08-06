@@ -20,7 +20,7 @@ public sealed class CombatAutoBattleConfig
     public CombatAutoBattleRole[] Enemies;
     public int MatchCount = 10;
     public int BaseSeed = 1;
-    public float TimeoutSeconds = 180f;
+    public float TimeoutSeconds = 480f;
     public float TimeScale = 16f;
 }
 
