@@ -38,7 +38,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
     private Button _highlightButton;
-    private Button _detailSettingsButton;
+    private Button _enemyFormationButton;
+    private Button _enemyPresetDefaultButton;
+    private Button _enemyPresetNeutralButton;
+    private GameObject _enemyPresetRowRoot;
+    private GameObject _debugRowRoot;
     private Button _debugCharacterRoutesButton;
     private Button _debugAssaultRoutesButton;
     private Button _debugAiLabelsButton;
@@ -57,6 +61,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     }
     private GameObject _allyColumnRoot;
     private GameObject _enemyColumnRoot;
+    private LayoutElement _teamSelectionsLayout;
     private RectTransform _pickerRoot;
     private TMP_Text _pickerDescription;
     private TMP_Text _pickerTitle;
@@ -160,9 +165,19 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _highlightButton.onClick.RemoveListener(OpenHighlightPicker);
         }
 
-        if (_detailSettingsButton != null)
+        if (_enemyFormationButton != null)
         {
-            _detailSettingsButton.onClick.RemoveListener(ToggleDetailSettings);
+            _enemyFormationButton.onClick.RemoveListener(ToggleEnemyFormation);
+        }
+
+        if (_enemyPresetDefaultButton != null)
+        {
+            _enemyPresetDefaultButton.onClick.RemoveListener(ApplyEnemyPresetDefault);
+        }
+
+        if (_enemyPresetNeutralButton != null)
+        {
+            _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
         }
 
         ClosePicker();
@@ -242,7 +257,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        teamsObject.GetComponent<LayoutElement>().preferredHeight = 500f;
+        _teamSelectionsLayout = teamsObject.GetComponent<LayoutElement>();
+        _teamSelectionsLayout.preferredHeight = 500f;
 
         RectTransform allyColumn = CreateTeamColumn(teams, "AllySelection", "味方");
         RectTransform enemyColumn = CreateTeamColumn(teams, "EnemySelection", "敵");
@@ -261,11 +277,27 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _highlightButton = null;
         }
 
-        if (_detailSettingsButton != null)
+        if (_enemyFormationButton != null)
         {
-            _detailSettingsButton.onClick.RemoveListener(ToggleDetailSettings);
-            _detailSettingsButton = null;
+            _enemyFormationButton.onClick.RemoveListener(ToggleEnemyFormation);
+            _enemyFormationButton = null;
         }
+
+        if (_enemyPresetDefaultButton != null)
+        {
+            _enemyPresetDefaultButton.onClick.RemoveListener(ApplyEnemyPresetDefault);
+            _enemyPresetDefaultButton = null;
+        }
+
+        if (_enemyPresetNeutralButton != null)
+        {
+            _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
+            _enemyPresetNeutralButton = null;
+        }
+
+        _enemyPresetRowRoot = null;
+        _debugRowRoot = null;
+        _teamSelectionsLayout = null;
 
         ClearDebugToggle(_debugCharacterRoutesButton);
         ClearDebugToggle(_debugAssaultRoutesButton);
@@ -311,13 +343,26 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
         _highlightButton = CreateButton(actionRow, "PersonalityHighlightButton", 0f, 48f, OpenHighlightPicker, flexibleWidth: 1f);
-        _detailSettingsButton = CreateButton(actionRow, "DetailSettingsButton", 200f, 48f, ToggleDetailSettings);
+        _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
         ConfigureToolbarLabel(_highlightButton, 24f);
-        ConfigureToolbarLabel(_detailSettingsButton, 24f);
+        ConfigureToolbarLabel(_enemyFormationButton, 24f);
         RefreshHighlightButton();
-        RefreshDetailSettingsButton();
+        RefreshEnemyFormationButton();
+
+        RectTransform presetRow = CreateHorizontalRow(_headerRoot, "EnemyPresetRow", 48f, spacing: 12f);
+        _enemyPresetRowRoot = presetRow.gameObject;
+        _enemyPresetDefaultButton = CreateButton(
+            presetRow, "EnemyPresetDefaultButton", 0f, 48f, ApplyEnemyPresetDefault, flexibleWidth: 1f);
+        _enemyPresetNeutralButton = CreateButton(
+            presetRow, "EnemyPresetNeutralButton", 0f, 48f, ApplyEnemyPresetNeutralPersonalities, flexibleWidth: 1f);
+        SetButtonLabel(_enemyPresetDefaultButton, "最強編成");
+        SetButtonLabel(_enemyPresetNeutralButton, "標準性格");
+        ConfigureToolbarLabel(_enemyPresetDefaultButton, 24f);
+        ConfigureToolbarLabel(_enemyPresetNeutralButton, 24f);
+        _enemyPresetRowRoot.SetActive(false);
 
         RectTransform debugRow = CreateHorizontalRow(_headerRoot, "DebugRow", 92f, spacing: 10f);
+        _debugRowRoot = debugRow.gameObject;
         CreateDebugControl(
             debugRow,
             "CharacterRoutes",
@@ -628,7 +673,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return $"{(on ? "■" : "□")} {label}";
     }
 
-    private void ToggleDetailSettings()
+    private void ToggleEnemyFormation()
     {
         SetDetailSettingsOpen(!_detailSettingsOpen);
     }
@@ -639,14 +684,51 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_allyColumnRoot != null) _allyColumnRoot.SetActive(!open);
         if (_enemyColumnRoot != null) _enemyColumnRoot.SetActive(open);
         if (_highlightButton != null) _highlightButton.gameObject.SetActive(!open);
-        RefreshDetailSettingsButton();
+        if (_enemyPresetRowRoot != null) _enemyPresetRowRoot.SetActive(open);
+        if (_debugRowRoot != null) _debugRowRoot.SetActive(!open);
+        RefreshFormationPanelHeights();
+        RefreshEnemyFormationButton();
         RefreshSelectionCountText();
     }
 
-    private void RefreshDetailSettingsButton()
+    private void RefreshFormationPanelHeights()
     {
-        SetButtonLabel(_detailSettingsButton, _detailSettingsOpen ? "閉じる" : "詳細設定");
-        ConfigureToolbarLabel(_detailSettingsButton, 24f);
+        if (_headerRoot != null)
+        {
+            LayoutElement headerLayout = _headerRoot.GetComponent<LayoutElement>();
+            if (headerLayout != null)
+            {
+                // Ally: action 48 + spacing 8 + debug 92.
+                // Enemy: action 48 + spacing 8 + preset 48 (no debug).
+                headerLayout.preferredHeight = _detailSettingsOpen ? 104f : 148f;
+            }
+        }
+
+        if (_teamSelectionsLayout != null)
+        {
+            // Keep header + spacing(8) + teams within the fixed 700 list height.
+            _teamSelectionsLayout.preferredHeight = _detailSettingsOpen ? 588f : 500f;
+        }
+    }
+
+    private void RefreshEnemyFormationButton()
+    {
+        SetButtonLabel(_enemyFormationButton, _detailSettingsOpen ? "閉じる" : "敵編成");
+        ConfigureToolbarLabel(_enemyFormationButton, 24f);
+    }
+
+    private void ApplyEnemyPresetDefault()
+    {
+        ClosePicker();
+        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true);
+        Refresh();
+    }
+
+    private void ApplyEnemyPresetNeutralPersonalities()
+    {
+        ClosePicker();
+        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: false);
+        Refresh();
     }
 
     private void OpenHighlightPicker()
@@ -1105,7 +1187,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RefreshRows(_allyRows);
         RefreshRows(_enemyRows);
         RefreshHighlightButton();
-        RefreshDetailSettingsButton();
+        RefreshEnemyFormationButton();
         RefreshDebugToggleButtons();
         RefreshSelectionCountText();
 
@@ -1126,7 +1208,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         int enemyCount = CountSelected(_enemyRows);
         if (_detailSettingsOpen)
         {
-            _selectionCountText.text = $"詳細設定（敵） 敵 {enemyCount}人";
+            _selectionCountText.text = $"敵編成 敵 {enemyCount}人";
         }
         else
         {
