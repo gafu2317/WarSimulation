@@ -114,7 +114,6 @@ public static class CombatPlaytestDebugSettings
 
         SetEnabled<CombatTerrainInfoClickDebugger>(false);
         SetEnabled<CombatMagicStoneDebugInput>(false);
-        SetEnabled<CombatSkillDebugIndicatorSystem>(false);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         SetEnabled<CombatBattleEventLogger>(false);
 #endif
