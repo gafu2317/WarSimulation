@@ -1,14 +1,25 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// EffectTest 専用。カタログの Prefab を手動再生して見た目を確認する。
+/// EffectTest 専用。全 SkillId の Prefab またはプロシージャル VFX を手動再生する。
 /// </summary>
 public sealed class SkillVfxViewer : MonoBehaviour
 {
+    private static readonly WeaponKind[] WeaponOrder =
+    {
+        WeaponKind.Sword,
+        WeaponKind.Shield,
+        WeaponKind.Wand,
+        WeaponKind.Grimoire,
+        WeaponKind.Bible,
+        WeaponKind.Rosary,
+    };
+
     [SerializeField] private SkillVfxPlayer _player;
     [SerializeField] private SkillVfxCatalog _catalog;
     [SerializeField] private Transform _caster;
@@ -24,10 +35,12 @@ public sealed class SkillVfxViewer : MonoBehaviour
     [SerializeField] private Button _normalButton;
 
     private SkillId[] _skillIds = Array.Empty<SkillId>();
+    private readonly Dictionary<SkillId, WeaponKind> _weaponBySkill = new();
     private int _index;
 
     private void OnEnable()
     {
+        ApplyUiLayout();
         BindButtons(true);
         RebuildSkillList();
         RefreshLabels("Ready");
@@ -80,6 +93,64 @@ public sealed class SkillVfxViewer : MonoBehaviour
         Bind(_normalButton, OnNormal, bind);
     }
 
+    private void ApplyUiLayout()
+    {
+        ApplyButtonLayout();
+        ApplyInfoTextLayout();
+    }
+
+    private void ApplyButtonLayout()
+    {
+        if (_prevButton == null) return;
+
+        RectTransform row = _prevButton.transform.parent as RectTransform;
+        Canvas canvas = row != null ? row.GetComponentInParent<Canvas>() : null;
+        if (row == null || canvas == null) return;
+
+        row.SetParent(canvas.transform, false);
+        row.anchorMin = Vector2.zero;
+        row.anchorMax = Vector2.right;
+        row.pivot = new Vector2(0.5f, 0f);
+        row.anchoredPosition = Vector2.zero;
+        row.offsetMin = new Vector2(24f, 24f);
+        row.offsetMax = new Vector2(-24f, 104f);
+    }
+
+    private void ApplyInfoTextLayout()
+    {
+        if (_skillText == null || _statusText == null) return;
+
+        RectTransform skill = _skillText.rectTransform;
+        RectTransform status = _statusText.rectTransform;
+        RectTransform panel = skill.parent as RectTransform;
+        if (panel == null) return;
+
+        // ButtonRow を外したあと、3行スキル + 2行ステータスが収まる高さにする。
+        panel.anchorMin = new Vector2(0f, 1f);
+        panel.anchorMax = new Vector2(1f, 1f);
+        panel.pivot = new Vector2(0.5f, 1f);
+        panel.anchoredPosition = new Vector2(0f, -24f);
+        panel.sizeDelta = new Vector2(-48f, 210f);
+
+        skill.anchorMin = new Vector2(0f, 0.4f);
+        skill.anchorMax = Vector2.one;
+        skill.pivot = new Vector2(0.5f, 1f);
+        skill.offsetMin = new Vector2(16f, 4f);
+        skill.offsetMax = new Vector2(-16f, -12f);
+        _skillText.verticalAlignment = VerticalAlignmentOptions.Top;
+        _skillText.enableWordWrapping = true;
+        _skillText.overflowMode = TextOverflowModes.Ellipsis;
+
+        status.anchorMin = Vector2.zero;
+        status.anchorMax = new Vector2(1f, 0.4f);
+        status.pivot = new Vector2(0.5f, 1f);
+        status.offsetMin = new Vector2(16f, 8f);
+        status.offsetMax = new Vector2(-16f, -4f);
+        _statusText.verticalAlignment = VerticalAlignmentOptions.Top;
+        _statusText.enableWordWrapping = true;
+        _statusText.overflowMode = TextOverflowModes.Ellipsis;
+    }
+
     private static void Bind(Button button, UnityEngine.Events.UnityAction action, bool bind)
     {
         if (button == null) return;
@@ -96,32 +167,49 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
     private void RebuildSkillList()
     {
-        if (_catalog == null || _catalog.Entries.Count == 0)
+        _weaponBySkill.Clear();
+        var buckets = new List<SkillId>[WeaponOrder.Length];
+        for (int i = 0; i < buckets.Length; i++)
         {
-            _skillIds = Array.Empty<SkillId>();
-            _index = 0;
-            return;
+            buckets[i] = new List<SkillId>();
         }
 
-        var ids = new SkillId[_catalog.Entries.Count];
-        int count = 0;
-        for (int i = 0; i < _catalog.Entries.Count; i++)
+        var extras = new List<SkillId>();
+        foreach (SkillId skillId in Enum.GetValues(typeof(SkillId)))
         {
-            SkillVfxCatalog.Entry entry = _catalog.Entries[i];
-            if (entry == null || entry.SkillId == SkillId.None) continue;
-            ids[count++] = entry.SkillId;
+            if (skillId == SkillId.None) continue;
+
+            WeaponKind kind = ResolveWeaponKindFallback(skillId);
+            _weaponBySkill[skillId] = kind;
+
+            int weaponIndex = Array.IndexOf(WeaponOrder, kind);
+            if (weaponIndex >= 0)
+            {
+                buckets[weaponIndex].Add(skillId);
+            }
+            else
+            {
+                extras.Add(skillId);
+            }
         }
 
-        if (count == 0)
+        var ordered = new List<SkillId>(32);
+        for (int i = 0; i < buckets.Length; i++)
         {
-            _skillIds = Array.Empty<SkillId>();
-            _index = 0;
-            return;
+            buckets[i].Sort(CompareSkillOrder);
+            ordered.AddRange(buckets[i]);
         }
 
-        _skillIds = new SkillId[count];
-        Array.Copy(ids, _skillIds, count);
-        _index = Mathf.Clamp(_index, 0, _skillIds.Length - 1);
+        extras.Sort(CompareSkillOrder);
+        ordered.AddRange(extras);
+
+        _skillIds = ordered.ToArray();
+        _index = Mathf.Clamp(_index, 0, Mathf.Max(0, _skillIds.Length - 1));
+    }
+
+    private static int CompareSkillOrder(SkillId left, SkillId right)
+    {
+        return string.CompareOrdinal(left.ToString(), right.ToString());
     }
 
     private void Step(int delta)
@@ -131,7 +219,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
             RebuildSkillList();
             if (_skillIds.Length == 0)
             {
-                RefreshLabels("カタログに SkillId がありません。");
+                RefreshLabels("再生できる SkillId がありません。");
                 return;
             }
         }
@@ -153,7 +241,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
             RebuildSkillList();
             if (_skillIds.Length == 0)
             {
-                RefreshLabels("カタログに再生対象がありません。");
+                RefreshLabels("再生できる SkillId がありません。");
                 return;
             }
         }
@@ -184,18 +272,25 @@ public sealed class SkillVfxViewer : MonoBehaviour
         {
             if (_skillIds.Length == 0)
             {
-                _skillText.text = "Skill: (none)";
+                _skillText.text = "再生できる SkillId がありません。";
             }
             else
             {
                 SkillId id = _skillIds[_index];
-                string prefabName = "-";
-                if (_catalog != null && _catalog.TryGetEntry(id, out SkillVfxCatalog.Entry entry) && entry.Prefab != null)
+                SkillBase skill = CombatSkillFactory.Create(id);
+                string skillName = skill != null ? skill.Name : id.ToString();
+                string weaponName = WeaponDisplayName(ResolveWeaponKind(id));
+                string source = "Procedural";
+                if (_catalog != null &&
+                    _catalog.TryGetEntry(id, out SkillVfxCatalog.Entry entry) &&
+                    entry.Prefab != null &&
+                    !entry.Prefab.name.StartsWith("Placeholder"))
                 {
-                    prefabName = entry.Prefab.name;
+                    source = entry.Prefab.name;
                 }
 
-                _skillText.text = $"Skill: {id}  [{_index + 1}/{_skillIds.Length}]\nPrefab: {prefabName}";
+                _skillText.text =
+                    $"武器: {weaponName}\nスキル: {skillName}  [{_index + 1}/{_skillIds.Length}]\nVFX: {source}";
             }
         }
 
@@ -203,5 +298,47 @@ public sealed class SkillVfxViewer : MonoBehaviour
         {
             _statusText.text = status + "\n←/→ or A/D: 選択  Space: 再生  C: 消去  1:×0.25  2:×1";
         }
+    }
+
+    private WeaponKind ResolveWeaponKind(SkillId skillId)
+    {
+        if (_weaponBySkill.TryGetValue(skillId, out WeaponKind kind))
+        {
+            return kind;
+        }
+
+        return ResolveWeaponKindFallback(skillId);
+    }
+
+    private static WeaponKind ResolveWeaponKindFallback(SkillId skillId)
+    {
+        string name = skillId.ToString();
+        if (name.StartsWith("Sword_", StringComparison.Ordinal)) return WeaponKind.Sword;
+        if (name.StartsWith("Shield_", StringComparison.Ordinal)) return WeaponKind.Shield;
+        if (name.StartsWith("Wand_", StringComparison.Ordinal)) return WeaponKind.Wand;
+        if (name.StartsWith("Grimoire_", StringComparison.Ordinal) ||
+            name.StartsWith("StatDebuff_", StringComparison.Ordinal))
+        {
+            return WeaponKind.Grimoire;
+        }
+
+        if (name.StartsWith("Bible_", StringComparison.Ordinal)) return WeaponKind.Bible;
+        if (name.StartsWith("Rosary_", StringComparison.Ordinal)) return WeaponKind.Rosary;
+        return WeaponKind.Unarmed;
+    }
+
+    private static string WeaponDisplayName(WeaponKind kind)
+    {
+        return kind switch
+        {
+            WeaponKind.Sword => "剣",
+            WeaponKind.Shield => "盾",
+            WeaponKind.Wand => "杖",
+            WeaponKind.Grimoire => "魔導書",
+            WeaponKind.Bible => "聖書",
+            WeaponKind.Rosary => "ロザリオ",
+            WeaponKind.Unarmed => "素手",
+            _ => kind.ToString(),
+        };
     }
 }
