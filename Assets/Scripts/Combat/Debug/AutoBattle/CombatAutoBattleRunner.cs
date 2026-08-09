@@ -7,6 +7,9 @@ using WarSimulation.Combat.Map;
 [DefaultExecutionOrder(-50)]
 public sealed class CombatAutoBattleRunner : MonoBehaviour
 {
+    private const float PreviousDefaultTimeScale = 16f;
+    private const float DefaultTimeScale = 32f;
+
     [SerializeField] private AuthoredMapDefinition[] _mapCandidates = Array.Empty<AuthoredMapDefinition>();
     [SerializeField] private WeaponConfig[] _weaponConfigs = Array.Empty<WeaponConfig>();
     [SerializeField] private CombatAutoBattleRole[] _allies = CreateDefaultParty();
@@ -14,7 +17,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     [SerializeField, Min(1)] private int _matchCount = 10;
     [SerializeField] private int _baseSeed = 1;
     [SerializeField, Min(1f)] private float _timeoutSeconds = 480f;
-    [SerializeField, Min(0.1f)] private float _timeScale = 16f;
+    [SerializeField, Min(0.1f)] private float _timeScale = 32f;
 
     private static CombatAutoBattleRole[] CreateDefaultParty()
     {
@@ -41,6 +44,12 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private AuthoredMapDefinition _lastAppliedMap;
     private bool _running;
     private bool _audioPaused;
+
+    private void Awake()
+    {
+        if (Mathf.Approximately(_timeScale, PreviousDefaultTimeScale))
+            _timeScale = DefaultTimeScale;
+    }
 
     private void Start()
     {

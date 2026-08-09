@@ -22,7 +22,7 @@ public sealed class CombatCompositionSweepConfig
     public int MinPartySize = 4;
     public int MaxPartySize = 6;
     public float TimeoutSeconds = 480f;
-    public float TimeScale = 16f;
+    public float TimeScale = 32f;
 }
 
 [Serializable]

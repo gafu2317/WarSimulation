@@ -21,7 +21,7 @@ public sealed class CombatAutoBattleConfig
     public int MatchCount = 10;
     public int BaseSeed = 1;
     public float TimeoutSeconds = 480f;
-    public float TimeScale = 16f;
+    public float TimeScale = 32f;
 }
 
 [Serializable]
