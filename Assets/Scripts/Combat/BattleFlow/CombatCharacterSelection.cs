@@ -39,6 +39,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
     private Button _highlightButton;
     private Button _enemyFormationButton;
+    private Button _stonePositionButton;
     private Button _enemyPresetDefaultButton;
     private Button _enemyPresetNeutralButton;
     private GameObject _enemyPresetRowRoot;
@@ -67,8 +68,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private TMP_Text _pickerTitle;
     private Transform _pickerContent;
     private bool _detailSettingsOpen;
+    private bool _stonePositionReversed;
 
     public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
+    public bool IsStonePositionReversed => _stonePositionReversed;
+    public event Action<bool> StonePositionReversedChanged;
 
     public void Initialize(
         IReadOnlyList<Character> allyCandidates,
@@ -76,6 +80,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> confirmed)
     {
         _confirmed = confirmed;
+        _stonePositionReversed = false;
         RemoveNullAndDuplicateOptions(_weaponOptions);
         RemoveNullAndDuplicateOptions(_personalityOptions);
         DeduplicatePersonalityOptionsByKind();
@@ -168,6 +173,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_enemyFormationButton != null)
         {
             _enemyFormationButton.onClick.RemoveListener(ToggleEnemyFormation);
+        }
+
+        if (_stonePositionButton != null)
+        {
+            _stonePositionButton.onClick.RemoveListener(ToggleStonePositionReversed);
         }
 
         if (_enemyPresetDefaultButton != null)
@@ -283,6 +293,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _enemyFormationButton = null;
         }
 
+        if (_stonePositionButton != null)
+        {
+            _stonePositionButton.onClick.RemoveListener(ToggleStonePositionReversed);
+            _stonePositionButton = null;
+        }
+
         if (_enemyPresetDefaultButton != null)
         {
             _enemyPresetDefaultButton.onClick.RemoveListener(ApplyEnemyPresetDefault);
@@ -344,10 +360,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
         _highlightButton = CreateButton(actionRow, "PersonalityHighlightButton", 0f, 48f, OpenHighlightPicker, flexibleWidth: 1f);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
+        _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
         ConfigureToolbarLabel(_highlightButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
+        ConfigureToolbarLabel(_stonePositionButton, 24f);
         RefreshHighlightButton();
         RefreshEnemyFormationButton();
+        RefreshStonePositionButton();
 
         RectTransform presetRow = CreateHorizontalRow(_headerRoot, "EnemyPresetRow", 48f, spacing: 12f);
         _enemyPresetRowRoot = presetRow.gameObject;
@@ -715,6 +734,26 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         SetButtonLabel(_enemyFormationButton, _detailSettingsOpen ? "閉じる" : "敵編成");
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
+    }
+
+    private void ToggleStonePositionReversed()
+    {
+        SetStonePositionReversedState(!_stonePositionReversed);
+        StonePositionReversedChanged?.Invoke(_stonePositionReversed);
+    }
+
+    public void SetStonePositionReversedState(bool reversed)
+    {
+        if (_stonePositionReversed == reversed) return;
+
+        _stonePositionReversed = reversed;
+        RefreshStonePositionButton();
+    }
+
+    private void RefreshStonePositionButton()
+    {
+        SetButtonLabel(_stonePositionButton, $"位置逆転: {(_stonePositionReversed ? "ON" : "OFF")}");
+        ConfigureToolbarLabel(_stonePositionButton, 24f);
     }
 
     private void ApplyEnemyPresetDefault()
@@ -1188,6 +1227,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RefreshRows(_enemyRows);
         RefreshHighlightButton();
         RefreshEnemyFormationButton();
+        RefreshStonePositionButton();
         RefreshDebugToggleButtons();
         RefreshSelectionCountText();
 

@@ -10,6 +10,7 @@ public sealed class CombatFlow : MonoBehaviour
     [SerializeField] private CombatCharacterSystem _characterSystem;
     [SerializeField] private CombatBattleFlow _battleFlow;
     [SerializeField] private CombatCharacterSelection _characterSelection;
+    [SerializeField] private CombatMapSystem _mapSystem;
     [SerializeField] private GameObject _characterSelectionPanel;
     [SerializeField] private List<GameObject> _battleUiObjects = new();
     [SerializeField] private GameObject _resultPanel;
@@ -59,6 +60,7 @@ public sealed class CombatFlow : MonoBehaviour
         CombatPlaytestDebugSettings.ApplyToScene();
         EnsureBattleControls();
         _battleFlow.BattleEnded += ShowResult;
+        _characterSelection.StonePositionReversedChanged += OnStonePositionReversedChanged;
         _backToSelectionButton?.onClick.AddListener(ShowSelection);
         _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
         ShowSelection();
@@ -71,6 +73,11 @@ public sealed class CombatFlow : MonoBehaviour
             _battleFlow.BattleEnded -= ShowResult;
         }
 
+        if (_characterSelection != null)
+        {
+            _characterSelection.StonePositionReversedChanged -= OnStonePositionReversedChanged;
+        }
+
         _backToSelectionButton?.onClick.RemoveListener(ShowSelection);
         ClearBattleControlListeners();
         RestoreNormalSpeed();
@@ -80,6 +87,12 @@ public sealed class CombatFlow : MonoBehaviour
         IReadOnlyList<CombatParticipantSetup> selectedAllies,
         IReadOnlyList<CombatParticipantSetup> selectedEnemies)
     {
+        if (!TryApplyStonePositionReversed(_characterSelection.IsStonePositionReversed))
+        {
+            ShowSelection();
+            return;
+        }
+
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
         SetVisible(_characterSelectionPanel, false);
         SetBattleUiVisible(true);
@@ -115,11 +128,29 @@ public sealed class CombatFlow : MonoBehaviour
         RestoreNormalSpeed();
         _battleFlow.AbortBattle();
         _characterSystem.SetParticipants(_allyCandidates, _enemies);
-        _characterSelection.ResetSelection();
         SetVisible(_characterSelectionPanel, true);
         SetBattleUiVisible(false);
         SetBattleControlsVisible(false);
         SetVisible(_resultPanel, false);
+    }
+
+    private void OnStonePositionReversedChanged(bool reversed)
+    {
+        if (TryApplyStonePositionReversed(reversed)) return;
+
+        _characterSelection.SetStonePositionReversedState(!reversed);
+    }
+
+    private bool TryApplyStonePositionReversed(bool reversed)
+    {
+        ResolveDependencies();
+        if (_mapSystem == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatFlow)}] Cannot change stone positions because CombatMapSystem is missing.", this);
+            return false;
+        }
+
+        return _mapSystem.TrySetStonePositionsReversed(reversed);
     }
 
     private void EnsureBattleControls()
@@ -347,8 +378,10 @@ public sealed class CombatFlow : MonoBehaviour
         CombatSceneContext context = CombatSceneContext.Instance;
         _characterSystem ??= context != null ? context.CharacterSystem : null;
         _battleFlow ??= context != null ? context.BattleFlow : null;
+        _mapSystem ??= context != null ? context.MapSystem : null;
         _characterSystem ??= FindAnyObjectByType<CombatCharacterSystem>();
         _battleFlow ??= FindAnyObjectByType<CombatBattleFlow>();
+        _mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
     }
 
     private static void CopyCharacters(List<Character> source, List<Character> destination)
