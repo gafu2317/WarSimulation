@@ -188,8 +188,6 @@ namespace WarSimulation.Combat.Map
 
         public static bool IsMagicStoneType(FeatureType type) =>
             type == FeatureType.OwnMainStone
-            || type == FeatureType.OwnSubStone
-            || type == FeatureType.EnemyMainStone
-            || type == FeatureType.EnemySubStone;
+            || type == FeatureType.EnemyMainStone;
     }
 }

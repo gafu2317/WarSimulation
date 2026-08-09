@@ -196,9 +196,7 @@ public class CombatMapSystem : MonoBehaviour
         {
             FeatureType type = map.Features[i].Type;
             if (type == FeatureType.OwnMainStone ||
-                type == FeatureType.OwnSubStone ||
-                type == FeatureType.EnemyMainStone ||
-                type == FeatureType.EnemySubStone)
+                type == FeatureType.EnemyMainStone)
             {
                 return true;
             }
@@ -211,8 +209,6 @@ public class CombatMapSystem : MonoBehaviour
     {
         var ownMainIndices = new List<int>();
         var enemyMainIndices = new List<int>();
-        var ownSubIndices = new List<int>();
-        var enemySubIndices = new List<int>();
 
         for (int i = 0; i < map.Features.Count; i++)
         {
@@ -224,23 +220,15 @@ public class CombatMapSystem : MonoBehaviour
                 case FeatureType.EnemyMainStone:
                     enemyMainIndices.Add(i);
                     break;
-                case FeatureType.OwnSubStone:
-                    ownSubIndices.Add(i);
-                    break;
-                case FeatureType.EnemySubStone:
-                    enemySubIndices.Add(i);
-                    break;
             }
         }
 
-        if (ownMainIndices.Count != enemyMainIndices.Count ||
-            ownSubIndices.Count != enemySubIndices.Count)
+        if (ownMainIndices.Count != enemyMainIndices.Count)
         {
             return false;
         }
 
         SwapFeaturePositions(map.Features, ownMainIndices, enemyMainIndices);
-        SwapFeaturePositions(map.Features, ownSubIndices, enemySubIndices);
         return true;
     }
 

@@ -594,7 +594,7 @@ public sealed class CombatAiSkillTests
             enemyGo.transform.position = new Vector3(1.5f, 0f, 1.2f);
 
             MagicStone stone = stoneGo.AddComponent<MagicStone>();
-            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
+            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, stoneHeight: 3f);
             stoneGo.transform.position = new Vector3(0f, 0f, 1.2f);
             stoneGo.AddComponent<BoxCollider>();
             Physics.SyncTransforms();

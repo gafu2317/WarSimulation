@@ -574,7 +574,7 @@ public sealed class CombatAiMoveTests
             Character enemy = enemyGo.AddComponent<Character>();
             enemy.SetTeam(CombatTeam.Enemy);
             enemy.Health.Initialize(30);
-            enemyGo.transform.position = new Vector3(70f, 0f, 0f);
+            enemyGo.transform.position = new Vector3(45f, 0f, 0f);
             CombatCharacterIntel enemyIntel = CreateIntel(
                 enemy,
                 true,
@@ -620,7 +620,7 @@ public sealed class CombatAiMoveTests
             Character enemy = enemyGo.AddComponent<Character>();
             enemy.SetTeam(CombatTeam.Enemy);
             enemy.Health.Initialize(30);
-            enemyGo.transform.position = new Vector3(70f, 0f, 0f);
+            enemyGo.transform.position = new Vector3(45f, 0f, 0f);
             CombatCharacterIntel enemyIntel = CreateIntel(
                 enemy,
                 true,

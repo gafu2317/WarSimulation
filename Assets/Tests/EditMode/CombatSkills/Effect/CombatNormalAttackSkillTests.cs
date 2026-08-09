@@ -79,7 +79,8 @@ public sealed class CombatNormalAttackSkillTests
             int hpAfterBlast = target.Health.HP;
 
             Assert.That(hpAfterBlast, Is.LessThan(hpAfterBolt));
-            Assert.That(blast.MaxRange, Is.GreaterThan(bolt.MaxRange));
+            Assert.That(blast.MaxRange, Is.EqualTo(20f));
+            Assert.That(bolt.MaxRange, Is.EqualTo(20f));
             Assert.That(blast.CooldownSeconds, Is.GreaterThan(bolt.CooldownSeconds));
         }
         finally

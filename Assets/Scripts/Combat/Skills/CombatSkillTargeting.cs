@@ -218,8 +218,8 @@ public static class CombatSkillTargeting
     private static bool IsEnemyStoneType(CombatTeam ownerTeam, FeatureType featureType)
     {
         return ownerTeam == CombatTeam.Ally
-            ? featureType == FeatureType.EnemyMainStone || featureType == FeatureType.EnemySubStone
-            : featureType == FeatureType.OwnMainStone || featureType == FeatureType.OwnSubStone;
+            ? featureType == FeatureType.EnemyMainStone
+            : featureType == FeatureType.OwnMainStone;
     }
 
     private static bool IsValidCandidate(Character owner, Character candidate, bool includeAllies)

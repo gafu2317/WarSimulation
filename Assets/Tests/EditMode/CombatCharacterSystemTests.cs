@@ -12,12 +12,17 @@ public sealed class CombatCharacterSystemTests
     public void GenerateCandidates_CreatesTenCharactersForEachTeamFromPrefab()
     {
         GameObject systemObject = new GameObject("CharacterSystem");
+        GameObject mapObject = new GameObject("MapSystem");
         GameObject prefabObject = new GameObject("CharacterPrefab");
         try
         {
             Character prefab = prefabObject.AddComponent<Character>();
             prefabObject.AddComponent<CombatAiBrain>();
+            CombatMapSystem mapSystem = mapObject.AddComponent<CombatMapSystem>();
+            mapSystem.SetCurrentMap(CreateStoneTestMap());
+            CombatEditModeTestUtil.SetPrivateField(mapSystem, "_isNavMeshReady", true);
             CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            CombatEditModeTestUtil.WireMapSystem(system, mapSystem);
             var serializedSystem = new UnityEditor.SerializedObject(system);
             serializedSystem.FindProperty("_generateCandidatesAtRuntime").boolValue = true;
             serializedSystem.FindProperty("_characterPrefab").objectReferenceValue = prefab;
@@ -45,6 +50,7 @@ public sealed class CombatCharacterSystemTests
         finally
         {
             Object.DestroyImmediate(prefabObject);
+            Object.DestroyImmediate(mapObject);
             Object.DestroyImmediate(systemObject);
         }
     }

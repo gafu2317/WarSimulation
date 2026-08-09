@@ -13,7 +13,7 @@ namespace WarSimulation.Combat.Map
     /// 見た目は暫定のプログラマーアート：
     ///   - 木  ：円柱（幹）＋ 球（葉冠）の 2 パーツ
     ///   - 岩  ：立方体 1 個を横長・斜め回転で置く
-    ///   - 魔石：立方体を Y 軸 45° 回転して縦長にし、結晶っぽく見せる。陣営色 × 役割（Main=大 / Sub=小）で塗り分け。
+    ///   - 魔石：立方体を Y 軸 45° 回転して縦長にし、結晶っぽく見せる。陣営色で塗り分け。
     /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
     /// </summary>
     [DisallowMultipleComponent]
@@ -71,12 +71,6 @@ namespace WarSimulation.Combat.Map
 
         [Tooltip("メイン魔石の高さ（メートル）。拠点扱いなのでかなり目立たせる。")]
         [SerializeField, Min(0.2f)] private float _mainStoneHeight = 3.2f;
-
-        [Tooltip("サブ魔石 1 個の底面サイズ（メートル）。メインより小さめ。")]
-        [SerializeField, Min(0.1f)] private float _subStoneBaseSize = 0.8f;
-
-        [Tooltip("サブ魔石の高さ（メートル）。")]
-        [SerializeField, Min(0.2f)] private float _subStoneHeight = 1.8f;
 
         [Tooltip("自陣営魔石の全面に貼るテクスチャ。未設定なら明るいシアン。")]
         [SerializeField] private Texture2D _ownStoneTexture;
@@ -141,16 +135,10 @@ namespace WarSimulation.Combat.Map
                         SpawnRock(root.transform, f, rockMat, cubeMesh, rockIdx++);
                         break;
                     case FeatureType.OwnMainStone:
-                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnMain", isMain: true, stoneIdx++, featureIndex: i);
-                        break;
-                    case FeatureType.OwnSubStone:
-                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnSub", isMain: false, stoneIdx++, featureIndex: i);
+                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnMain", stoneIdx++, featureIndex: i);
                         break;
                     case FeatureType.EnemyMainStone:
-                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemyMain", isMain: true, stoneIdx++, featureIndex: i);
-                        break;
-                    case FeatureType.EnemySubStone:
-                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemySub", isMain: false, stoneIdx++, featureIndex: i);
+                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemyMain", stoneIdx++, featureIndex: i);
                         break;
                 }
             }
@@ -207,8 +195,7 @@ namespace WarSimulation.Combat.Map
                 {
                     continue;
                 }
-                bool isMain = IsMainStoneType(feature.Type);
-                float height = isMain ? _mainStoneHeight : _subStoneHeight;
+                float height = _mainStoneHeight;
                 view.transform.localPosition = feature.WorldPosition +
                     new Vector3(0f, MagicStoneFloatOffset + height * 0.5f, 0f);
                 view.transform.localRotation = feature.Rotation * Quaternion.Euler(0f, 45f, 0f);
@@ -224,9 +211,7 @@ namespace WarSimulation.Combat.Map
                 case FeatureType.Tree:
                 case FeatureType.Rock:
                 case FeatureType.OwnMainStone:
-                case FeatureType.OwnSubStone:
                 case FeatureType.EnemyMainStone:
-                case FeatureType.EnemySubStone:
                     return true;
                 default:
                     return false;
@@ -236,14 +221,7 @@ namespace WarSimulation.Combat.Map
         private static bool IsMagicStoneType(FeatureType type)
         {
             return type == FeatureType.OwnMainStone ||
-                   type == FeatureType.OwnSubStone ||
-                   type == FeatureType.EnemyMainStone ||
-                   type == FeatureType.EnemySubStone;
-        }
-
-        private static bool IsMainStoneType(FeatureType type)
-        {
-            return type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone;
+                   type == FeatureType.EnemyMainStone;
         }
 
         public void Clear()
@@ -356,14 +334,14 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>
         /// 魔石 1 個分を生成する。立方体を Y 軸 45° 回転させて上から見たときにひし形になるようにし、
-        /// 縦長にスケールして結晶っぽく見せる。Main はサイズ・高さともに大きく、Sub は控えめ。
+        /// 縦長にスケールして結晶っぽく見せる。
         /// </summary>
         private void SpawnMagicStone(
             Transform parent, PlacedFeature f, Material mat, Mesh cube,
-            string label, bool isMain, int idx, int featureIndex)
+            string label, int idx, int featureIndex)
         {
-            float baseSize = isMain ? _mainStoneBaseSize : _subStoneBaseSize;
-            float height = isMain ? _mainStoneHeight : _subStoneHeight;
+            float baseSize = _mainStoneBaseSize;
+            float height = _mainStoneHeight;
 
             var stone = new GameObject($"{label}Stone_{idx}", typeof(MeshFilter), typeof(MeshRenderer), typeof(BoxCollider));
             stone.transform.SetParent(parent, worldPositionStays: false);
@@ -383,7 +361,7 @@ namespace WarSimulation.Combat.Map
             stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
             stone.GetComponent<BoxCollider>().isTrigger = false;
             MagicStone instance = stone.AddComponent<MagicStone>();
-            instance.Setup(featureIndex, f.Type, isMain, height);
+            instance.Setup(featureIndex, f.Type, height);
         }
 
         private static void IgnoreFromNavMeshBuild(GameObject go)

@@ -404,9 +404,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private static Color MagicStoneColor(FeatureType type) => type switch
         {
             FeatureType.OwnMainStone => new Color(0.25f, 0.55f, 1f),
-            FeatureType.OwnSubStone => new Color(0.45f, 0.7f, 1f),
             FeatureType.EnemyMainStone => new Color(1f, 0.3f, 0.3f),
-            FeatureType.EnemySubStone => new Color(1f, 0.55f, 0.4f),
             _ => Color.magenta,
         };
 
@@ -1003,23 +1001,17 @@ namespace WarSimulation.Combat.Map.EditorOnly
             int index = current switch
             {
                 FeatureType.OwnMainStone => 0,
-                FeatureType.OwnSubStone => 1,
-                FeatureType.EnemyMainStone => 2,
-                FeatureType.EnemySubStone => 3,
+                FeatureType.EnemyMainStone => 1,
                 _ => 0,
             };
             index = EditorGUILayout.Popup("種類", index, new[]
             {
                 "自軍メイン",
-                "自軍サブ",
                 "敵軍メイン",
-                "敵軍サブ",
             });
             return index switch
             {
-                1 => FeatureType.OwnSubStone,
-                2 => FeatureType.EnemyMainStone,
-                3 => FeatureType.EnemySubStone,
+                1 => FeatureType.EnemyMainStone,
                 _ => FeatureType.OwnMainStone,
             };
         }

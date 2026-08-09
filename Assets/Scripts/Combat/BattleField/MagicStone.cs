@@ -7,7 +7,6 @@ public sealed class MagicStone : MonoBehaviour
 {
     [SerializeField] private int _featureIndex = -1;
     [SerializeField] private FeatureType _featureType;
-    [SerializeField] private bool _isMainStone;
 
     private CombatWorldHealthBar _healthBar;
     private HealthSource _healthSource;
@@ -15,14 +14,13 @@ public sealed class MagicStone : MonoBehaviour
     public int FeatureIndex => _featureIndex;
     public FeatureType FeatureType => _featureType;
 
-    public void Setup(int featureIndex, FeatureType featureType, bool isMainStone, float stoneHeight)
+    public void Setup(int featureIndex, FeatureType featureType, float stoneHeight)
     {
         _featureIndex = featureIndex;
         _featureType = featureType;
-        _isMainStone = isMainStone;
 
-        float barWidth = isMainStone ? 1.6f : 1.1f;
-        float yOffset = stoneHeight + (isMainStone ? 0.8f : 0.5f);
+        float barWidth = 1.6f;
+        float yOffset = stoneHeight + 0.8f;
         EnsureHealthBar(new Vector3(0f, yOffset, 0f), barWidth);
     }
 
@@ -35,9 +33,7 @@ public sealed class MagicStone : MonoBehaviour
 
         if (_healthBar == null)
         {
-            float barWidth = _isMainStone ? 1.6f : 1.1f;
-            float yOffset = _isMainStone ? 4f : 2.3f;
-            EnsureHealthBar(new Vector3(0f, yOffset, 0f), barWidth);
+            EnsureHealthBar(new Vector3(0f, 4f, 0f), 1.6f);
         }
 
         if (_healthSource == null && system != null)

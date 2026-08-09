@@ -6,7 +6,6 @@ using WarSimulation.Combat.Map;
 public sealed class CombatMagicStoneSystem : MonoBehaviour
 {
     [SerializeField, Min(1)] private int _mainStoneMaxHP = 500;
-    [SerializeField, Min(1)] private int _subStoneMaxHP = 200;
 
     private readonly Dictionary<int, MagicStoneRuntimeState> _states = new Dictionary<int, MagicStoneRuntimeState>();
     private readonly Dictionary<int, MagicStone> _views = new Dictionary<int, MagicStone>();
@@ -103,10 +102,7 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
                 view.OnDestroyed();
             }
 
-            if (IsMainStone(state.Type))
-            {
-                MainStoneDestroyed?.Invoke(state.Type);
-            }
+            MainStoneDestroyed?.Invoke(state.Type);
         }
 
         return applied;
@@ -152,20 +148,13 @@ public sealed class CombatMagicStoneSystem : MonoBehaviour
 
     private int GetMaxHPForType(FeatureType type)
     {
-        return IsMainStone(type) ? _mainStoneMaxHP : _subStoneMaxHP;
+        return _mainStoneMaxHP;
     }
 
     private static bool IsMagicStone(FeatureType type)
     {
         return type == FeatureType.OwnMainStone ||
-               type == FeatureType.OwnSubStone ||
-               type == FeatureType.EnemyMainStone ||
-               type == FeatureType.EnemySubStone;
-    }
-
-    private static bool IsMainStone(FeatureType type)
-    {
-        return type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone;
+               type == FeatureType.EnemyMainStone;
     }
 }
 

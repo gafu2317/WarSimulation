@@ -106,34 +106,6 @@ public sealed class CombatMagicStoneSystemTests
         }
     }
 
-    [Test]
-    public void SubStoneDestroyed_KeepsBattleRunning()
-    {
-        GameObject flowGo = new GameObject("BattleFlow");
-        GameObject systemGo = new GameObject("MagicStoneSystem");
-        try
-        {
-            CombatMagicStoneSystem system = systemGo.AddComponent<CombatMagicStoneSystem>();
-            CombatEditModeTestUtil.SetPrivateField(system, "_subStoneMaxHP", 40);
-
-            CombatBattleFlow flow = flowGo.AddComponent<CombatBattleFlow>();
-            CombatEditModeTestUtil.WireBattleFlow(flow, system);
-            CombatEditModeTestUtil.SetPrivateField(flow, "_state", CombatBattleState.Running);
-
-            MapData map = CreateMapWithMainAndSubStones();
-            system.Initialize(map);
-            system.TakeDamage(2, 40);
-
-            Assert.That(flow.State, Is.EqualTo(CombatBattleState.Running));
-            Assert.That(system.IsDestroyed(FeatureType.OwnSubStone), Is.True);
-        }
-        finally
-        {
-            Object.DestroyImmediate(flowGo);
-            Object.DestroyImmediate(systemGo);
-        }
-    }
-
     private static MapData CreateMapWithMainStones()
     {
         MapData map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), seed: 1);
@@ -142,10 +114,4 @@ public sealed class CombatMagicStoneSystemTests
         return map;
     }
 
-    private static MapData CreateMapWithMainAndSubStones()
-    {
-        MapData map = CreateMapWithMainStones();
-        map.AddFeature(new PlacedFeature(FeatureType.OwnSubStone, new Vector3(2f, 0f, 1f)));
-        return map;
-    }
 }

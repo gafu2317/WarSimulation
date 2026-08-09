@@ -254,7 +254,7 @@ public sealed class CombatSkillExecutionTests
             system.Initialize(map);
 
             MagicStone stone = stoneGo.AddComponent<MagicStone>();
-            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
+            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, stoneHeight: 3f);
             stoneGo.transform.position = new Vector3(0f, 1.5f, 2f);
             stoneGo.transform.localScale = new Vector3(1.2f, 3f, 1.2f);
             stoneGo.AddComponent<BoxCollider>();
@@ -305,7 +305,7 @@ public sealed class CombatSkillExecutionTests
             system.Initialize(map);
 
             MagicStone stone = stoneGo.AddComponent<MagicStone>();
-            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, isMainStone: true, stoneHeight: 3f);
+            stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, stoneHeight: 3f);
             stoneGo.transform.position = new Vector3(0f, 1.5f, 8f);
             stoneGo.AddComponent<BoxCollider>();
 

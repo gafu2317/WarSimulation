@@ -191,12 +191,8 @@ public sealed class CombatMapSystemTests
             Assert.That(notificationCount, Is.EqualTo(1));
             Assert.That(map.Features[0].Type, Is.EqualTo(FeatureType.OwnMainStone));
             Assert.That(map.Features[1].Type, Is.EqualTo(FeatureType.EnemyMainStone));
-            Assert.That(map.Features[2].Type, Is.EqualTo(FeatureType.OwnSubStone));
-            Assert.That(map.Features[3].Type, Is.EqualTo(FeatureType.EnemySubStone));
             Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
             Assert.That(map.Features[1].WorldPosition, Is.EqualTo(new Vector3(1f, 0f, 1f)));
-            Assert.That(map.Features[2].WorldPosition, Is.EqualTo(new Vector3(7f, 0f, 7f)));
-            Assert.That(map.Features[3].WorldPosition, Is.EqualTo(new Vector3(3f, 0f, 3f)));
             Assert.That(map.Features[0].Rotation, Is.EqualTo(ownMainRotation));
             Assert.That(map.Features[0].Scale, Is.EqualTo(ownMainScale));
 
@@ -212,8 +208,6 @@ public sealed class CombatMapSystemTests
             Assert.That(notificationCount, Is.EqualTo(2));
             Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(1f, 0f, 1f)));
             Assert.That(map.Features[1].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
-            Assert.That(map.Features[2].WorldPosition, Is.EqualTo(new Vector3(3f, 0f, 3f)));
-            Assert.That(map.Features[3].WorldPosition, Is.EqualTo(new Vector3(7f, 0f, 7f)));
         }
         finally
         {
@@ -253,7 +247,7 @@ public sealed class CombatMapSystemTests
             MapData map = new MapData(new HeightMap(12, 12, 1f), new GroundStateGrid(12, 12, 1f), 1);
             map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(1f, 0f, 1f)));
             map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(9f, 0f, 9f)));
-            map.AddFeature(new PlacedFeature(FeatureType.OwnSubStone, new Vector3(3f, 0f, 3f)));
+            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(3f, 0f, 3f)));
             system.SetCurrentMap(map);
 
             Assert.That(system.TrySetStonePositionsReversed(true), Is.False);
@@ -374,8 +368,6 @@ public sealed class CombatMapSystemTests
         MapData map = new MapData(new HeightMap(12, 12, 1f), new GroundStateGrid(12, 12, 1f), 1);
         map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(1f, 0f, 1f)));
         map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(9f, 0f, 9f)));
-        map.AddFeature(new PlacedFeature(FeatureType.OwnSubStone, new Vector3(3f, 0f, 3f)));
-        map.AddFeature(new PlacedFeature(FeatureType.EnemySubStone, new Vector3(7f, 0f, 7f)));
         return map;
     }
 
@@ -393,7 +385,7 @@ public sealed class CombatMapSystemTests
             GameObject stoneObject = new GameObject($"Stone{i}");
             stoneObject.transform.SetParent(generatedFeatures.transform, worldPositionStays: false);
             MagicStone stone = stoneObject.AddComponent<MagicStone>();
-            stone.Setup(i, type, type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone, 3.2f);
+            stone.Setup(i, type, 3.2f);
         }
 
         return hostObject;
