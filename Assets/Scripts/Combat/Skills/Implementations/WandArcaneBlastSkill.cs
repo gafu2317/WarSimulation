@@ -8,7 +8,7 @@ public sealed class WandArcaneBlastSkill : SkillBase
 
     public WandArcaneBlastSkill(
         float intScale = 0.9f,
-        float maxRange = 45f,
+        float maxRange = 20f,
         float cooldownSeconds = 7f)
     {
         _intScale = intScale;

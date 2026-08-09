@@ -163,10 +163,10 @@ public sealed class CombatNormalAttackSkillTests
     }
 
     [TestCase(SkillId.Sword_Slash, 2f)]
-    [TestCase(SkillId.Wand_Bolt, 30f)]
-    [TestCase(SkillId.Wand_AreaBlast, 35f)]
-    [TestCase(SkillId.Wand_ArcaneBlast, 45f)]
-    [TestCase(SkillId.Wand_GodsHand, 60f)]
+    [TestCase(SkillId.Wand_Bolt, 20f)]
+    [TestCase(SkillId.Wand_AreaBlast, 20f)]
+    [TestCase(SkillId.Wand_ArcaneBlast, 20f)]
+    [TestCase(SkillId.Wand_GodsHand, 20f)]
     [TestCase(SkillId.Grimoire_Bolt, 30f)]
     [TestCase(SkillId.Grimoire_Bind, 25f)]
     [TestCase(SkillId.Grimoire_Poison, 25f)]

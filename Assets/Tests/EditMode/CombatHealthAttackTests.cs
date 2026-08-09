@@ -414,7 +414,7 @@ public sealed class CombatHealthAttackTests
     public void Weapons_ExposeExpectedCombatValues()
     {
         AssertWeapon(new Sword(), 2f, 12, 0.9f, CombatStat.STR);
-        AssertWeapon(new Wand(), 30f, 10, 1.4f, CombatStat.INT);
+        AssertWeapon(new Wand(), 20f, 10, 1.4f, CombatStat.INT);
         AssertWeapon(new Grimoire(), 30f, 14, 2f, CombatStat.INT);
         AssertWeapon(new Bible(), 30f, 10, 1.6f, CombatStat.FAI);
         AssertWeapon(new Rosary(), 15f, 8, 1.2f, CombatStat.FAI);

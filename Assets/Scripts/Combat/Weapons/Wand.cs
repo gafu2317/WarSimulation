@@ -15,7 +15,7 @@ public class Wand : WeaponBase
     public override IReadOnlyList<SkillId> GrantedSkillIds => _grantedSkillIds;
 
     public Wand(
-        float range = 30f,
+        float range = 20f,
         float cooldown = 1.4f,
         int intBonus = 10,
         IReadOnlyList<SkillId> grantedSkillIds = null)

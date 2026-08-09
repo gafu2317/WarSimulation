@@ -8,7 +8,7 @@ public sealed class WandBoltSkill : SkillBase
 
     public WandBoltSkill(
         float intScale = 0.4f,
-        float maxRange = 30f,
+        float maxRange = 20f,
         float cooldownSeconds = 1.4f)
     {
         _intScale = intScale;

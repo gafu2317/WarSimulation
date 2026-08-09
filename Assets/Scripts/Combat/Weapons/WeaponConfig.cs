@@ -92,7 +92,7 @@ public sealed class WeaponConfig : ScriptableObject
                 _primaryStatBonus = 6;
                 break;
             case WeaponKind.Wand:
-                _range = 30f;
+                _range = 20f;
                 _cooldownSeconds = 1.4f;
                 _primaryStatBonus = 10;
                 break;

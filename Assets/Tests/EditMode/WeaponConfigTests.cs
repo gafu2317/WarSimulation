@@ -60,7 +60,7 @@ public sealed class WeaponConfigTests
         WeaponConfig config = CreateConfig(WeaponKind.Wand);
         try
         {
-            Assert.That(config.Range, Is.EqualTo(30f).Within(0.001f));
+            Assert.That(config.Range, Is.EqualTo(20f).Within(0.001f));
             Assert.That(config.CooldownSeconds, Is.EqualTo(1.4f).Within(0.001f));
             Assert.That(config.PrimaryStatBonus, Is.EqualTo(10));
         }
