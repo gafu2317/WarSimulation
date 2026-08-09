@@ -312,21 +312,18 @@ public sealed class CombatMapSystemTests
     [Test]
     public void RefreshMagicStonePositions_MovesExistingViewsByFeatureIndex()
     {
-        GameObject rendererObject = new GameObject("FeatureRenderer");
-        GameObject generatedFeatures = new GameObject("GeneratedFeatures");
+        GameObject rendererObject = null;
         try
         {
-            FeatureRenderer renderer = rendererObject.AddComponent<FeatureRenderer>();
-            generatedFeatures.transform.SetParent(rendererObject.transform, worldPositionStays: false);
-
-            GameObject stoneObject = new GameObject("OwnMain");
-            stoneObject.transform.SetParent(generatedFeatures.transform, worldPositionStays: false);
-            MagicStone stone = stoneObject.AddComponent<MagicStone>();
-            stone.Setup(0, FeatureType.OwnMainStone, isMainStone: true, stoneHeight: 3.2f);
-            BoxCollider collider = stoneObject.AddComponent<BoxCollider>();
-            CombatWorldHealthBar healthBar = stoneObject.GetComponent<CombatWorldHealthBar>();
-
             MapData map = CreateMapWithPairedStones();
+            rendererObject = CreateRenderedStoneHost(map);
+            FeatureRenderer renderer = rendererObject.GetComponent<FeatureRenderer>();
+            MagicStone stone = rendererObject.transform
+                .Find("GeneratedFeatures/Stone0")
+                .GetComponent<MagicStone>();
+            BoxCollider collider = stone.gameObject.AddComponent<BoxCollider>();
+            CombatWorldHealthBar healthBar = stone.GetComponent<CombatWorldHealthBar>();
+
             map.Features[0] = new PlacedFeature(
                 FeatureType.OwnMainStone,
                 new Vector3(5f, 0f, 6f),
@@ -345,7 +342,7 @@ public sealed class CombatMapSystemTests
         }
         finally
         {
-            Object.DestroyImmediate(rendererObject);
+            if (rendererObject != null) Object.DestroyImmediate(rendererObject);
         }
     }
 

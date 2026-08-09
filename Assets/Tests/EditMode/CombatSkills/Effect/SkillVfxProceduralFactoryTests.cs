@@ -65,7 +65,9 @@ public sealed class SkillVfxProceduralFactoryTests
             Assert.That(line, Is.Not.Null);
             Assert.That(line.GetPosition(0), Is.EqualTo(self + Vector3.up));
             Assert.That(line.GetPosition(line.positionCount - 1), Is.EqualTo(target + Vector3.up));
-            Assert.That(line.startColor, Is.EqualTo(new Color(1f, 0.95f, 0.05f, 1f)));
+            Assert.That(
+                (Color32)line.startColor,
+                Is.EqualTo((Color32)new Color(1f, 0.95f, 0.05f, 1f)));
         }
         finally
         {

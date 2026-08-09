@@ -7,6 +7,10 @@ using UnityEngine.UI;
 
 public sealed class CombatCharacterSelection : MonoBehaviour
 {
+    private const int MaxPartyDisplayCount = 10;
+    private const int PartyGridRowCount = 5;
+    private const float CharacterListWidth = 1600f;
+
     private static readonly WeaponKind[] DefaultPartyWeapons =
     {
         WeaponKind.Sword,
@@ -86,6 +90,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         DeduplicatePersonalityOptionsByKind();
         AddBuiltInPersonalityOptions();
         RebuildLayout(allyCandidates, enemyCandidates);
+        ConfigureSelectionCountText();
         ResetSelection();
     }
 
@@ -193,7 +198,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ClosePicker();
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
         {
-            if (_builtInPersonalityOptions[i] != null) Destroy(_builtInPersonalityOptions[i]);
+            DestroyGeneratedObject(_builtInPersonalityOptions[i]);
         }
     }
 
@@ -207,7 +212,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             CombatAiPersonalityProfile profile = builtIns[i];
             if (FindPersonalityByKind(profile.Kind) != null)
             {
-                Destroy(profile);
+                DestroyGeneratedObject(profile);
                 continue;
             }
 
@@ -248,10 +253,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         for (int i = _characterList.childCount - 1; i >= 0; i--)
         {
-            Destroy(_characterList.GetChild(i).gameObject);
+            DestroyGeneratedObject(_characterList.GetChild(i).gameObject);
         }
 
-        _characterList.sizeDelta = new Vector2(1080f, 700f);
+        _characterList.sizeDelta = new Vector2(CharacterListWidth, 700f);
         CreateHeaderControls(_characterList);
 
         GameObject teamsObject = new GameObject(
@@ -274,8 +279,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RectTransform enemyColumn = CreateTeamColumn(teams, "EnemySelection", "敵");
         _allyColumnRoot = allyColumn.gameObject;
         _enemyColumnRoot = enemyColumn.gameObject;
-        BuildRows(allyColumn, allyCandidates, _allyRows);
-        BuildRows(enemyColumn, enemyCandidates, _enemyRows);
+        RectTransform allyRows = CreateRowsGrid(allyColumn, "AllyRows");
+        RectTransform enemyRows = CreateRowsGrid(enemyColumn, "EnemyRows");
+        BuildRows(allyRows, allyCandidates, _allyRows);
+        BuildRows(enemyRows, enemyCandidates, _enemyRows);
         SetDetailSettingsOpen(false);
     }
 
@@ -810,7 +817,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        columnObject.GetComponent<LayoutElement>().preferredWidth = 1080f;
+        columnObject.GetComponent<LayoutElement>().preferredWidth = CharacterListWidth;
 
         TMP_Text header = Instantiate(_selectionCountText, column);
         header.name = $"{objectName}Title";
@@ -822,6 +829,35 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                                      header.gameObject.AddComponent<LayoutElement>();
         headerLayout.preferredHeight = 48f;
         return column;
+    }
+
+    private static RectTransform CreateRowsGrid(RectTransform parent, string objectName)
+    {
+        GameObject rowsObject = new GameObject(
+            objectName,
+            typeof(RectTransform),
+            typeof(GridLayoutGroup),
+            typeof(ContentSizeFitter),
+            typeof(LayoutElement));
+        RectTransform rows = rowsObject.GetComponent<RectTransform>();
+        rows.SetParent(parent, false);
+
+        GridLayoutGroup grid = rowsObject.GetComponent<GridLayoutGroup>();
+        grid.spacing = new Vector2(8f, 8f);
+        grid.cellSize = new Vector2((CharacterListWidth - grid.spacing.x) * 0.5f, 72f);
+        grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+        grid.startAxis = GridLayoutGroup.Axis.Vertical;
+        grid.childAlignment = TextAnchor.UpperLeft;
+        grid.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+        grid.constraintCount = PartyGridRowCount;
+
+        ContentSizeFitter fitter = rowsObject.GetComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        LayoutElement layout = rowsObject.GetComponent<LayoutElement>();
+        layout.flexibleWidth = 1f;
+        return rows;
     }
 
     private void BuildRows(
@@ -872,6 +908,17 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         row.WeaponButton.onClick.AddListener(() => OpenWeaponPicker(row));
         row.PersonalityButton.onClick.AddListener(() => OpenPersonalityPickerForRow(row));
         return row;
+    }
+
+    private void ConfigureSelectionCountText()
+    {
+        if (_selectionCountText == null) return;
+
+        _selectionCountText.enableWordWrapping = false;
+        _selectionCountText.overflowMode = TextOverflowModes.Overflow;
+        _selectionCountText.rectTransform.SetSizeWithCurrentAnchors(
+            RectTransform.Axis.Horizontal,
+            420f);
     }
 
     private int FindPersonalityIndex(CombatAiPersonalityProfile profile)
@@ -1077,6 +1124,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _pickerDescription.name = "PickerDescription";
         _pickerDescription.alignment = TextAlignmentOptions.Left;
         _pickerDescription.fontSize = 24f;
+        _pickerDescription.enableWordWrapping = true;
+        _pickerDescription.overflowMode = TextOverflowModes.Overflow;
         _pickerDescription.textWrappingMode = TextWrappingModes.Normal;
         _pickerDescription.text = string.Empty;
         LayoutElement descriptionLayout = _pickerDescription.gameObject.GetComponent<LayoutElement>() ??
@@ -1146,7 +1195,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_pickerContent == null) return;
         for (int i = _pickerContent.childCount - 1; i >= 0; i--)
         {
-            Destroy(_pickerContent.GetChild(i).gameObject);
+            DestroyGeneratedObject(_pickerContent.GetChild(i).gameObject);
         }
     }
 
@@ -1248,11 +1297,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         int enemyCount = CountSelected(_enemyRows);
         if (_detailSettingsOpen)
         {
-            _selectionCountText.text = $"敵編成 敵 {enemyCount}人";
+            _selectionCountText.text = $"敵 {enemyCount}/{MaxPartyDisplayCount}人";
         }
         else
         {
-            _selectionCountText.text = $"味方 {allyCount}人 / 敵 {enemyCount}人（標準編成）";
+            _selectionCountText.text =
+                $"味方 {allyCount}/{MaxPartyDisplayCount}人 / 敵 {enemyCount}/{MaxPartyDisplayCount}人";
         }
     }
 
@@ -1385,6 +1435,20 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         rect.anchorMax = Vector2.one;
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
+    }
+
+    private static void DestroyGeneratedObject(UnityEngine.Object target)
+    {
+        if (target == null) return;
+
+        if (Application.isPlaying)
+        {
+            UnityEngine.Object.Destroy(target);
+        }
+        else
+        {
+            UnityEngine.Object.DestroyImmediate(target);
+        }
     }
 
     private sealed class SelectionRow

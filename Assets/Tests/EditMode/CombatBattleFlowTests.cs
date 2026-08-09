@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -131,6 +132,85 @@ public sealed class CombatBattleFlowTests
         }
     }
 
+    [Test]
+    public void CharacterSelection_ShowsTenCandidatesInTwoColumnsAndKeepsToggleMode()
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+
+        try
+        {
+            GameObject selectionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
+            Assert.That(selectionPrefab, Is.Not.Null);
+
+            selectionObject = Object.Instantiate(selectionPrefab);
+            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            Assert.That(selection, Is.Not.Null);
+
+            List<Character> allies = CreateCharacters("Ally", CombatTeam.Ally, 10, characters);
+            List<Character> enemies = CreateCharacters("Enemy", CombatTeam.Enemy, 10, characters);
+            selection.Initialize(allies, enemies, null);
+
+            GameObject allyColumn = GetPrivateField<GameObject>(selection, "_allyColumnRoot");
+            Transform allyRowsGrid = allyColumn.transform.Find("AllyRows");
+            Assert.That(allyRowsGrid, Is.Not.Null);
+            GridLayoutGroup grid = allyRowsGrid.GetComponent<GridLayoutGroup>();
+            Assert.That(grid, Is.Not.Null);
+            Assert.That(grid.startAxis, Is.EqualTo(GridLayoutGroup.Axis.Vertical));
+            Assert.That(grid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedRowCount));
+            Assert.That(grid.constraintCount, Is.EqualTo(5));
+            Assert.That(allyRowsGrid.childCount, Is.EqualTo(10));
+
+            for (int i = 0; i < allyRowsGrid.childCount; i++)
+            {
+                Assert.That(allyRowsGrid.GetChild(i).GetComponent<HorizontalLayoutGroup>(), Is.Not.Null);
+                Assert.That(allyRowsGrid.GetChild(i).childCount, Is.EqualTo(3));
+            }
+
+            TMP_Text selectionCountText = GetPrivateField<TMP_Text>(selection, "_selectionCountText");
+            Assert.That(selectionCountText.text, Is.EqualTo("味方 5/10人 / 敵 5/10人"));
+            Assert.That(selectionCountText.enableWordWrapping, Is.False);
+            Assert.That(selectionCountText.overflowMode, Is.EqualTo(TextOverflowModes.Overflow));
+            Assert.That(selectionCountText.rectTransform.sizeDelta.x, Is.EqualTo(420f));
+
+            IList allySelectionRows = GetPrivateField<IList>(selection, "_allyRows");
+            for (int i = 0; i < allySelectionRows.Count; i++)
+            {
+                Assert.That(
+                    GetPrivateField<bool>(allySelectionRows[i], "Selected"),
+                    Is.EqualTo(i < 5));
+            }
+
+            object firstAllyRow = allySelectionRows[0];
+            Button firstCharacterButton = GetPrivateField<Button>(firstAllyRow, "CharacterButton");
+            Assert.That(firstCharacterButton.GetComponent<LayoutElement>().preferredWidth, Is.EqualTo(300f));
+            Assert.That(
+                GetPrivateField<Button>(firstAllyRow, "WeaponButton").GetComponent<LayoutElement>().preferredWidth,
+                Is.EqualTo(240f));
+            Assert.That(
+                GetPrivateField<Button>(firstAllyRow, "PersonalityButton").GetComponent<LayoutElement>().preferredWidth,
+                Is.EqualTo(240f));
+            firstCharacterButton.onClick.Invoke();
+            Assert.That(selectionCountText.text, Is.EqualTo("味方 4/10人 / 敵 5/10人"));
+
+            Button enemyFormationButton = GetPrivateField<Button>(selection, "_enemyFormationButton");
+            enemyFormationButton.onClick.Invoke();
+
+            Assert.That(GetPrivateField<GameObject>(selection, "_allyColumnRoot").activeSelf, Is.False);
+            Assert.That(GetPrivateField<GameObject>(selection, "_enemyColumnRoot").activeSelf, Is.True);
+            Assert.That(selectionCountText.text, Is.EqualTo("敵 5/10人"));
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
+        }
+    }
+
     private static List<Character> CreateCharacters(
         string namePrefix,
         CombatTeam team,
@@ -152,14 +232,18 @@ public sealed class CombatBattleFlowTests
 
     private static T GetPrivateField<T>(object target, string fieldName)
     {
-        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        FieldInfo field = target.GetType().GetField(
+            fieldName,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.That(field, Is.Not.Null, $"Field {fieldName} was not found on {target.GetType().Name}.");
         return (T)field.GetValue(target);
     }
 
     private static void SetPrivateField(object target, string fieldName, object value)
     {
-        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        FieldInfo field = target.GetType().GetField(
+            fieldName,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.That(field, Is.Not.Null, $"Field {fieldName} was not found on {target.GetType().Name}.");
         field.SetValue(target, value);
     }

@@ -1,63 +1,18 @@
-# WarSimulation Agent Notes
+# WarSimulation
 
-docsにゲームの内容についてが書いてあるよ
-./docs
+- ゲーム仕様は `./docs`、戦闘AIの入口は `./docs/AI/README.md`。
+- コードは短く読みやすく保ち、不要な抽象化・分岐・コメントを追加しない。コードには How、テストには What、コミットログには Why、コメントには Why not を書く。
+- 新規TextMeshPro UIには `Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset` と対応マテリアルを使う。
 
-戦闘AIの入口は `./docs/AI/README.md`
+## Unity
 
+- 既存のシーン・Prefab・UI階層・参照は、依頼された場合を除き変更しない。追加物は専用の機能ルート配下に置く。
+- Editor setup/repair は、既存対象とアセットを全て検証してから変更し、専用ルートだけを冪等に作り直す。想定対象が無ければ代替Prefabを作らず停止する。
+- シーン変更前に未コミット変更を確認し、変更後は意図した対象だけが変わったことを確認する。修復成功は事後条件を確認できた場合だけ報告する。
+- 既に開いているUnity Editorを使い、別のUnity起動やbatchmode検証を行わない。シーン変更は明示的な操作から開始する。
 
-## Code Style
+## Structure
 
-- Prefer short, simple code, but do not sacrifice readability, correctness, or consistency with existing project patterns.
-- Avoid unnecessary abstractions, wrapper methods, temporary variables, comments, and branching when the same behavior can be expressed clearly with less code.
-- Do not compress code in ways that make intent harder to understand, hide important state changes, or make Unity Inspector usage less clear.
-
-## UI Conventions
-
-- Use `Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset` for TextMeshPro UI text by default, including its matching shared material. Do not use the TextMeshPro default font for newly created UI.
-
-## Unity Scene Safety
-
-- Treat existing scene objects, Prefab instances, hierarchy, RectTransforms, and serialized references as user-owned. Do not move, rename, delete, replace, reparent, or duplicate them unless the user explicitly requests that exact change.
-- When adding a feature to an existing scene, place all newly owned objects under one clearly named feature root. Setup and repair tools may recreate only that owned root; they must not reorganize unrelated existing objects.
-- Do not instantiate a replacement Prefab merely because an expected scene object was not found. Stop with a clear validation error and inspect the actual scene structure first.
-- Editor setup tools must validate every required existing object and asset before making the first mutation. If validation fails, leave the scene unchanged.
-- Editor setup tools must be idempotent and narrowly scoped. Re-running a tool may replace only objects previously created by that same tool.
-- Preserve the parent, sibling relationship, anchors, pivot, offsets, scale, and serialized references of existing UI. Toggle existing UI through explicit references without changing its hierarchy or layout.
-- Before editing a scene, check whether it already has uncommitted changes. After editing, verify that only the intended scene objects changed and keep a scene-only Git restore as the rollback path.
-- Never claim a Unity scene repair succeeded without verifying its postconditions. If the running Editor cannot be inspected through tools, ask the user to execute one explicit menu action and confirm the resulting hierarchy before removing temporary tooling.
-
-## Verification Notes
-
-- After implementing a feature or bug fix, you MUST run a defect-first review via a Task subagent, then fix actionable P0–P2 findings before declaring the work done. The review prompt must include the concrete user goal and ask to flag non-essential/overbuilt code. Details: `.cursor/rules/post-implementation-grok-review.mdc`.
-- Assume the Unity Editor is already running for this project. Do not launch another Unity process or repeatedly start and quit Unity from the command line.
-- If Prefab, scene, or other Unity API work is required, use the already-open Editor. Prefer a temporary explicit Editor menu command that the user runs once, then remove the temporary generation/setup code after confirming completion.
-- Do not automatically change the user's currently open scene from an import hook or `InitializeOnLoad` callback. Scene mutations must be initiated explicitly in the existing Editor.
-- If the current session has no tool connection to the running Editor, edit files and ask the user to perform the minimal Editor action instead of starting Unity yourself.
-- Avoid launching Unity in batchmode for routine verification because it can hang during licensing initialization and force the running Unity Editor to close.
-- Prefer `dotnet build Assembly-CSharp.csproj` for quick compile checks after Unity has regenerated the csproj files.
-- Do not run `dotnet build Assembly-CSharp.csproj` by default when the generated csproj is stale or missing the touched source files; it is not useful in that state and can hang during restore/build in this environment.
-- For existing C# file edits, prefer static checks such as `git diff --check` and ask the user to confirm compilation in the already-open Unity Editor unless the csproj is known to be freshly regenerated and includes the touched files.
-- Before running `dotnet build`, if new C# files were added during the task, check whether those files are already listed in the Unity-generated `Assembly-CSharp.csproj`.
-- If new files are missing from `Assembly-CSharp.csproj`, add them to the generated csproj only as a local verification aid before building, and mention that Unity regeneration will overwrite this file.
-- Do not intentionally run `dotnet build` once just to discover missing new-file csproj entries; avoid that known failure path.
-- If `dotnet build` still fails only because new files are missing from a Unity-generated csproj that should be regenerated by Unity, ask the user to let Unity regenerate project files instead of starting Unity batchmode automatically.
-- Run Unity EditMode/PlayMode tests from the already-open Editor unless the user explicitly asks for batchmode testing.
-
-## Folder Conventions
-
-- `Assets/Scripts/Systems/Combat/...` is intentional. Keep scene-level orchestration and cross-object coordinators there; keep combat-domain logic under `Assets/Scripts/Combat/...`.
-- Do not collapse `Systems/Combat` into `Combat/...` unless the user explicitly asks for that architectural change.
-- For combat data, `Map` means battlefield generation/render data and `Combat` means non-map battle config such as AI and skills.
-- If the data layout is mid-migration, preserve that split and do not introduce a third naming axis.
-
-## Combat Map State
-
-- `MapData` represents the current combat map state, not only the initial generated state.
-- `MapData.Height` stores terrain height. Combat-time biome and ground changes are assumed not to change height, colliders, or baked NavMesh.
-- `MapData.GroundStates` stores the current ground state for each cell. Combat-time changes such as snow, swamp, water/ice logic, or other ground-state changes should update this data through a system API.
-- `MapData` also owns current map-side metadata such as biome IDs, forest regions, lakes, rivers, and placed features.
-- `CombatMapSystem` is the scene-level access point for map queries and updates. Gameplay code should ask `CombatMapSystem` for terrain information instead of reaching into map internals from many places.
-- `CombatMapSystem.TryGetTerrainInfo(...)` reads `MapData` and returns a snapshot result for one queried position. `TerrainInfo` is not the source of truth.
-- Visual systems should read the current `MapData` / `CombatMapSystem` state and refresh terrain colors, overlays, decals, or meshes when the current map state changes.
-- Do not assume combat-time biome or ground-state changes require Terrain height regeneration or NavMesh rebaking unless the design explicitly changes.
+- `Assets/Scripts/Systems/Combat/` はシーン orchestration、`Assets/Scripts/Combat/` は戦闘ドメイン。`Map` は地形生成・描画データ、`Combat` はAI・スキル等の戦闘設定を指す。
+- `MapData` は現在のマップ状態を保持する。高さ・コライダー・NavMeshは戦闘中に変えず、地面状態は `GroundStates` を通じて更新する。
+- マップ問い合わせ・更新は `CombatMapSystem` 経由で行う。`TryGetTerrainInfo` は `MapData` のスナップショットを返し、表示系は現在状態を再読込して更新する。

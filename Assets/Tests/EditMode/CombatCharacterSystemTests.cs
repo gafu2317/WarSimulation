@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -7,6 +8,41 @@ using WarSimulation.Combat.Map;
 
 public sealed class CombatCharacterSystemTests
 {
+    [Test]
+    public void GenerateCandidates_CreatesTenCharactersForEachTeamFromPrefab()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        GameObject prefabObject = new GameObject("CharacterPrefab");
+        try
+        {
+            Character prefab = prefabObject.AddComponent<Character>();
+            prefabObject.AddComponent<CombatAiBrain>();
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            var serializedSystem = new UnityEditor.SerializedObject(system);
+            serializedSystem.FindProperty("_generateCandidatesAtRuntime").boolValue = true;
+            serializedSystem.FindProperty("_characterPrefab").objectReferenceValue = prefab;
+            serializedSystem.ApplyModifiedPropertiesWithoutUndo();
+            MethodInfo awake = typeof(CombatCharacterSystem).GetMethod(
+                "Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(awake, Is.Not.Null);
+            awake.Invoke(system, null);
+
+            Assert.That(system.AllyCharacters, Has.Count.EqualTo(10));
+            Assert.That(system.EnemyCharacters, Has.Count.EqualTo(10));
+            Assert.That(system.AllyCharacters, Has.All.Matches<Character>(character =>
+                character.Team == CombatTeam.Ally && character.GetComponent<CombatAiBrain>() != null));
+            Assert.That(system.EnemyCharacters, Has.All.Matches<Character>(character =>
+                character.Team == CombatTeam.Enemy && character.GetComponent<CombatAiBrain>() != null));
+            Assert.That(system.transform.Find("GeneratedCombatCharacters"), Is.Not.Null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(prefabObject);
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
     [Test]
     public void TickAiDecisionsNow_PlansEveryParticipantBeforeExecutingInParticipantOrder()
     {
@@ -303,4 +339,5 @@ public sealed class CombatCharacterSystemTests
         b.y = 0f;
         return Vector3.Distance(a, b);
     }
+
 }

@@ -6,6 +6,8 @@ using WarSimulation.Combat.Map;
 
 public class CombatCharacterSystem : MonoBehaviour
 {
+    private const int CandidateCountPerTeam = 10;
+    private const string GeneratedCharactersRootName = "GeneratedCombatCharacters";
     private const float FlatCellMaxSlopeDeg = 8f;
     private const float CharacterSpacingDistance = 1.5f;
     private const float InitialFeatureClearanceDistance = 3f;
@@ -19,6 +21,8 @@ public class CombatCharacterSystem : MonoBehaviour
     public List<Character> AllyCharacters = new List<Character>();
     public List<Character> EnemyCharacters = new List<Character>();
 
+    [SerializeField] private bool _generateCandidatesAtRuntime;
+    [SerializeField] private Character _characterPrefab;
     [SerializeField] private CombatMapSystem _mapSystem;
 
     private readonly Dictionary<Character, Vector3> _initialPositions = new Dictionary<Character, Vector3>();
@@ -401,7 +405,18 @@ public class CombatCharacterSystem : MonoBehaviour
 
     private void Awake()
     {
-        CollectCharactersFromScene();
+        if (_generateCandidatesAtRuntime)
+        {
+            if (_characterPrefab == null)
+            {
+                Debug.LogError($"[{nameof(CombatCharacterSystem)}] Character prefab is not configured.", this);
+                enabled = false;
+                return;
+            }
+
+            GenerateCandidates();
+        }
+
         AssignTeamsFromLists();
         ResetAiDecisionSchedule(Time.time);
     }
@@ -413,23 +428,30 @@ public class CombatCharacterSystem : MonoBehaviour
         TickAiDecisionsNow(Time.time);
     }
 
-#if UNITY_EDITOR
-    private void OnValidate()
-    {
-        CollectCharactersFromScene();
-        AssignTeamsFromLists();
-    }
-#endif
-
-    private void CollectCharactersFromScene()
+    private void GenerateCandidates()
     {
         AllyCharacters.Clear();
         EnemyCharacters.Clear();
-        Character[] all = FindObjectsByType<Character>();
-        foreach (Character c in all)
+
+        var root = new GameObject(GeneratedCharactersRootName);
+        root.transform.SetParent(transform, false);
+        GenerateTeamCandidates(root.transform, CombatTeam.Ally, AllyCharacters);
+        GenerateTeamCandidates(root.transform, CombatTeam.Enemy, EnemyCharacters);
+    }
+
+    private void GenerateTeamCandidates(
+        Transform parent,
+        CombatTeam team,
+        List<Character> destination)
+    {
+        string namePrefix = team == CombatTeam.Ally ? "AllyCandidate" : "EnemyCandidate";
+        for (int i = 0; i < CandidateCountPerTeam; i++)
         {
-            if (c.Team == CombatTeam.Ally) AllyCharacters.Add(c);
-            else EnemyCharacters.Add(c);
+            Character character = Instantiate(_characterPrefab, parent);
+            character.name = $"{namePrefix}{i + 1:00}";
+            character.gameObject.SetActive(true);
+            character.SetTeam(team);
+            destination.Add(character);
         }
     }
 
