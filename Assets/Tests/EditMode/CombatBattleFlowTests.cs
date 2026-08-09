@@ -211,6 +211,97 @@ public sealed class CombatBattleFlowTests
         }
     }
 
+    [Test]
+    public void CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker()
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+
+        try
+        {
+            GameObject selectionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
+            Assert.That(selectionPrefab, Is.Not.Null);
+
+            selectionObject = Object.Instantiate(selectionPrefab);
+            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            Assert.That(selection, Is.Not.Null);
+
+            selection.Initialize(
+                CreateCharacters("Ally", CombatTeam.Ally, 10, characters),
+                CreateCharacters("Enemy", CombatTeam.Enemy, 10, characters),
+                null);
+
+            Button bulkWeaponButton = GetPrivateField<Button>(selection, "_bulkWeaponButton");
+            bulkWeaponButton.onClick.Invoke();
+            Transform pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
+            Assert.That(pickerContent.childCount, Is.EqualTo(selection.WeaponOptions.Count));
+            Assert.That(
+                pickerContent.GetChild(0).GetComponent<LayoutElement>().preferredHeight,
+                Is.EqualTo(64f));
+
+            RectTransform pickerRoot = GetPrivateField<RectTransform>(selection, "_pickerRoot");
+            RectTransform panel = pickerRoot.Find("Panel") as RectTransform;
+            Assert.That(panel, Is.Not.Null);
+            Assert.That(panel.sizeDelta, Is.EqualTo(new Vector2(960f, 720f)));
+
+            pickerContent.GetChild(pickerContent.childCount - 1).GetComponent<Button>().onClick.Invoke();
+            IList allyRows = GetPrivateField<IList>(selection, "_allyRows");
+            for (int i = 0; i < allyRows.Count; i++)
+            {
+                Assert.That(
+                    GetPrivateField<int>(allyRows[i], "WeaponIndex"),
+                    Is.EqualTo(selection.WeaponOptions.Count - 1));
+            }
+
+            Assert.That(selection.WeaponOptions.Count, Is.GreaterThan(1));
+            GetPrivateField<Button>(allyRows[0], "WeaponButton").onClick.Invoke();
+            pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
+            pickerContent.GetChild(0).GetComponent<Button>().onClick.Invoke();
+            Assert.That(GetPrivateField<int>(allyRows[0], "WeaponIndex"), Is.EqualTo(0));
+            Assert.That(
+                GetPrivateField<int>(allyRows[1], "WeaponIndex"),
+                Is.EqualTo(selection.WeaponOptions.Count - 1));
+
+            GetPrivateField<Button>(selection, "_enemyFormationButton").onClick.Invoke();
+            Button bulkPersonalityButton = GetPrivateField<Button>(selection, "_bulkPersonalityButton");
+            bulkPersonalityButton.onClick.Invoke();
+            pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
+            IList personalityOptions = GetPrivateField<IList>(selection, "_personalityOptions");
+            Assert.That(pickerContent.childCount, Is.EqualTo(personalityOptions.Count));
+            Assert.That(personalityOptions.Count, Is.GreaterThan(1));
+            GridLayoutGroup personalityGrid = pickerContent.GetComponent<GridLayoutGroup>();
+            Assert.That(personalityGrid.enabled, Is.True);
+            Assert.That(personalityGrid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
+            Assert.That(personalityGrid.constraintCount, Is.EqualTo(2));
+
+            pickerContent.GetChild(pickerContent.childCount - 1).GetComponent<Button>().onClick.Invoke();
+            IList enemyRows = GetPrivateField<IList>(selection, "_enemyRows");
+            for (int i = 0; i < enemyRows.Count; i++)
+            {
+                Assert.That(
+                    GetPrivateField<int>(enemyRows[i], "PersonalityIndex"),
+                    Is.EqualTo(personalityOptions.Count - 1));
+            }
+
+            GetPrivateField<Button>(enemyRows[0], "PersonalityButton").onClick.Invoke();
+            pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
+            pickerContent.GetChild(0).GetComponent<Button>().onClick.Invoke();
+            Assert.That(GetPrivateField<int>(enemyRows[0], "PersonalityIndex"), Is.EqualTo(0));
+            Assert.That(
+                GetPrivateField<int>(enemyRows[1], "PersonalityIndex"),
+                Is.EqualTo(personalityOptions.Count - 1));
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
+        }
+    }
+
     private static List<Character> CreateCharacters(
         string namePrefix,
         CombatTeam team,

@@ -42,6 +42,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
     private Button _highlightButton;
+    private Button _bulkWeaponButton;
+    private Button _bulkPersonalityButton;
     private Button _enemyFormationButton;
     private Button _stonePositionButton;
     private Button _enemyPresetDefaultButton;
@@ -71,6 +73,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private TMP_Text _pickerDescription;
     private TMP_Text _pickerTitle;
     private Transform _pickerContent;
+    private GridLayoutGroup _pickerGridLayout;
     private bool _detailSettingsOpen;
     private bool _stonePositionReversed;
 
@@ -173,6 +176,16 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_highlightButton != null)
         {
             _highlightButton.onClick.RemoveListener(OpenHighlightPicker);
+        }
+
+        if (_bulkWeaponButton != null)
+        {
+            _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
+        }
+
+        if (_bulkPersonalityButton != null)
+        {
+            _bulkPersonalityButton.onClick.RemoveListener(OpenBulkPersonalityPicker);
         }
 
         if (_enemyFormationButton != null)
@@ -294,6 +307,18 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _highlightButton = null;
         }
 
+        if (_bulkWeaponButton != null)
+        {
+            _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
+            _bulkWeaponButton = null;
+        }
+
+        if (_bulkPersonalityButton != null)
+        {
+            _bulkPersonalityButton.onClick.RemoveListener(OpenBulkPersonalityPicker);
+            _bulkPersonalityButton = null;
+        }
+
         if (_enemyFormationButton != null)
         {
             _enemyFormationButton.onClick.RemoveListener(ToggleEnemyFormation);
@@ -366,9 +391,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
         _highlightButton = CreateButton(actionRow, "PersonalityHighlightButton", 0f, 48f, OpenHighlightPicker, flexibleWidth: 1f);
+        _bulkWeaponButton = CreateButton(actionRow, "BulkWeaponButton", 220f, 48f, OpenBulkWeaponPicker);
+        _bulkPersonalityButton = CreateButton(actionRow, "BulkPersonalityButton", 220f, 48f, OpenBulkPersonalityPicker);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
+        SetButtonLabel(_bulkWeaponButton, "武器一括変更");
+        SetButtonLabel(_bulkPersonalityButton, "性格一括変更");
         ConfigureToolbarLabel(_highlightButton, 24f);
+        ConfigureToolbarLabel(_bulkWeaponButton, 24f);
+        ConfigureToolbarLabel(_bulkPersonalityButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
         ConfigureToolbarLabel(_stonePositionButton, 24f);
         RefreshHighlightButton();
@@ -517,6 +548,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void OpenDebugSettings(DebugSettingsKind kind)
     {
         EnsurePicker();
+        SetPickerLayout(twoColumns: false);
         ClearPickerOptions();
         RebuildDebugSettingsPicker(kind);
         ShowPicker();
@@ -965,6 +997,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_weaponOptions.Count == 0) return;
 
         EnsurePicker();
+        SetPickerLayout(twoColumns: false);
         ClearPickerOptions();
         SetPickerTitle("武器を選択");
         SetPickerDescription("一覧から武器を選んでください。");
@@ -986,6 +1019,35 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ShowPicker();
     }
 
+    private void OpenBulkWeaponPicker()
+    {
+        if (_weaponOptions.Count == 0) return;
+
+        List<SelectionRow> rows = GetVisibleRows();
+        EnsurePicker();
+        SetPickerLayout(twoColumns: false);
+        ClearPickerOptions();
+        SetPickerTitle("武器一括変更");
+        SetPickerDescription("現在表示中の陣営10人の武器をまとめて変更します。");
+
+        for (int i = 0; i < _weaponOptions.Count; i++)
+        {
+            int index = i;
+            AddPickerOption(GetWeaponName(_weaponOptions[i]), () =>
+            {
+                for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+                {
+                    rows[rowIndex].WeaponIndex = index;
+                }
+
+                RefreshRows(rows);
+                ClosePicker();
+            });
+        }
+
+        ShowPicker();
+    }
+
     private void OpenPersonalityPickerForRow(SelectionRow row)
     {
         OpenPersonalityPicker(
@@ -999,6 +1061,29 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             });
     }
 
+    private void OpenBulkPersonalityPicker()
+    {
+        List<SelectionRow> rows = GetVisibleRows();
+        OpenPersonalityPicker(
+            "性格一括変更",
+            rows.Count > 0 ? rows[0].PersonalityIndex : -1,
+            includeNone: false,
+            onSelected: index =>
+            {
+                for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+                {
+                    rows[rowIndex].PersonalityIndex = index;
+                }
+
+                RefreshRows(rows);
+            });
+    }
+
+    private List<SelectionRow> GetVisibleRows()
+    {
+        return _detailSettingsOpen ? _enemyRows : _allyRows;
+    }
+
     private void OpenPersonalityPicker(
         string title,
         int selectedIndex,
@@ -1008,6 +1093,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (!includeNone && _personalityOptions.Count == 0) return;
 
         EnsurePicker();
+        SetPickerLayout(twoColumns: true);
         ClearPickerOptions();
         SetPickerTitle(title);
 
@@ -1099,7 +1185,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         panel.anchorMin = new Vector2(0.5f, 0.5f);
         panel.anchorMax = new Vector2(0.5f, 0.5f);
         panel.pivot = new Vector2(0.5f, 0.5f);
-        panel.sizeDelta = new Vector2(720f, 560f);
+        panel.sizeDelta = new Vector2(960f, 720f);
         panelObject.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.14f, 0.96f);
         panelObject.GetComponent<Button>().transition = Selectable.Transition.None;
         VerticalLayoutGroup panelLayout = panelObject.GetComponent<VerticalLayoutGroup>();
@@ -1142,7 +1228,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         scrollRectTransform.SetParent(panel, false);
         scrollObject.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.08f, 0.9f);
         LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
-        scrollLayout.preferredHeight = 380f;
+        scrollLayout.preferredHeight = 500f;
         scrollLayout.flexibleHeight = 1f;
 
         GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
@@ -1155,7 +1241,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         GameObject contentObject = new GameObject(
             "Content",
             typeof(RectTransform),
-            typeof(VerticalLayoutGroup),
+            typeof(GridLayoutGroup),
             typeof(ContentSizeFitter));
         RectTransform content = contentObject.GetComponent<RectTransform>();
         content.SetParent(viewport, false);
@@ -1164,13 +1250,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         content.pivot = new Vector2(0.5f, 1f);
         content.offsetMin = Vector2.zero;
         content.offsetMax = Vector2.zero;
-        VerticalLayoutGroup contentLayout = contentObject.GetComponent<VerticalLayoutGroup>();
-        contentLayout.spacing = 6f;
-        contentLayout.padding = new RectOffset(8, 8, 8, 8);
-        contentLayout.childControlWidth = true;
-        contentLayout.childControlHeight = true;
-        contentLayout.childForceExpandWidth = true;
-        contentLayout.childForceExpandHeight = false;
+        _pickerGridLayout = contentObject.GetComponent<GridLayoutGroup>();
+        _pickerGridLayout.cellSize = new Vector2(900f, 64f);
+        _pickerGridLayout.spacing = new Vector2(8f, 6f);
+        _pickerGridLayout.padding = new RectOffset(8, 8, 8, 8);
+        _pickerGridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
+        _pickerGridLayout.startCorner = GridLayoutGroup.Corner.UpperLeft;
+        _pickerGridLayout.childAlignment = TextAnchor.UpperCenter;
+        _pickerGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        _pickerGridLayout.constraintCount = 1;
         ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -1190,6 +1278,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _pickerRoot.gameObject.SetActive(false);
     }
 
+    private void SetPickerLayout(bool twoColumns)
+    {
+        if (_pickerGridLayout == null) return;
+
+        _pickerGridLayout.constraintCount = twoColumns ? 2 : 1;
+        _pickerGridLayout.cellSize = new Vector2(twoColumns ? 450f : 900f, 64f);
+    }
+
     private void ClearPickerOptions()
     {
         if (_pickerContent == null) return;
@@ -1203,7 +1299,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         if (_pickerContent == null || _characterItemPrefab == null) return;
 
-        Button button = CreateButton(_pickerContent, null, 0f, 56f, () => onClick?.Invoke());
+        Button button = CreateButton(_pickerContent, null, 0f, 64f, () => onClick?.Invoke());
         button.GetComponent<LayoutElement>().flexibleWidth = 1f;
         SetButtonLabel(button, label);
         if (onHighlight != null)
