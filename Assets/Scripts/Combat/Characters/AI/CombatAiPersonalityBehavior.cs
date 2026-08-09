@@ -26,13 +26,10 @@ public static class CombatAiPersonalityBehavior
         } : 0f;
         if (profile != null)
         {
-            bool hasKnownEnemy = HasKnownEnemy(context);
             score += profile.Kind switch
             {
                 CombatAiPersonalityKind.BattleJunkie when objective == CombatObjective.AttackEnemy => ForcedSelectionScore,
                 CombatAiPersonalityKind.BattleJunkie => ForcedRejectionScore,
-                CombatAiPersonalityKind.Coward when objective == CombatObjective.Retreat && hasKnownEnemy => ForcedSelectionScore,
-                CombatAiPersonalityKind.Coward when hasKnownEnemy => ForcedRejectionScore,
                 CombatAiPersonalityKind.Cunning when objective == CombatObjective.DestroyEnemyStone => 160f,
                 CombatAiPersonalityKind.Cunning when objective == CombatObjective.AttackEnemy => -36f,
                 CombatAiPersonalityKind.Devoted when objective == CombatObjective.SupportAlly => 72f,
@@ -74,7 +71,6 @@ public static class CombatAiPersonalityBehavior
             {
                 CombatAiPersonalityKind.AttentionSeeker => 130f,
                 CombatAiPersonalityKind.BattleJunkie => 96f,
-                CombatAiPersonalityKind.Coward => ForcedSelectionScore,
                 CombatAiPersonalityKind.Cunning => 90f,
                 CombatAiPersonalityKind.Devoted => 140f,
                 CombatAiPersonalityKind.Lonely => 136f,
@@ -87,8 +83,6 @@ public static class CombatAiPersonalityBehavior
         {
             CombatAiPersonalityKind.BattleJunkie when code == CombatAiMoveCode.PursueEnemy => 72f,
             CombatAiPersonalityKind.BattleJunkie when code == CombatAiMoveCode.AdvanceEnemyStone || code == CombatAiMoveCode.AdvanceViaBridge => -80f,
-            CombatAiPersonalityKind.Coward when code == CombatAiMoveCode.ReturnOwnStone || code == CombatAiMoveCode.MoveForest => 40f,
-            CombatAiPersonalityKind.Coward when code == CombatAiMoveCode.PursueEnemy => -40f,
             CombatAiPersonalityKind.Cunning when code == CombatAiMoveCode.AdvanceViaBridge => 72f,
             CombatAiPersonalityKind.Cunning when code == CombatAiMoveCode.AdvanceEnemyStone => 56f,
             CombatAiPersonalityKind.Cunning when code == CombatAiMoveCode.PursueEnemy => -48f,
@@ -121,7 +115,6 @@ public static class CombatAiPersonalityBehavior
         score += profile.Kind switch
         {
             CombatAiPersonalityKind.BattleJunkie when damage => 48f,
-            CombatAiPersonalityKind.Coward when damage => -24f,
             CombatAiPersonalityKind.Cunning when damage && objective == CombatObjective.DestroyEnemyStone => 28f,
             CombatAiPersonalityKind.Devoted when support => 48f,
             CombatAiPersonalityKind.Lonely when support => 18f,
@@ -142,18 +135,6 @@ public static class CombatAiPersonalityBehavior
             {
                 return true;
             }
-        }
-
-        return false;
-    }
-
-    public static bool HasKnownEnemy(CombatAiContext context)
-    {
-        if (context == null) return false;
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.IsAlive && enemy.HasKnownPosition) return true;
         }
 
         return false;

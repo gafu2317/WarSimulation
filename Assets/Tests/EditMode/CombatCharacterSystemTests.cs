@@ -34,6 +34,12 @@ public sealed class CombatCharacterSystemTests
                 character.Team == CombatTeam.Ally && character.GetComponent<CombatAiBrain>() != null));
             Assert.That(system.EnemyCharacters, Has.All.Matches<Character>(character =>
                 character.Team == CombatTeam.Enemy && character.GetComponent<CombatAiBrain>() != null));
+            Assert.That(
+                system.AllyCharacters.ConvertAll(character => character.DisplayName),
+                Is.EqualTo(new[] { "砂狼シロコ", "小鳥遊ホシノ", "陸八魔アル", "空崎ヒナ", "浅黄ムツキ", "黒見セリカ", "十六夜ノノミ", "奥空アヤネ", "聖園ミカ", "早瀬ユウカ" }));
+            Assert.That(
+                system.EnemyCharacters.ConvertAll(character => character.DisplayName),
+                Is.EqualTo(new[] { "杏山カズサ", "才羽モモイ", "才羽ミドリ", "天雨アコ", "銀鏡イオリ", "火宮チナツ", "愛清フウカ", "棗イロハ", "下江コハル", "浦和ハナコ" }));
             Assert.That(system.transform.Find("GeneratedCombatCharacters"), Is.Not.Null);
         }
         finally

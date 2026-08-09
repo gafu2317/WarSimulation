@@ -9,7 +9,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         CombatAiPersonalityKind.Neutral,
         CombatAiPersonalityKind.AttentionSeeker,
         CombatAiPersonalityKind.BattleJunkie,
-        CombatAiPersonalityKind.Coward,
         CombatAiPersonalityKind.Cunning,
         CombatAiPersonalityKind.Devoted,
         CombatAiPersonalityKind.Lonely,
@@ -62,10 +61,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 profile._aggression = 1f;
                 profile._riskTolerance = 0.7f;
                 break;
-            case CombatAiPersonalityKind.Coward:
-                profile._caution = 1f;
-                profile._riskTolerance = -1f;
-                break;
             case CombatAiPersonalityKind.Cunning:
                 profile._caution = 0.8f;
                 profile._objectiveFocus = 0.9f;
@@ -94,7 +89,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         {
             CombatAiPersonalityKind.AttentionSeeker => "目立ちたがり屋",
             CombatAiPersonalityKind.BattleJunkie => "戦闘狂",
-            CombatAiPersonalityKind.Coward => "臆病者",
             CombatAiPersonalityKind.Cunning => "狡猾",
             CombatAiPersonalityKind.Devoted => "献身的",
             CombatAiPersonalityKind.Lonely => "寂しがり",
@@ -111,8 +105,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 "キャラの多い場所へ寄って目立ちます。",
             CombatAiPersonalityKind.BattleJunkie =>
                 "何があっても敵への攻撃をやめません。",
-            CombatAiPersonalityKind.Coward =>
-                "敵がいるとすぐに後退します。",
             CombatAiPersonalityKind.Cunning =>
                 "敵の少ないルートを使って魔石へ向かいます。",
             CombatAiPersonalityKind.Devoted =>

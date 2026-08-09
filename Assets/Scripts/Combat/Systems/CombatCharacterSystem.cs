@@ -11,6 +11,16 @@ public class CombatCharacterSystem : MonoBehaviour
     private const float FlatCellMaxSlopeDeg = 8f;
     private const float CharacterSpacingDistance = 1.5f;
     private const float InitialFeatureClearanceDistance = 3f;
+    private static readonly string[] DefaultAllyCandidateNames =
+    {
+        "砂狼シロコ", "小鳥遊ホシノ", "陸八魔アル", "空崎ヒナ", "浅黄ムツキ",
+        "黒見セリカ", "十六夜ノノミ", "奥空アヤネ", "聖園ミカ", "早瀬ユウカ",
+    };
+    private static readonly string[] DefaultEnemyCandidateNames =
+    {
+        "杏山カズサ", "才羽モモイ", "才羽ミドリ", "天雨アコ", "銀鏡イオリ",
+        "火宮チナツ", "愛清フウカ", "棗イロハ", "下江コハル", "浦和ハナコ",
+    };
     private static readonly ProfilerMarker CollectAiBrainsMarker = new("CombatAI.CollectBrains");
     private static readonly ProfilerMarker ScanAiVisionMarker = new("CombatAI.ScanVision");
     private static readonly ProfilerMarker ShareAiVisionMarker = new("CombatAI.ShareVision");
@@ -414,6 +424,16 @@ public class CombatCharacterSystem : MonoBehaviour
                 return;
             }
 
+            CombatMapSystem mapSystem = ResolveMapSystem();
+            if (mapSystem == null || !mapSystem.EnsureMapAndNavMeshInitialized())
+            {
+                Debug.LogError(
+                    $"[{nameof(CombatCharacterSystem)}] Cannot generate runtime candidates before the map NavMesh is ready.",
+                    this);
+                enabled = false;
+                return;
+            }
+
             GenerateCandidates();
         }
 
@@ -435,8 +455,11 @@ public class CombatCharacterSystem : MonoBehaviour
 
         var root = new GameObject(GeneratedCharactersRootName);
         root.transform.SetParent(transform, false);
+        root.SetActive(false);
         GenerateTeamCandidates(root.transform, CombatTeam.Ally, AllyCharacters);
         GenerateTeamCandidates(root.transform, CombatTeam.Enemy, EnemyCharacters);
+        TryRelocateCharactersNearMainStones();
+        root.SetActive(true);
     }
 
     private void GenerateTeamCandidates(
@@ -444,11 +467,13 @@ public class CombatCharacterSystem : MonoBehaviour
         CombatTeam team,
         List<Character> destination)
     {
-        string namePrefix = team == CombatTeam.Ally ? "AllyCandidate" : "EnemyCandidate";
+        string[] defaultNames = team == CombatTeam.Ally
+            ? DefaultAllyCandidateNames
+            : DefaultEnemyCandidateNames;
         for (int i = 0; i < CandidateCountPerTeam; i++)
         {
             Character character = Instantiate(_characterPrefab, parent);
-            character.name = $"{namePrefix}{i + 1:00}";
+            character.name = defaultNames[i];
             character.gameObject.SetActive(true);
             character.SetTeam(team);
             destination.Add(character);

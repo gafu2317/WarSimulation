@@ -98,6 +98,7 @@ public class CombatMapSystem : MonoBehaviour
     private TerrainData _cachedTerrainData;
     private float _cachedTerrainMinimumHeight;
     private float _cachedTerrainMaximumHeight;
+    private bool _isNavMeshReady;
 
     // 天気
     public enum Weather { Sunny, Rainy, Hot, Cold, Thunder }
@@ -112,15 +113,37 @@ public class CombatMapSystem : MonoBehaviour
 
     private void Start()
     {
-        if (!_buildMapOnStart || CurrentMap != null) return;
+        if (!_buildMapOnStart || _isNavMeshReady) return;
 
-        BuildAndSetCurrentMap(_renderMapOnStart);
+        if (_renderMapOnStart)
+        {
+            EnsureMapAndNavMeshInitialized();
+        }
+        else if (CurrentMap == null)
+        {
+            BuildAndSetCurrentMap(render3D: false);
+        }
+    }
+
+    public bool EnsureMapAndNavMeshInitialized()
+    {
+        if (_isNavMeshReady && CurrentMap != null) return true;
+        if (!_buildMapOnStart)
+        {
+            Debug.LogWarning(
+                $"[{nameof(CombatMapSystem)}] Cannot initialize the map and NavMesh because map building is disabled.",
+                this);
+            return false;
+        }
+
+        return BuildAndSetCurrentMap(render3D: true) != null && _isNavMeshReady;
     }
 
     public void SetCurrentMap(MapData map)
     {
         bool isSameMap = map != null && ReferenceEquals(CurrentMap, map);
         CurrentMap = map;
+        if (!isSameMap) _isNavMeshReady = false;
         if (!isSameMap)
         {
             IsStonePositionReversed = false;
@@ -412,6 +435,7 @@ public class CombatMapSystem : MonoBehaviour
             bakeNavMesh: render3D,
             prebakedNavMesh);
         SetCurrentMap(map);
+        _isNavMeshReady = render3D && navMeshReady;
         if (navMeshReady && render3D)
         {
             CombatAssaultRouteCache.EnsureBuilt(this);

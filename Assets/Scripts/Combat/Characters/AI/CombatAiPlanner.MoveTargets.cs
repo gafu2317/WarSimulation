@@ -167,51 +167,6 @@ public static partial class CombatAiPlanner
         return CombatMoveTarget.ForCharacter(ally);
     }
 
-    private static CombatMoveTarget CreateCowardRetreatTarget(CombatAiContext context)
-    {
-        CombatCharacterIntel nearestEnemy = FindNearestKnownEnemyIntel(context, context.Owner.transform.position);
-        if (nearestEnemy.Character == null) return CombatMoveTarget.None;
-
-        Vector3 ownerPosition = context.Owner.transform.position;
-        float ownerEnemyDistance = HorizontalDistance(ownerPosition, nearestEnemy.KnownPosition);
-
-        Character nearestAlly = FindNearestAllyCharacter(context);
-        if (nearestAlly != null)
-        {
-            Vector3 direction = Flatten(nearestEnemy.KnownPosition - nearestAlly.transform.position);
-            if (direction.sqrMagnitude > 0.01f)
-            {
-                direction.Normalize();
-                Vector3 behindAlly = nearestAlly.transform.position - direction * 2.5f;
-                behindAlly.y = ownerPosition.y;
-                float behindEnemyDistance = HorizontalDistance(behindAlly, nearestEnemy.KnownPosition);
-                // 味方の後ろでも敵に近づくなら採用しない（後退専用）。
-                if (behindEnemyDistance > ownerEnemyDistance + 0.5f &&
-                    HorizontalDistance(ownerPosition, behindAlly) > 1.25f)
-                {
-                    return CombatMoveTarget.ForPosition(behindAlly);
-                }
-            }
-        }
-
-        if (context.HasOwnStonePosition)
-        {
-            float stoneEnemyDistance = HorizontalDistance(context.OwnStonePosition, nearestEnemy.KnownPosition);
-            if (stoneEnemyDistance > ownerEnemyDistance + 0.5f &&
-                HorizontalDistance(ownerPosition, context.OwnStonePosition) > 1.25f)
-            {
-                return CombatMoveTarget.ForPosition(context.OwnStonePosition);
-            }
-        }
-
-        Vector3 away = Flatten(ownerPosition - nearestEnemy.KnownPosition);
-        if (away.sqrMagnitude <= 0.01f) away = Vector3.back;
-        away.Normalize();
-        Vector3 destination = ownerPosition + away * 6f;
-        destination.y = ownerPosition.y;
-        return CombatMoveTarget.ForPosition(destination);
-    }
-
     private static CombatMoveTarget CreateCunningLowRiskStoneTarget(CombatAiContext context)
     {
         if (!context.HasEnemyStonePosition || context.Owner == null) return CombatMoveTarget.None;

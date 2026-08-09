@@ -101,14 +101,8 @@ public static class CombatCompositionSweepGenerator
 
     private static readonly CombatAiPersonalityKind[] AffinitySupport =
     {
-        CombatAiPersonalityKind.Coward,
         CombatAiPersonalityKind.Devoted,
         CombatAiPersonalityKind.Lonely,
-    };
-
-    private static readonly CombatAiPersonalityKind[] AffinityGrimoire =
-    {
-        CombatAiPersonalityKind.Coward,
     };
 
     // Affinity-valid combo seeds from docs/AI/コンボ.md
@@ -138,11 +132,6 @@ public static class CombatCompositionSweepGenerator
         {
             new CombatAutoBattleRole { Weapon = WeaponKind.Shield, Personality = CombatAiPersonalityKind.AttentionSeeker },
             new CombatAutoBattleRole { Weapon = WeaponKind.Wand, Personality = CombatAiPersonalityKind.BattleJunkie },
-        },
-        new[]
-        {
-            new CombatAutoBattleRole { Weapon = WeaponKind.Shield, Personality = CombatAiPersonalityKind.AttentionSeeker },
-            new CombatAutoBattleRole { Weapon = WeaponKind.Rosary, Personality = CombatAiPersonalityKind.Coward },
         },
         new[]
         {
@@ -314,8 +303,6 @@ public static class CombatCompositionSweepGenerator
                 return AffinitySwordWand;
             case WeaponKind.Shield:
                 return AffinityShield;
-            case WeaponKind.Grimoire:
-                return AffinityGrimoire;
             default:
                 return AffinitySupport;
         }
