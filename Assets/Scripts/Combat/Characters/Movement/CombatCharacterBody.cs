@@ -5,6 +5,9 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 public sealed class CombatCharacterBody : MonoBehaviour
 {
+    private const string RiverAreaName = "River";
+    private const string WalkableAreaName = "Walkable";
+
     [SerializeField] private CombatMapSystem _mapSystem;
     [SerializeField] private CombatNavigationSystem _navigationSystem;
 
@@ -67,6 +70,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
     {
         if (_agent == null || !_agent.isOnNavMesh) return false;
 
+        ApplyPersonalityNavigationCosts();
         return ResolveNavigationSystem().TryResolveDestination(
             _agent,
             worldPosition,
@@ -85,6 +89,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
         if (!isRetreat && owner != null && owner.SkillCaster.IsCasting) return false;
         if (!isRetreat && IsMovementRestricted()) return false;
 
+        ApplyPersonalityNavigationCosts();
         if (!ResolveNavigationSystem().TryResolveDestination(
                 _agent,
                 worldPosition,
@@ -100,6 +105,22 @@ public sealed class CombatCharacterBody : MonoBehaviour
         resolvedDestination = destination;
         SetRoute(path.corners);
         return true;
+    }
+
+    private void ApplyPersonalityNavigationCosts()
+    {
+        Character owner = GetComponent<Character>();
+        if (_agent == null || owner?.PersonalityProfile == null ||
+            owner.PersonalityProfile.Kind != CombatAiPersonalityKind.Reckless)
+        {
+            return;
+        }
+
+        int riverArea = NavMesh.GetAreaFromName(RiverAreaName);
+        int walkableArea = NavMesh.GetAreaFromName(WalkableAreaName);
+        if (riverArea < 0 || walkableArea < 0) return;
+
+        _agent.SetAreaCost(riverArea, NavMesh.GetAreaCost(walkableArea));
     }
 
     public void Stop()
