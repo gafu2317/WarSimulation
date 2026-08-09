@@ -18,6 +18,10 @@ public sealed class RosaryDistantHealSkill : SkillBase
 
     public override string Name => "遠隔癒し";
 
+    public override string PowerDescription => $"FAI × {_faiScale:0.##}";
+
+    public override string EffectDescription => "単体回復。距離で回復量補正";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;

@@ -6,6 +6,10 @@ public abstract class SkillBase
 
     public abstract string Name { get; }
 
+    public virtual string PowerDescription => string.Empty;
+
+    public virtual string EffectDescription => string.Empty;
+
     public virtual float CooldownSeconds => 0f;
 
     public virtual float CastTimeSeconds => 0f;

@@ -12,6 +12,8 @@ public sealed class BibleInvulnerableSkill : SkillBase
     }
 
     public override string Name => "無敵";
+
+    public override string EffectDescription => $"自身を無敵化（{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1.2f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Self;

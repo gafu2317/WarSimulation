@@ -24,6 +24,9 @@ public sealed class StatBuffSkill : SkillBase
 
     public override string Name => _name;
 
+    public override string EffectDescription =>
+        $"{_stat}を × {_buffMultiplier:0.##}（{_durationSeconds:0.##}秒）";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float CastTimeSeconds => 0.9f;

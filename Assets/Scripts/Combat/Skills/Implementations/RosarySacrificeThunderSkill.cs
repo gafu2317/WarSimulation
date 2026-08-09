@@ -17,6 +17,8 @@ public sealed class RosarySacrificeThunderSkill : SkillBase
     }
 
     public override string Name => "神の雷";
+    public override string PowerDescription => $"FAI × {_faiScale:0.##}";
+    public override string EffectDescription => "認識済みの敵へ範囲ダメージ";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 2.5f;
     public override SkillTargetKind TargetKind => SkillTargetKind.RecognizedEnemies;

@@ -20,6 +20,9 @@ public sealed class BibleGotsumeSkill : SkillBase
     }
 
     public override string Name => "ゴツメ";
+
+    public override string EffectDescription =>
+        $"攻撃者へ {_reflectDamage} ダメージ反射（{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1f;
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;

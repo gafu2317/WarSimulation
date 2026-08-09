@@ -18,6 +18,10 @@ public sealed class GrimoireBoltSkill : SkillBase
 
     public override string Name => "通常攻撃";
 
+    public override string PowerDescription => $"INT × {_intScale:0.##}";
+
+    public override string EffectDescription => "単体ダメージ";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float MaxRange => _maxRange;

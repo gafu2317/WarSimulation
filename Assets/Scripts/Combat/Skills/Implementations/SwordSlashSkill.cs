@@ -18,6 +18,10 @@ public sealed class SwordSlashSkill : SkillBase
 
     public override string Name => "斬撃";
 
+    public override string PowerDescription => $"STR × {_strScale:0.##}";
+
+    public override string EffectDescription => "単体ダメージ";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float MaxRange => _maxRange;

@@ -24,6 +24,9 @@ public sealed class StatDebuffSkill : SkillBase
 
     public override string Name => _name;
 
+    public override string EffectDescription =>
+        $"対象の {_stat} を × {_debuffMultiplier:0.##}（{_durationSeconds:0.##}秒）";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float CastTimeSeconds => 1f;

@@ -18,6 +18,10 @@ public sealed class WandArcaneBlastSkill : SkillBase
 
     public override string Name => "極大魔弾";
 
+    public override string PowerDescription => $"INT × {_intScale:0.##}";
+
+    public override string EffectDescription => "単体の高威力ダメージ";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float CastTimeSeconds => 1.5f;

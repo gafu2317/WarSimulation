@@ -18,6 +18,10 @@ public sealed class BibleSmiteSkill : SkillBase
 
     public override string Name => "通常攻撃";
 
+    public override string PowerDescription => $"FAI × {_faiScale:0.##}";
+
+    public override string EffectDescription => "単体ダメージ";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float MaxRange => _maxRange;

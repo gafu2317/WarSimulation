@@ -17,6 +17,8 @@ public sealed class WandGodsHandSkill : SkillBase
     }
 
     public override string Name => "神の手";
+    public override string PowerDescription => $"INT × {_intScale:0.##}";
+    public override string EffectDescription => "単体の超高威力ダメージ";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 2.5f;
     public override float MaxRange => _maxRange;

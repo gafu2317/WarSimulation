@@ -18,6 +18,10 @@ public sealed class RosaryCloseHealSkill : SkillBase
 
     public override string Name => "大回復";
 
+    public override string PowerDescription => $"FAI × {_faiScale:0.##}";
+
+    public override string EffectDescription => "単体大回復";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float CastTimeSeconds => 1.3f;

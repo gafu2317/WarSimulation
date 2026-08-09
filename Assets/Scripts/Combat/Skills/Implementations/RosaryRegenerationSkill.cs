@@ -23,6 +23,9 @@ public sealed class RosaryRegenerationSkill : SkillBase
     }
 
     public override string Name => "継続回復";
+    public override string PowerDescription =>
+        $"{_healPerTick} 回復/{_tickIntervalSeconds:0.##}秒 × {_durationSeconds:0.##}秒";
+    public override string EffectDescription => "対象に継続回復";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1f;
     public override SkillTargetKind TargetKind => SkillTargetKind.AllyOrSelf;

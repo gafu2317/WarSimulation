@@ -12,6 +12,8 @@ public sealed class GrimoireStealthSkill : SkillBase
     }
 
     public override string Name => "不可視";
+
+    public override string EffectDescription => $"自身を不可視化（{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 0.8f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Self;

@@ -26,6 +26,9 @@ public sealed class RosaryHealingAreaSkill : SkillBase
     }
 
     public override string Name => "回復エリア";
+    public override string PowerDescription =>
+        $"{_healPerTick} 回復/{_tickIntervalSeconds:0.##}秒 × {_durationSeconds:0.##}秒";
+    public override string EffectDescription => "地点に回復エリアを設置";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1.5f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Point;

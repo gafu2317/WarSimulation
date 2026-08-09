@@ -20,6 +20,8 @@ public sealed class BibleCarryRushSkill : SkillBase
     }
 
     public override string Name => "高速移動";
+    public override string EffectDescription =>
+        $"味方の移動速度 × {_speedMultiplier:0.##}（{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1.2f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Ally;

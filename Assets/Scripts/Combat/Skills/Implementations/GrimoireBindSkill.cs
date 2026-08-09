@@ -17,6 +17,8 @@ public sealed class GrimoireBindSkill : SkillBase
     }
 
     public override string Name => "金縛り";
+
+    public override string EffectDescription => $"対象を拘束（{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1.4f;
     public override float MaxRange => _maxRange;

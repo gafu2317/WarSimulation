@@ -20,6 +20,8 @@ public sealed class WandAreaBlastSkill : SkillBase
     }
 
     public override string Name => "範囲魔法";
+    public override string PowerDescription => $"INT × {_intScale:0.##}";
+    public override string EffectDescription => "範囲ダメージ";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1.5f;
     public override SkillTargetKind TargetKind => SkillTargetKind.Area;

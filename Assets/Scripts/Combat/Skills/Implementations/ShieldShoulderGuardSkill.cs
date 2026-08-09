@@ -20,6 +20,8 @@ public sealed class ShieldShoulderGuardSkill : SkillBase
     }
 
     public override string Name => "肩代わり";
+    public override string EffectDescription =>
+        $"味方への攻撃を肩代わり（肩代わり先の {_damageMultiplier:0%} ダメージ、{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
     public override SkillTargetKind TargetKind => SkillTargetKind.Ally;
     public override float MaxRange => _maxRange;

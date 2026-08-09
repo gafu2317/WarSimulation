@@ -23,6 +23,9 @@ public sealed class GrimoirePoisonSkill : SkillBase
     }
 
     public override string Name => "毒";
+
+    public override string EffectDescription =>
+        $"毒 {_damagePerTick}ダメージ/{_tickIntervalSeconds:0.##}秒 × {_durationSeconds:0.##}秒";
     public override float CooldownSeconds => _cooldownSeconds;
     public override float CastTimeSeconds => 1.1f;
     public override float MaxRange => _maxRange;

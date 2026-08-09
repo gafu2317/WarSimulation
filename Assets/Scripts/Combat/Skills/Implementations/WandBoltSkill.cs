@@ -18,6 +18,10 @@ public sealed class WandBoltSkill : SkillBase
 
     public override string Name => "魔弾";
 
+    public override string PowerDescription => $"INT × {_intScale:0.##}";
+
+    public override string EffectDescription => "単体ダメージ。距離で威力補正";
+
     public override float CooldownSeconds => _cooldownSeconds;
 
     public override float MaxRange => _maxRange;

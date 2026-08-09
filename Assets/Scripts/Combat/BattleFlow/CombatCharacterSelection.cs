@@ -70,10 +70,19 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private GameObject _enemyColumnRoot;
     private LayoutElement _teamSelectionsLayout;
     private RectTransform _pickerRoot;
+    private RectTransform _pickerPanel;
+    private RectTransform _pickerDetailsRoot;
     private TMP_Text _pickerDescription;
     private TMP_Text _pickerTitle;
     private Transform _pickerContent;
+    private Transform _pickerDetailsContent;
     private GridLayoutGroup _pickerGridLayout;
+    private LayoutElement _pickerOptionsLayout;
+    private LayoutElement _pickerDetailsLayout;
+    private readonly List<Button> _pickerWeaponButtons = new();
+    private bool _pickerShowsWeaponDetails;
+    private int _pendingWeaponIndex = -1;
+    private Action<int> _pendingWeaponSelectionCommit;
     private bool _detailSettingsOpen;
     private bool _stonePositionReversed;
 
@@ -208,7 +217,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
         }
 
-        ClosePicker();
+        ClosePicker(commitPendingWeaponSelection: false);
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
         {
             DestroyGeneratedObject(_builtInPersonalityOptions[i]);
@@ -994,29 +1003,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void OpenWeaponPicker(SelectionRow row)
     {
-        if (_weaponOptions.Count == 0) return;
-
-        EnsurePicker();
-        SetPickerLayout(twoColumns: false);
-        ClearPickerOptions();
-        SetPickerTitle("武器を選択");
-        SetPickerDescription("一覧から武器を選んでください。");
-
-        for (int i = 0; i < _weaponOptions.Count; i++)
-        {
-            int index = i;
-            WeaponConfig weapon = _weaponOptions[i];
-            string label = GetWeaponName(weapon);
-            if (index == row.WeaponIndex) label = "■ " + label;
-            AddPickerOption(label, () =>
+        OpenWeaponPicker(
+            "武器を選択",
+            row.WeaponIndex,
+            index =>
             {
                 row.WeaponIndex = index;
                 RefreshRow(row);
-                ClosePicker();
             });
-        }
-
-        ShowPicker();
     }
 
     private void OpenBulkWeaponPicker()
@@ -1024,16 +1018,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_weaponOptions.Count == 0) return;
 
         List<SelectionRow> rows = GetVisibleRows();
-        EnsurePicker();
-        SetPickerLayout(twoColumns: false);
-        ClearPickerOptions();
-        SetPickerTitle("武器一括変更");
-        SetPickerDescription("現在表示中の陣営10人の武器をまとめて変更します。");
-
-        for (int i = 0; i < _weaponOptions.Count; i++)
-        {
-            int index = i;
-            AddPickerOption(GetWeaponName(_weaponOptions[i]), () =>
+        OpenWeaponPicker(
+            "武器一括変更",
+            rows.Count > 0 ? rows[0].WeaponIndex : 0,
+            index =>
             {
                 for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
                 {
@@ -1041,10 +1029,34 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 }
 
                 RefreshRows(rows);
-                ClosePicker();
             });
+    }
+
+    private void OpenWeaponPicker(string title, int selectedIndex, Action<int> onSelected)
+    {
+        if (_weaponOptions.Count == 0) return;
+
+        EnsurePicker();
+        SetWeaponPickerLayout();
+        ClearPickerOptions();
+        ClearPickerDetails();
+        SetPickerTitle(title);
+        SetPickerDescription("武器を選ぶと右側にスキル詳細が表示されます。");
+        _pendingWeaponIndex = Mathf.Clamp(selectedIndex, 0, _weaponOptions.Count - 1);
+        _pendingWeaponSelectionCommit = onSelected;
+
+        for (int i = 0; i < _weaponOptions.Count; i++)
+        {
+            int index = i;
+            Button button = AddPickerOption(GetWeaponPickerLabel(index), () =>
+            {
+                _pendingWeaponIndex = index;
+                RefreshWeaponPickerSelection();
+            });
+            _pickerWeaponButtons.Add(button);
         }
 
+        RefreshWeaponPickerSelection();
         ShowPicker();
     }
 
@@ -1186,6 +1198,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         panel.anchorMax = new Vector2(0.5f, 0.5f);
         panel.pivot = new Vector2(0.5f, 0.5f);
         panel.sizeDelta = new Vector2(960f, 720f);
+        _pickerPanel = panel;
         panelObject.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.14f, 0.96f);
         panelObject.GetComponent<Button>().transition = Selectable.Transition.None;
         VerticalLayoutGroup panelLayout = panelObject.GetComponent<VerticalLayoutGroup>();
@@ -1218,6 +1231,22 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                                           _pickerDescription.gameObject.AddComponent<LayoutElement>();
         descriptionLayout.preferredHeight = 72f;
 
+        GameObject bodyObject = new GameObject(
+            "PickerBody",
+            typeof(RectTransform),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement));
+        RectTransform body = bodyObject.GetComponent<RectTransform>();
+        body.SetParent(panel, false);
+        HorizontalLayoutGroup bodyLayout = bodyObject.GetComponent<HorizontalLayoutGroup>();
+        bodyLayout.spacing = 10f;
+        bodyLayout.childControlWidth = true;
+        bodyLayout.childControlHeight = true;
+        bodyLayout.childForceExpandWidth = false;
+        bodyLayout.childForceExpandHeight = true;
+        LayoutElement bodyElement = bodyObject.GetComponent<LayoutElement>();
+        bodyElement.flexibleHeight = 1f;
+
         GameObject scrollObject = new GameObject(
             "Scroll",
             typeof(RectTransform),
@@ -1225,11 +1254,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             typeof(ScrollRect),
             typeof(LayoutElement));
         RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
-        scrollRectTransform.SetParent(panel, false);
+        scrollRectTransform.SetParent(body, false);
         scrollObject.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.08f, 0.9f);
         LayoutElement scrollLayout = scrollObject.GetComponent<LayoutElement>();
-        scrollLayout.preferredHeight = 500f;
-        scrollLayout.flexibleHeight = 1f;
+        scrollLayout.flexibleWidth = 1f;
+        _pickerOptionsLayout = scrollLayout;
 
         GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
         RectTransform viewport = viewportObject.GetComponent<RectTransform>();
@@ -1271,6 +1300,61 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         scroll.vertical = true;
         scroll.movementType = ScrollRect.MovementType.Clamped;
 
+        GameObject detailsObject = new GameObject(
+            "SkillDetails",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(ScrollRect),
+            typeof(LayoutElement));
+        _pickerDetailsRoot = detailsObject.GetComponent<RectTransform>();
+        _pickerDetailsRoot.SetParent(body, false);
+        detailsObject.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.08f, 0.9f);
+        _pickerDetailsLayout = detailsObject.GetComponent<LayoutElement>();
+        _pickerDetailsLayout.flexibleWidth = 4f;
+
+        GameObject detailsViewportObject = new GameObject(
+            "Viewport",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Mask));
+        RectTransform detailsViewport = detailsViewportObject.GetComponent<RectTransform>();
+        detailsViewport.SetParent(_pickerDetailsRoot, false);
+        Stretch(detailsViewport);
+        detailsViewportObject.GetComponent<Image>().color = Color.white;
+        detailsViewportObject.GetComponent<Mask>().showMaskGraphic = false;
+
+        GameObject detailsContentObject = new GameObject(
+            "Content",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(ContentSizeFitter));
+        RectTransform detailsContent = detailsContentObject.GetComponent<RectTransform>();
+        detailsContent.SetParent(detailsViewport, false);
+        detailsContent.anchorMin = new Vector2(0f, 1f);
+        detailsContent.anchorMax = new Vector2(1f, 1f);
+        detailsContent.pivot = new Vector2(0.5f, 1f);
+        detailsContent.offsetMin = Vector2.zero;
+        detailsContent.offsetMax = Vector2.zero;
+        VerticalLayoutGroup detailsLayout = detailsContentObject.GetComponent<VerticalLayoutGroup>();
+        detailsLayout.spacing = 8f;
+        detailsLayout.padding = new RectOffset(8, 8, 8, 8);
+        detailsLayout.childControlWidth = true;
+        detailsLayout.childControlHeight = true;
+        detailsLayout.childForceExpandWidth = true;
+        detailsLayout.childForceExpandHeight = false;
+        ContentSizeFitter detailsFitter = detailsContentObject.GetComponent<ContentSizeFitter>();
+        detailsFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        detailsFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        _pickerDetailsContent = detailsContent;
+
+        ScrollRect detailsScroll = detailsObject.GetComponent<ScrollRect>();
+        detailsScroll.viewport = detailsViewport;
+        detailsScroll.content = detailsContent;
+        detailsScroll.horizontal = false;
+        detailsScroll.vertical = true;
+        detailsScroll.movementType = ScrollRect.MovementType.Clamped;
+        _pickerDetailsRoot.gameObject.SetActive(false);
+
         Button closeButton = CreateButton(panel, "ClosePickerButton", 0f, 44f, ClosePicker);
         closeButton.GetComponent<LayoutElement>().flexibleWidth = 1f;
         SetButtonLabel(closeButton, "閉じる");
@@ -1282,12 +1366,58 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         if (_pickerGridLayout == null) return;
 
+        _pickerShowsWeaponDetails = false;
+        if (_pickerPanel != null)
+        {
+            _pickerPanel.sizeDelta = new Vector2(960f, 720f);
+        }
+
+        if (_pickerDetailsRoot != null)
+        {
+            _pickerDetailsRoot.gameObject.SetActive(false);
+        }
+
+        if (_pickerOptionsLayout != null)
+        {
+            _pickerOptionsLayout.flexibleWidth = 1f;
+        }
+
         _pickerGridLayout.constraintCount = twoColumns ? 2 : 1;
         _pickerGridLayout.cellSize = new Vector2(twoColumns ? 450f : 900f, 64f);
     }
 
+    private void SetWeaponPickerLayout()
+    {
+        if (_pickerGridLayout == null) return;
+
+        _pickerShowsWeaponDetails = true;
+        if (_pickerPanel != null)
+        {
+            _pickerPanel.sizeDelta = new Vector2(1440f, 720f);
+        }
+
+        if (_pickerOptionsLayout != null)
+        {
+            _pickerOptionsLayout.flexibleWidth = 2f;
+        }
+
+        if (_pickerDetailsLayout != null)
+        {
+            _pickerDetailsLayout.flexibleWidth = 8f;
+        }
+
+        if (_pickerDetailsRoot != null)
+        {
+            _pickerDetailsRoot.gameObject.SetActive(true);
+        }
+
+        _pickerGridLayout.constraintCount = 1;
+        _pickerGridLayout.cellSize = new Vector2(260f, 64f);
+    }
+
     private void ClearPickerOptions()
     {
+        _pickerWeaponButtons.Clear();
         if (_pickerContent == null) return;
         for (int i = _pickerContent.childCount - 1; i >= 0; i--)
         {
@@ -1295,9 +1425,9 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
     }
 
-    private void AddPickerOption(string label, Action onClick, Action onHighlight = null)
+    private Button AddPickerOption(string label, Action onClick, Action onHighlight = null)
     {
-        if (_pickerContent == null || _characterItemPrefab == null) return;
+        if (_pickerContent == null || _characterItemPrefab == null) return null;
 
         Button button = CreateButton(_pickerContent, null, 0f, 64f, () => onClick?.Invoke());
         button.GetComponent<LayoutElement>().flexibleWidth = 1f;
@@ -1306,6 +1436,232 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             button.gameObject.AddComponent<EventTriggerProxy>().OnHighlighted = onHighlight;
         }
+
+        return button;
+    }
+
+    private string GetWeaponPickerLabel(int index)
+    {
+        string prefix = index == _pendingWeaponIndex ? "■ " : string.Empty;
+        return prefix + GetWeaponName(_weaponOptions[index]);
+    }
+
+    private void RefreshWeaponPickerSelection()
+    {
+        if (!_pickerShowsWeaponDetails) return;
+
+        for (int i = 0; i < _pickerWeaponButtons.Count; i++)
+        {
+            Button button = _pickerWeaponButtons[i];
+            if (button != null && i < _weaponOptions.Count)
+            {
+                SetButtonLabel(button, GetWeaponPickerLabel(i));
+            }
+        }
+
+        RefreshWeaponDetails(GetOption(_weaponOptions, _pendingWeaponIndex));
+    }
+
+    private void ClearPickerDetails()
+    {
+        if (_pickerDetailsContent == null) return;
+
+        for (int i = _pickerDetailsContent.childCount - 1; i >= 0; i--)
+        {
+            DestroyGeneratedObject(_pickerDetailsContent.GetChild(i).gameObject);
+        }
+    }
+
+    private void RefreshWeaponDetails(WeaponConfig weapon)
+    {
+        ClearPickerDetails();
+        if (_pickerDetailsContent == null) return;
+
+        if (weapon == null)
+        {
+            AddPickerDetailText("武器がありません。", 24f, TextAlignmentOptions.Center, 48f);
+            return;
+        }
+
+        WeaponBase weaponRuntime = weapon.CreateWeapon();
+        AddPickerDetailText(GetWeaponName(weapon), 28f, TextAlignmentOptions.Center, 42f);
+        AddPickerDetailText(
+            $"通常攻撃　射程: {FormatRange(weapon.Range)}　CT: {FormatSeconds(weapon.CooldownSeconds)}　" +
+            $"{FormatCombatStat(weaponRuntime.ScalingStat)}補正: +{weapon.PrimaryStatBonus}",
+            18f,
+            TextAlignmentOptions.Center,
+            42f);
+
+        CombatSkillCatalog catalog = CombatSceneContext.Instance != null
+            ? CombatSceneContext.Instance.SkillCatalog
+            : null;
+        bool ownsCatalog = catalog == null;
+        catalog ??= CombatSkillCatalog.CreateDefaultRuntimeCatalog();
+
+        IReadOnlyList<SkillDefinition> definitions = catalog.GetDefinitionsForKind(weapon.Kind);
+        var skills = new List<SkillBase>();
+        for (int i = 0; i < definitions.Count; i++)
+        {
+            SkillDefinition definition = definitions[i];
+            if (definition == null) continue;
+
+            SkillBase skill = CombatSkillFactory.Create(definition.SkillId);
+            if (skill == null) continue;
+
+            skills.Add(skill);
+        }
+
+        if (skills.Count == 0)
+        {
+            AddPickerDetailText("スキルなし", 22f, TextAlignmentOptions.Center, 48f);
+        }
+        else
+        {
+            for (int i = 0; i < skills.Count; i++)
+            {
+                AddSkillDetailCard(skills[i]);
+            }
+        }
+
+        if (ownsCatalog)
+        {
+            for (int i = 0; i < definitions.Count; i++)
+            {
+                DestroyGeneratedObject(definitions[i]);
+            }
+
+            DestroyGeneratedObject(catalog);
+        }
+
+        ScrollRect detailsScroll = _pickerDetailsRoot != null
+            ? _pickerDetailsRoot.GetComponent<ScrollRect>()
+            : null;
+        if (detailsScroll != null)
+        {
+            detailsScroll.verticalNormalizedPosition = 1f;
+        }
+    }
+
+    private void AddSkillDetailCard(SkillBase skill)
+    {
+        GameObject card = new GameObject(
+            $"SkillCard_{skill.Id}",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement));
+        card.transform.SetParent(_pickerDetailsContent, false);
+        card.GetComponent<Image>().color = new Color(0.12f, 0.15f, 0.2f, 1f);
+
+        HorizontalLayoutGroup layout = card.GetComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(10, 10, 8, 8);
+        layout.spacing = 8f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+        card.GetComponent<LayoutElement>().preferredHeight = 84f;
+
+        string effect = string.IsNullOrEmpty(skill.EffectDescription)
+            ? "—"
+            : skill.EffectDescription;
+        if (skill.SelfHpCost > 0)
+        {
+            effect += $"。自身のHPを {skill.SelfHpCost} 消費";
+        }
+
+        AddSkillDetailCell(card.transform, skill.Name, 1.5f, 19f);
+        AddSkillDetailCell(card.transform, $"射程: {FormatRange(skill.MaxRange)}", 1f, 15f);
+        AddSkillDetailCell(
+            card.transform,
+            $"威力: {(string.IsNullOrEmpty(skill.PowerDescription) ? "—" : skill.PowerDescription)}",
+            1.5f,
+            15f);
+        AddSkillDetailCell(card.transform, $"効果: {effect}", 3.5f, 15f);
+        AddSkillDetailCell(
+            card.transform,
+            $"CT: {FormatSeconds(skill.CooldownSeconds)} / 詠唱: {FormatSeconds(skill.CastTimeSeconds)}",
+            1.8f,
+            15f);
+        AddSkillDetailCell(
+            card.transform,
+            $"対象: {FormatTargetKind(skill.TargetKind)}" +
+            (skill.AreaRadius > 0f ? $" / 範囲: {FormatRange(skill.AreaRadius)}" : string.Empty),
+            1.8f,
+            15f);
+    }
+
+    private void AddSkillDetailCell(Transform parent, string value, float flexibleWidth, float fontSize)
+    {
+        TMP_Text text = AddPickerDetailText(
+            value,
+            fontSize,
+            TextAlignmentOptions.Left,
+            68f,
+            parent);
+        LayoutElement layout = text.gameObject.GetComponent<LayoutElement>();
+        layout.flexibleWidth = flexibleWidth;
+        layout.minWidth = 0f;
+    }
+
+    private TMP_Text AddPickerDetailText(
+        string value,
+        float fontSize,
+        TextAlignmentOptions alignment,
+        float preferredHeight,
+        Transform parent = null)
+    {
+        Transform target = parent != null ? parent : _pickerDetailsContent;
+        TMP_Text text = Instantiate(_selectionCountText, target);
+        text.text = value;
+        text.fontSize = fontSize;
+        text.alignment = alignment;
+        text.enableAutoSizing = false;
+        text.enableWordWrapping = true;
+        text.overflowMode = TextOverflowModes.Overflow;
+        text.textWrappingMode = TextWrappingModes.Normal;
+        LayoutElement layout = text.gameObject.GetComponent<LayoutElement>() ??
+                               text.gameObject.AddComponent<LayoutElement>();
+        layout.preferredHeight = preferredHeight;
+        return text;
+    }
+
+    private static string FormatRange(float range)
+    {
+        return float.IsPositiveInfinity(range) ? "無制限" : $"{range:0.##}m";
+    }
+
+    private static string FormatSeconds(float seconds)
+    {
+        return seconds <= 0f ? "なし" : $"{seconds:0.##}秒";
+    }
+
+    private static string FormatCombatStat(CombatStat stat)
+    {
+        return stat switch
+        {
+            CombatStat.STR => "STR",
+            CombatStat.INT => "INT",
+            CombatStat.FAI => "FAI",
+            CombatStat.AGI => "AGI",
+            _ => stat.ToString(),
+        };
+    }
+
+    private static string FormatTargetKind(SkillTargetKind targetKind)
+    {
+        return targetKind switch
+        {
+            SkillTargetKind.Self => "自身",
+            SkillTargetKind.Enemy => "敵単体",
+            SkillTargetKind.Ally => "味方単体",
+            SkillTargetKind.AllyOrSelf => "味方単体/自身",
+            SkillTargetKind.Point => "地点",
+            SkillTargetKind.Area => "範囲",
+            SkillTargetKind.RecognizedEnemies => "認識済みの敵",
+            SkillTargetKind.AllAllies => "味方全体",
+            _ => "なし",
+        };
     }
 
     private void SetPickerTitle(string title)
@@ -1330,12 +1686,30 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ClosePicker()
     {
+        ClosePicker(commitPendingWeaponSelection: true);
+    }
+
+    private void ClosePicker(bool commitPendingWeaponSelection)
+    {
+        bool shouldCommit = commitPendingWeaponSelection && _pickerShowsWeaponDetails;
+        Action<int> commit = _pendingWeaponSelectionCommit;
+        int selectedIndex = _pendingWeaponIndex;
+        _pickerShowsWeaponDetails = false;
+        _pendingWeaponSelectionCommit = null;
+        _pendingWeaponIndex = -1;
+
+        if (shouldCommit)
+        {
+            commit?.Invoke(selectedIndex);
+        }
+
         if (_pickerRoot != null)
         {
             _pickerRoot.gameObject.SetActive(false);
         }
 
         ClearPickerOptions();
+        ClearPickerDetails();
     }
 
     private void ConfirmSelection()
@@ -1412,6 +1786,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void RefreshRow(SelectionRow row)
     {
+        if (row == null || row.Character == null) return;
+
         SetButtonLabel(row.CharacterButton, $"{(row.Selected ? "■" : "□")} {row.Character.DisplayName}");
         SetButtonLabel(row.WeaponButton, $"武器: {GetWeaponName(GetOption(_weaponOptions, row.WeaponIndex))}");
         CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);

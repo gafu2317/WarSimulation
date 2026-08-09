@@ -15,6 +15,10 @@ public sealed class IdentifiedSkill : SkillBase
 
     public override string Name => _inner.Name;
 
+    public override string PowerDescription => _inner.PowerDescription;
+
+    public override string EffectDescription => _inner.EffectDescription;
+
     public override float CooldownSeconds => _inner.CooldownSeconds;
 
     public override float CastTimeSeconds => _inner.CastTimeSeconds;
