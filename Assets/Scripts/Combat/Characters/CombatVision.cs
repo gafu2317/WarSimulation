@@ -69,6 +69,7 @@ public sealed class CombatVision : MonoBehaviour
 {
     private const string VisionObstacleLayerName = "VisionObstacle";
     private const float HorizontalFovDegreesValue = 160f;
+    private const float SightCastRadius = 0.3f;
 
     private CombatCharacterSystem _characterSystem;
     private CombatMapSystem _mapSystem;
@@ -370,8 +371,9 @@ public sealed class CombatVision : MonoBehaviour
 
         int layerMask = ResolveObstructionLayerMask();
 
-        int hitCount = Physics.RaycastNonAlloc(
+        int hitCount = Physics.SphereCastNonAlloc(
             headPos,
+            SightCastRadius,
             dirToTarget,
             _lineOfSightHits,
             distanceToTarget,
@@ -445,8 +447,9 @@ public sealed class CombatVision : MonoBehaviour
             end = origin + direction * rayDistance;
         }
 
-        int hitCount = Physics.RaycastNonAlloc(
+        int hitCount = Physics.SphereCastNonAlloc(
             origin,
+            SightCastRadius,
             direction,
             _lineOfSightHits,
             rayDistance,
@@ -640,8 +643,9 @@ public sealed class CombatVision : MonoBehaviour
         Vector3 dirToAlly = diff / distance;
         int layerMask = ResolveObstructionLayerMask();
 
-        int hitCount = Physics.RaycastNonAlloc(
+        int hitCount = Physics.SphereCastNonAlloc(
             myHeadPos,
+            SightCastRadius,
             dirToAlly,
             _communicationHits,
             distance,
