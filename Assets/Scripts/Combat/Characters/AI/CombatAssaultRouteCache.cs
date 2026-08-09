@@ -13,6 +13,8 @@ public static class CombatAssaultRouteCache
     private static MapData _cachedMap;
     private static Transform _cachedOrigin;
     private static bool _buildCompleted;
+    private static bool _hasRouteOrientation;
+    private static bool _routesMatchReversedPositions;
     private static MapData _rebuildFallbackLoggedForMap;
     private static readonly List<CombatAiAssaultRoute> AllyRoutes = new List<CombatAiAssaultRoute>();
     private static readonly List<CombatAiAssaultRoute> EnemyRoutes = new List<CombatAiAssaultRoute>();
@@ -22,13 +24,21 @@ public static class CombatAssaultRouteCache
         _cachedMap = null;
         _cachedOrigin = null;
         _buildCompleted = false;
+        _hasRouteOrientation = false;
+        _routesMatchReversedPositions = false;
         AllyRoutes.Clear();
         EnemyRoutes.Clear();
     }
 
-    public static IReadOnlyList<CombatAiAssaultRoute> GetRoutes(CombatTeam team)
+    public static IReadOnlyList<CombatAiAssaultRoute> GetRoutes(
+        CombatTeam team,
+        bool stonePositionReversed)
     {
-        return team == CombatTeam.Enemy ? EnemyRoutes : AllyRoutes;
+        bool useOppositeTeamRoutes = _hasRouteOrientation &&
+            _routesMatchReversedPositions != stonePositionReversed;
+        bool useEnemyRoutes = team == CombatTeam.Enemy;
+        if (useOppositeTeamRoutes) useEnemyRoutes = !useEnemyRoutes;
+        return useEnemyRoutes ? EnemyRoutes : AllyRoutes;
     }
 
     public static void EnsureBuilt(CombatMapSystem mapSystem)
@@ -63,7 +73,7 @@ public static class CombatAssaultRouteCache
                 $"currentFp={authored.ComputeBakeFingerprint()}");
         }
 
-        Rebuild(map, origin);
+        Rebuild(map, origin, mapSystem.IsStonePositionReversed);
     }
 
     public static bool TryHydrateFromAuthored(
@@ -81,11 +91,16 @@ public static class CombatAssaultRouteCache
         _cachedOrigin = mapOrigin;
         HydrateTeam(authored.BakedAllyAssaultRoutes, mapOrigin, AllyRoutes);
         HydrateTeam(authored.BakedEnemyAssaultRoutes, mapOrigin, EnemyRoutes);
+        _hasRouteOrientation = true;
+        _routesMatchReversedPositions = false;
         _buildCompleted = true;
         return true;
     }
 
-    public static void Rebuild(MapData map, Transform mapOrigin)
+    public static void Rebuild(
+        MapData map,
+        Transform mapOrigin,
+        bool stonePositionReversed = false)
     {
         Invalidate();
         if (map == null) return;
@@ -98,6 +113,8 @@ public static class CombatAssaultRouteCache
             !TryFindMainStoneWorld(map, mapOrigin, FeatureType.EnemyMainStone, out Vector3 enemyStone))
         {
             // 魔石が無いマップは再試行不要
+            _hasRouteOrientation = true;
+            _routesMatchReversedPositions = stonePositionReversed;
             _buildCompleted = true;
             return;
         }
@@ -113,6 +130,8 @@ public static class CombatAssaultRouteCache
 
         BuildTeamRoutes(map, mapOrigin, allyStart, allyGoal, areaMask, AllyRoutes);
         BuildTeamRoutes(map, mapOrigin, enemyStart, enemyGoal, areaMask, EnemyRoutes);
+        _hasRouteOrientation = true;
+        _routesMatchReversedPositions = stonePositionReversed;
         _buildCompleted = true;
     }
 

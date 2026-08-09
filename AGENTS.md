@@ -29,7 +29,7 @@ docsにゲームの内容についてが書いてあるよ
 
 ## Verification Notes
 
-- After implementing a feature or bug fix, you MUST run a defect-first review via a Task subagent with model `cursor-grok-4.5-high`, then fix actionable P0–P2 findings before declaring the work done. The review prompt must include the concrete user goal and ask to flag non-essential/overbuilt code. Details: `.cursor/rules/post-implementation-grok-review.mdc`.
+- After implementing a feature or bug fix, you MUST run a defect-first review via a Task subagent, then fix actionable P0–P2 findings before declaring the work done. The review prompt must include the concrete user goal and ask to flag non-essential/overbuilt code. Details: `.cursor/rules/post-implementation-grok-review.mdc`.
 - Assume the Unity Editor is already running for this project. Do not launch another Unity process or repeatedly start and quit Unity from the command line.
 - If Prefab, scene, or other Unity API work is required, use the already-open Editor. Prefer a temporary explicit Editor menu command that the user runs once, then remove the temporary generation/setup code after confirming completion.
 - Do not automatically change the user's currently open scene from an import hook or `InitializeOnLoad` callback. Scene mutations must be initiated explicitly in the existing Editor.

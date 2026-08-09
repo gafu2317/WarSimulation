@@ -36,6 +36,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     private readonly List<Transform> _endpointMarkers = new();
     private Transform _generatedRoot;
     private Transform _endpointRoot;
+    private CombatMapSystem _subscribedMapSystem;
     private int _lastVisibleRouteCount = -1;
     private float _nextRetryTime;
     private string _lastFailureReason = "";
@@ -56,6 +57,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
 
         CombatNavMeshBuilder.Built += OnNavMeshBuilt;
         CombatNavMeshBuilder.Cleared += OnNavMeshCleared;
+        TrySubscribeStonePositionChanges();
         _nextRetryTime = 0f;
         ApplyPlaytestSettings();
         RefreshRoutes();
@@ -73,6 +75,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     {
         CombatNavMeshBuilder.Built -= OnNavMeshBuilt;
         CombatNavMeshBuilder.Cleared -= OnNavMeshCleared;
+        UnsubscribeStonePositionChanges();
         DestroyGeneratedRoot();
     }
 
@@ -80,16 +83,46 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     {
         CombatNavMeshBuilder.Built -= OnNavMeshBuilt;
         CombatNavMeshBuilder.Cleared -= OnNavMeshCleared;
+        UnsubscribeStonePositionChanges();
         DestroyGeneratedRoot();
     }
 
     private void Update()
     {
         if (!Application.isPlaying || !isActiveAndEnabled) return;
+        TrySubscribeStonePositionChanges();
         if (_lastVisibleRouteCount > 0) return;
         if (Time.unscaledTime < _nextRetryTime) return;
 
         _nextRetryTime = Time.unscaledTime + 0.5f;
+        RefreshRoutes();
+    }
+
+    private void TrySubscribeStonePositionChanges()
+    {
+        CombatMapSystem mapSystem = CombatSceneContext.Instance?.MapSystem;
+        mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
+        if (_subscribedMapSystem == mapSystem) return;
+
+        UnsubscribeStonePositionChanges();
+        _subscribedMapSystem = mapSystem;
+        if (_subscribedMapSystem != null)
+        {
+            _subscribedMapSystem.StonePositionsChanged += OnStonePositionsChanged;
+        }
+    }
+
+    private void UnsubscribeStonePositionChanges()
+    {
+        if (_subscribedMapSystem == null) return;
+
+        _subscribedMapSystem.StonePositionsChanged -= OnStonePositionsChanged;
+        _subscribedMapSystem = null;
+    }
+
+    private void OnStonePositionsChanged()
+    {
+        _lastVisibleRouteCount = -1;
         RefreshRoutes();
     }
 
@@ -109,6 +142,8 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     private void RefreshRoutes()
     {
         if (!Application.isPlaying || !isActiveAndEnabled) return;
+
+        TrySubscribeStonePositionChanges();
 
         EnsureLines();
         if (!TryGetBuildContext(

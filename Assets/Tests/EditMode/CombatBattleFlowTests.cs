@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class CombatBattleFlowTests
 {
@@ -62,6 +63,10 @@ public sealed class CombatBattleFlowTests
             List<Character> allies = CreateCharacters("Ally", CombatTeam.Ally, 6, characters);
             List<Character> enemies = CreateCharacters("Enemy", CombatTeam.Enemy, 6, characters);
             selection.Initialize(allies, enemies, null);
+            Assert.That(selection.IsStonePositionReversed, Is.False);
+            Button stonePositionButton = GetPrivateField<Button>(selection, "_stonePositionButton");
+            stonePositionButton.onClick.Invoke();
+            Assert.That(selection.IsStonePositionReversed, Is.True);
 
             IList allyRows = GetPrivateField<IList>(selection, "_allyRows");
             IList enemyRows = GetPrivateField<IList>(selection, "_enemyRows");
@@ -109,6 +114,9 @@ public sealed class CombatBattleFlowTests
             Assert.That(GetPrivateField<bool>(lastEnemyRow, "Selected"), Is.True);
             Assert.That(GetPrivateField<int>(lastEnemyRow, "WeaponIndex"), Is.EqualTo(customWeaponIndex));
             Assert.That(GetPrivateField<int>(lastEnemyRow, "PersonalityIndex"), Is.EqualTo(customPersonalityIndex));
+
+            selection.SetStonePositionReversedState(false);
+            Assert.That(selection.IsStonePositionReversed, Is.False);
         }
         finally
         {

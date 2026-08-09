@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -155,6 +156,67 @@ namespace WarSimulation.Combat.Map
             }
         }
 
+        public void RefreshMagicStonePositions(MapData map)
+        {
+            TryRefreshMagicStonePositions(map);
+        }
+
+        public bool TryRefreshMagicStonePositions(MapData map)
+        {
+            if (map == null) return false;
+
+            Transform root = transform.Find(RootName);
+            bool hasMagicStones = false;
+            for (int i = 0; i < map.Features.Count; i++)
+            {
+                if (IsMagicStoneType(map.Features[i].Type))
+                {
+                    hasMagicStones = true;
+                    break;
+                }
+            }
+
+            if (!hasMagicStones) return true;
+            if (root == null) return false;
+
+            MagicStone[] views = root.GetComponentsInChildren<MagicStone>(includeInactive: true);
+            var viewsByFeatureIndex = new Dictionary<int, MagicStone>(views.Length);
+            for (int i = 0; i < views.Length; i++)
+            {
+                MagicStone view = views[i];
+                if (view != null && view.FeatureIndex >= 0)
+                {
+                    viewsByFeatureIndex[view.FeatureIndex] = view;
+                }
+            }
+
+            for (int i = 0; i < map.Features.Count; i++)
+            {
+                PlacedFeature feature = map.Features[i];
+                if (IsMagicStoneType(feature.Type) && !viewsByFeatureIndex.ContainsKey(i))
+                {
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < map.Features.Count; i++)
+            {
+                PlacedFeature feature = map.Features[i];
+                if (!IsMagicStoneType(feature.Type) ||
+                    !viewsByFeatureIndex.TryGetValue(i, out MagicStone view))
+                {
+                    continue;
+                }
+                bool isMain = IsMainStoneType(feature.Type);
+                float height = isMain ? _mainStoneHeight : _subStoneHeight;
+                view.transform.localPosition = feature.WorldPosition +
+                    new Vector3(0f, MagicStoneFloatOffset + height * 0.5f, 0f);
+                view.transform.localRotation = feature.Rotation * Quaternion.Euler(0f, 45f, 0f);
+            }
+
+            return true;
+        }
+
         private static bool IsHandledType(FeatureType t)
         {
             switch (t)
@@ -169,6 +231,19 @@ namespace WarSimulation.Combat.Map
                 default:
                     return false;
             }
+        }
+
+        private static bool IsMagicStoneType(FeatureType type)
+        {
+            return type == FeatureType.OwnMainStone ||
+                   type == FeatureType.OwnSubStone ||
+                   type == FeatureType.EnemyMainStone ||
+                   type == FeatureType.EnemySubStone;
+        }
+
+        private static bool IsMainStoneType(FeatureType type)
+        {
+            return type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone;
         }
 
         public void Clear()

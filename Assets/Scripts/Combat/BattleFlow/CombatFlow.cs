@@ -6,6 +6,8 @@ using UnityEngine.UI;
 public sealed class CombatFlow : MonoBehaviour
 {
     private static readonly float[] BattleSpeedOptions = { 1f, 2f, 4f, 8f };
+    private static readonly Vector3 NormalCameraPosition = new Vector3(30f, 20f, -10f);
+    private static readonly Vector3 ReversedCameraPosition = new Vector3(30f, 20f, 70f);
 
     [SerializeField] private CombatCharacterSystem _characterSystem;
     [SerializeField] private CombatBattleFlow _battleFlow;
@@ -92,6 +94,7 @@ public sealed class CombatFlow : MonoBehaviour
             ShowSelection();
             return;
         }
+        ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
 
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
         SetVisible(_characterSelectionPanel, false);
@@ -139,6 +142,15 @@ public sealed class CombatFlow : MonoBehaviour
         if (TryApplyStonePositionReversed(reversed)) return;
 
         _characterSelection.SetStonePositionReversedState(!reversed);
+    }
+
+    private void ApplyCombatCamera(bool reversed)
+    {
+        Camera camera = Camera.main;
+        if (camera == null) return;
+
+        camera.transform.position = reversed ? ReversedCameraPosition : NormalCameraPosition;
+        camera.transform.rotation = Quaternion.Euler(40f, reversed ? 180f : 0f, 0f);
     }
 
     private bool TryApplyStonePositionReversed(bool reversed)

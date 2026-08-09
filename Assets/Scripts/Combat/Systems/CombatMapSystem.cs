@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using WarSimulation.Combat.Map;
@@ -90,6 +92,8 @@ public class CombatMapSystem : MonoBehaviour
     public MapData CurrentMap { get; private set; }
     public float MinimumTerrainHeight { get; private set; }
     public float MaximumTerrainHeight { get; private set; }
+    public bool IsStonePositionReversed { get; private set; }
+    public event Action StonePositionsChanged;
 
     private TerrainData _cachedTerrainData;
     private float _cachedTerrainMinimumHeight;
@@ -115,10 +119,130 @@ public class CombatMapSystem : MonoBehaviour
 
     public void SetCurrentMap(MapData map)
     {
+        bool isSameMap = map != null && ReferenceEquals(CurrentMap, map);
         CurrentMap = map;
+        if (!isSameMap)
+        {
+            IsStonePositionReversed = false;
+        }
         CombatAssaultRouteCache.Invalidate();
         UpdateTerrainHeightRange(map);
         InitializeMagicStoneSystem(map);
+    }
+
+    public bool TrySetStonePositionsReversed(bool reversed)
+    {
+        if (IsStonePositionReversed == reversed) return true;
+        if (CurrentMap == null)
+        {
+            Debug.LogWarning($"[{nameof(CombatMapSystem)}] Cannot reverse stone positions before a map is ready.", this);
+            return false;
+        }
+
+        if (!TrySwapStonePositions(CurrentMap))
+        {
+            Debug.LogWarning(
+                $"[{nameof(CombatMapSystem)}] Cannot reverse stone positions because paired stone counts do not match.",
+                this);
+            return false;
+        }
+
+        if (HasMagicStones(CurrentMap))
+        {
+            FeatureRenderer featureRenderer = _mapSceneHost != null
+                ? _mapSceneHost.GetComponent<FeatureRenderer>()
+                : null;
+            if (featureRenderer == null || !featureRenderer.TryRefreshMagicStonePositions(CurrentMap))
+            {
+                TrySwapStonePositions(CurrentMap);
+                Debug.LogWarning(
+                    $"[{nameof(CombatMapSystem)}] Cannot reverse stone positions because the map features are not rendered.",
+                    this);
+                return false;
+            }
+        }
+
+        IsStonePositionReversed = reversed;
+        StonePositionsChanged?.Invoke();
+        return true;
+    }
+
+    private static bool HasMagicStones(MapData map)
+    {
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            FeatureType type = map.Features[i].Type;
+            if (type == FeatureType.OwnMainStone ||
+                type == FeatureType.OwnSubStone ||
+                type == FeatureType.EnemyMainStone ||
+                type == FeatureType.EnemySubStone)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TrySwapStonePositions(MapData map)
+    {
+        var ownMainIndices = new List<int>();
+        var enemyMainIndices = new List<int>();
+        var ownSubIndices = new List<int>();
+        var enemySubIndices = new List<int>();
+
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            switch (map.Features[i].Type)
+            {
+                case FeatureType.OwnMainStone:
+                    ownMainIndices.Add(i);
+                    break;
+                case FeatureType.EnemyMainStone:
+                    enemyMainIndices.Add(i);
+                    break;
+                case FeatureType.OwnSubStone:
+                    ownSubIndices.Add(i);
+                    break;
+                case FeatureType.EnemySubStone:
+                    enemySubIndices.Add(i);
+                    break;
+            }
+        }
+
+        if (ownMainIndices.Count != enemyMainIndices.Count ||
+            ownSubIndices.Count != enemySubIndices.Count)
+        {
+            return false;
+        }
+
+        SwapFeaturePositions(map.Features, ownMainIndices, enemyMainIndices);
+        SwapFeaturePositions(map.Features, ownSubIndices, enemySubIndices);
+        return true;
+    }
+
+    private static void SwapFeaturePositions(
+        List<PlacedFeature> features,
+        List<int> firstIndices,
+        List<int> secondIndices)
+    {
+        for (int i = 0; i < firstIndices.Count; i++)
+        {
+            int firstIndex = firstIndices[i];
+            int secondIndex = secondIndices[i];
+            PlacedFeature first = features[firstIndex];
+            PlacedFeature second = features[secondIndex];
+            features[firstIndex] = new PlacedFeature(
+                first.Type,
+                second.WorldPosition,
+                first.Rotation,
+                first.Scale);
+            features[secondIndex] = new PlacedFeature(
+                second.Type,
+                first.WorldPosition,
+                second.Rotation,
+                second.Scale);
+        }
     }
 
     private void UpdateTerrainHeightRange(MapData map)

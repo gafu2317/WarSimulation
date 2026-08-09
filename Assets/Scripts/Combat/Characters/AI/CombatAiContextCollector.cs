@@ -346,7 +346,9 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         if (owner == null || mapSystem == null) return;
 
         CombatAssaultRouteCache.EnsureBuilt(mapSystem);
-        IReadOnlyList<CombatAiAssaultRoute> cached = CombatAssaultRouteCache.GetRoutes(owner.Team);
+        IReadOnlyList<CombatAiAssaultRoute> cached = CombatAssaultRouteCache.GetRoutes(
+            owner.Team,
+            mapSystem.IsStonePositionReversed);
         for (int i = 0; i < cached.Count; i++)
         {
             _assaultRoutes.Add(cached[i]);
