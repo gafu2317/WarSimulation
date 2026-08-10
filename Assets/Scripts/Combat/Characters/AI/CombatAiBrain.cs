@@ -145,7 +145,8 @@ public sealed class CombatAiBrain : MonoBehaviour
                 GetFocusCommitmentRemainingSeconds(),
                 previousPlan.Objective,
                 _objectiveReasonCodes,
-                GetObjectiveCommitmentRemainingSeconds());
+                GetObjectiveCommitmentRemainingSeconds(),
+                previousPlan.MoveTarget);
         }
         SetPreparedDecision(previousPlan, nextPlan, nextContext);
         return true;

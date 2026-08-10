@@ -5,6 +5,7 @@ using UnityEngine;
 public static partial class CombatAiPlanner
 {
     private const float UnselectableScore = -100000f;
+    private const float MoveArrivalDistance = 1.5f;
     private const float RosaryPreferredSupportDistance = 5.5f;
     private const float RosaryCloseHealDistance = 2.5f;
     private const float RosaryEnemyClearanceDistance = 6.5f;
@@ -49,7 +50,8 @@ public static partial class CombatAiPlanner
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
         List<CombatAiReasonCode> selectedObjectiveReasons = null,
-        float objectiveCommitmentRemainingSeconds = 0f)
+        float objectiveCommitmentRemainingSeconds = 0f,
+        CombatMoveTarget previousMoveTarget = default)
     {
         if (context == null || context.Owner == null) return CombatAiPlan.None;
         return BuildPlanCore(
@@ -59,6 +61,7 @@ public static partial class CombatAiPlanner
             focusCommitmentRemainingSeconds,
             previousObjective,
             objectiveCommitmentRemainingSeconds,
+            previousMoveTarget,
             null,
             selectedObjectiveReasons);
     }
@@ -70,6 +73,7 @@ public static partial class CombatAiPlanner
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective,
         float objectiveCommitmentRemainingSeconds,
+        CombatMoveTarget previousMoveTarget,
         CombatAiDebugSnapshot snapshot,
         List<CombatAiReasonCode> selectedObjectiveReasons)
     {
@@ -128,6 +132,13 @@ public static partial class CombatAiPlanner
                 captureDebug ? snapshot.MoveEntries : null,
                 out selectedMove);
         }
+        moveTarget = PreserveCunningMoveTarget(
+            context,
+            personalityProfile,
+            previousObjective,
+            previousMoveTarget,
+            objective,
+            moveTarget);
         if (captureDebug) snapshot.SelectedMove = selectedMove;
 
         SkillBase bestSkill;
@@ -147,6 +158,28 @@ public static partial class CombatAiPlanner
 
         var plan = new CombatAiPlan(objective, moveTarget, bestSkill, bestSkillContext);
         return plan;
+    }
+
+    private static CombatMoveTarget PreserveCunningMoveTarget(
+        CombatAiContext context,
+        CombatAiPersonalityProfile personalityProfile,
+        CombatObjective previousObjective,
+        CombatMoveTarget previousMoveTarget,
+        CombatObjective objective,
+        CombatMoveTarget selectedMoveTarget)
+    {
+        if (personalityProfile == null || personalityProfile.Kind != CombatAiPersonalityKind.Cunning ||
+            previousObjective != CombatObjective.DestroyEnemyStone ||
+            objective != CombatObjective.DestroyEnemyStone ||
+            !previousMoveTarget.HasDestination ||
+            context == null || context.Owner == null ||
+            context.IsMoveDestinationBlocked(previousMoveTarget.Destination) ||
+            HorizontalDistance(context.Owner.transform.position, previousMoveTarget.Destination) <= MoveArrivalDistance)
+        {
+            return selectedMoveTarget;
+        }
+
+        return previousMoveTarget;
     }
 
     private static CombatMoveTarget SelectBestMove(
@@ -405,7 +438,8 @@ public static partial class CombatAiPlanner
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
-        float objectiveCommitmentRemainingSeconds = 0f)
+        float objectiveCommitmentRemainingSeconds = 0f,
+        CombatMoveTarget previousMoveTarget = default)
     {
         if (context == null || context.Owner == null)
         {
@@ -424,6 +458,7 @@ public static partial class CombatAiPlanner
             focusCommitmentRemainingSeconds,
             previousObjective,
             objectiveCommitmentRemainingSeconds,
+            previousMoveTarget,
             snapshot,
             null);
         return snapshot;

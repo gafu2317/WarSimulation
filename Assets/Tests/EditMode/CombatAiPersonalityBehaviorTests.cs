@@ -242,6 +242,37 @@ public sealed class CombatAiPersonalityBehaviorTests
     }
 
     [Test]
+    public void 狡猾は敵魔石への移動中に未到着の目的地を維持する()
+    {
+        GameObject ownerObject = new GameObject("Owner");
+        GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile profile = null;
+        try
+        {
+            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(3f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Cunning);
+            CombatAiContext context = CreateContext(owner, enemy, null, new Vector3(20f, 0f, 0f));
+            CombatMoveTarget previousTarget = CombatMoveTarget.ForPosition(new Vector3(12f, 0f, 0f));
+
+            CombatAiPlan plan = CombatAiPlanner.BuildPlan(
+                context,
+                profile,
+                previousObjective: CombatObjective.DestroyEnemyStone,
+                previousMoveTarget: previousTarget);
+
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+            Assert.That(plan.MoveTarget.Destination, Is.EqualTo(previousTarget.Destination));
+        }
+        finally
+        {
+            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(ownerObject);
+        }
+    }
+
+    [Test]
     public void 目立ちたがり屋は密集の重心へ寄る()
     {
         GameObject ownerObject = new GameObject("Owner");
