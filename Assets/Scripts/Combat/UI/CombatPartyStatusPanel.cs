@@ -300,6 +300,13 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
             return;
         }
 
+        HorizontalLayoutGroup layout = _allyColumn.GetComponent<HorizontalLayoutGroup>();
+        if (layout != null)
+        {
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+        }
+
         float preferredHeight = GetPreferredViewportHeight(_allyColumn);
         if (preferredHeight <= 0f)
         {
@@ -314,14 +321,15 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         viewport.SetSiblingIndex(siblingIndex);
         viewport.anchorMin = _allyColumn.anchorMin;
         viewport.anchorMax = _allyColumn.anchorMax;
-        viewport.anchoredPosition = _allyColumn.anchoredPosition;
-        viewport.sizeDelta = new Vector2(_allyColumn.sizeDelta.x, preferredHeight);
+        viewport.anchoredPosition = new Vector2(0f, _allyColumn.anchoredPosition.y);
+        viewport.sizeDelta = new Vector2(-Mathf.Abs(_allyColumn.anchoredPosition.x) * 2f, preferredHeight);
         viewport.pivot = _allyColumn.pivot;
 
         _allyColumn.SetParent(viewport, false);
-        _allyColumn.anchorMin = new Vector2(0f, 0.5f);
-        _allyColumn.anchorMax = new Vector2(0f, 0.5f);
+        _allyColumn.anchorMin = new Vector2(0.5f, 0.5f);
+        _allyColumn.anchorMax = new Vector2(0.5f, 0.5f);
         _allyColumn.anchoredPosition = Vector2.zero;
+        _allyColumn.pivot = new Vector2(0.5f, 0.5f);
 
         _allyScrollRect = viewportObject.GetComponent<ScrollRect>();
         _allyScrollRect.content = _allyColumn;

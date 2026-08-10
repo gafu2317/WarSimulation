@@ -189,18 +189,18 @@ public sealed class CombatPartyStatusPanelTests
         Character character = CreateCharacter("Target", CombatTeam.Ally);
         var viewObject = CreateMemberViewObject("MemberView");
         var view = viewObject.GetComponent<CombatPartyMemberView>();
-        Image frame = viewObject.transform.Find("Frame").GetComponent<Image>();
-        Color idleColor = frame.color;
+        Image background = viewObject.transform.Find("Background").GetComponent<Image>();
+        Color idleColor = background.color;
         view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
 
         viewObject.GetComponent<Button>().onClick.Invoke();
 
         Assert.That(CombatPartyFocus.Selected, Is.EqualTo(character));
-        Assert.That(frame.color, Is.Not.EqualTo(idleColor));
+        Assert.That(background.color, Is.Not.EqualTo(idleColor));
 
         viewObject.GetComponent<Button>().onClick.Invoke();
         Assert.That(CombatPartyFocus.Selected, Is.Null);
-        Assert.That(frame.color, Is.EqualTo(idleColor));
+        Assert.That(background.color, Is.EqualTo(idleColor));
 
         Object.DestroyImmediate(viewObject);
         Object.DestroyImmediate(character.gameObject);
@@ -356,7 +356,6 @@ public sealed class CombatPartyStatusPanelTests
     {
         var root = new GameObject(name, typeof(RectTransform), typeof(CombatPartyMemberView));
         CreateChild(root.transform, "Background", typeof(RectTransform), typeof(Image));
-        CreateChild(root.transform, "Frame", typeof(RectTransform), typeof(Image));
 
         var appearance = CreateChild(root.transform, "Appearance", typeof(RectTransform), typeof(CombatCharacterAppearanceView));
         CreateChild(appearance.transform, "Content", typeof(RectTransform));
