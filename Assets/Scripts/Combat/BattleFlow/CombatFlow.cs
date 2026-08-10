@@ -168,12 +168,7 @@ public sealed class CombatFlow : MonoBehaviour
     {
         if (_battleHudView == null)
         {
-            CombatPartyStatusPanel statusPanel = FindAnyObjectByType<CombatPartyStatusPanel>(FindObjectsInactive.Include);
-            if (statusPanel != null)
-            {
-                _battleHudView = statusPanel.GetComponent<CombatBattleHudView>();
-                _battleHudView ??= statusPanel.gameObject.AddComponent<CombatBattleHudView>();
-            }
+            _battleHudView = FindKuenBattleHud();
         }
 
         if (_battleHudView == null)
@@ -193,6 +188,23 @@ public sealed class CombatFlow : MonoBehaviour
         _battleHudView.SpeedRequested += CycleBattleSpeed;
         RefreshBattleControlLabels();
         SetBattleControlsVisible(false);
+    }
+
+    private static CombatBattleHudView FindKuenBattleHud()
+    {
+        CombatBattleHudView[] huds = FindObjectsByType<CombatBattleHudView>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < huds.Length; i++)
+        {
+            CombatBattleHudView hud = huds[i];
+            if (hud != null && hud.transform.Find("ControlPanel") != null)
+            {
+                return hud;
+            }
+        }
+
+        return null;
     }
 
     private void SetBattleSpeed(float speed)

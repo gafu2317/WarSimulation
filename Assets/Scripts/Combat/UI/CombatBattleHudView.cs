@@ -6,23 +6,27 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class CombatBattleHudView : MonoBehaviour
 {
-    private const string PauseMenuName = "BattlePauseMenu";
+    private const string TemporaryControlsName = "TemporaryBattleControls";
 
     private Button _menuButton;
     private Button _speedButton;
     private TMP_Text _speedText;
     private GameObject _controlPanel;
-    private GameObject _pauseMenu;
-    private Button _resumeButton;
+    private GameObject _temporaryControls;
+    private Button _temporarySpeedButton;
+    private TMP_Text _temporarySpeedText;
+    private Button _pauseButton;
+    private TMP_Text _pauseButtonText;
     private Button _returnButton;
     private bool _listenersAttached;
+    private bool _isPaused;
 
     public event Action MenuRequested;
     public event Action ResumeRequested;
     public event Action ReturnToSelectionRequested;
     public event Action SpeedRequested;
 
-    public bool IsMenuVisible => _pauseMenu != null && _pauseMenu.activeSelf;
+    public bool IsMenuVisible => _isPaused;
 
     private void Awake()
     {
@@ -48,7 +52,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         _speedText ??= transform.Find("ControlPanel/Speed/Text")?.GetComponent<TMP_Text>();
 
         DisableUnavailableCommands();
-        EnsurePauseMenu();
+        EnsureTemporaryControls();
         if (isActiveAndEnabled)
         {
             AttachListeners();
@@ -62,6 +66,11 @@ public sealed class CombatBattleHudView : MonoBehaviour
             _controlPanel.SetActive(visible);
         }
 
+        if (_temporaryControls != null)
+        {
+            _temporaryControls.SetActive(visible);
+        }
+
         if (!visible)
         {
             SetMenuVisible(false);
@@ -70,13 +79,10 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     public void SetMenuVisible(bool visible)
     {
-        if (_pauseMenu != null)
+        _isPaused = visible;
+        if (_pauseButtonText != null)
         {
-            _pauseMenu.SetActive(visible);
-            if (visible)
-            {
-                _pauseMenu.transform.SetAsLastSibling();
-            }
+            _pauseButtonText.text = visible ? "再開" : "一時停止";
         }
     }
 
@@ -85,6 +91,11 @@ public sealed class CombatBattleHudView : MonoBehaviour
         if (_speedText != null)
         {
             _speedText.text = $"{speed:0}x";
+        }
+
+        if (_temporarySpeedText != null)
+        {
+            _temporarySpeedText.text = $"速度 {speed:0}x";
         }
     }
 
@@ -107,51 +118,55 @@ public sealed class CombatBattleHudView : MonoBehaviour
         }
     }
 
-    private void EnsurePauseMenu()
+    private void EnsureTemporaryControls()
     {
-        Transform existing = transform.Find(PauseMenuName);
+        Transform existing = transform.Find(TemporaryControlsName);
         if (existing != null)
         {
-            _pauseMenu = existing.gameObject;
-            _resumeButton = existing.Find("Panel/ResumeButton")?.GetComponent<Button>();
-            _returnButton = existing.Find("Panel/ReturnToSelectionButton")?.GetComponent<Button>();
+            _temporaryControls = existing.gameObject;
+            ResolveTemporaryControls(existing);
             return;
         }
 
         TMP_FontAsset font = GetComponentInChildren<TMP_Text>(includeInactive: true)?.font;
-        _pauseMenu = new GameObject(PauseMenuName, typeof(RectTransform), typeof(Image));
-        RectTransform menuRect = _pauseMenu.GetComponent<RectTransform>();
-        menuRect.SetParent(transform, false);
-        menuRect.anchorMin = Vector2.zero;
-        menuRect.anchorMax = Vector2.one;
-        menuRect.offsetMin = Vector2.zero;
-        menuRect.offsetMax = Vector2.zero;
+        _temporaryControls = new GameObject(
+            TemporaryControlsName,
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(HorizontalLayoutGroup));
+        RectTransform controlsRect = _temporaryControls.GetComponent<RectTransform>();
+        controlsRect.SetParent(transform, false);
+        controlsRect.anchorMin = new Vector2(0.5f, 1f);
+        controlsRect.anchorMax = new Vector2(0.5f, 1f);
+        controlsRect.pivot = new Vector2(0.5f, 1f);
+        controlsRect.anchoredPosition = new Vector2(0f, -150f);
+        controlsRect.sizeDelta = new Vector2(620f, 76f);
+        _temporaryControls.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.68f);
 
-        Image backdrop = _pauseMenu.GetComponent<Image>();
-        backdrop.color = new Color(0f, 0f, 0f, 0.72f);
-        backdrop.raycastTarget = true;
-
-        GameObject panelObject = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
-        RectTransform panel = panelObject.GetComponent<RectTransform>();
-        panel.SetParent(menuRect, false);
-        panel.anchorMin = new Vector2(0.5f, 0.5f);
-        panel.anchorMax = new Vector2(0.5f, 0.5f);
-        panel.pivot = new Vector2(0.5f, 0.5f);
-        panel.sizeDelta = new Vector2(420f, 220f);
-        panelObject.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.16f, 0.98f);
-
-        VerticalLayoutGroup layout = panelObject.GetComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(48, 48, 44, 44);
-        layout.spacing = 20f;
+        HorizontalLayoutGroup layout = _temporaryControls.GetComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(8, 8, 8, 8);
+        layout.spacing = 8f;
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = true;
 
-        _resumeButton = CreateButton(panel, "ResumeButton", "戦闘に戻る", font);
-        _returnButton = CreateButton(panel, "ReturnToSelectionButton", "編成に戻る", font);
-        _pauseMenu.SetActive(false);
+        _temporarySpeedButton = CreateButton(controlsRect, "SpeedButton", "速度 1x", font);
+        _pauseButton = CreateButton(controlsRect, "PauseButton", "一時停止", font);
+        _returnButton = CreateButton(controlsRect, "ReturnToSelectionButton", "編成に戻る", font);
+        _temporarySpeedText = _temporarySpeedButton.GetComponentInChildren<TMP_Text>();
+        _pauseButtonText = _pauseButton.GetComponentInChildren<TMP_Text>();
+        _temporaryControls.SetActive(false);
+    }
+
+    private void ResolveTemporaryControls(Transform controls)
+    {
+        _temporarySpeedButton = controls.Find("SpeedButton")?.GetComponent<Button>();
+        _pauseButton = controls.Find("PauseButton")?.GetComponent<Button>();
+        _returnButton = controls.Find("ReturnToSelectionButton")?.GetComponent<Button>();
+        _temporarySpeedText = _temporarySpeedButton?.GetComponentInChildren<TMP_Text>();
+        _pauseButtonText = _pauseButton?.GetComponentInChildren<TMP_Text>();
     }
 
     private static Button CreateButton(Transform parent, string objectName, string labelValue, TMP_FontAsset font)
@@ -190,7 +205,8 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
         _menuButton?.onClick.AddListener(OnMenuClicked);
         _speedButton?.onClick.AddListener(OnSpeedClicked);
-        _resumeButton?.onClick.AddListener(OnResumeClicked);
+        _temporarySpeedButton?.onClick.AddListener(OnSpeedClicked);
+        _pauseButton?.onClick.AddListener(OnPauseClicked);
         _returnButton?.onClick.AddListener(OnReturnClicked);
         _listenersAttached = true;
     }
@@ -204,13 +220,23 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
         _menuButton?.onClick.RemoveListener(OnMenuClicked);
         _speedButton?.onClick.RemoveListener(OnSpeedClicked);
-        _resumeButton?.onClick.RemoveListener(OnResumeClicked);
+        _temporarySpeedButton?.onClick.RemoveListener(OnSpeedClicked);
+        _pauseButton?.onClick.RemoveListener(OnPauseClicked);
         _returnButton?.onClick.RemoveListener(OnReturnClicked);
         _listenersAttached = false;
     }
 
     private void OnMenuClicked() => MenuRequested?.Invoke();
     private void OnSpeedClicked() => SpeedRequested?.Invoke();
-    private void OnResumeClicked() => ResumeRequested?.Invoke();
+    private void OnPauseClicked()
+    {
+        if (_isPaused)
+        {
+            ResumeRequested?.Invoke();
+            return;
+        }
+
+        MenuRequested?.Invoke();
+    }
     private void OnReturnClicked() => ReturnToSelectionRequested?.Invoke();
 }

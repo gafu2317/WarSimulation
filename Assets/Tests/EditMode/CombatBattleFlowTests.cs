@@ -80,10 +80,15 @@ public sealed class CombatBattleFlowTests
             SetPrivateField(combatFlow, "_battleHudView", hud);
             InvokePrivate(combatFlow, "EnsureBattleControls");
 
-            Button speedButton = hudObject.transform.Find("ControlPanel/Speed/Image").GetComponent<Button>();
+            Button speedButton = hudObject.transform.Find("TemporaryBattleControls/SpeedButton").GetComponent<Button>();
             Button menuButton = hudObject.transform.Find("ControlPanel/Menu/Image").GetComponent<Button>();
-            Button resumeButton = hudObject.transform.Find("BattlePauseMenu/Panel/ResumeButton").GetComponent<Button>();
+            Button pauseButton = hudObject.transform.Find("TemporaryBattleControls/PauseButton").GetComponent<Button>();
+            Button returnButton = hudObject.transform.Find("TemporaryBattleControls/ReturnToSelectionButton").GetComponent<Button>();
             TMP_Text speedText = hudObject.transform.Find("ControlPanel/Speed/Text").GetComponent<TMP_Text>();
+            TMP_Text pauseText = pauseButton.GetComponentInChildren<TMP_Text>();
+
+            Assert.That(pauseButton, Is.Not.Null);
+            Assert.That(returnButton, Is.Not.Null);
 
             speedButton.onClick.Invoke();
             Assert.That(Time.timeScale, Is.EqualTo(2f));
@@ -97,9 +102,17 @@ public sealed class CombatBattleFlowTests
             Assert.That(Time.timeScale, Is.EqualTo(0f));
             Assert.That(speedText.text, Is.EqualTo("2x"));
 
-            resumeButton.onClick.Invoke();
+            pauseButton.onClick.Invoke();
             Assert.That(Time.timeScale, Is.EqualTo(2f));
             Assert.That(hud.IsMenuVisible, Is.False);
+            Assert.That(pauseText.text, Is.EqualTo("一時停止"));
+
+            pauseButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(0f));
+            Assert.That(pauseText.text, Is.EqualTo("再開"));
+
+            pauseButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(2f));
 
             Button smokeButton = hudObject.transform.Find("UserCommandPanel/Smoke/Image").GetComponent<Button>();
             Button weatherButton = hudObject.transform.Find("UserCommandPanel/WeatherChange/Image/Option1").GetComponent<Button>();
