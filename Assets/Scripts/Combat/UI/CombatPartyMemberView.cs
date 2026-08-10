@@ -29,9 +29,9 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     private CombatAiBrain _aiBrain;
     private float _skillHideAtTime = float.NegativeInfinity;
     private bool _showingCastSkill;
-    private Image _backgroundImage;
-    private Color _idleBackgroundColor;
-    private bool _hasIdleBackgroundColor;
+    private Image _focusImage;
+    private Color _idleFocusColor;
+    private bool _hasIdleFocusColor;
     private Button _focusButton;
 
     public Character BoundCharacter => _character;
@@ -257,17 +257,17 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     private void EnsureFocusClickable()
     {
-        ResolveBackgroundImage();
-        if (_backgroundImage == null)
+        ResolveFocusImage();
+        if (_focusImage == null)
         {
             return;
         }
 
-        _backgroundImage.raycastTarget = true;
-        if (!_hasIdleBackgroundColor)
+        _focusImage.raycastTarget = true;
+        if (!_hasIdleFocusColor)
         {
-            _idleBackgroundColor = _backgroundImage.color;
-            _hasIdleBackgroundColor = true;
+            _idleFocusColor = _focusImage.color;
+            _hasIdleFocusColor = true;
         }
 
         if (_focusButton == null)
@@ -279,7 +279,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             }
 
             _focusButton.transition = Selectable.Transition.None;
-            _focusButton.targetGraphic = _backgroundImage;
+            _focusButton.targetGraphic = _focusImage;
             _focusButton.onClick.RemoveListener(OnFocusClicked);
             _focusButton.onClick.AddListener(OnFocusClicked);
         }
@@ -299,35 +299,36 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     private void ApplyFocusVisual()
     {
-        ResolveBackgroundImage();
-        if (_backgroundImage == null || !_hasIdleBackgroundColor)
+        ResolveFocusImage();
+        if (_focusImage == null || !_hasIdleFocusColor)
         {
             return;
         }
 
         bool focused = _character != null && _character == CombatPartyFocus.Selected;
-        _backgroundImage.color = focused
-            ? new Color(FocusBackgroundColor.r, FocusBackgroundColor.g, FocusBackgroundColor.b, _idleBackgroundColor.a)
-            : _idleBackgroundColor;
+        _focusImage.color = focused
+            ? new Color(FocusBackgroundColor.r, FocusBackgroundColor.g, FocusBackgroundColor.b, _idleFocusColor.a)
+            : _idleFocusColor;
     }
 
-    private void ResolveBackgroundImage()
+    private void ResolveFocusImage()
     {
-        if (_backgroundImage != null)
+        if (_focusImage != null)
         {
             return;
         }
 
-        Transform background = transform.Find("Background");
-        if (background != null)
+        Transform focus = transform.Find("Frame");
+        focus ??= transform.Find("Background");
+        if (focus != null)
         {
-            _backgroundImage = background.GetComponent<Image>();
+            _focusImage = focus.GetComponent<Image>();
         }
     }
 
     private void ResolveReferences()
     {
-        ResolveBackgroundImage();
+        ResolveFocusImage();
 
         if (_appearanceView == null)
         {
