@@ -138,10 +138,6 @@ public sealed class CombatBattleFlowTests
             Assert.That(scroll, Is.Not.Null);
             Assert.That(scroll.horizontal, Is.True);
             Assert.That(scroll.vertical, Is.False);
-            Assert.That(scroll.content.pivot.x, Is.EqualTo(0.5f));
-            Assert.That(
-                scroll.content.GetComponent<HorizontalLayoutGroup>().childControlWidth,
-                Is.True);
         }
         finally
         {

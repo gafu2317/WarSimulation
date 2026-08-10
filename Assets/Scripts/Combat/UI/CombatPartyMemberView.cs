@@ -7,6 +7,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(RectTransform))]
 public sealed class CombatPartyMemberView : MonoBehaviour
 {
+    private const float BackgroundLeftInset = 40f;
     private static readonly Color FocusBackgroundColor = new(1f, 0.85f, 0.1f, 1f);
 
     [SerializeField, Min(0.1f)] private float _skillDisplaySeconds = 2.2f;
@@ -322,6 +323,11 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         if (background != null)
         {
             _backgroundImage = background.GetComponent<Image>();
+            RectTransform rect = background as RectTransform;
+            if (rect != null)
+            {
+                rect.offsetMin = new Vector2(BackgroundLeftInset, rect.offsetMin.y);
+            }
         }
     }
 

@@ -74,14 +74,43 @@ public sealed class CombatCharacterAppearanceView : MonoBehaviour
         _rectTransform = GetComponent<RectTransform>();
         _rectTransform.sizeDelta = new Vector2(_previewWidth, _previewHeight);
 
-        var contentObject = new GameObject("Content", typeof(RectTransform));
-        contentObject.transform.SetParent(transform, false);
-        _contentRoot = contentObject.GetComponent<RectTransform>();
+        Transform existingContent = transform.Find("Mask/Content");
+        existingContent ??= transform.Find("Content");
+        if (existingContent != null)
+        {
+            _contentRoot = existingContent.GetComponent<RectTransform>();
+            ClearExistingContent();
+        }
+        else
+        {
+            var contentObject = new GameObject("Content", typeof(RectTransform));
+            contentObject.transform.SetParent(transform, false);
+            _contentRoot = contentObject.GetComponent<RectTransform>();
+        }
+
         _contentRoot.anchorMin = new Vector2(0.5f, 0.5f);
         _contentRoot.anchorMax = new Vector2(0.5f, 0.5f);
         _contentRoot.pivot = new Vector2(0.5f, 0.5f);
         _contentRoot.anchoredPosition = Vector2.zero;
         _contentRoot.sizeDelta = new Vector2(_previewWidth, _previewHeight);
+        _contentRoot.localScale = Vector3.one;
+    }
+
+    private void ClearExistingContent()
+    {
+        for (int i = _contentRoot.childCount - 1; i >= 0; i--)
+        {
+            GameObject child = _contentRoot.GetChild(i).gameObject;
+            child.SetActive(false);
+            if (Application.isPlaying)
+            {
+                Destroy(child);
+            }
+            else
+            {
+                DestroyImmediate(child);
+            }
+        }
     }
 
     private void ClearParts()
