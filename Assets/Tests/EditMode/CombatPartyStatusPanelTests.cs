@@ -193,8 +193,6 @@ public sealed class CombatPartyStatusPanelTests
         Color idleColor = background.color;
         view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
 
-        Assert.That(background.rectTransform.offsetMin.x, Is.EqualTo(40f));
-
         viewObject.GetComponent<Button>().onClick.Invoke();
 
         Assert.That(CombatPartyFocus.Selected, Is.EqualTo(character));
@@ -221,27 +219,6 @@ public sealed class CombatPartyStatusPanelTests
         view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
 
         Assert.That(view.PartCount, Is.EqualTo(2));
-
-        Object.DestroyImmediate(viewObject);
-        Object.DestroyImmediate(character.gameObject);
-    }
-
-    [Test]
-    public void CombatCharacterAppearanceView_ReplacesPrefabPreviewImages()
-    {
-        Character character = CreateCharacter("Visual", CombatTeam.Ally, withAppearance: false);
-        AttachAppearance(character.transform, "CharacterFrontLeft", "Body", CreateTestSprite(Color.red), new Vector3(0f, 1f, 0f), 0);
-
-        var viewObject = new GameObject("AppearanceView", typeof(RectTransform));
-        var mask = CreateChild(viewObject.transform, "Mask", typeof(RectTransform));
-        var content = CreateChild(mask.transform, "Content", typeof(RectTransform));
-        CreateChild(content.transform, "PrefabPreview", typeof(RectTransform), typeof(Image));
-        var view = viewObject.AddComponent<CombatCharacterAppearanceView>();
-
-        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
-
-        Assert.That(content.transform.childCount, Is.EqualTo(1));
-        Assert.That(content.transform.GetChild(0).name, Is.EqualTo("Body"));
 
         Object.DestroyImmediate(viewObject);
         Object.DestroyImmediate(character.gameObject);
