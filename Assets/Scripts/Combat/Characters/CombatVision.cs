@@ -371,26 +371,28 @@ public sealed class CombatVision : MonoBehaviour
 
         int layerMask = ResolveObstructionLayerMask();
 
-        int hitCount = Physics.SphereCastNonAlloc(
-            headPos,
-            SightCastRadius,
-            dirToTarget,
-            _lineOfSightHits,
-            distanceToTarget,
-            layerMask,
-            QueryTriggerInteraction.Ignore);
+        int hitCount = CastSight(headPos, dirToTarget, _lineOfSightHits, distanceToTarget, layerMask);
+        RaycastHit blocker = default;
+        float nearestDistance = float.PositiveInfinity;
+        bool hasBlocker = false;
         for (int i = 0; i < hitCount; i++)
         {
-            Transform hitTransform = _lineOfSightHits[i].transform;
+            RaycastHit hit = _lineOfSightHits[i];
+            Transform hitTransform = hit.transform;
             if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, target))
             {
                 continue;
             }
 
-            return false;
+            if (hit.distance >= nearestDistance) continue;
+            nearestDistance = hit.distance;
+            blocker = hit;
+            hasBlocker = true;
         }
 
-        return true;
+        if (!hasBlocker) return true;
+        CombatVisionObstructionDiagnostics.Record(_owner, target, blocker, headPos);
+        return false;
     }
 
     public bool IsWithinFieldOfView(Transform target)
@@ -447,14 +449,13 @@ public sealed class CombatVision : MonoBehaviour
             end = origin + direction * rayDistance;
         }
 
-        int hitCount = Physics.SphereCastNonAlloc(
+        int hitCount = CastSight(
             origin,
-            SightCastRadius,
             direction,
             _lineOfSightHits,
             rayDistance,
-            ResolveObstructionLayerMask(),
-            QueryTriggerInteraction.Ignore);
+            ResolveObstructionLayerMask());
+        RaycastHit blocker = default;
         float nearestDistance = float.PositiveInfinity;
         for (int i = 0; i < hitCount; i++)
         {
@@ -464,8 +465,14 @@ public sealed class CombatVision : MonoBehaviour
             if (hit.distance >= nearestDistance) continue;
 
             nearestDistance = hit.distance;
+            blocker = hit;
             end = hit.point;
             blocked = true;
+        }
+
+        if (blocked)
+        {
+            CombatVisionObstructionDiagnostics.Record(_owner, target, blocker, origin);
         }
 
         return true;
@@ -643,26 +650,56 @@ public sealed class CombatVision : MonoBehaviour
         Vector3 dirToAlly = diff / distance;
         int layerMask = ResolveObstructionLayerMask();
 
-        int hitCount = Physics.SphereCastNonAlloc(
-            myHeadPos,
-            SightCastRadius,
-            dirToAlly,
-            _communicationHits,
-            distance,
-            layerMask,
-            QueryTriggerInteraction.Ignore);
+        int hitCount = CastSight(myHeadPos, dirToAlly, _communicationHits, distance, layerMask);
+        RaycastHit blocker = default;
+        float nearestDistance = float.PositiveInfinity;
+        bool hasBlocker = false;
         for (int i = 0; i < hitCount; i++)
         {
-            Transform hitTransform = _communicationHits[i].transform;
+            RaycastHit hit = _communicationHits[i];
+            Transform hitTransform = hit.transform;
             if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, ally.transform))
             {
                 continue;
             }
 
-            return false;
+            if (hit.distance >= nearestDistance) continue;
+            nearestDistance = hit.distance;
+            blocker = hit;
+            hasBlocker = true;
         }
 
-        return true;
+        if (!hasBlocker) return true;
+        CombatVisionObstructionDiagnostics.Record(_owner, ally.transform, blocker, myHeadPos);
+        return false;
+    }
+
+    private static int CastSight(
+        Vector3 origin,
+        Vector3 direction,
+        RaycastHit[] hits,
+        float distance,
+        int layerMask)
+    {
+        if (CombatPlaytestDebugSettings.UseThickSightCast)
+        {
+            return Physics.SphereCastNonAlloc(
+                origin,
+                SightCastRadius,
+                direction,
+                hits,
+                distance,
+                layerMask,
+                QueryTriggerInteraction.Ignore);
+        }
+
+        return Physics.RaycastNonAlloc(
+            origin,
+            direction,
+            hits,
+            distance,
+            layerMask,
+            QueryTriggerInteraction.Ignore);
     }
 
     // 通信可能な味方（Rayが通る相手）にだけ記憶を共有する

@@ -46,6 +46,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     private void OnDisable()
     {
         UnsubscribeEvents();
+        FlushVisionDiagnostics();
         CloseLog();
     }
 
@@ -79,6 +80,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     {
         CloseLog();
         _formatter.Reset();
+        CombatVisionObstructionDiagnostics.BeginBattle();
         _battleStartTime = Time.time;
         _nextSnapshotTime = _battleStartTime + _snapshotIntervalSeconds;
 
@@ -103,6 +105,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         if (_writer == null) return;
 
         float duration = Mathf.Max(0f, Time.time - _battleStartTime);
+        FlushVisionDiagnostics();
         TryGetBattleSnapshot(out int ownStoneHp, out int ownStoneMaxHp, out int enemyStoneHp, out int enemyStoneMaxHp, out int allyAlive, out int enemyAlive);
         string outcomeLabel = outcome == CombatBattleState.WaitingToStart
             ? "Timeout"
@@ -124,6 +127,15 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         if (_writer == null) return;
         EndLog(CombatBattleState.WaitingToStart);
         _lastBattleState = CombatBattleState.WaitingToStart;
+    }
+
+    private void FlushVisionDiagnostics()
+    {
+        CombatVisionObstructionDiagnostics.WriteTo(line =>
+        {
+            WriteLine(line);
+            Debug.Log(line, this);
+        });
     }
 
     private void MaybeWriteSnapshot()

@@ -215,30 +215,64 @@ public sealed class CombatTeamVisionTests
     }
 
     [Test]
-    public void CombatVision_ObstacleNearSightLineBlocksWithSightCastRadius()
+    public void CombatVision_OptionalThickSightCastBlocksNearbyObstacle()
     {
         GameObject observerGo = new GameObject("Observer");
         GameObject targetGo = new GameObject("Target");
-        GameObject treeGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject obstacleGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bool previousValue = CombatPlaytestDebugSettings.UseThickSightCast;
 
         try
         {
+            CombatPlaytestDebugSettings.SetUseThickSightCast(true);
             Character observer = observerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
             observerGo.transform.position = Vector3.zero;
             targetGo.transform.position = new Vector3(0f, 0f, 5f);
-            treeGo.transform.position = new Vector3(0.25f, 1f, 2.5f);
-            treeGo.transform.localScale = new Vector3(0.1f, 0.2f, 0.1f);
-            treeGo.layer = LayerMask.NameToLayer("VisionObstacle");
+            obstacleGo.transform.position = new Vector3(0.25f, 1f, 2.5f);
+            obstacleGo.transform.localScale = new Vector3(0.1f, 0.2f, 0.1f);
+            obstacleGo.layer = LayerMask.NameToLayer("VisionObstacle");
             Physics.SyncTransforms();
 
             Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.False);
         }
         finally
         {
+            CombatPlaytestDebugSettings.SetUseThickSightCast(previousValue);
             Object.DestroyImmediate(observerGo);
             Object.DestroyImmediate(targetGo);
-            Object.DestroyImmediate(treeGo);
+            Object.DestroyImmediate(obstacleGo);
+        }
+    }
+
+    [Test]
+    public void CombatVision_ThickSightCastDoesNotBlockFromColliderOverlappingSightOrigin()
+    {
+        GameObject observerGo = new GameObject("Observer");
+        GameObject targetGo = new GameObject("Target");
+        GameObject overlappingObstacleGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bool previousValue = CombatPlaytestDebugSettings.UseThickSightCast;
+
+        try
+        {
+            CombatPlaytestDebugSettings.SetUseThickSightCast(true);
+            Character observer = observerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            observerGo.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(0f, 0f, 5f);
+            overlappingObstacleGo.transform.position = new Vector3(0f, 1f, 0f);
+            overlappingObstacleGo.transform.localScale = new Vector3(1f, 1f, 1f);
+            overlappingObstacleGo.layer = LayerMask.NameToLayer("VisionObstacle");
+            Physics.SyncTransforms();
+
+            Assert.That(observer.Vision.HasLineOfSight(target.transform), Is.True);
+        }
+        finally
+        {
+            CombatPlaytestDebugSettings.SetUseThickSightCast(previousValue);
+            Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(overlappingObstacleGo);
         }
     }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
 using WarSimulation.Combat.Map;
@@ -66,10 +67,61 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return false;
             }
 
+            if (!SaveBakedMapAsset(definition, map, fingerprint, out string mapError))
+            {
+                status = mapError;
+                return false;
+            }
+
+            if (!builder.Load(definition.BakedNavMesh))
+            {
+                status = "保存済みNavMeshDataの再ロードに失敗しました";
+                return false;
+            }
+
             definition.SetBakedAssaultRoutes(allyRoutes, enemyRoutes, fingerprint);
+            host.SetBakedRenderFingerprint(fingerprint);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssets();
-            status = "シーンへ3D反映完了 / NavMesh・進攻ルートを保存しました";
+            EditorSceneManager.MarkSceneDirty(host.gameObject.scene);
+            status = "シーンへ3D反映完了 / MapData・NavMesh・進攻ルートを保存しました（シーンを保存してください）";
+            return true;
+        }
+
+        private static bool SaveBakedMapAsset(
+            AuthoredMapDefinition definition,
+            MapData map,
+            int fingerprint,
+            out string error)
+        {
+            error = null;
+            string definitionPath = AssetDatabase.GetAssetPath(definition);
+            if (string.IsNullOrEmpty(definitionPath))
+            {
+                error = "AuthoredMap のアセットパスを取得できません";
+                return false;
+            }
+
+            string dir = Path.GetDirectoryName(definitionPath)?.Replace('\\', '/') ?? "Assets";
+            string assetPath = $"{dir}/{definition.name}_BakedMapData.asset";
+            if (definition.BakedMapData != null)
+            {
+                string existingPath = AssetDatabase.GetAssetPath(definition.BakedMapData);
+                if (!string.IsNullOrEmpty(existingPath)) assetPath = existingPath;
+            }
+
+            string assetName = Path.GetFileNameWithoutExtension(assetPath);
+            BakedMapData saved = AssetDatabase.LoadAssetAtPath<BakedMapData>(assetPath);
+            if (saved == null)
+            {
+                saved = ScriptableObject.CreateInstance<BakedMapData>();
+                saved.name = assetName;
+                AssetDatabase.CreateAsset(saved, assetPath);
+            }
+
+            saved.Capture(map, fingerprint);
+            EditorUtility.SetDirty(saved);
+            definition.SetBakedMapData(saved);
             return true;
         }
 

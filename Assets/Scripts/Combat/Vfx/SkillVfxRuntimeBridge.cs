@@ -20,6 +20,8 @@ public static class SkillVfxRuntimeBridge
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Initialize()
     {
+        if (!Application.isPlaying) return;
+
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
         CombatSkillActionEvents.Completed += OnSkillCompleted;
         EnsurePlayer();
@@ -27,12 +29,16 @@ public static class SkillVfxRuntimeBridge
 
     private static void OnSkillCompleted(CombatSkillActionResult result)
     {
+        if (!Application.isPlaying) return;
+
         EnsurePlayer();
         _player?.PlayAction(result);
     }
 
     private static void EnsurePlayer()
     {
+        if (!Application.isPlaying) return;
+
         if (_player != null) return;
 
         SkillVfxPlayer[] players = Object.FindObjectsByType<SkillVfxPlayer>(FindObjectsInactive.Exclude);

@@ -11,6 +11,7 @@ namespace WarSimulation.Combat.Map
     public sealed class MapSceneHost : MonoBehaviour
     {
         [SerializeField] private MapConfig _config;
+        [SerializeField] private int _bakedRenderFingerprint;
 
         public MapConfig Config
         {
@@ -40,6 +41,39 @@ namespace WarSimulation.Combat.Map
             if (!render3D)
                 return true;
             return Render3D(map, bakeNavMesh, prebakedNavMesh);
+        }
+
+        public void SetBakedRenderFingerprint(int fingerprint)
+        {
+            _bakedRenderFingerprint = fingerprint;
+        }
+
+        public bool LoadBakedMap(MapData map, NavMeshData prebakedNavMesh, int fingerprint)
+        {
+            if (map == null || prebakedNavMesh == null)
+            {
+                Debug.LogError($"[{nameof(MapSceneHost)}] Baked map and NavMeshData are required.", this);
+                return false;
+            }
+
+            if (!HasBakedRenderData(map, fingerprint))
+            {
+                Debug.LogError(
+                    $"[{nameof(MapSceneHost)}] Generated map render data is missing from the scene.",
+                    this);
+                return false;
+            }
+
+            CombatNavMeshBuilder navMeshBuilder = GetComponent<CombatNavMeshBuilder>();
+            if (navMeshBuilder == null)
+            {
+                Debug.LogError($"[{nameof(MapSceneHost)}] CombatNavMeshBuilder is missing.", this);
+                return false;
+            }
+
+            if (!navMeshBuilder.Load(prebakedNavMesh)) return false;
+            SetCombatMapSystemCurrentMap(map);
+            return true;
         }
 
         public void Render3D(MapData map) => Render3D(map, bakeNavMesh: true, prebakedNavMesh: null);
@@ -95,6 +129,31 @@ namespace WarSimulation.Combat.Map
             GetComponent<RiverRenderer>()?.Clear();
             GetComponent<TerrainSkirtRenderer>()?.Clear();
             GetComponent<TerrainRenderer>()?.Clear();
+        }
+
+        private bool HasBakedRenderData(MapData map, int fingerprint)
+        {
+            if (_bakedRenderFingerprint != fingerprint) return false;
+            if (transform.Find("GeneratedTerrain") == null) return false;
+            if (map.Rivers.Count > 0 && transform.Find("GeneratedRivers") == null) return false;
+            if (map.Lakes.Count > 0 && transform.Find("GeneratedLakes") == null) return false;
+
+            bool hasBridge = false;
+            bool hasFeature = false;
+            for (int i = 0; i < map.Features.Count; i++)
+            {
+                FeatureType type = map.Features[i].Type;
+                if (type == FeatureType.Bridge) hasBridge = true;
+                if (type == FeatureType.Tree || type == FeatureType.Rock ||
+                    type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone)
+                {
+                    hasFeature = true;
+                }
+            }
+
+            if (hasBridge && transform.Find("GeneratedBridges") == null) return false;
+            if (hasFeature && transform.Find("GeneratedFeatures") == null) return false;
+            return true;
         }
 
         private static void SetCombatMapSystemCurrentMap(MapData map)

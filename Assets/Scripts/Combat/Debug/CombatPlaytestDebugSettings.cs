@@ -25,6 +25,8 @@ public static class CombatPlaytestDebugSettings
     public static bool VisionShowLines { get; private set; } = true;
     public static bool VisionShowObstructionRays { get; private set; }
     public static bool VisionShowFieldOfView { get; private set; } = true;
+    public static bool UseThickSightCast { get; private set; }
+    public static bool LogVisionObstructions { get; private set; }
 
     public static event Action Changed;
 
@@ -64,6 +66,13 @@ public static class CombatPlaytestDebugSettings
         Set(VisionShowObstructionRays, v => VisionShowObstructionRays = v, value);
     public static void SetVisionShowFieldOfView(bool value) =>
         Set(VisionShowFieldOfView, v => VisionShowFieldOfView = v, value);
+    public static void SetUseThickSightCast(bool value) =>
+        Set(UseThickSightCast, v => UseThickSightCast = v, value);
+    public static void SetLogVisionObstructions(bool value)
+    {
+        Set(LogVisionObstructions, v => LogVisionObstructions = v, value);
+        if (!value) CombatVisionObstructionDiagnostics.Clear();
+    }
 
     public static void ResetCharacterRouteDetailsToDefault()
     {
@@ -96,6 +105,9 @@ public static class CombatPlaytestDebugSettings
         VisionShowLines = true;
         VisionShowObstructionRays = false;
         VisionShowFieldOfView = true;
+        UseThickSightCast = false;
+        LogVisionObstructions = false;
+        CombatVisionObstructionDiagnostics.Clear();
         ApplyToScene();
         Changed?.Invoke();
     }
@@ -114,9 +126,6 @@ public static class CombatPlaytestDebugSettings
 
         SetEnabled<CombatTerrainInfoClickDebugger>(false);
         SetEnabled<CombatMagicStoneDebugInput>(false);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        SetEnabled<CombatBattleEventLogger>(false);
-#endif
     }
 
     private static void Set(bool current, Action<bool> assign, bool value)

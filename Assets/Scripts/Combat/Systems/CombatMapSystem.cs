@@ -121,7 +121,7 @@ public class CombatMapSystem : MonoBehaviour
         }
         else if (CurrentMap == null)
         {
-            BuildAndSetCurrentMap(render3D: false);
+            LoadBakedMapAndNavMesh();
         }
     }
 
@@ -136,7 +136,56 @@ public class CombatMapSystem : MonoBehaviour
             return false;
         }
 
-        return BuildAndSetCurrentMap(render3D: true) != null && _isNavMeshReady;
+        return LoadBakedMapAndNavMesh();
+    }
+
+    public bool LoadBakedMapAndNavMesh()
+    {
+        if (!_buildMapOnStart)
+        {
+            Debug.LogWarning(
+                $"[{nameof(CombatMapSystem)}] Cannot load the baked map because map building is disabled.",
+                this);
+            return false;
+        }
+
+        if (_authoredMap == null || _mapSceneHost == null)
+        {
+            Debug.LogError(
+                $"[{nameof(CombatMapSystem)}] Baked map loading requires AuthoredMap and MapSceneHost.",
+                this);
+            return false;
+        }
+
+        int currentFingerprint = _authoredMap.ComputeBakeFingerprint();
+        if (!_authoredMap.HasValidBakedMapData || !_authoredMap.HasValidBakedNavMesh)
+        {
+            Debug.LogError(
+                $"[{nameof(CombatMapSystem)}] Baked map data is invalid. " +
+                $"mapData={_authoredMap.BakedMapData != null} " +
+                $"navMesh={_authoredMap.BakedNavMesh != null} " +
+                $"storedNavFp={_authoredMap.NavMeshBakeFingerprint} " +
+                $"currentFp={currentFingerprint}. Re-bake the authored map in the Editor.",
+                this);
+            return false;
+        }
+
+        MapData map;
+        try
+        {
+            map = _authoredMap.BakedMapData.CreateRuntimeMap();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[{nameof(CombatMapSystem)}] Failed to load baked MapData: {ex.Message}", this);
+            return false;
+        }
+
+        if (!_mapSceneHost.LoadBakedMap(map, _authoredMap.BakedNavMesh, currentFingerprint)) return false;
+
+        _isNavMeshReady = true;
+        CombatAssaultRouteCache.EnsureBuilt(this);
+        return true;
     }
 
     public void SetCurrentMap(MapData map)

@@ -43,6 +43,7 @@ namespace WarSimulation.Combat.Map
         [Header("Baked Navigation")]
         [SerializeField] private NavMeshData _bakedNavMesh;
         [SerializeField] private int _navMeshBakeFingerprint;
+        [SerializeField] private BakedMapData _bakedMapData;
         [SerializeField] private List<AuthoredBakedAssaultRoute> _bakedAllyAssaultRoutes = new();
         [SerializeField] private List<AuthoredBakedAssaultRoute> _bakedEnemyAssaultRoutes = new();
         [SerializeField] private int _assaultRouteBakeFingerprint;
@@ -73,6 +74,7 @@ namespace WarSimulation.Combat.Map
 
         public NavMeshData BakedNavMesh => _bakedNavMesh;
         public int NavMeshBakeFingerprint => _navMeshBakeFingerprint;
+        public BakedMapData BakedMapData => _bakedMapData;
         public IReadOnlyList<AuthoredBakedAssaultRoute> BakedAllyAssaultRoutes => _bakedAllyAssaultRoutes;
         public IReadOnlyList<AuthoredBakedAssaultRoute> BakedEnemyAssaultRoutes => _bakedEnemyAssaultRoutes;
         public int AssaultRouteBakeFingerprint => _assaultRouteBakeFingerprint;
@@ -89,6 +91,9 @@ namespace WarSimulation.Combat.Map
 
         public bool HasValidBakedNavMesh =>
             _bakedNavMesh != null && _navMeshBakeFingerprint == ComputeBakeFingerprint();
+
+        public bool HasValidBakedMapData =>
+            _bakedMapData != null && _bakedMapData.IsValidFor(ComputeBakeFingerprint());
 
         public bool HasValidBakedAssaultRoutes =>
             _hasBakedAssaultRoutes && _assaultRouteBakeFingerprint == ComputeBakeFingerprint();
@@ -358,6 +363,11 @@ namespace WarSimulation.Combat.Map
         {
             _bakedNavMesh = navMeshData;
             _navMeshBakeFingerprint = fingerprint;
+        }
+
+        public void SetBakedMapData(BakedMapData bakedMapData)
+        {
+            _bakedMapData = bakedMapData;
         }
 
         public void SetBakedAssaultRoutes(
