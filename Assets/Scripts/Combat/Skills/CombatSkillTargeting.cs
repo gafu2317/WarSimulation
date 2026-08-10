@@ -69,6 +69,17 @@ public static class CombatSkillTargeting
             requireRecognition: false);
     }
 
+    public static IReadOnlyList<Character> GetAllEnemies(Character owner)
+    {
+        return CollectCharacters(
+            owner,
+            includeAllies: false,
+            center: default,
+            radius: float.PositiveInfinity,
+            includeSelf: false,
+            requireRecognition: false);
+    }
+
     public static SkillExecutionContext CreateEnemyAreaContext(
         Character owner,
         Vector3 center,

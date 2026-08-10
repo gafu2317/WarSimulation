@@ -9,7 +9,7 @@ public sealed class ShieldShoulderGuardSkill : SkillBase
 
     public ShieldShoulderGuardSkill(
         float maxRange = 8f,
-        float durationSeconds = 5f,
+        float durationSeconds = 3f,
         float damageMultiplier = 0.6f,
         float cooldownSeconds = 7f)
     {

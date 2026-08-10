@@ -93,6 +93,35 @@ public sealed class CombatPhase4SkillTests
     }
 
     [Test]
+    public void BibleGotsumeSkill_DoesNotReflectReflectedDamageAgain()
+    {
+        GameObject firstGo = new GameObject("First");
+        GameObject secondGo = new GameObject("Second");
+        try
+        {
+            Character first = firstGo.AddComponent<Character>();
+            Character second = secondGo.AddComponent<Character>();
+            first.SetTeam(CombatTeam.Ally);
+            second.SetTeam(CombatTeam.Enemy);
+            first.Health.Initialize(30);
+            second.Health.Initialize(30);
+
+            var skill = new BibleGotsumeSkill();
+            skill.Execute(first, SkillExecutionContext.ForSelf(first));
+            skill.Execute(second, SkillExecutionContext.ForSelf(second));
+            first.Health.TakeDamage(5, second);
+
+            Assert.That(first.Health.HP, Is.EqualTo(25));
+            Assert.That(second.Health.HP, Is.EqualTo(22));
+        }
+        finally
+        {
+            Object.DestroyImmediate(secondGo);
+            Object.DestroyImmediate(firstGo);
+        }
+    }
+
+    [Test]
     public void BibleCarryRushSkill_BoostsSpeedAndCarriesAlly()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -204,6 +233,52 @@ public sealed class CombatPhase4SkillTests
     }
 
     [Test]
+    public void ShieldShoulderGuardSkill_DoesNotRedirectRedirectedDamageAgain()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject firstGo = new GameObject("FirstGuardian");
+        GameObject secondGo = new GameObject("SecondGuardian");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character first = firstGo.AddComponent<Character>();
+            Character second = secondGo.AddComponent<Character>();
+            Character enemy = enemyGo.AddComponent<Character>();
+            first.SetTeam(CombatTeam.Ally);
+            second.SetTeam(CombatTeam.Ally);
+            enemy.SetTeam(CombatTeam.Enemy);
+            first.Health.Initialize(30);
+            second.Health.Initialize(30);
+            enemy.Health.Initialize(30);
+            secondGo.transform.position = firstGo.transform.position + Vector3.forward * 2f;
+            enemyGo.transform.position = firstGo.transform.position + Vector3.forward * 4f;
+
+            system.AllyCharacters.Add(first);
+            system.AllyCharacters.Add(second);
+            system.EnemyCharacters.Add(enemy);
+            system.AssignTeamsFromLists();
+            first.Vision.UpdateVision();
+            second.Vision.UpdateVision();
+
+            var skill = new ShieldShoulderGuardSkill();
+            skill.Execute(first, SkillExecutionContext.ForTarget(second));
+            skill.Execute(second, SkillExecutionContext.ForTarget(first));
+            first.Health.TakeDamage(10, enemy);
+
+            Assert.That(first.Health.HP, Is.EqualTo(30));
+            Assert.That(second.Health.HP, Is.EqualTo(24));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(secondGo);
+            Object.DestroyImmediate(firstGo);
+            Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
     public void GrimoireBindSkill_AppliesBindAndPreventsActing()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -213,6 +288,7 @@ public sealed class CombatPhase4SkillTests
             Character owner = ownerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
             owner.Health.Initialize(30);
+            typeof(Character).GetProperty("INT").SetValue(owner, 40);
             target.SetTeam(CombatTeam.Enemy);
             target.Health.Initialize(30);
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 2f;
@@ -285,6 +361,7 @@ public sealed class CombatPhase4SkillTests
             Character owner = ownerGo.AddComponent<Character>();
             Character ally = allyGo.AddComponent<Character>();
             owner.Health.Initialize(30);
+            typeof(Character).GetProperty("FAI").SetValue(owner, 40);
             ally.SetTeam(CombatTeam.Ally);
             ally.Health.Initialize(maxHP: 30, currentHP: 10);
             allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 2f;
@@ -309,6 +386,7 @@ public sealed class CombatPhase4SkillTests
         try
         {
             fixture.Ally.Health.Initialize(maxHP: 30, currentHP: 10);
+            typeof(Character).GetProperty("FAI").SetValue(fixture.Owner, 40);
             Vector3 placedPoint = fixture.Ally.transform.position;
 
             new RosaryHealingAreaSkill().Execute(

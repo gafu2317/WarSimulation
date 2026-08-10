@@ -5,6 +5,29 @@ using WarSimulation.Combat.Map;
 public sealed class CombatHealthAttackTests
 {
     [Test]
+    public void CombatCharacterPrefab_UsesStandardBattleStats()
+    {
+        GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Prefabs/Combat/CombatCharacter.prefab");
+        GameObject instance = null;
+        try
+        {
+            instance = Object.Instantiate(prefab);
+            Character character = instance.GetComponent<Character>();
+
+            Assert.That(character.MaxHP, Is.EqualTo(120));
+            Assert.That(character.STR, Is.EqualTo(30));
+            Assert.That(character.INT, Is.EqualTo(30));
+            Assert.That(character.FAI, Is.EqualTo(30));
+            Assert.That(character.AGI, Is.EqualTo(30));
+        }
+        finally
+        {
+            if (instance != null) Object.DestroyImmediate(instance);
+        }
+    }
+
+    [Test]
     public void Health_RaisesAppliedDamageWithVictimAndAttacker()
     {
         GameObject victimGo = new GameObject("Victim");

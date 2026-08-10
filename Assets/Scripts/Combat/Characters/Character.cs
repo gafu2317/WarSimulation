@@ -18,6 +18,10 @@ public class Character : MonoBehaviour
     [SerializeField] private CombatSkillCatalog _skillCatalogOverride;
     [SerializeField] private List<SkillId> _learnedSkillIds = new();
     [SerializeField] private bool _unlockAllCatalogSkillsForKindWhenLearnedEmpty = true;
+    [SerializeField, Min(0)] private int _baseSTR;
+    [SerializeField, Min(0)] private int _baseINT;
+    [SerializeField, Min(0)] private int _baseFAI;
+    [SerializeField, Min(0)] private int _baseAGI;
 
     // キャラクターの基礎データ
     [field: SerializeField] public CharacterData CharacterData { private set; get; }
@@ -71,6 +75,11 @@ public class Character : MonoBehaviour
 
     private void Awake()
     {
+        STR = _baseSTR;
+        INT = _baseINT;
+        FAI = _baseFAI;
+        AGI = _baseAGI;
+
         _agent = GetComponent<NavMeshAgent>();
         _body = GetComponent<CombatCharacterBody>();
         if (_body == null)
@@ -273,7 +282,8 @@ public class Character : MonoBehaviour
             weapon.Kind,
             _learnedSkillIds,
             weapon.GrantedSkillIds,
-            _unlockAllCatalogSkillsForKindWhenLearnedEmpty);
+            _unlockAllCatalogSkillsForKindWhenLearnedEmpty,
+            weapon);
 
         for (int i = 0; i < builtSkills.Count; i++)
         {

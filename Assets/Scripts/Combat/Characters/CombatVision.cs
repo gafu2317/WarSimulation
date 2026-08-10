@@ -276,6 +276,18 @@ public sealed class CombatVision : MonoBehaviour
         return Mathf.Max(0f, _searchTimeout - GetMemoryAgeSeconds(target));
     }
 
+    public void Forget(Character target)
+    {
+        if (target == null) return;
+
+        _visibleEnemies.Remove(target);
+        CharacterMemory memory = EnsureTracked(target);
+        memory.LastSeenPosition = null;
+        memory.LastSeenTime = Time.time - _searchTimeout - 1f;
+        memory.SharedFrom = null;
+        RebuildRememberedEnemiesFromTracked();
+    }
+
     // 味方から情報を受け取る
     public void ReceiveSharedMemory(Character sharedFrom, List<CharacterMemory> sharedMemories)
     {

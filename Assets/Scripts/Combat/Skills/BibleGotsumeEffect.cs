@@ -43,13 +43,15 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
         DestroySelf();
     }
 
-    private void OnWearerDamaged(int damage, Character attacker)
+    private void OnWearerDamaged(int damage, CombatEffectSource attackSource)
     {
+        if (attackSource.IsReactiveDamage) return;
+        Character attacker = attackSource.Character;
         if (attacker == null || attacker == _wearer) return;
         if (attacker.Team == _wearer.Team) return;
         if (attacker.Health == null || !attacker.Health.IsTargetable) return;
 
-        attacker.Health.TakeDamage(_reflectDamage, _source);
+        attacker.Health.TakeDamage(_reflectDamage, _source.AsReactiveDamage());
     }
 
     private void DestroySelf()
@@ -67,7 +69,7 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
     {
         if (_wearer != null && _wearer.Health != null)
         {
-            _wearer.Health.Damaged += OnWearerDamaged;
+            _wearer.Health.DamagedWithSource += OnWearerDamaged;
         }
     }
 
@@ -75,7 +77,7 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
     {
         if (_wearer != null && _wearer.Health != null)
         {
-            _wearer.Health.Damaged -= OnWearerDamaged;
+            _wearer.Health.DamagedWithSource -= OnWearerDamaged;
         }
     }
 }

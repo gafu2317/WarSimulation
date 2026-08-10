@@ -578,12 +578,13 @@ public static partial class CombatAiPlanner
             if (!ally.IsAlive || ally.MaxHP <= 0) return -80f;
 
             int reservedHealing = GetAllyPendingHealing(context, ally.Character);
-            int projectedHP = Mathf.Min(ally.MaxHP, ally.HP + reservedHealing);
+            int incomingDamage = GetEnemyPendingDamage(context, ally.Character);
+            int projectedHP = Mathf.Clamp(ally.HP + reservedHealing - incomingDamage, 0, ally.MaxHP);
             float hpRatio = projectedHP / (float)ally.MaxHP;
             float missingHpRatio = 1f - hpRatio;
             if (CombatAiSkillClassifier.IsHeal(skill) && missingHpRatio <= 0.05f)
             {
-                return -80f;
+                return UnselectableScore;
             }
 
             float score = missingHpRatio * (CombatAiSkillClassifier.IsHeal(skill) ? 50f : 18f);
@@ -633,15 +634,19 @@ public static partial class CombatAiPlanner
         SkillExecutionContext skillContext)
     {
         float score = 0f;
+        bool hasHealingNeed = false;
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
             if (ally.Character == null || !ally.IsAlive || ally.MaxHP <= 0) continue;
             if (HorizontalDistance(skillContext.TargetPoint, ally.CurrentPosition) > skill.AreaRadius) continue;
-            int projectedHP = Mathf.Min(
-                ally.MaxHP,
-                ally.HP + GetAllyPendingHealing(context, ally.Character));
+            int projectedHP = Mathf.Clamp(
+                ally.HP + GetAllyPendingHealing(context, ally.Character) -
+                GetEnemyPendingDamage(context, ally.Character),
+                0,
+                ally.MaxHP);
             int missingHp = Mathf.Max(0, ally.MaxHP - projectedHP);
+            hasHealingNeed |= missingHp > ally.MaxHP * 0.05f;
             int healing = skill.EstimateHealing(context.Owner, skillContext, ally.Character);
             score += missingHp / (float)ally.MaxHP * 28f;
             score += Mathf.Min(missingHp, healing) / (float)ally.MaxHP * 36f;
@@ -653,13 +658,18 @@ public static partial class CombatAiPlanner
         if (owner != null && owner.Health != null && owner.MaxHP > 0 &&
             HorizontalDistance(skillContext.TargetPoint, owner.transform.position) <= skill.AreaRadius)
         {
-            int missingHp = Mathf.Max(0, owner.MaxHP - owner.Health.HP);
+            int projectedHp = Mathf.Clamp(
+                owner.Health.HP + GetAllyPendingHealing(context, owner) - GetEnemyPendingDamage(context, owner),
+                0,
+                owner.MaxHP);
+            int missingHp = Mathf.Max(0, owner.MaxHP - projectedHp);
+            hasHealingNeed |= missingHp > owner.MaxHP * 0.05f;
             int healing = skill.EstimateHealing(owner, skillContext, owner);
             score += missingHp / (float)owner.MaxHP * 28f;
             score += Mathf.Min(missingHp, healing) / (float)owner.MaxHP * 36f;
         }
 
-        return score;
+        return hasHealingNeed ? score : UnselectableScore;
     }
 
     private static float GetPostHealSurvivalScore(CombatAiContext context, CombatCharacterIntel ally, int healing)
@@ -807,6 +817,21 @@ public static partial class CombatAiPlanner
         }
 
         return healing;
+    }
+
+    private static int GetEnemyPendingDamage(CombatAiContext context, Character target)
+    {
+        int damage = 0;
+        for (int i = 0; i < context.EnemyPendingDamage.Count; i++)
+        {
+            CombatAiPendingDamage pending = context.EnemyPendingDamage[i];
+            if (pending.Target == target)
+            {
+                damage += pending.Damage;
+            }
+        }
+
+        return damage;
     }
 
     private static float GetSelfHpCostPenalty(CombatAiContext context, int hpCost)

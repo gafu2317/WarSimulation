@@ -428,6 +428,43 @@ public sealed class CombatTeamVisionTests
     }
 
     [Test]
+    public void GrimoireStealthSkill_ClearsExistingEnemyRecognition()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject observerGo = new GameObject("Observer");
+        GameObject casterGo = new GameObject("Caster");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character observer = observerGo.AddComponent<Character>();
+            Character caster = casterGo.AddComponent<Character>();
+            observer.SetTeam(CombatTeam.Ally);
+            caster.SetTeam(CombatTeam.Enemy);
+            observerGo.AddComponent<CapsuleCollider>().center = Vector3.up;
+            casterGo.AddComponent<CapsuleCollider>().center = Vector3.up;
+            casterGo.transform.position = Vector3.forward * 5f;
+            Physics.SyncTransforms();
+
+            system.AllyCharacters.Add(observer);
+            system.EnemyCharacters.Add(caster);
+            system.AssignTeamsFromLists();
+            observer.Vision.Initialize();
+            observer.Vision.UpdateVision();
+            Assert.That(observer.Vision.HasRecognitionOf(caster), Is.True);
+
+            new GrimoireStealthSkill().Execute(caster, SkillExecutionContext.ForSelf(caster));
+
+            Assert.That(observer.Vision.HasRecognitionOf(caster), Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(casterGo);
+            Object.DestroyImmediate(observerGo);
+            Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
     public void CombatVision_RemembersEnemyAfterLineOfSightLost()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");

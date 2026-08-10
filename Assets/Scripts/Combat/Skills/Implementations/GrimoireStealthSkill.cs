@@ -23,5 +23,10 @@ public sealed class GrimoireStealthSkill : SkillBase
         if (self == null) return;
 
         self.StatusEffects?.ApplyStealth(_durationSeconds, "GrimoireStealth", self);
+        var enemies = CombatSkillTargeting.GetAllEnemies(self);
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            enemies[i]?.Vision?.Forget(self);
+        }
     }
 }

@@ -59,6 +59,7 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
     private void OnProtectedTargetIncomingDamage(CombatHealth.IncomingDamageContext context)
     {
         if (context == null || context.IsHandled || context.Amount <= 0) return;
+        if (context.AttackSource.IsReactiveDamage) return;
         if (_guardian == null || _protectedTarget == null) return;
         if (_guardian.Health == null || _protectedTarget.Health == null) return;
         if (!_guardian.Health.IsAlive || !_protectedTarget.Health.IsAlive) return;
@@ -74,7 +75,7 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
         context.IsHandled = true;
         context.PreventionSource = _source;
         int redirectedDamage = Mathf.Max(1, Mathf.RoundToInt(context.Amount * _damageMultiplier));
-        _guardian.Health.TakeDamage(redirectedDamage, context.AttackSource);
+        _guardian.Health.TakeDamage(redirectedDamage, context.AttackSource.AsReactiveDamage());
     }
 
     private void DestroySelf()

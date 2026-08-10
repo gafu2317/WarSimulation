@@ -7,7 +7,8 @@ public static class CombatSkillLoadoutBuilder
         WeaponKind equippedKind,
         IReadOnlyList<SkillId> learnedSkillIds,
         IReadOnlyList<SkillId> grantedSkillIds,
-        bool unlockAllCatalogSkillsForKindWhenLearnedEmpty)
+        bool unlockAllCatalogSkillsForKindWhenLearnedEmpty,
+        WeaponBase equippedWeapon = null)
     {
         if (catalog == null || equippedKind == WeaponKind.Unarmed)
         {
@@ -56,7 +57,7 @@ public static class CombatSkillLoadoutBuilder
         var skills = new List<SkillBase>(resolvedIds.Count);
         foreach (SkillId skillId in resolvedIds)
         {
-            SkillBase skill = CombatSkillFactory.Create(skillId);
+            SkillBase skill = CombatSkillFactory.Create(skillId, equippedWeapon);
             if (skill != null)
             {
                 skills.Add(skill);

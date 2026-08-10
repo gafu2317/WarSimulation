@@ -4034,8 +4034,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b438f0385149349887b66341a11284, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatHealth
-  _maxHP: 200
-  _hp: 200
+  _maxHP: 120
+  _hp: 120
   _retreatArrivalDistance: 1.25
   _reviveDelayAfterArrival: 15
 --- !u!114 &6848952658909422077
@@ -4056,6 +4056,10 @@ MonoBehaviour:
   _skillCatalogOverride: {fileID: 11400000, guid: d7e8f9a0b1c28345a61728394a5b6c7d, type: 2}
   _learnedSkillIds: 
   _unlockAllCatalogSkillsForKindWhenLearnedEmpty: 1
+  _baseSTR: 30
+  _baseINT: 30
+  _baseFAI: 30
+  _baseAGI: 30
   <CharacterData>k__BackingField: {fileID: 0}
 --- !u!114 &3170098868722888951
 MonoBehaviour:

@@ -58,6 +58,26 @@ public sealed class CombatSkillLoadoutBuilderTests
         Assert.That(((IdentifiedSkill)skills[0]).SkillId, Is.EqualTo(SkillId.Bible_StrBuff));
     }
 
+    [Test]
+    public void Build_UsesEquippedWeaponRangeAndCooldownForBasicAttack()
+    {
+        CombatSkillCatalog catalog = CreateCatalog(
+            CombatEditModeTestUtil.CreateTestSkillDefinition(SkillId.Grimoire_Bolt, WeaponKind.Grimoire));
+        var weapon = new Grimoire(range: 18f, cooldown: 3f);
+
+        IReadOnlyList<SkillBase> skills = CombatSkillLoadoutBuilder.Build(
+            catalog,
+            WeaponKind.Grimoire,
+            learnedSkillIds: new[] { SkillId.Grimoire_Bolt },
+            grantedSkillIds: System.Array.Empty<SkillId>(),
+            unlockAllCatalogSkillsForKindWhenLearnedEmpty: false,
+            equippedWeapon: weapon);
+
+        Assert.That(skills, Has.Count.EqualTo(1));
+        Assert.That(skills[0].MaxRange, Is.EqualTo(18f));
+        Assert.That(skills[0].CooldownSeconds, Is.EqualTo(3f));
+    }
+
     private static CombatSkillCatalog CreateCatalog(params SkillDefinition[] definitions)
     {
         return CombatEditModeTestUtil.CreateTestSkillCatalog(definitions);

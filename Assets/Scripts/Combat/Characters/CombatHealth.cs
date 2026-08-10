@@ -51,6 +51,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     public event Action HealthChanged;
     public event Action<IncomingDamageContext> IncomingDamage;
     public event Action<int, Character> Damaged;
+    public event Action<int, CombatEffectSource> DamagedWithSource;
     public event Action<Character, Character> Defeated;
 
     private void Awake()
@@ -148,6 +149,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         if (appliedDamage > 0)
         {
             Damaged?.Invoke(appliedDamage, source.Character);
+            DamagedWithSource?.Invoke(appliedDamage, source);
             CombatDamageEvents.RaiseDamageApplied(ResolveOwner(), appliedDamage, source);
         }
 

@@ -171,6 +171,36 @@ public sealed class CombatAiSkillTests
     }
 
     [Test]
+    public void Planner_DoesNotSelectHealingAreaWhenAlliesAreFullHealth()
+    {
+        GameObject ownerGo = new GameObject("RosaryOwner");
+        GameObject allyGo = new GameObject("HealthyAlly");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            owner.EquipWeapon(new Rosary());
+            Character ally = allyGo.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            allyGo.transform.position = new Vector3(2f, 0f, 0f);
+            SkillBase healingArea = new RosaryHealingAreaSkill(radius: 3f);
+            CombatEditModeTestUtil.SetAvailableCombatSkills(owner, healingArea);
+            CombatAiContext context = CreatePlannerContext(
+                owner,
+                allyIntel: new[] { CreateIntel(ally, true, allyGo.transform.position) });
+
+            CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
+
+            Assert.That(snapshot.SelectedSkill.Skill, Is.Null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void Planner_ProductionAndDebugPlansMatchWhenNoSkillsAreAvailable()
     {
         GameObject ownerGo = new GameObject("Owner");
