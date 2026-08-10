@@ -1,4 +1,5 @@
 using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,6 +21,9 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     [SerializeField] private Image _hpFillImage;
 
     private Transform _weaponIconRoot;
+    private Transform _buffDebuffIconRoot;
+    private readonly GameObject[] _weaponIcons = new GameObject[7];
+    private readonly List<Image> _statusEffectIcons = new();
     private Character _character;
     private CombatHealth _health;
     private CombatAiBrain _aiBrain;
@@ -37,6 +41,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     public string CurrentSkillText => _skillText != null ? _skillText.text : string.Empty;
     public string CurrentPersonalityText => _personalityText != null ? _personalityText.text : string.Empty;
     public float CurrentHpRatio => _hpFillImage != null ? _hpFillImage.fillAmount : 0f;
+    public int ActiveStatusIconCount => CountActiveStatusIcons();
 
     private void Awake()
     {
@@ -193,25 +198,25 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     public void RefreshBuffDebuff()
     {
-        if (_buffDebuffText == null)
-        {
-            return;
-        }
+        ResolveStatusEffectIcons();
 
         if (_character == null || _character.StatusEffects == null)
         {
-            _buffDebuffText.text = string.Empty;
+            if (_buffDebuffText != null) _buffDebuffText.text = string.Empty;
+            RefreshStatusEffectIcons(null);
             return;
         }
 
         var effects = _character.StatusEffects.GetActiveEffectSnapshots();
         if (effects == null || effects.Count == 0)
         {
-            _buffDebuffText.text = string.Empty;
+            if (_buffDebuffText != null) _buffDebuffText.text = string.Empty;
+            RefreshStatusEffectIcons(effects);
             return;
         }
 
-        _buffDebuffText.text = FormatEffects(effects);
+        if (_buffDebuffText != null) _buffDebuffText.text = FormatEffects(effects);
+        RefreshStatusEffectIcons(effects);
     }
 
     public void RefreshHealth()
@@ -229,6 +234,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     public void RefreshWeaponIcon()
     {
+        ResolveWeaponIcons();
         if (_weaponIconRoot == null)
         {
             return;
@@ -240,10 +246,12 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         string iconName = GetWeaponIconName(kind);
         bool hasIcon = !string.IsNullOrEmpty(iconName);
         _weaponIconRoot.gameObject.SetActive(hasIcon);
-        for (int i = 0; i < _weaponIconRoot.childCount; i++)
+        for (int i = 1; i < _weaponIcons.Length; i++)
         {
-            Transform child = _weaponIconRoot.GetChild(i);
-            child.gameObject.SetActive(hasIcon && child.name == iconName);
+            if (_weaponIcons[i] != null)
+            {
+                _weaponIcons[i].SetActive(hasIcon && i == (int)kind);
+            }
         }
     }
 
@@ -285,6 +293,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         }
 
         CombatPartyFocus.Toggle(_character);
+        ApplyFocusVisual();
         CombatCharacterFocusMarker.EnsureFor(_character);
     }
 
@@ -377,6 +386,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         if (_skillBackground == null)
         {
             Transform skillBackground = transform.Find("SkillBackground");
+            skillBackground ??= transform.Find("Skill");
             if (skillBackground != null)
             {
                 _skillBackground = skillBackground.gameObject;
@@ -388,6 +398,9 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             Transform skillText = _skillBackground != null
                 ? _skillBackground.transform.Find("SkillText")
                 : transform.Find("SkillText");
+            skillText ??= _skillBackground != null
+                ? _skillBackground.transform.Find("Text")
+                : null;
             if (skillText != null)
             {
                 _skillText = skillText.GetComponent<TextMeshProUGUI>();
@@ -398,6 +411,8 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         {
             _weaponIconRoot = transform.Find("WeaponIconRoot");
         }
+
+        _buffDebuffIconRoot ??= transform.Find("BuffDebuffRoot");
 
         if (_hpFillImage == null)
         {
@@ -435,6 +450,133 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         }
         _skillHideAtTime = float.NegativeInfinity;
         _showingCastSkill = false;
+    }
+
+    private void ResolveWeaponIcons()
+    {
+        if (_weaponIconRoot == null)
+        {
+            _weaponIconRoot = transform.Find("WeaponIconRoot");
+        }
+
+        if (_weaponIconRoot == null || _weaponIcons[(int)WeaponKind.Sword] != null)
+        {
+            return;
+        }
+
+        for (int i = (int)WeaponKind.Sword; i <= (int)WeaponKind.Rosary; i++)
+        {
+            string iconName = GetWeaponIconName((WeaponKind)i);
+            Transform icon = FindDescendant(_weaponIconRoot, iconName);
+            _weaponIcons[i] = icon != null ? icon.gameObject : null;
+        }
+    }
+
+    private void ResolveStatusEffectIcons()
+    {
+        if (_statusEffectIcons.Count > 0)
+        {
+            return;
+        }
+
+        _buffDebuffIconRoot ??= transform.Find("BuffDebuffRoot");
+        if (_buffDebuffIconRoot == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _buffDebuffIconRoot.childCount; i++)
+        {
+            Image image = _buffDebuffIconRoot.GetChild(i).GetComponent<Image>();
+            if (image == null)
+            {
+                continue;
+            }
+
+            image.raycastTarget = false;
+            _statusEffectIcons.Add(image);
+        }
+    }
+
+    private void RefreshStatusEffectIcons(IReadOnlyList<CombatStatusEffectSnapshot> effects)
+    {
+        int effectCount = effects != null ? effects.Count : 0;
+        for (int i = 0; i < _statusEffectIcons.Count; i++)
+        {
+            Image icon = _statusEffectIcons[i];
+            bool visible = i < effectCount;
+            icon.gameObject.SetActive(visible);
+            if (visible)
+            {
+                icon.sprite = null;
+                icon.color = GetStatusEffectColor(effects[i]);
+            }
+        }
+
+        if (_buffDebuffIconRoot != null)
+        {
+            _buffDebuffIconRoot.gameObject.SetActive(effectCount > 0);
+        }
+    }
+
+    private int CountActiveStatusIcons()
+    {
+        int count = 0;
+        for (int i = 0; i < _statusEffectIcons.Count; i++)
+        {
+            if (_statusEffectIcons[i] != null && _statusEffectIcons[i].gameObject.activeSelf)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static Color GetStatusEffectColor(CombatStatusEffectSnapshot effect)
+    {
+        if (effect.IsBuff ||
+            effect.Type == CombatStatusEffects.EffectType.Invulnerable ||
+            effect.Type == CombatStatusEffects.EffectType.HealOverTime ||
+            effect.Type == CombatStatusEffects.EffectType.Stealth)
+        {
+            return Color.cyan;
+        }
+
+        if (effect.IsDebuff ||
+            effect.Type == CombatStatusEffects.EffectType.Root ||
+            effect.Type == CombatStatusEffects.EffectType.Bind ||
+            effect.Type == CombatStatusEffects.EffectType.Poison)
+        {
+            return Color.red;
+        }
+
+        return Color.gray;
+    }
+
+    private static Transform FindDescendant(Transform root, string targetName)
+    {
+        if (root == null || string.IsNullOrEmpty(targetName))
+        {
+            return null;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform child = root.GetChild(i);
+            if (child.name == targetName)
+            {
+                return child;
+            }
+
+            Transform nested = FindDescendant(child, targetName);
+            if (nested != null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     private static string FormatEffects(System.Collections.Generic.IReadOnlyList<CombatStatusEffectSnapshot> effects)

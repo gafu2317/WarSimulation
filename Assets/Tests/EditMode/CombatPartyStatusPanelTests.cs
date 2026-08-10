@@ -141,6 +141,73 @@ public sealed class CombatPartyStatusPanelTests
     }
 
     [Test]
+    public void CombatPartyMemberView_ShowsFirstThreeStatusEffectsAsColoredBlankIcons()
+    {
+        Character character = CreateCharacter("Target", CombatTeam.Ally);
+        character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.25f, 5f);
+        character.StatusEffects.ApplyPoison(2, 5f, 1f);
+        character.StatusEffects.ApplyInvulnerable(5f);
+        character.StatusEffects.ApplyRoot(5f);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+
+        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
+
+        Transform icons = viewObject.transform.Find("BuffDebuffRoot");
+        Assert.That(view.ActiveStatusIconCount, Is.EqualTo(3));
+        Assert.That(icons.GetChild(0).GetComponent<Image>().sprite, Is.Null);
+        Assert.That(icons.GetChild(0).GetComponent<Image>().color, Is.EqualTo(Color.cyan));
+        Assert.That(icons.GetChild(1).GetComponent<Image>().color, Is.EqualTo(Color.red));
+        Assert.That(icons.GetChild(2).GetComponent<Image>().color, Is.EqualTo(Color.cyan));
+
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(character.gameObject);
+    }
+
+    [Test]
+    public void CombatPartyMemberView_SelectsNestedWeaponIcon()
+    {
+        Character character = CreateCharacter("Target", CombatTeam.Ally);
+        character.EquipWeapon(new Sword());
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+
+        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
+
+        Transform mask = viewObject.transform.Find("WeaponIconRoot/Mask");
+        Assert.That(mask.Find("SwordIcon").gameObject.activeSelf, Is.True);
+        Assert.That(mask.Find("ShieldIcon").gameObject.activeSelf, Is.False);
+
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(character.gameObject);
+    }
+
+    [Test]
+    public void CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight()
+    {
+        CombatPartyFocus.Clear();
+        Character character = CreateCharacter("Target", CombatTeam.Ally);
+        var viewObject = CreateMemberViewObject("MemberView");
+        var view = viewObject.GetComponent<CombatPartyMemberView>();
+        Image background = viewObject.transform.Find("Background").GetComponent<Image>();
+        Color idleColor = background.color;
+        view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
+
+        viewObject.GetComponent<Button>().onClick.Invoke();
+
+        Assert.That(CombatPartyFocus.Selected, Is.EqualTo(character));
+        Assert.That(background.color, Is.Not.EqualTo(idleColor));
+
+        viewObject.GetComponent<Button>().onClick.Invoke();
+        Assert.That(CombatPartyFocus.Selected, Is.Null);
+        Assert.That(background.color, Is.EqualTo(idleColor));
+
+        Object.DestroyImmediate(viewObject);
+        Object.DestroyImmediate(character.gameObject);
+        Object.DestroyImmediate(GameObject.Find("CombatFocusMarkerOverlayCanvas"));
+    }
+
+    [Test]
     public void CombatCharacterAppearanceView_BuildsImagesFromDirectionSprites()
     {
         Character character = CreateCharacter("Visual", CombatTeam.Ally, withAppearance: false);
@@ -300,12 +367,17 @@ public sealed class CombatPartyStatusPanelTests
         CreateTmpText(root.transform, "WeaponText");
         GameObject weaponIconRoot = CreateChild(root.transform, "WeaponIconRoot", typeof(RectTransform));
         weaponIconRoot.SetActive(false);
-        CreateChild(weaponIconRoot.transform, "SwordIcon", typeof(RectTransform), typeof(Image));
-        CreateChild(weaponIconRoot.transform, "ShieldIcon", typeof(RectTransform), typeof(Image));
-        CreateChild(weaponIconRoot.transform, "WandIcon", typeof(RectTransform), typeof(Image));
-        CreateChild(weaponIconRoot.transform, "GrimoireIcon", typeof(RectTransform), typeof(Image));
-        CreateChild(weaponIconRoot.transform, "BibleIcon", typeof(RectTransform), typeof(Image));
-        CreateChild(weaponIconRoot.transform, "RosaryIcon", typeof(RectTransform), typeof(Image));
+        GameObject weaponMask = CreateChild(weaponIconRoot.transform, "Mask", typeof(RectTransform));
+        CreateChild(weaponMask.transform, "SwordIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponMask.transform, "ShieldIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponMask.transform, "WandIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponMask.transform, "GrimoireIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponMask.transform, "BibleIcon", typeof(RectTransform), typeof(Image));
+        CreateChild(weaponMask.transform, "RosaryIcon", typeof(RectTransform), typeof(Image));
+        GameObject buffDebuffRoot = CreateChild(root.transform, "BuffDebuffRoot", typeof(RectTransform));
+        CreateChild(buffDebuffRoot.transform, "Image", typeof(RectTransform), typeof(Image));
+        CreateChild(buffDebuffRoot.transform, "Image (1)", typeof(RectTransform), typeof(Image));
+        CreateChild(buffDebuffRoot.transform, "Image (2)", typeof(RectTransform), typeof(Image));
         CreateTmpText(root.transform, "HpText");
         GameObject skillBackground = CreateChild(root.transform, "SkillBackground", typeof(RectTransform), typeof(Image));
         skillBackground.SetActive(false);

@@ -41,6 +41,116 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void KuenBattleHud_CyclesSpeedAndPausesUntilResume()
+    {
+        GameObject hudObject = null;
+        GameObject battleFlowObject = new GameObject("BattleFlow");
+        GameObject flowObject = new GameObject("CombatFlow");
+
+        try
+        {
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            Assert.That(hudPrefab, Is.Not.Null);
+            hudObject = Object.Instantiate(hudPrefab);
+
+            CombatBattleHudView hud = hudObject.GetComponent<CombatBattleHudView>();
+            CombatPartyStatusPanel statusPanel = hudObject.GetComponent<CombatPartyStatusPanel>();
+            Assert.That(hud, Is.Not.Null);
+            Assert.That(statusPanel, Is.Not.Null);
+            Assert.That(hudObject.transform.Find("EnemiesColumn"), Is.Null);
+            Assert.That(
+                GetPrivateField<object>(hudObject.transform.Find("MagicStoneStatusRoot/AllyStonePanel").GetComponent<CombatMagicStoneStatusView>(), "_featureType").ToString(),
+                Is.EqualTo("OwnMainStone"));
+            Assert.That(
+                GetPrivateField<object>(hudObject.transform.Find("MagicStoneStatusRoot/EnemyStonePanel").GetComponent<CombatMagicStoneStatusView>(), "_featureType").ToString(),
+                Is.EqualTo("EnemyMainStone"));
+
+            TMP_Text[] labels = hudObject.GetComponentsInChildren<TMP_Text>(includeInactive: true);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Assert.That(
+                    AssetDatabase.GetAssetPath(labels[i].font),
+                    Is.EqualTo("Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset"));
+            }
+
+            CombatBattleFlow battleFlow = battleFlowObject.AddComponent<CombatBattleFlow>();
+            SetState(battleFlow, CombatBattleState.Running);
+            CombatFlow combatFlow = flowObject.AddComponent<CombatFlow>();
+            SetPrivateField(combatFlow, "_battleFlow", battleFlow);
+            SetPrivateField(combatFlow, "_battleHudView", hud);
+            InvokePrivate(combatFlow, "EnsureBattleControls");
+
+            Button speedButton = hudObject.transform.Find("ControlPanel/Speed/Image").GetComponent<Button>();
+            Button menuButton = hudObject.transform.Find("ControlPanel/Menu/Image").GetComponent<Button>();
+            Button resumeButton = hudObject.transform.Find("BattlePauseMenu/Panel/ResumeButton").GetComponent<Button>();
+            TMP_Text speedText = hudObject.transform.Find("ControlPanel/Speed/Text").GetComponent<TMP_Text>();
+
+            speedButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(2f));
+            Assert.That(speedText.text, Is.EqualTo("2x"));
+
+            menuButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(0f));
+            Assert.That(hud.IsMenuVisible, Is.True);
+
+            speedButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(0f));
+            Assert.That(speedText.text, Is.EqualTo("2x"));
+
+            resumeButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(2f));
+            Assert.That(hud.IsMenuVisible, Is.False);
+
+            Button smokeButton = hudObject.transform.Find("UserCommandPanel/Smoke/Image").GetComponent<Button>();
+            Button weatherButton = hudObject.transform.Find("UserCommandPanel/WeatherChange/Image/Option1").GetComponent<Button>();
+            Assert.That(smokeButton.interactable, Is.False);
+            Assert.That(weatherButton.interactable, Is.False);
+        }
+        finally
+        {
+            Time.timeScale = 1f;
+            if (hudObject != null) Object.DestroyImmediate(hudObject);
+            Object.DestroyImmediate(flowObject);
+            Object.DestroyImmediate(battleFlowObject);
+        }
+    }
+
+    [Test]
+    public void KuenBattleHud_ShowsTenAlliesInHorizontalScroll()
+    {
+        GameObject hudObject = null;
+        GameObject systemObject = new GameObject("CharacterSystem");
+        var characters = new List<GameObject>();
+
+        try
+        {
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            Assert.That(hudPrefab, Is.Not.Null);
+            hudObject = Object.Instantiate(hudPrefab);
+            CombatPartyStatusPanel panel = hudObject.GetComponent<CombatPartyStatusPanel>();
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            system.AllyCharacters.AddRange(CreateCharacters("Ally", CombatTeam.Ally, 10, characters));
+
+            panel.Initialize(system);
+
+            ScrollRect scroll = hudObject.GetComponentInChildren<ScrollRect>(includeInactive: true);
+            Assert.That(panel.AllyViewCount, Is.EqualTo(10));
+            Assert.That(scroll, Is.Not.Null);
+            Assert.That(scroll.horizontal, Is.True);
+            Assert.That(scroll.vertical, Is.False);
+        }
+        finally
+        {
+            if (hudObject != null) Object.DestroyImmediate(hudObject);
+            Object.DestroyImmediate(systemObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
+        }
+    }
+
+    [Test]
     public void CombatFlow_ReturnsToSelectionWithoutResettingLastUsedFormation()
     {
         GameObject characterSystemObject = new GameObject("CharacterSystem");
@@ -417,6 +527,15 @@ public sealed class CombatBattleFlowTests
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.That(field, Is.Not.Null, $"Field {fieldName} was not found on {target.GetType().Name}.");
         field.SetValue(target, value);
+    }
+
+    private static void InvokePrivate(object target, string methodName)
+    {
+        MethodInfo method = target.GetType().GetMethod(
+            methodName,
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.That(method, Is.Not.Null, $"Method {methodName} was not found on {target.GetType().Name}.");
+        method.Invoke(target, null);
     }
 
     private static void SetState(CombatBattleFlow flow, CombatBattleState state)

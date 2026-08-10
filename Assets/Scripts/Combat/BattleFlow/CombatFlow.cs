@@ -21,11 +21,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private readonly List<Character> _allyCandidates = new();
     private readonly List<Character> _enemies = new();
-    private readonly List<Button> _speedButtons = new();
-
-    private GameObject _battleControlRoot;
-    private Button _pauseButton;
-    private Button _returnToSelectionButton;
+    private CombatBattleHudView _battleHudView;
     private float _selectedBattleSpeed = 1f;
     private bool _isPaused;
 
@@ -101,6 +97,7 @@ public sealed class CombatFlow : MonoBehaviour
         SetBattleUiVisible(true);
         SetVisible(_resultPanel, false);
         SetBattleControlsVisible(true);
+        SetPauseMenuVisible(false);
         _battleFlow.StartBattleOnCurrentMap();
 
         if (_battleFlow.State != CombatBattleState.Running)
@@ -120,6 +117,7 @@ public sealed class CombatFlow : MonoBehaviour
         }
 
         RestoreNormalSpeed();
+        SetPauseMenuVisible(false);
         SetVisible(_characterSelectionPanel, false);
         SetBattleUiVisible(false);
         SetBattleControlsVisible(false);
@@ -129,6 +127,7 @@ public sealed class CombatFlow : MonoBehaviour
     private void ShowSelection()
     {
         RestoreNormalSpeed();
+        SetPauseMenuVisible(false);
         _battleFlow.AbortBattle();
         _characterSystem.SetParticipants(_allyCandidates, _enemies);
         SetVisible(_characterSelectionPanel, true);
@@ -167,110 +166,33 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void EnsureBattleControls()
     {
-        if (_battleControlRoot != null) return;
-
-        Canvas canvas = GetComponentInParent<Canvas>(includeInactive: true);
-        if (canvas == null && _characterSelectionPanel != null)
+        if (_battleHudView == null)
         {
-            canvas = _characterSelectionPanel.GetComponentInParent<Canvas>(includeInactive: true);
+            CombatPartyStatusPanel statusPanel = FindAnyObjectByType<CombatPartyStatusPanel>(FindObjectsInactive.Include);
+            if (statusPanel != null)
+            {
+                _battleHudView = statusPanel.GetComponent<CombatBattleHudView>();
+                _battleHudView ??= statusPanel.gameObject.AddComponent<CombatBattleHudView>();
+            }
         }
 
-        if (canvas == null)
+        if (_battleHudView == null)
         {
-            Debug.LogWarning($"[{nameof(CombatFlow)}] Battle controls require a Canvas.", this);
+            Debug.LogWarning($"[{nameof(CombatFlow)}] Kuen battle HUD was not found.", this);
             return;
         }
 
-        GameObject rootObject = new GameObject(
-            "BattlePlaytestControls",
-            typeof(RectTransform),
-            typeof(HorizontalLayoutGroup),
-            typeof(Image));
-        _battleControlRoot = rootObject;
-        RectTransform root = rootObject.GetComponent<RectTransform>();
-        root.SetParent(canvas.transform, false);
-        root.anchorMin = new Vector2(0.5f, 1f);
-        root.anchorMax = new Vector2(0.5f, 1f);
-        root.pivot = new Vector2(0.5f, 1f);
-        root.anchoredPosition = new Vector2(0f, -24f);
-        root.sizeDelta = new Vector2(640f, 56f);
-
-        Canvas controlCanvas = rootObject.AddComponent<Canvas>();
-        controlCanvas.overrideSorting = true;
-        controlCanvas.sortingOrder = 200;
-        rootObject.AddComponent<GraphicRaycaster>();
-
-        Image background = rootObject.GetComponent<Image>();
-        background.color = new Color(0.06f, 0.08f, 0.12f, 0.82f);
-        background.raycastTarget = true;
-
-        HorizontalLayoutGroup layout = rootObject.GetComponent<HorizontalLayoutGroup>();
-        layout.padding = new RectOffset(8, 8, 8, 8);
-        layout.spacing = 8f;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = true;
-
-        _speedButtons.Clear();
-        for (int i = 0; i < BattleSpeedOptions.Length; i++)
-        {
-            float speed = BattleSpeedOptions[i];
-            Button button = CreateBattleControlButton(root, $"Speedx{speed:0}", 72f);
-            float captured = speed;
-            button.onClick.AddListener(() => SetBattleSpeed(captured));
-            _speedButtons.Add(button);
-        }
-
-        _pauseButton = CreateBattleControlButton(root, "Pause", 120f);
-        _pauseButton.onClick.AddListener(TogglePause);
-
-        _returnToSelectionButton = CreateBattleControlButton(root, "ReturnToSelection", 160f);
-        _returnToSelectionButton.onClick.AddListener(ShowSelection);
-        SetBattleControlLabel(_returnToSelectionButton, "編成に戻る");
-
+        _battleHudView.EnsureBuilt();
+        _battleHudView.MenuRequested -= OpenPauseMenu;
+        _battleHudView.MenuRequested += OpenPauseMenu;
+        _battleHudView.ResumeRequested -= ResumeBattle;
+        _battleHudView.ResumeRequested += ResumeBattle;
+        _battleHudView.ReturnToSelectionRequested -= ReturnToSelection;
+        _battleHudView.ReturnToSelectionRequested += ReturnToSelection;
+        _battleHudView.SpeedRequested -= CycleBattleSpeed;
+        _battleHudView.SpeedRequested += CycleBattleSpeed;
         RefreshBattleControlLabels();
         SetBattleControlsVisible(false);
-    }
-
-    private Button CreateBattleControlButton(Transform parent, string objectName, float width)
-    {
-        GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
-        buttonObject.transform.SetParent(parent, false);
-
-        Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0.16f, 0.2f, 0.28f, 0.95f);
-
-        LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
-        layout.preferredWidth = width;
-        layout.preferredHeight = 40f;
-        layout.flexibleWidth = 0f;
-
-        GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-        labelRect.SetParent(buttonObject.transform, false);
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        labelRect.offsetMin = new Vector2(4f, 2f);
-        labelRect.offsetMax = new Vector2(-4f, -2f);
-
-        TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-        if (_resultTitle != null)
-        {
-            label.font = _resultTitle.font;
-            label.fontSharedMaterial = _resultTitle.fontSharedMaterial;
-        }
-
-        label.alignment = TextAlignmentOptions.Center;
-        label.fontSize = 20f;
-        label.enableAutoSizing = false;
-        label.textWrappingMode = TextWrappingModes.NoWrap;
-        label.overflowMode = TextOverflowModes.Ellipsis;
-        label.color = Color.white;
-        label.raycastTarget = false;
-
-        return buttonObject.GetComponent<Button>();
     }
 
     private void SetBattleSpeed(float speed)
@@ -281,13 +203,37 @@ public sealed class CombatFlow : MonoBehaviour
         RefreshBattleControlLabels();
     }
 
-    private void TogglePause()
+    private void CycleBattleSpeed()
     {
-        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running) return;
+        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || _isPaused) return;
 
-        _isPaused = !_isPaused;
+        int currentIndex = System.Array.IndexOf(BattleSpeedOptions, _selectedBattleSpeed);
+        int nextIndex = currentIndex >= 0 ? (currentIndex + 1) % BattleSpeedOptions.Length : 0;
+        SetBattleSpeed(BattleSpeedOptions[nextIndex]);
+    }
+
+    private void OpenPauseMenu()
+    {
+        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || _isPaused) return;
+
+        _isPaused = true;
         ApplyEffectiveTimeScale();
-        RefreshBattleControlLabels();
+        SetPauseMenuVisible(true);
+    }
+
+    private void ResumeBattle()
+    {
+        if (!_isPaused) return;
+
+        _isPaused = false;
+        SetPauseMenuVisible(false);
+        ApplyEffectiveTimeScale();
+    }
+
+    private void ReturnToSelection()
+    {
+        SetPauseMenuVisible(false);
+        ShowSelection();
     }
 
     private void ApplySelectedBattleSpeed()
@@ -317,72 +263,30 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void RefreshBattleControlLabels()
     {
-        RefreshSpeedButtonLabels();
-        RefreshPauseButtonLabel();
-    }
-
-    private void RefreshSpeedButtonLabels()
-    {
-        for (int i = 0; i < _speedButtons.Count && i < BattleSpeedOptions.Length; i++)
-        {
-            float speed = BattleSpeedOptions[i];
-            bool selected = !_isPaused && Mathf.Approximately(_selectedBattleSpeed, speed);
-            string mark = selected ? "■" : "□";
-            SetBattleControlLabel(_speedButtons[i], $"{mark} ×{speed:0}");
-            Image image = _speedButtons[i] != null ? _speedButtons[i].GetComponent<Image>() : null;
-            if (image != null)
-            {
-                image.color = selected
-                    ? new Color(0.22f, 0.42f, 0.72f, 0.95f)
-                    : new Color(0.16f, 0.2f, 0.28f, 0.95f);
-            }
-        }
-    }
-
-    private void RefreshPauseButtonLabel()
-    {
-        if (_pauseButton == null) return;
-
-        SetBattleControlLabel(_pauseButton, _isPaused ? "再開" : "一時停止");
-        Image image = _pauseButton.GetComponent<Image>();
-        if (image != null)
-        {
-            image.color = _isPaused
-                ? new Color(0.72f, 0.42f, 0.18f, 0.95f)
-                : new Color(0.16f, 0.2f, 0.28f, 0.95f);
-        }
-    }
-
-    private static void SetBattleControlLabel(Button button, string value)
-    {
-        TMP_Text label = button != null ? button.GetComponentInChildren<TMP_Text>(true) : null;
-        if (label != null) label.text = value;
+        _battleHudView?.SetSpeedLabel(_selectedBattleSpeed);
     }
 
     private void SetBattleControlsVisible(bool visible)
     {
-        if (_battleControlRoot != null)
-        {
-            _battleControlRoot.SetActive(visible);
-        }
+        _battleHudView?.SetControlsVisible(visible);
+    }
+
+    private void SetPauseMenuVisible(bool visible)
+    {
+        _battleHudView?.SetMenuVisible(visible);
     }
 
     private void ClearBattleControlListeners()
     {
-        for (int i = 0; i < _speedButtons.Count; i++)
+        if (_battleHudView == null)
         {
-            if (_speedButtons[i] != null) _speedButtons[i].onClick.RemoveAllListeners();
+            return;
         }
 
-        if (_pauseButton != null)
-        {
-            _pauseButton.onClick.RemoveListener(TogglePause);
-        }
-
-        if (_returnToSelectionButton != null)
-        {
-            _returnToSelectionButton.onClick.RemoveListener(ShowSelection);
-        }
+        _battleHudView.MenuRequested -= OpenPauseMenu;
+        _battleHudView.ResumeRequested -= ResumeBattle;
+        _battleHudView.ReturnToSelectionRequested -= ReturnToSelection;
+        _battleHudView.SpeedRequested -= CycleBattleSpeed;
     }
 
     private void ResolveDependencies()

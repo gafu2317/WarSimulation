@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [DefaultExecutionOrder(-80)]
 public sealed class CombatPartyStatusPanel : MonoBehaviour
@@ -13,6 +14,7 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
     private readonly List<CombatPartyMemberView> _allyViews = new();
     private readonly List<CombatPartyMemberView> _enemyViews = new();
     private CombatCharacterSystem _characterSystem;
+    private ScrollRect _allyScrollRect;
     private float _nextSyncTime;
 
     public int AllyViewCount => CountActiveViews(_allyViews);
@@ -139,6 +141,7 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         }
 
         EnsureTemplates();
+        EnsureAllyScrollView();
         RehydrateExistingViews(_allyColumn, _allyTemplate, _allyViews);
         RehydrateExistingViews(_enemyColumn, _enemyTemplate, _enemyViews);
     }
@@ -282,6 +285,63 @@ public sealed class CombatPartyStatusPanel : MonoBehaviour
         {
             _enemyTemplate.gameObject.SetActive(false);
         }
+    }
+
+    private void EnsureAllyScrollView()
+    {
+        if (_allyColumn == null || _allyScrollRect != null)
+        {
+            return;
+        }
+
+        _allyScrollRect = _allyColumn.GetComponentInParent<ScrollRect>();
+        if (_allyScrollRect != null)
+        {
+            return;
+        }
+
+        float preferredHeight = GetPreferredViewportHeight(_allyColumn);
+        if (preferredHeight <= 0f)
+        {
+            return;
+        }
+
+        Transform originalParent = _allyColumn.parent;
+        int siblingIndex = _allyColumn.GetSiblingIndex();
+        var viewportObject = new GameObject("AlliesViewport", typeof(RectTransform), typeof(RectMask2D), typeof(ScrollRect));
+        RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+        viewport.SetParent(originalParent, false);
+        viewport.SetSiblingIndex(siblingIndex);
+        viewport.anchorMin = _allyColumn.anchorMin;
+        viewport.anchorMax = _allyColumn.anchorMax;
+        viewport.anchoredPosition = _allyColumn.anchoredPosition;
+        viewport.sizeDelta = new Vector2(_allyColumn.sizeDelta.x, preferredHeight);
+        viewport.pivot = _allyColumn.pivot;
+
+        _allyColumn.SetParent(viewport, false);
+        _allyColumn.anchorMin = new Vector2(0f, 0.5f);
+        _allyColumn.anchorMax = new Vector2(0f, 0.5f);
+        _allyColumn.anchoredPosition = Vector2.zero;
+
+        _allyScrollRect = viewportObject.GetComponent<ScrollRect>();
+        _allyScrollRect.content = _allyColumn;
+        _allyScrollRect.viewport = viewport;
+        _allyScrollRect.horizontal = true;
+        _allyScrollRect.vertical = false;
+        _allyScrollRect.movementType = ScrollRect.MovementType.Clamped;
+    }
+
+    private static float GetPreferredViewportHeight(RectTransform column)
+    {
+        float preferredHeight = LayoutUtility.GetPreferredHeight(column);
+        for (int i = 0; i < column.childCount && preferredHeight <= 0f; i++)
+        {
+            preferredHeight = Mathf.Max(
+                preferredHeight,
+                LayoutUtility.GetPreferredHeight(column.GetChild(i) as RectTransform));
+        }
+
+        return preferredHeight;
     }
 
     private static CombatPartyMemberView FindDirectChildTemplate(RectTransform column)
