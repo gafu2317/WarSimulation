@@ -1,0 +1,130 @@
+{
+  "generatedAt": "2026-08-10T04:00:43.7983370Z",
+  "runStartedAt": "2026-08-10T04:00:42.5699180Z",
+  "durationSeconds": 0.8896618,
+  "testMode": "EditMode",
+  "totalTests": 7,
+  "passed": 6,
+  "failed": 4,
+  "skipped": 0,
+  "inconclusive": 0,
+  "status": "failed",
+  "failures": [
+    {
+      "name": "KuenBattleHud_ShowsTenAlliesInHorizontalScroll",
+      "fullName": "CombatBattleFlowTests.KuenBattleHud_ShowsTenAlliesInHorizontalScroll",
+      "message": "  Expected: not null\n  But was:  null\n",
+      "stackTrace": "at CombatBattleFlowTests.KuenBattleHud_ShowsTenAlliesInHorizontalScroll () [0x0007f] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatBattleFlowTests.cs:136\n"
+    },
+    {
+      "name": "CombatBattleFlowTests",
+      "fullName": "CombatBattleFlowTests",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    },
+    {
+      "name": "EditModeTests.dll",
+      "fullName": "/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    },
+    {
+      "name": "WarSimulation1",
+      "fullName": "WarSimulation1",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    }
+  ],
+  "tests": [
+    {
+      "name": "CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker",
+      "fullName": "CombatBattleFlowTests.CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker",
+      "status": "Passed",
+      "duration": 0.2330762,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker\n"
+    },
+    {
+      "name": "CharacterSelection_DestroyingWhileWeaponPickerIsOpen_DoesNotRefreshDestroyedRow",
+      "fullName": "CombatBattleFlowTests.CharacterSelection_DestroyingWhileWeaponPickerIsOpen_DoesNotRefreshDestroyedRow",
+      "status": "Passed",
+      "duration": 0.0126223,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CharacterSelection_DestroyingWhileWeaponPickerIsOpen_DoesNotRefreshDestroyedRow\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CharacterSelection_DestroyingWhileWeaponPickerIsOpen_DoesNotRefreshDestroyedRow\n"
+    },
+    {
+      "name": "CharacterSelection_ShowsTenCandidatesInTwoColumnsAndKeepsToggleMode",
+      "fullName": "CombatBattleFlowTests.CharacterSelection_ShowsTenCandidatesInTwoColumnsAndKeepsToggleMode",
+      "status": "Passed",
+      "duration": 0.0328802,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CharacterSelection_ShowsTenCandidatesInTwoColumnsAndKeepsToggleMode\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CharacterSelection_ShowsTenCandidatesInTwoColumnsAndKeepsToggleMode\n"
+    },
+    {
+      "name": "CombatFlow_ReturnsToSelectionWithoutResettingLastUsedFormation",
+      "fullName": "CombatBattleFlowTests.CombatFlow_ReturnsToSelectionWithoutResettingLastUsedFormation",
+      "status": "Passed",
+      "duration": 0.0219199,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CombatFlow_ReturnsToSelectionWithoutResettingLastUsedFormation\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.CombatFlow_ReturnsToSelectionWithoutResettingLastUsedFormation\n[CombatBattleFlow] CurrentMap is not set. Generate a map before starting the battle.\n"
+    },
+    {
+      "name": "EndBattle_NotifiesTheFirstValidOutcomeOnly",
+      "fullName": "CombatBattleFlowTests.EndBattle_NotifiesTheFirstValidOutcomeOnly",
+      "status": "Passed",
+      "duration": 0.0006946,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.EndBattle_NotifiesTheFirstValidOutcomeOnly\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.EndBattle_NotifiesTheFirstValidOutcomeOnly\n"
+    },
+    {
+      "name": "KuenBattleHud_CyclesSpeedAndPausesUntilResume",
+      "fullName": "CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume",
+      "status": "Passed",
+      "duration": 0.0637183,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume\n"
+    },
+    {
+      "name": "KuenBattleHud_ShowsTenAlliesInHorizontalScroll",
+      "fullName": "CombatBattleFlowTests.KuenBattleHud_ShowsTenAlliesInHorizontalScroll",
+      "status": "Failed",
+      "duration": 0.0214111,
+      "message": "  Expected: not null\n  But was:  null\n",
+      "stackTrace": "at CombatBattleFlowTests.KuenBattleHud_ShowsTenAlliesInHorizontalScroll () [0x0007f] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatBattleFlowTests.cs:136\n",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.KuenBattleHud_ShowsTenAlliesInHorizontalScroll\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.KuenBattleHud_ShowsTenAlliesInHorizontalScroll\n"
+    },
+    {
+      "name": "CombatBattleFlowTests",
+      "fullName": "CombatBattleFlowTests",
+      "status": "Failed",
+      "duration": 0.5939038,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests\n[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests\n"
+    },
+    {
+      "name": "EditModeTests.dll",
+      "fullName": "/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll",
+      "status": "Failed",
+      "duration": 0.7908657,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: /Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll\n[unity-cli-bridge][TestExecutionHandler] Test started: /Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll\n"
+    },
+    {
+      "name": "WarSimulation1",
+      "fullName": "WarSimulation1",
+      "status": "Failed",
+      "duration": 0.8896618,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": ""
+    }
+  ]
+}

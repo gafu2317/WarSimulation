@@ -1,0 +1,175 @@
+{
+  "generatedAt": "2026-08-10T03:59:21.5561920Z",
+  "runStartedAt": "2026-08-10T03:59:20.3385750Z",
+  "durationSeconds": 0.5214987,
+  "testMode": "EditMode",
+  "totalTests": 12,
+  "passed": 11,
+  "failed": 4,
+  "skipped": 0,
+  "inconclusive": 0,
+  "status": "failed",
+  "failures": [
+    {
+      "name": "CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight",
+      "message": "  Expected: not equal to RGBA(1.000, 1.000, 1.000, 1.000)\n  But was:  RGBA(1.000, 1.000, 1.000, 1.000)\n",
+      "stackTrace": "at CombatPartyStatusPanelTests.CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight () [0x0006a] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatPartyStatusPanelTests.cs:199\n"
+    },
+    {
+      "name": "CombatPartyStatusPanelTests",
+      "fullName": "CombatPartyStatusPanelTests",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    },
+    {
+      "name": "EditModeTests.dll",
+      "fullName": "/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    },
+    {
+      "name": "WarSimulation1",
+      "fullName": "WarSimulation1",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    }
+  ],
+  "tests": [
+    {
+      "name": "CombatCharacterAppearanceView_BuildsImagesFromDirectionSprites",
+      "fullName": "CombatPartyStatusPanelTests.CombatCharacterAppearanceView_BuildsImagesFromDirectionSprites",
+      "status": "Passed",
+      "duration": 0.0266923,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatCharacterAppearanceView_BuildsImagesFromDirectionSprites\n"
+    },
+    {
+      "name": "CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight",
+      "status": "Failed",
+      "duration": 0.0394538,
+      "message": "  Expected: not equal to RGBA(1.000, 1.000, 1.000, 1.000)\n  But was:  RGBA(1.000, 1.000, 1.000, 1.000)\n",
+      "stackTrace": "at CombatPartyStatusPanelTests.CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight () [0x0006a] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatPartyStatusPanelTests.cs:199\n",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_ClickTogglesCharacterFocusAndHighlight\n"
+    },
+    {
+      "name": "CombatPartyMemberView_RefreshesPersonalityAfterBind",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_RefreshesPersonalityAfterBind",
+      "status": "Passed",
+      "duration": 0.0034934,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_RefreshesPersonalityAfterBind\n"
+    },
+    {
+      "name": "CombatPartyMemberView_SelectsNestedWeaponIcon",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_SelectsNestedWeaponIcon",
+      "status": "Passed",
+      "duration": 0.0050923,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_SelectsNestedWeaponIcon\n"
+    },
+    {
+      "name": "CombatPartyMemberView_ShowsBuffDebuffText",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsBuffDebuffText",
+      "status": "Passed",
+      "duration": 0.0053511,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsBuffDebuffText\n"
+    },
+    {
+      "name": "CombatPartyMemberView_ShowsCastingSkill",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsCastingSkill",
+      "status": "Passed",
+      "duration": 0.0035495,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsCastingSkill\n"
+    },
+    {
+      "name": "CombatPartyMemberView_ShowsCharacterDisplayName",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsCharacterDisplayName",
+      "status": "Passed",
+      "duration": 0.0019315,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsCharacterDisplayName\n"
+    },
+    {
+      "name": "CombatPartyMemberView_ShowsFirstThreeStatusEffectsAsColoredBlankIcons",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsFirstThreeStatusEffectsAsColoredBlankIcons",
+      "status": "Passed",
+      "duration": 0.0023231,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_ShowsFirstThreeStatusEffectsAsColoredBlankIcons\n"
+    },
+    {
+      "name": "CombatPartyMemberView_ShowSkillDisplaysAndExpires",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_ShowSkillDisplaysAndExpires",
+      "status": "Passed",
+      "duration": 0.0022413,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_ShowSkillDisplaysAndExpires\n"
+    },
+    {
+      "name": "CombatPartyMemberView_UpdatesHpAndKeepsZeroHpVisible",
+      "fullName": "CombatPartyStatusPanelTests.CombatPartyMemberView_UpdatesHpAndKeepsZeroHpVisible",
+      "status": "Passed",
+      "duration": 0.0035109,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.CombatPartyMemberView_UpdatesHpAndKeepsZeroHpVisible\n"
+    },
+    {
+      "name": "ForceSyncNow_MatchesCurrentTeamCounts",
+      "fullName": "CombatPartyStatusPanelTests.ForceSyncNow_MatchesCurrentTeamCounts",
+      "status": "Passed",
+      "duration": 0.0135951,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.ForceSyncNow_MatchesCurrentTeamCounts\n"
+    },
+    {
+      "name": "ForceSyncNow_TracksListChanges",
+      "fullName": "CombatPartyStatusPanelTests.ForceSyncNow_TracksListChanges",
+      "status": "Passed",
+      "duration": 0.0085089,
+      "message": null,
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests.ForceSyncNow_TracksListChanges\n"
+    },
+    {
+      "name": "CombatPartyStatusPanelTests",
+      "fullName": "CombatPartyStatusPanelTests",
+      "status": "Failed",
+      "duration": 0.230219,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatPartyStatusPanelTests\n"
+    },
+    {
+      "name": "EditModeTests.dll",
+      "fullName": "/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll",
+      "status": "Failed",
+      "duration": 0.4236046,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: /Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll\n"
+    },
+    {
+      "name": "WarSimulation1",
+      "fullName": "WarSimulation1",
+      "status": "Failed",
+      "duration": 0.5214987,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": ""
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-08-10T04:04:21.3196020Z",
+  "runStartedAt": "2026-08-10T04:04:20.1800000Z",
+  "durationSeconds": 0.6407232,
+  "testMode": "EditMode",
+  "totalTests": 1,
+  "passed": 0,
+  "failed": 4,
+  "skipped": 0,
+  "inconclusive": 0,
+  "status": "failed",
+  "failures": [
+    {
+      "name": "KuenBattleHud_CyclesSpeedAndPausesUntilResume",
+      "fullName": "CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume",
+      "message": "System.NullReferenceException : Object reference not set to an instance of an object",
+      "stackTrace": "  at CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume () [0x002a4] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatBattleFlowTests.cs:105 \n  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)\n  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <67e9686a86934ae8b0ef7cc81c6b4608>:0 "
+    },
+    {
+      "name": "CombatBattleFlowTests",
+      "fullName": "CombatBattleFlowTests",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    },
+    {
+      "name": "EditModeTests.dll",
+      "fullName": "/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    },
+    {
+      "name": "WarSimulation1",
+      "fullName": "WarSimulation1",
+      "message": "One or more child tests had errors",
+      "stackTrace": null
+    }
+  ],
+  "tests": [
+    {
+      "name": "KuenBattleHud_CyclesSpeedAndPausesUntilResume",
+      "fullName": "CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume",
+      "status": "Failed",
+      "duration": 0.1496608,
+      "message": "System.NullReferenceException : Object reference not set to an instance of an object",
+      "stackTrace": "  at CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume () [0x002a4] in /Users/fukutomi/Unity/WarSimulation/Assets/Tests/EditMode/CombatBattleFlowTests.cs:105 \n  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)\n  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <67e9686a86934ae8b0ef7cc81c6b4608>:0 ",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests.KuenBattleHud_CyclesSpeedAndPausesUntilResume\n"
+    },
+    {
+      "name": "CombatBattleFlowTests",
+      "fullName": "CombatBattleFlowTests",
+      "status": "Failed",
+      "duration": 0.3557781,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: CombatBattleFlowTests\n"
+    },
+    {
+      "name": "EditModeTests.dll",
+      "fullName": "/Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll",
+      "status": "Failed",
+      "duration": 0.5466298,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: /Users/fukutomi/Unity/WarSimulation/Library/ScriptAssemblies/EditModeTests.dll\n"
+    },
+    {
+      "name": "WarSimulation1",
+      "fullName": "WarSimulation1",
+      "status": "Failed",
+      "duration": 0.6407232,
+      "message": "One or more child tests had errors",
+      "stackTrace": null,
+      "output": ""
+    }
+  ]
+}

@@ -20,14 +20,22 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         WeaponKind.Shield,
     };
 
-    // Top auto-battle composition vs Neutral: swords BattleJunkie, wand Cunning, rosary Devoted, shield AttentionSeeker.
+    private static readonly WeaponKind[] DefaultEnemyWeapons =
+    {
+        WeaponKind.Sword,
+        WeaponKind.Wand,
+        WeaponKind.Wand,
+        WeaponKind.Shield,
+        WeaponKind.Rosary,
+    };
+
     private static readonly CombatAiPersonalityKind[] DefaultEnemyPersonalities =
     {
+        CombatAiPersonalityKind.Reckless,
+        CombatAiPersonalityKind.Reckless,
         CombatAiPersonalityKind.BattleJunkie,
-        CombatAiPersonalityKind.BattleJunkie,
-        CombatAiPersonalityKind.Cunning,
         CombatAiPersonalityKind.Devoted,
-        CombatAiPersonalityKind.AttentionSeeker,
+        CombatAiPersonalityKind.Devoted,
     };
 
     [SerializeField] private RectTransform _characterList;
@@ -110,21 +118,25 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         ClosePicker();
         SetDetailSettingsOpen(false);
-        ApplyDefaultParty(_allyRows, useEnemyPersonalities: false);
-        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true);
+        ApplyDefaultParty(_allyRows, useEnemyPersonalities: false, useEnemyWeapons: false);
+        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true, useEnemyWeapons: true);
         Refresh();
     }
 
-    private void ApplyDefaultParty(List<SelectionRow> rows, bool useEnemyPersonalities)
+    private void ApplyDefaultParty(
+        List<SelectionRow> rows,
+        bool useEnemyPersonalities,
+        bool useEnemyWeapons)
     {
+        WeaponKind[] defaultWeapons = useEnemyWeapons ? DefaultEnemyWeapons : DefaultPartyWeapons;
         for (int i = 0; i < rows.Count; i++)
         {
             SelectionRow row = rows[i];
-            bool selected = i < DefaultPartyWeapons.Length;
+            bool selected = i < defaultWeapons.Length;
             row.Selected = selected;
             if (!selected) continue;
 
-            int weaponIndex = FindWeaponIndex(DefaultPartyWeapons[i]);
+            int weaponIndex = FindWeaponIndex(defaultWeapons[i]);
             if (weaponIndex >= 0)
             {
                 row.WeaponIndex = weaponIndex;
@@ -825,14 +837,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void ApplyEnemyPresetDefault()
     {
         ClosePicker();
-        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true);
+        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true, useEnemyWeapons: true);
         Refresh();
     }
 
     private void ApplyEnemyPresetNeutralPersonalities()
     {
         ClosePicker();
-        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: false);
+        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: false, useEnemyWeapons: false);
         Refresh();
     }
 
