@@ -42,6 +42,7 @@ namespace WarSimulation.Tests.EditMode
                 Assert.That(loaded.Rivers.Count, Is.EqualTo(source.Rivers.Count));
                 Assert.That(loaded.Rivers[0].Cells, Is.EqualTo(source.Rivers[0].Cells));
                 Assert.That(loaded.Rivers[0].WidthMeters, Is.EqualTo(source.Rivers[0].WidthMeters));
+                Assert.That(loaded.Rivers[0].WaterTagRatio, Is.EqualTo(source.Rivers[0].WaterTagRatio));
                 Assert.That(loaded.Lakes.Count, Is.EqualTo(source.Lakes.Count));
                 Assert.That(loaded.Lakes[0].Center, Is.EqualTo(source.Lakes[0].Center));
                 Assert.That(loaded.Lakes[0].WaterY, Is.EqualTo(source.Lakes[0].WaterY));
@@ -54,6 +55,17 @@ namespace WarSimulation.Tests.EditMode
             {
                 Object.DestroyImmediate(baked);
             }
+        }
+
+        [Test]
+        public void RiverPath_DefaultWaterTagRatioIsNinetyPercent()
+        {
+            var river = new RiverPath(
+                new[] { new Vector2Int(0, 0), new Vector2Int(1, 1) },
+                4f,
+                0.75f);
+
+            Assert.That(river.WaterTagRatio, Is.EqualTo(0.9f).Within(0.001f));
         }
 
         [Test]

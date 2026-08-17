@@ -41,6 +41,7 @@ public sealed class AuthoredMapBuilderTests
             Assert.That(map.Mountains[0].Kind, Is.EqualTo(MountainKind.Large));
             Assert.That(map.Rivers.Count, Is.EqualTo(1));
             Assert.That(map.Rivers[0].Cells.Count, Is.GreaterThanOrEqualTo(2));
+            Assert.That(map.Rivers[0].WaterTagRatio, Is.EqualTo(0.9f).Within(0.001f));
             Assert.That(map.Lakes.Count, Is.EqualTo(1));
             Assert.That(map.Lakes[0].IsFrozen, Is.True);
             Assert.That(CountWater(map), Is.GreaterThan(0));
@@ -281,7 +282,7 @@ public sealed class AuthoredMapBuilderTests
         var shape = ScriptableObject.CreateInstance<RiverShape>();
         SetPrivateField(shape, "_widthMeters", 1.5f);
         SetPrivateField(shape, "_depthMeters", 0.8f);
-        SetPrivateField(shape, "_waterTagRatio", 1f);
+        SetPrivateField(shape, "_waterTagRatio", 0.9f);
         return shape;
     }
 

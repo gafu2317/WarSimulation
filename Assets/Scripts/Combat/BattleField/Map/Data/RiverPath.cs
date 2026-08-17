@@ -30,7 +30,7 @@ namespace WarSimulation.Combat.Map
             IReadOnlyList<Vector2Int> cells,
             float widthMeters,
             float depthMeters,
-            float waterTagRatio = 0.8f)
+            float waterTagRatio = 0.9f)
         {
             Cells = cells ?? throw new ArgumentNullException(nameof(cells));
             WidthMeters = widthMeters;

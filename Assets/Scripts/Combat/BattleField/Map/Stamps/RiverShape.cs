@@ -23,7 +23,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Min(0.01f)] private float _depthMeters = 2f;
 
         [Tooltip("掘削幅に対する Water タグ半径の比率。速度低下など GroundState.Water の範囲。NavMesh コスト帯には使わない。")]
-        [SerializeField, Range(0f, 1f)] private float _waterTagRatio = 0.8f;
+        [SerializeField, Range(0f, 1f)] private float _waterTagRatio = 0.9f;
 
         public float WidthMeters => _widthMeters;
         public float DepthMeters => _depthMeters;
