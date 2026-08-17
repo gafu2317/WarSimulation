@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fd0f04299ab452d9dbef43284e10c5, type: 3}
+  m_Name: AuthoredMap 9
+  m_EditorClassIdentifier: WarSimulation.Combat::WarSimulation.Combat.Map.AuthoredMapDefinition
+  _sharedConfig: {fileID: 11400000, guid: f2fa3155fa7424bf7876ce40c28805c1, type: 2}
+  _buildSeed: 0
+  _bakedNavMesh: {fileID: 23800000, guid: d7f442893ae1e45858b8c876053c838e, type: 2}
+  _navMeshBakeFingerprint: -418646887
+  _bakedMapData: {fileID: 11400000, guid: 49a98eb2fb384426289082ba3ef53ebd, type: 2}
+  _bakedAllyAssaultRoutes:
+  - BridgeFeatureIndex: -1
+    HasBridgeWaypoints: 0
+    EnterLocal: {x: 0, y: 0, z: 0}
+    ExitLocal: {x: 0, y: 0, z: 0}
+  _bakedEnemyAssaultRoutes:
+  - BridgeFeatureIndex: 0
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 23.419353, y: 0.08333397, z: 47.725807}
+    ExitLocal: {x: 23.419353, y: 0.08333397, z: 40.725807}
+  _assaultRouteBakeFingerprint: -418646887
+  _hasBakedAssaultRoutes: 1
+  _mountains: []
+  _rivers: []
+  _lakes: []
+  _groundPatches: []
+  _forests: []
+  _bridges: []
+  _trees: []
+  _rocks: []
+  _magicStones:
+  - Type: 0
+    Center: {x: 55, y: 5}
+  - Type: 2
+    Center: {x: 5, y: 55}

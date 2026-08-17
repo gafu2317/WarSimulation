@@ -1,0 +1,181 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fd0f04299ab452d9dbef43284e10c5, type: 3}
+  m_Name: AuthoredMap 6
+  m_EditorClassIdentifier: WarSimulation.Combat::WarSimulation.Combat.Map.AuthoredMapDefinition
+  _sharedConfig: {fileID: 11400000, guid: f2fa3155fa7424bf7876ce40c28805c1, type: 2}
+  _buildSeed: 0
+  _bakedNavMesh: {fileID: 23800000, guid: bea6f088d8ded40888385db981283d42, type: 2}
+  _navMeshBakeFingerprint: -455592085
+  _bakedMapData: {fileID: 11400000, guid: 07afa7cdd65444933ad226f90f183546, type: 2}
+  _bakedAllyAssaultRoutes:
+  - BridgeFeatureIndex: -1
+    HasBridgeWaypoints: 0
+    EnterLocal: {x: 0, y: 0, z: 0}
+    ExitLocal: {x: 0, y: 0, z: 0}
+  _bakedEnemyAssaultRoutes:
+  - BridgeFeatureIndex: -1
+    HasBridgeWaypoints: 0
+    EnterLocal: {x: 0, y: 0, z: 0}
+    ExitLocal: {x: 0, y: 0, z: 0}
+  _assaultRouteBakeFingerprint: -455592085
+  _hasBakedAssaultRoutes: 1
+  _mountains: []
+  _rivers: []
+  _lakes:
+  - Shape: {fileID: 11400000, guid: c4f281a6b9d347e2a1d8e5c7f2b30986, type: 2}
+    Center: {x: 29.903225, y: 31.45161}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+    IsFrozen: 0
+  _groundPatches:
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 21.67742, y: 29.806452}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 23.709679, y: 35.612904}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 31.838707, y: 40.25806}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 38.903225, y: 35.225807}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 34.548386, y: 36.387096}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 26.129032, y: 38.419353}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 37.258064, y: 32.709675}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 36.290325, y: 27.967741}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 34.064514, y: 24.483873}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 28.161291, y: 23.612902}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 24.193548, y: 24.483873}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 6.193548, y: 23.225805}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 8.032258, y: 39.29032}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 18.967741, y: 49.64516}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 45, y: 48.29032}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 51.580647, y: 30.387096}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 49.741936, y: 13.064514}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 41.322582, y: 10.741936}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 25.35484, y: 11.32258}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 13.935484, y: 10.83871}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 4.3548384, y: 54.09677}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 34.741936, y: 55.258064}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 44.225807, y: 24.096773}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 33.387096, y: 2.9032266}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: fec2fdd0519254aeaa3b3a151cc0842b, type: 2}
+    Center: {x: 18.580645, y: 42.19355}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  _forests:
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 10.16129, y: 50.90323}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 8.225806, y: 34.258064}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 14.225806, y: 13.838711}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 31.16129, y: 9.483872}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 49.838707, y: 13.064514}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 29.129032, y: 53.612904}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 52.83871, y: 32.225803}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 44.032257, y: 46.354836}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  _bridges: []
+  _trees: []
+  _rocks: []
+  _magicStones:
+  - Type: 0
+    Center: {x: 56.322582, y: 54.967743}
+  - Type: 2
+    Center: {x: 3.6774194, y: 5.2258053}

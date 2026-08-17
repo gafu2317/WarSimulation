@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fd0f04299ab452d9dbef43284e10c5, type: 3}
+  m_Name: AuthoredMap 3
+  m_EditorClassIdentifier: WarSimulation.Combat::WarSimulation.Combat.Map.AuthoredMapDefinition
+  _sharedConfig: {fileID: 11400000, guid: f2fa3155fa7424bf7876ce40c28805c1, type: 2}
+  _buildSeed: 0
+  _bakedNavMesh: {fileID: 23800000, guid: ddde2473135b349e784d274b86b3ebcd, type: 2}
+  _navMeshBakeFingerprint: 1503886840
+  _bakedMapData: {fileID: 11400000, guid: 39d5443c1e2554ff1bc120b2cfcb16d2, type: 2}
+  _bakedAllyAssaultRoutes:
+  - BridgeFeatureIndex: 211
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 38.815247, y: 0.13455677, z: 51.080498}
+    ExitLocal: {x: 35.684753, y: 0.17774233, z: 44.819504}
+  - BridgeFeatureIndex: 212
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 30.784756, y: 0.16275197, z: 18.380495}
+    ExitLocal: {x: 33.91525, y: 0.08333397, z: 12.119505}
+  _bakedEnemyAssaultRoutes:
+  - BridgeFeatureIndex: 211
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 35.684753, y: 0.17774233, z: 44.819504}
+    ExitLocal: {x: 38.815247, y: 0.13455677, z: 51.080498}
+  - BridgeFeatureIndex: 212
+    HasBridgeWaypoints: 1
+    EnterLocal: {x: 33.91525, y: 0.08333397, z: 12.119505}
+    ExitLocal: {x: 30.784756, y: 0.16275197, z: 18.380495}
+  _assaultRouteBakeFingerprint: 1503886840
+  _hasBakedAssaultRoutes: 1
+  _mountains:
+  - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
+    Kind: 1
+    Center: {x: 3.6774194, y: 29.709679}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  _rivers:
+  - Shape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
+    ControlPoints:
+    - {x: 3.580645, y: 60}
+    - {x: 27.67742, y: 45.48387}
+    - {x: 60, y: 30.193548}
+  - Shape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}
+    ControlPoints:
+    - {x: 60, y: 25.83871}
+    - {x: 21.580647, y: 20.516127}
+    - {x: 1.8387097, y: 0}
+  _lakes: []
+  _groundPatches: []
+  _forests:
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 38.903225, y: 30.387096}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 50.806454, y: 28.35484}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 53.51613, y: 40.16129}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 55.83871, y: 17.709679}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 14.709678, y: 48.48387}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: f6e256d587e014c23a41f3a285e42b37, type: 2}
+    Center: {x: 14.612904, y: 13.645163}
+    RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  _bridges:
+  - Center: {x: 37.25, y: 47.95}
+    RotationDeg: 26.565052
+    Scale: {x: 2, y: 0.2, z: 5}
+  - Center: {x: 32.350002, y: 15.25}
+    RotationDeg: 153.43495
+    Scale: {x: 2, y: 0.2, z: 5}
+  _trees: []
+  _rocks: []
+  _magicStones:
+  - Type: 0
+    Center: {x: 46.741936, y: 54.870968}
+  - Type: 2
+    Center: {x: 41.80645, y: 5.3225794}
