@@ -129,6 +129,37 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void BattleUi_HasLayeredHpBarsForCharacterCardsAndMagicStones()
+    {
+        GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+        Assert.That(hudPrefab, Is.Not.Null);
+
+        GameObject hudObject = Object.Instantiate(hudPrefab);
+        try
+        {
+            CombatPartyMemberView[] characterViews = hudObject.GetComponentsInChildren<CombatPartyMemberView>(true);
+            CombatMagicStoneStatusView[] magicStoneViews = hudObject.GetComponentsInChildren<CombatMagicStoneStatusView>(true);
+
+            Assert.That(characterViews, Has.Length.EqualTo(6));
+            Assert.That(magicStoneViews, Has.Length.EqualTo(2));
+
+            for (int i = 0; i < characterViews.Length; i++)
+            {
+                AssertLayeredHpBar(GetPrivateField<Image>(characterViews[i], "_hpFillImage"));
+            }
+
+            for (int i = 0; i < magicStoneViews.Length; i++)
+            {
+                AssertLayeredHpBar(GetPrivateField<Image>(magicStoneViews[i], "_hpFillImage"));
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(hudObject);
+        }
+    }
+
+    [Test]
     public void KuenBattleHud_ShowsTenAlliesInHorizontalScroll()
     {
         GameObject hudObject = null;
@@ -558,5 +589,34 @@ public sealed class CombatBattleFlowTests
             BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.That(field, Is.Not.Null);
         field.SetValue(flow, state);
+    }
+
+    private static void AssertLayeredHpBar(Image frontImage)
+    {
+        Assert.That(frontImage, Is.Not.Null);
+        Assert.That(frontImage.type, Is.EqualTo(Image.Type.Filled));
+        Assert.That(frontImage.fillMethod, Is.EqualTo(Image.FillMethod.Horizontal));
+        Assert.That(frontImage.fillOrigin, Is.EqualTo(0));
+        Assert.That(frontImage.fillAmount, Is.EqualTo(1f));
+        Assert.That(frontImage.sprite, Is.Not.Null);
+
+        Transform mask = frontImage.transform.parent;
+        Assert.That(mask, Is.Not.Null);
+        Assert.That(mask.name, Is.EqualTo("Mask"));
+
+        Transform background = mask.Find("HPBarBackground");
+        Assert.That(background, Is.Not.Null);
+        Assert.That(background.GetSiblingIndex(), Is.LessThan(frontImage.transform.GetSiblingIndex()));
+
+        Image backgroundImage = background.GetComponent<Image>();
+        Assert.That(backgroundImage, Is.Not.Null);
+        Assert.That(backgroundImage.type, Is.EqualTo(Image.Type.Simple));
+        Assert.That(backgroundImage.sprite, Is.Null);
+        Assert.That(backgroundImage.color.r, Is.EqualTo(11f / 255f).Within(0.000001f));
+        Assert.That(backgroundImage.color.g, Is.EqualTo(61f / 255f).Within(0.000001f));
+        Assert.That(backgroundImage.color.b, Is.EqualTo(27f / 255f).Within(0.000001f));
+        Assert.That(backgroundImage.color.a, Is.EqualTo(1f));
+        Assert.That(backgroundImage.raycastTarget, Is.False);
+        Assert.That(backgroundImage.fillAmount, Is.EqualTo(1f));
     }
 }
