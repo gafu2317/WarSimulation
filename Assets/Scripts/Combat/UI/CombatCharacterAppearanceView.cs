@@ -27,6 +27,7 @@ public sealed class CombatCharacterAppearanceView : MonoBehaviour
     private readonly List<PartSnapshot> _snapshots = new();
     private RectTransform _rectTransform;
     private RectTransform _contentRoot;
+    private bool _usesPrefabContent;
 
     public int PartCount => _partImages.Count;
 
@@ -45,6 +46,11 @@ public sealed class CombatCharacterAppearanceView : MonoBehaviour
             return;
         }
 
+        if (_usesPrefabContent)
+        {
+            return;
+        }
+
         if (!TryBuildSnapshots(character.transform, facing, _snapshots, out Bounds bounds))
         {
             return;
@@ -55,7 +61,6 @@ public sealed class CombatCharacterAppearanceView : MonoBehaviour
         float width = Mathf.Max(0.001f, bounds.size.x);
         float scale = Mathf.Min(_previewWidth / width, _previewHeight / height);
 
-        _rectTransform.sizeDelta = new Vector2(_previewWidth, _previewHeight);
         _contentRoot.sizeDelta = new Vector2(width * scale, height * scale);
 
         for (int i = 0; i < _snapshots.Count; i++)
@@ -72,10 +77,23 @@ public sealed class CombatCharacterAppearanceView : MonoBehaviour
         }
 
         _rectTransform = GetComponent<RectTransform>();
-        _rectTransform.sizeDelta = new Vector2(_previewWidth, _previewHeight);
 
-        var contentObject = new GameObject("Content", typeof(RectTransform));
-        contentObject.transform.SetParent(transform, false);
+        Transform mask = transform.Find("Mask");
+        Transform prefabContent = mask != null ? mask.Find("Content") : null;
+        if (prefabContent != null && prefabContent.childCount > 0)
+        {
+            _contentRoot = prefabContent as RectTransform;
+            _usesPrefabContent = _contentRoot != null;
+            if (_usesPrefabContent)
+            {
+                return;
+            }
+        }
+
+        _usesPrefabContent = false;
+        Transform contentParent = mask != null ? mask : transform;
+        var contentObject = new GameObject("RuntimeContent", typeof(RectTransform));
+        contentObject.transform.SetParent(contentParent, false);
         _contentRoot = contentObject.GetComponent<RectTransform>();
         _contentRoot.anchorMin = new Vector2(0.5f, 0.5f);
         _contentRoot.anchorMax = new Vector2(0.5f, 0.5f);
