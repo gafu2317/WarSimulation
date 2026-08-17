@@ -56,6 +56,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Button _stonePositionButton;
     private Button _enemyPresetDefaultButton;
     private Button _enemyPresetNeutralButton;
+    private Button _formationCodeApplyButton;
+    private Button _formationCodeCopyButton;
+    private Button _formationCodePasteButton;
+    private TMP_InputField _formationCodeInput;
+    private TMP_Text _formationCodeStatus;
     private GameObject _enemyPresetRowRoot;
     private GameObject _debugRowRoot;
     private Button _debugCharacterRoutesButton;
@@ -229,6 +234,21 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
         }
 
+        if (_formationCodeApplyButton != null)
+        {
+            _formationCodeApplyButton.onClick.RemoveListener(ApplyFormationCode);
+        }
+
+        if (_formationCodeCopyButton != null)
+        {
+            _formationCodeCopyButton.onClick.RemoveListener(CopyFormationCode);
+        }
+
+        if (_formationCodePasteButton != null)
+        {
+            _formationCodePasteButton.onClick.RemoveListener(PasteFormationCode);
+        }
+
         ClosePicker(commitPendingWeaponSelection: false);
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
         {
@@ -364,6 +384,27 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _enemyPresetNeutralButton = null;
         }
 
+        if (_formationCodeApplyButton != null)
+        {
+            _formationCodeApplyButton.onClick.RemoveListener(ApplyFormationCode);
+            _formationCodeApplyButton = null;
+        }
+
+        if (_formationCodeCopyButton != null)
+        {
+            _formationCodeCopyButton.onClick.RemoveListener(CopyFormationCode);
+            _formationCodeCopyButton = null;
+        }
+
+        if (_formationCodePasteButton != null)
+        {
+            _formationCodePasteButton.onClick.RemoveListener(PasteFormationCode);
+            _formationCodePasteButton = null;
+        }
+
+        _formationCodeInput = null;
+        _formationCodeStatus = null;
+
         _enemyPresetRowRoot = null;
         _debugRowRoot = null;
         _teamSelectionsLayout = null;
@@ -426,6 +467,29 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RefreshHighlightButton();
         RefreshEnemyFormationButton();
         RefreshStonePositionButton();
+
+        RectTransform codeRow = CreateHorizontalRow(_headerRoot, "FormationCodeRow", 48f, spacing: 10f);
+        _formationCodeInput = CreateFormationCodeInput(codeRow);
+        _formationCodeCopyButton = CreateButton(codeRow, "FormationCodeCopyButton", 225f, 48f, CopyFormationCode);
+        _formationCodePasteButton = CreateButton(codeRow, "FormationCodePasteButton", 180f, 48f, PasteFormationCode);
+        _formationCodeApplyButton = CreateButton(codeRow, "FormationCodeApplyButton", 180f, 48f, ApplyFormationCode);
+        _formationCodeStatus = Instantiate(_selectionCountText, codeRow);
+        _formationCodeStatus.name = "FormationCodeStatus";
+        _formationCodeStatus.fontSize = 18f;
+        _formationCodeStatus.alignment = TextAlignmentOptions.Left;
+        _formationCodeStatus.enableAutoSizing = false;
+        _formationCodeStatus.textWrappingMode = TextWrappingModes.NoWrap;
+        _formationCodeStatus.overflowMode = TextOverflowModes.Ellipsis;
+        _formationCodeStatus.text = "味方編成コード";
+        LayoutElement statusLayout = _formationCodeStatus.gameObject.GetComponent<LayoutElement>() ??
+                                      _formationCodeStatus.gameObject.AddComponent<LayoutElement>();
+        statusLayout.preferredWidth = 300f;
+        SetButtonLabel(_formationCodeApplyButton, "適用");
+        SetButtonLabel(_formationCodeCopyButton, "コードコピー");
+        SetButtonLabel(_formationCodePasteButton, "ペースト");
+        ConfigureToolbarLabel(_formationCodeApplyButton, 20f);
+        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
+        ConfigureToolbarLabel(_formationCodePasteButton, 20f);
 
         RectTransform presetRow = CreateHorizontalRow(_headerRoot, "EnemyPresetRow", 48f, spacing: 12f);
         _enemyPresetRowRoot = presetRow.gameObject;
@@ -776,7 +840,23 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_debugRowRoot != null) _debugRowRoot.SetActive(!open);
         RefreshFormationPanelHeights();
         RefreshEnemyFormationButton();
+        RefreshFormationCodeContext();
         RefreshSelectionCountText();
+    }
+
+    private void RefreshFormationCodeContext()
+    {
+        string teamLabel = _detailSettingsOpen ? "敵" : "味方";
+        SetButtonLabel(_formationCodeApplyButton, "適用");
+        SetButtonLabel(_formationCodeCopyButton, "コードコピー");
+        SetButtonLabel(_formationCodePasteButton, "ペースト");
+        ConfigureToolbarLabel(_formationCodeApplyButton, 20f);
+        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
+        ConfigureToolbarLabel(_formationCodePasteButton, 20f);
+        if (_formationCodeStatus != null)
+        {
+            _formationCodeStatus.text = $"{teamLabel}編成コード（{GetVisibleRows().Count}文字）";
+        }
     }
 
     private void RefreshFormationPanelHeights()
@@ -786,16 +866,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             LayoutElement headerLayout = _headerRoot.GetComponent<LayoutElement>();
             if (headerLayout != null)
             {
-                // Ally: action 48 + spacing 8 + debug 92.
-                // Enemy: action 48 + spacing 8 + preset 48 (no debug).
-                headerLayout.preferredHeight = _detailSettingsOpen ? 104f : 148f;
+                headerLayout.preferredHeight = _detailSettingsOpen ? 160f : 204f;
             }
         }
 
         if (_teamSelectionsLayout != null)
         {
-            // Keep header + spacing(8) + teams within the fixed 700 list height.
-            _teamSelectionsLayout.preferredHeight = _detailSettingsOpen ? 588f : 500f;
+            _teamSelectionsLayout.preferredHeight = _detailSettingsOpen ? 532f : 488f;
         }
     }
 
@@ -1014,6 +1091,198 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         HideIndicator(button);
         if (onClick != null) button.onClick.AddListener(onClick);
         return button;
+    }
+
+    private TMP_InputField CreateFormationCodeInput(Transform parent)
+    {
+        GameObject inputObject = new GameObject(
+            "FormationCodeInput",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(TMP_InputField),
+            typeof(LayoutElement));
+        inputObject.transform.SetParent(parent, false);
+        inputObject.GetComponent<Image>().color = new Color(0.05f, 0.06f, 0.08f, 0.95f);
+        LayoutElement inputLayout = inputObject.GetComponent<LayoutElement>();
+        inputLayout.minWidth = 280f;
+        inputLayout.flexibleWidth = 1f;
+
+        TMP_Text text = Instantiate(_selectionCountText, inputObject.transform);
+        text.name = "Text";
+        text.text = string.Empty;
+        text.fontSize = 18f;
+        text.alignment = TextAlignmentOptions.Left;
+        text.enableAutoSizing = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        Stretch(text.rectTransform);
+        text.margin = new Vector4(12f, 0f, 12f, 0f);
+
+        TMP_Text placeholder = Instantiate(_selectionCountText, inputObject.transform);
+        placeholder.name = "Placeholder";
+        placeholder.text = "コード表示欄（コードをコピーで生成）";
+        placeholder.fontSize = 18f;
+        placeholder.alignment = TextAlignmentOptions.Left;
+        placeholder.enableAutoSizing = false;
+        placeholder.textWrappingMode = TextWrappingModes.NoWrap;
+        placeholder.overflowMode = TextOverflowModes.Ellipsis;
+        placeholder.color = new Color(1f, 1f, 1f, 0.45f);
+        Stretch(placeholder.rectTransform);
+        placeholder.margin = new Vector4(12f, 0f, 12f, 0f);
+
+        TMP_InputField input = inputObject.GetComponent<TMP_InputField>();
+        input.textComponent = text;
+        input.placeholder = placeholder;
+        input.textViewport = inputObject.GetComponent<RectTransform>();
+        input.targetGraphic = inputObject.GetComponent<Image>();
+        input.lineType = TMP_InputField.LineType.SingleLine;
+        input.contentType = TMP_InputField.ContentType.Standard;
+        input.characterValidation = TMP_InputField.CharacterValidation.None;
+        input.caretColor = Color.white;
+        input.onValueChanged.AddListener(OnFormationCodeInputChanged);
+        return input;
+    }
+
+    private void OnFormationCodeInputChanged(string value)
+    {
+        SetButtonLabel(_formationCodeCopyButton, "コードコピー");
+        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
+        SetFormationCodeStatus(string.Empty);
+    }
+
+    private void ApplyFormationCode()
+    {
+        List<SelectionRow> rows = GetVisibleRows();
+        if (!CombatFormationCode.TryDecode(
+                _formationCodeInput != null ? _formationCodeInput.text : string.Empty,
+                rows.Count,
+                out CombatFormationCodeData data,
+                out string error))
+        {
+            SetFormationCodeStatus(error);
+            return;
+        }
+
+        if (!TryApplyFormationEntries(rows, data.Entries, out error))
+        {
+            SetFormationCodeStatus(error);
+            return;
+        }
+
+        Refresh();
+        if (_formationCodeInput != null)
+        {
+            _formationCodeInput.text = string.Empty;
+        }
+
+        SetFormationCodeStatus("編成コードを適用しました。");
+    }
+
+    private bool TryApplyFormationEntries(
+        List<SelectionRow> rows,
+        IReadOnlyList<CombatFormationCodeEntry> entries,
+        out string error)
+    {
+        error = string.Empty;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (!entries[i].Selected) continue;
+
+            if (FindWeaponIndex(entries[i].Weapon) < 0)
+            {
+                error = $"武器「{entries[i].Weapon}」がこの画面で選択できません。";
+                return false;
+            }
+
+            if (FindPersonalityByKind(entries[i].Personality) == null &&
+                !IsBuiltInPersonalityKind(entries[i].Personality))
+            {
+                error = $"性格「{entries[i].Personality}」がこの画面で選択できません。";
+                return false;
+            }
+        }
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            CombatFormationCodeEntry entry = entries[i];
+            SelectionRow row = rows[i];
+            row.Selected = entry.Selected;
+            if (!entry.Selected) continue;
+
+            row.WeaponIndex = FindWeaponIndex(entry.Weapon);
+            row.PersonalityIndex = FindOrAddPersonalityIndex(entry.Personality);
+        }
+
+        return true;
+    }
+
+    private static bool IsBuiltInPersonalityKind(CombatAiPersonalityKind kind)
+    {
+        for (int i = 0; i < CombatAiPersonalityProfile.BuiltInKinds.Length; i++)
+        {
+            if (CombatAiPersonalityProfile.BuiltInKinds[i] == kind) return true;
+        }
+
+        return false;
+    }
+
+    private void CopyFormationCode()
+    {
+        List<SelectionRow> rows = GetVisibleRows();
+        string code = CombatFormationCode.Encode(
+            BuildFormationEntries(rows));
+        if (_formationCodeInput != null)
+        {
+            _formationCodeInput.text = code;
+        }
+
+        GUIUtility.systemCopyBuffer = code;
+        SetButtonLabel(_formationCodeCopyButton, "コピーしました");
+        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
+        SetFormationCodeStatus("編成コードをコピーしました。");
+    }
+
+    private void PasteFormationCode()
+    {
+        if (_formationCodeInput != null)
+        {
+            _formationCodeInput.text = GUIUtility.systemCopyBuffer ?? string.Empty;
+        }
+
+        SetFormationCodeStatus("コードをペーストしました。");
+    }
+
+    private List<CombatFormationCodeEntry> BuildFormationEntries(List<SelectionRow> rows)
+    {
+        var entries = new List<CombatFormationCodeEntry>(rows.Count);
+        for (int i = 0; i < rows.Count; i++)
+        {
+            SelectionRow row = rows[i];
+            WeaponConfig weapon = GetOption(_weaponOptions, row.WeaponIndex);
+            CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);
+            entries.Add(new CombatFormationCodeEntry(
+                row.Selected,
+                weapon != null ? weapon.Kind : WeaponKind.Unarmed,
+                personality != null ? personality.Kind : CombatAiPersonalityKind.Neutral));
+        }
+
+        return entries;
+    }
+
+    private void SetFormationCodeStatus(string message)
+    {
+        if (_formationCodeStatus != null)
+        {
+            _formationCodeStatus.text = message ?? string.Empty;
+        }
+
+        if (!string.IsNullOrEmpty(message) &&
+            message != "編成コードを適用しました。" &&
+            message != "編成コードをコピーしました。" &&
+            message != "コードをペーストしました。")
+        {
+            Debug.LogWarning($"[{nameof(CombatCharacterSelection)}] {message}", this);
+        }
     }
 
     private void Toggle(SelectionRow row)
