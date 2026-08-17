@@ -62,7 +62,7 @@ public sealed class CombatAiWorldLabelDebugView : CombatDebugBehaviour
             if (CombatPlaytestDebugSettings.LabelShowPersonality)
             {
                 CombatAiPersonalityProfile personality = entry.Character.PersonalityProfile;
-                entry.Label.SetPersonality(personality, CombatAiPersonalityHighlight.Matches(personality));
+                entry.Label.SetPersonality(personality);
             }
             else
             {

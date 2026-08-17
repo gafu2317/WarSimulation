@@ -49,7 +49,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<SelectionRow> _enemyRows = new();
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
-    private Button _highlightButton;
     private Button _bulkWeaponButton;
     private Button _bulkPersonalityButton;
     private Button _enemyFormationButton;
@@ -199,11 +198,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void OnDestroy()
     {
         _startBattleButton?.onClick.RemoveListener(ConfirmSelection);
-        if (_highlightButton != null)
-        {
-            _highlightButton.onClick.RemoveListener(OpenHighlightPicker);
-        }
-
         if (_bulkWeaponButton != null)
         {
             _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
@@ -342,12 +336,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ClearToolbarButtons()
     {
-        if (_highlightButton != null)
-        {
-            _highlightButton.onClick.RemoveListener(OpenHighlightPicker);
-            _highlightButton = null;
-        }
-
         if (_bulkWeaponButton != null)
         {
             _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
@@ -452,19 +440,16 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         headerObject.GetComponent<LayoutElement>().preferredHeight = 148f;
 
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
-        _highlightButton = CreateButton(actionRow, "PersonalityHighlightButton", 0f, 48f, OpenHighlightPicker, flexibleWidth: 1f);
         _bulkWeaponButton = CreateButton(actionRow, "BulkWeaponButton", 220f, 48f, OpenBulkWeaponPicker);
         _bulkPersonalityButton = CreateButton(actionRow, "BulkPersonalityButton", 220f, 48f, OpenBulkPersonalityPicker);
-        _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
+        _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
         SetButtonLabel(_bulkWeaponButton, "武器一括変更");
         SetButtonLabel(_bulkPersonalityButton, "性格一括変更");
-        ConfigureToolbarLabel(_highlightButton, 24f);
         ConfigureToolbarLabel(_bulkWeaponButton, 24f);
         ConfigureToolbarLabel(_bulkPersonalityButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
         ConfigureToolbarLabel(_stonePositionButton, 24f);
-        RefreshHighlightButton();
         RefreshEnemyFormationButton();
         RefreshStonePositionButton();
 
@@ -835,7 +820,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _detailSettingsOpen = open;
         if (_allyColumnRoot != null) _allyColumnRoot.SetActive(!open);
         if (_enemyColumnRoot != null) _enemyColumnRoot.SetActive(open);
-        if (_highlightButton != null) _highlightButton.gameObject.SetActive(!open);
         if (_enemyPresetRowRoot != null) _enemyPresetRowRoot.SetActive(open);
         if (_debugRowRoot != null) _debugRowRoot.SetActive(!open);
         RefreshFormationPanelHeights();
@@ -914,34 +898,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ClosePicker();
         ApplyDefaultParty(_enemyRows, useEnemyPersonalities: false, useEnemyWeapons: false);
         Refresh();
-    }
-
-    private void OpenHighlightPicker()
-    {
-        OpenPersonalityPicker(
-            "ハイライト性格を選択",
-            selectedIndex: -1,
-            includeNone: true,
-            onSelected: index =>
-            {
-                if (index < 0)
-                {
-                    CombatAiPersonalityHighlight.Set(null);
-                }
-                else
-                {
-                    CombatAiPersonalityProfile profile = GetOption(_personalityOptions, index);
-                    CombatAiPersonalityHighlight.Set(profile != null ? profile.Kind : null);
-                }
-
-                RefreshHighlightButton();
-            });
-    }
-
-    private void RefreshHighlightButton()
-    {
-        SetButtonLabel(_highlightButton, $"ハイライト: {CombatAiPersonalityHighlight.DisplayLabel}");
-        ConfigureToolbarLabel(_highlightButton, 24f);
     }
 
     private RectTransform CreateTeamColumn(RectTransform parent, string objectName, string title)
@@ -1355,7 +1311,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         OpenPersonalityPicker(
             "性格を選択",
             row.PersonalityIndex,
-            includeNone: false,
             onSelected: index =>
             {
                 row.PersonalityIndex = index;
@@ -1369,7 +1324,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         OpenPersonalityPicker(
             "性格一括変更",
             rows.Count > 0 ? rows[0].PersonalityIndex : -1,
-            includeNone: false,
             onSelected: index =>
             {
                 for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
@@ -1389,31 +1343,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void OpenPersonalityPicker(
         string title,
         int selectedIndex,
-        bool includeNone,
         Action<int> onSelected)
     {
-        if (!includeNone && _personalityOptions.Count == 0) return;
+        if (_personalityOptions.Count == 0) return;
 
         EnsurePicker();
         SetPickerLayout(twoColumns: true);
         ClearPickerOptions();
         SetPickerTitle(title);
 
-        if (includeNone)
-        {
-            bool isNone = !CombatAiPersonalityHighlight.HasHighlight;
-            const string noneDescription = "性格ハイライトを使いません。";
-            AddPickerOption(
-                isNone ? "■ なし" : "なし",
-                () =>
-                {
-                    onSelected?.Invoke(-1);
-                    ClosePicker();
-                },
-                () => SetPickerDescription(noneDescription));
-        }
-
-        CombatAiPersonalityKind? highlightKind = CombatAiPersonalityHighlight.Kind;
         for (int i = 0; i < _personalityOptions.Count; i++)
         {
             int index = i;
@@ -1421,9 +1359,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             if (personality == null) continue;
 
             string name = personality.DisplayNameJapanese;
-            bool selected = includeNone
-                ? highlightKind.HasValue && personality.Kind == highlightKind.Value
-                : index == selectedIndex;
+            bool selected = index == selectedIndex;
             string description = personality.BehaviorDescriptionJapanese;
             AddPickerOption(
                 selected ? "■ " + name : name,
@@ -1435,14 +1371,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 () => SetPickerDescription(description));
         }
 
-        CombatAiPersonalityProfile initial = includeNone
-            ? (highlightKind.HasValue ? FindPersonalityByKind(highlightKind.Value) : null)
-            : GetOption(_personalityOptions, selectedIndex);
+        CombatAiPersonalityProfile initial = GetOption(_personalityOptions, selectedIndex);
         SetPickerDescription(initial != null
             ? initial.BehaviorDescriptionJapanese
-            : includeNone
-                ? "性格ハイライトを使いません。"
-                : "性格を選ぶと、ここで挙動の説明が表示されます。");
+            : "性格を選ぶと、ここで挙動の説明が表示されます。");
         ShowPicker();
     }
 
@@ -2034,7 +1966,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         RefreshRows(_allyRows);
         RefreshRows(_enemyRows);
-        RefreshHighlightButton();
         RefreshEnemyFormationButton();
         RefreshStonePositionButton();
         RefreshDebugToggleButtons();

@@ -390,6 +390,7 @@ public sealed class CombatVision : MonoBehaviour
         for (int i = 0; i < hitCount; i++)
         {
             RaycastHit hit = _lineOfSightHits[i];
+            if (hit.distance <= Mathf.Epsilon) continue;
             Transform hitTransform = hit.transform;
             if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, target))
             {
@@ -472,6 +473,7 @@ public sealed class CombatVision : MonoBehaviour
         for (int i = 0; i < hitCount; i++)
         {
             RaycastHit hit = _lineOfSightHits[i];
+            if (hit.distance <= Mathf.Epsilon) continue;
             Transform hitTransform = hit.transform;
             if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, target)) continue;
             if (hit.distance >= nearestDistance) continue;
@@ -669,6 +671,7 @@ public sealed class CombatVision : MonoBehaviour
         for (int i = 0; i < hitCount; i++)
         {
             RaycastHit hit = _communicationHits[i];
+            if (hit.distance <= Mathf.Epsilon) continue;
             Transform hitTransform = hit.transform;
             if (IsPartOfTransform(hitTransform, transform) || IsPartOfTransform(hitTransform, ally.transform))
             {

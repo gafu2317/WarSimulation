@@ -41,10 +41,58 @@ public class Character : MonoBehaviour
     public int MaxHP => Health != null ? Health.MaxHP : 0;
     public int HP => Health != null ? Health.HP : 0;
     public int CP { private set; get; }
-    public int STR { private set; get; }
-    public int INT { private set; get; }
-    public int FAI { private set; get; }
-    public int AGI { private set; get; }
+    public int STR
+    {
+        get
+        {
+            EnsureRuntimeStatsInitialized();
+            return _str;
+        }
+        private set
+        {
+            EnsureRuntimeStatsInitialized();
+            _str = value;
+        }
+    }
+    public int INT
+    {
+        get
+        {
+            EnsureRuntimeStatsInitialized();
+            return _int;
+        }
+        private set
+        {
+            EnsureRuntimeStatsInitialized();
+            _int = value;
+        }
+    }
+    public int FAI
+    {
+        get
+        {
+            EnsureRuntimeStatsInitialized();
+            return _fai;
+        }
+        private set
+        {
+            EnsureRuntimeStatsInitialized();
+            _fai = value;
+        }
+    }
+    public int AGI
+    {
+        get
+        {
+            EnsureRuntimeStatsInitialized();
+            return _agi;
+        }
+        private set
+        {
+            EnsureRuntimeStatsInitialized();
+            _agi = value;
+        }
+    }
 
     // バフ・デバフ率
     public float STRBuff => ResolveStatusEffects().GetMultiplier(CombatStatusEffects.StatKind.STR);
@@ -72,6 +120,11 @@ public class Character : MonoBehaviour
     private CombatSkillCaster _skillCaster;
     private CombatAiPersonalityProfile _runtimePersonalityProfile;
     private WeaponConfig _runtimeWeaponConfig;
+    private int _str;
+    private int _int;
+    private int _fai;
+    private int _agi;
+    private bool _runtimeStatsInitialized;
 
     private void Awake()
     {
@@ -114,6 +167,17 @@ public class Character : MonoBehaviour
         _skillCaster = GetComponent<CombatSkillCaster>();
 
         ApplyInitialWeaponFromConfig();
+    }
+
+    private void EnsureRuntimeStatsInitialized()
+    {
+        if (_runtimeStatsInitialized) return;
+
+        _str = _baseSTR;
+        _int = _baseINT;
+        _fai = _baseFAI;
+        _agi = _baseAGI;
+        _runtimeStatsInitialized = true;
     }
 
     private void Start()

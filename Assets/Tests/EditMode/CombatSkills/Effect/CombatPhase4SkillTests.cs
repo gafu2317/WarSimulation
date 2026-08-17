@@ -315,6 +315,7 @@ public sealed class CombatPhase4SkillTests
             Character owner = ownerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
             owner.Health.Initialize(30);
+            typeof(Character).GetProperty("INT").SetValue(owner, 40);
             target.SetTeam(CombatTeam.Enemy);
             target.Health.Initialize(30);
             targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 2f;

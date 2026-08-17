@@ -1,16 +1,15 @@
 {
   "dependencies": {
     "com.akiojin.unity-cli-bridge": {
-      "version": "https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge",
+      "version": "file:com.akiojin.unity-cli-bridge",
       "depth": 0,
-      "source": "git",
+      "source": "embedded",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.inputsystem": "1.14.2",
         "com.unity.recorder": "4.0.0",
         "com.unity.addressables": "1.22.3"
-      },
-      "hash": "8daf7fa8cee861686b3ade87fa965f89f43f99fe"
+      }
     },
     "com.coplaydev.unity-mcp": {
       "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",

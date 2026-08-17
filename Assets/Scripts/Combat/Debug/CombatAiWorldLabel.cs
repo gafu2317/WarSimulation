@@ -23,7 +23,6 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
     [SerializeField] private Color _backgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.82f);
     [SerializeField] private Color _weaponBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.76f);
     [SerializeField] private Color _personalityBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.76f);
-    [SerializeField] private Color _personalityHighlightBackgroundColor = new Color(0.85f, 0.65f, 0.12f, 0.9f);
     [SerializeField] private Color _skillBackgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.72f);
     [SerializeField] private Color _defaultTextColor = new Color(1f, 0.95f, 0.85f, 1f);
     [SerializeField] private Color _allyTextColor = new Color(0.3f, 0.7f, 1f, 1f);
@@ -100,16 +99,14 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         RefreshRowLayout();
     }
 
-    public void SetPersonality(CombatAiPersonalityProfile profile, bool highlighted)
+    public void SetPersonality(CombatAiPersonalityProfile profile)
     {
         EnsureBuilt();
         if (_personalityText == null || _personalityBackgroundImage == null || _personalityRoot == null) return;
 
         _personalityText.text = CombatAiDebugLabels.PersonalityShort(profile);
         _personalityText.color = ResolveLabelTextColor();
-        _personalityBackgroundImage.color = highlighted
-            ? _personalityHighlightBackgroundColor
-            : _personalityBackgroundColor;
+        _personalityBackgroundImage.color = _personalityBackgroundColor;
         _personalityRoot.gameObject.SetActive(true);
         RefreshRowLayout();
     }
@@ -271,7 +268,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
         _skillBackgroundImage = CreateBackground(_skillRoot, "SkillBackground");
         _skillText = CreateLabel(_skillRoot, "SkillLabel", _skillHeight, 14, 24);
         SetWeapon(_character != null ? _character.EquippedWeapon : null);
-        SetPersonality(_character != null ? _character.PersonalityProfile : null, highlighted: false);
+        SetPersonality(_character != null ? _character.PersonalityProfile : null);
         HideSkill();
         RefreshRowLayout();
         UpdateRootVisibleState();

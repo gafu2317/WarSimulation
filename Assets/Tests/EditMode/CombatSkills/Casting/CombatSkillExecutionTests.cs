@@ -208,6 +208,27 @@ public sealed class CombatSkillExecutionTests
     }
 
     [Test]
+    public void WorldLabel_SetPersonality_ShowsPersonalityName()
+    {
+        GameObject ownerGo = new GameObject("Owner");
+        CombatAiPersonalityProfile profile = ScriptableObject.CreateInstance<CombatAiPersonalityProfile>();
+        try
+        {
+            CombatEditModeTestUtil.SetPrivateField(profile, "_displayNameJapanese", "慎重");
+            CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
+
+            label.SetPersonality(profile);
+
+            Assert.That(label.CurrentPersonalityText, Is.EqualTo("慎重"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(profile);
+            Object.DestroyImmediate(ownerGo);
+        }
+    }
+
+    [Test]
     public void IdentifiedSkill_Execute_WithoutWorldLabel_DoesNotThrow()
     {
         GameObject ownerGo = new GameObject("Owner");

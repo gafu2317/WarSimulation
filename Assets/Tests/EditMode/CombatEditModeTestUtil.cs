@@ -9,8 +9,26 @@ internal static partial class CombatEditModeTestUtil
         Assert.That(target, Is.Not.Null, "SetPrivateField target must not be null.");
         FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
         field ??= target.GetType().BaseType?.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.That(field, Is.Not.Null, $"Field {fieldName} was not found on {target.GetType().Name}.");
-        field.SetValue(target, value);
+        if (field != null)
+        {
+            field.SetValue(target, value);
+            return;
+        }
+
+        PropertyInfo property = target.GetType().GetProperty(
+            fieldName,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        if (property == null &&
+            fieldName.StartsWith("<") &&
+            fieldName.EndsWith(">k__BackingField"))
+        {
+            string propertyName = fieldName.Substring(1, fieldName.Length - 1 - ">k__BackingField".Length);
+            property = target.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+        Assert.That(property, Is.Not.Null, $"Field or property {fieldName} was not found on {target.GetType().Name}.");
+        property.SetValue(target, value);
     }
 
     public static void WireMapSystem(CombatCharacterSystem system, CombatMapSystem mapSystem)
