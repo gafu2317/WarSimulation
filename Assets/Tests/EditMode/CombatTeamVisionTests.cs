@@ -215,16 +215,14 @@ public sealed class CombatTeamVisionTests
     }
 
     [Test]
-    public void CombatVision_OptionalThickSightCastBlocksNearbyObstacle()
+    public void CombatVision_UsesThickSightCastForNearbyObstacle()
     {
         GameObject observerGo = new GameObject("Observer");
         GameObject targetGo = new GameObject("Target");
         GameObject obstacleGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        bool previousValue = CombatPlaytestDebugSettings.UseThickSightCast;
 
         try
         {
-            CombatPlaytestDebugSettings.SetUseThickSightCast(true);
             Character observer = observerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
             observerGo.transform.position = Vector3.zero;
@@ -238,7 +236,6 @@ public sealed class CombatTeamVisionTests
         }
         finally
         {
-            CombatPlaytestDebugSettings.SetUseThickSightCast(previousValue);
             Object.DestroyImmediate(observerGo);
             Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(obstacleGo);
@@ -251,11 +248,9 @@ public sealed class CombatTeamVisionTests
         GameObject observerGo = new GameObject("Observer");
         GameObject targetGo = new GameObject("Target");
         GameObject overlappingObstacleGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        bool previousValue = CombatPlaytestDebugSettings.UseThickSightCast;
 
         try
         {
-            CombatPlaytestDebugSettings.SetUseThickSightCast(true);
             Character observer = observerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
             observerGo.transform.position = Vector3.zero;
@@ -269,7 +264,6 @@ public sealed class CombatTeamVisionTests
         }
         finally
         {
-            CombatPlaytestDebugSettings.SetUseThickSightCast(previousValue);
             Object.DestroyImmediate(observerGo);
             Object.DestroyImmediate(targetGo);
             Object.DestroyImmediate(overlappingObstacleGo);

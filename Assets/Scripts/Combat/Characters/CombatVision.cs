@@ -693,20 +693,9 @@ public sealed class CombatVision : MonoBehaviour
         float distance,
         int layerMask)
     {
-        if (CombatPlaytestDebugSettings.UseThickSightCast)
-        {
-            return Physics.SphereCastNonAlloc(
-                origin,
-                SightCastRadius,
-                direction,
-                hits,
-                distance,
-                layerMask,
-                QueryTriggerInteraction.Ignore);
-        }
-
-        return Physics.RaycastNonAlloc(
+        return Physics.SphereCastNonAlloc(
             origin,
+            SightCastRadius,
             direction,
             hits,
             distance,

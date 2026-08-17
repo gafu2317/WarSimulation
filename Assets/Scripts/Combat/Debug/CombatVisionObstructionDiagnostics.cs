@@ -33,8 +33,7 @@ public static class CombatVisionObstructionDiagnostics
 
     public static void Record(Character owner, Transform target, RaycastHit hit, Vector3 origin)
     {
-        if (!CombatPlaytestDebugSettings.UseThickSightCast ||
-            !CombatPlaytestDebugSettings.LogVisionObstructions ||
+        if (!CombatPlaytestDebugSettings.LogVisionObstructions ||
             owner == null ||
             hit.collider == null)
         {
@@ -68,9 +67,7 @@ public static class CombatVisionObstructionDiagnostics
 
     public static void WriteTo(Action<string> writeLine)
     {
-        if (writeLine == null ||
-            !CombatPlaytestDebugSettings.UseThickSightCast ||
-            !CombatPlaytestDebugSettings.LogVisionObstructions)
+        if (writeLine == null || !CombatPlaytestDebugSettings.LogVisionObstructions)
         {
             return;
         }

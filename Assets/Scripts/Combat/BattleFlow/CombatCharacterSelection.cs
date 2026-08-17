@@ -717,15 +717,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                         RebuildDebugSettingsPicker(kind);
                     });
                 AddDebugBoolOption(
-                    "太い視線判定を使う",
-                    CombatPlaytestDebugSettings.UseThickSightCast,
-                    "視線を半径0.3mのSphereCastで判定します。通常のRaycastに戻す場合はOFFにします。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetUseThickSightCast(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
                     "視界の遮蔽物をログに記録する",
                     CombatPlaytestDebugSettings.LogVisionObstructions,
                     "太い視線判定で遮られたColliderを戦闘ログへ集約して記録します。",
