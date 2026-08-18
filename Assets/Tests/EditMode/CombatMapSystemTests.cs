@@ -269,16 +269,10 @@ public sealed class CombatMapSystemTests
         MapData map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), 1);
         try
         {
-            definition.SetBakedAssaultRoutes(
-                new List<AuthoredBakedAssaultRoute>
-                {
-                    new AuthoredBakedAssaultRoute(10, true, Vector3.zero, Vector3.right),
-                },
-                new List<AuthoredBakedAssaultRoute>
-                {
-                    new AuthoredBakedAssaultRoute(20, true, Vector3.forward, Vector3.one),
-                },
-                definition.ComputeBakeFingerprint());
+            map.AddAssaultRoute(new AssaultRoute(
+                "route-main",
+                "Main",
+                new[] { Vector3.zero, Vector3.right, Vector3.one }));
             CombatAssaultRouteCache.Invalidate();
 
             Assert.That(CombatAssaultRouteCache.TryHydrateFromAuthored(definition, map, null), Is.True);
@@ -287,14 +281,14 @@ public sealed class CombatMapSystemTests
             IReadOnlyList<CombatAiAssaultRoute> reversedAlly =
                 CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: true);
 
-            Assert.That(normalAlly[0].BridgeFeatureIndex, Is.EqualTo(10));
-            Assert.That(reversedAlly[0].BridgeFeatureIndex, Is.EqualTo(20));
+            Assert.That(normalAlly[0].Corners[0], Is.EqualTo(Vector3.zero));
+            Assert.That(reversedAlly[0].Corners[0], Is.EqualTo(Vector3.one));
             Assert.That(
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, stonePositionReversed: false)[0].BridgeFeatureIndex,
-                Is.EqualTo(20));
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, stonePositionReversed: false)[0].Corners[0],
+                Is.EqualTo(Vector3.one));
             Assert.That(
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, stonePositionReversed: true)[0].BridgeFeatureIndex,
-                Is.EqualTo(10));
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, stonePositionReversed: true)[0].Corners[0],
+                Is.EqualTo(Vector3.zero));
         }
         finally
         {

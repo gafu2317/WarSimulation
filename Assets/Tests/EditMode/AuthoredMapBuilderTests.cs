@@ -73,6 +73,71 @@ public sealed class AuthoredMapBuilderTests
     }
 
     [Test]
+    public void Fingerprints_RouteChangeDoesNotInvalidateGeometry()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            int geometry = definition.ComputeGeometryFingerprint();
+            int routesBefore = definition.ComputeAssaultRouteFingerprint();
+            definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
+                "manual-route", "Manual", AuthoredAssaultRouteSource.Manual));
+
+            Assert.That(definition.ComputeGeometryFingerprint(), Is.EqualTo(geometry));
+            Assert.That(definition.ComputeAssaultRouteFingerprint(), Is.Not.EqualTo(routesBefore));
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void MigrateLegacyAssaultRoutes_RunsOnlyOnce()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            definition.SetBakedAssaultRoutes(
+                new List<AuthoredBakedAssaultRoute>
+                {
+                    new AuthoredBakedAssaultRoute(
+                        2, true, new Vector3(3f, 0f, 4f), new Vector3(5f, 0f, 6f)),
+                },
+                new List<AuthoredBakedAssaultRoute>(),
+                definition.ComputeGeometryFingerprint());
+
+            Assert.That(definition.MigrateLegacyAssaultRoutes(), Is.True);
+            Assert.That(definition.AssaultRoutes.Count, Is.EqualTo(1));
+            Assert.That(definition.AssaultRoutes[0].Waypoints, Is.EqualTo(
+                new[] { new Vector2(3f, 4f), new Vector2(5f, 6f) }));
+            Assert.That(definition.MigrateLegacyAssaultRoutes(), Is.False);
+            Assert.That(definition.AssaultRoutes.Count, Is.EqualTo(1));
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void ReplaceAutomaticRoutesPreservesManualRoutes()
+    {
+        var manual = new AuthoredAssaultRoute(
+            "manual-route", "Manual", AuthoredAssaultRouteSource.Manual);
+        var oldAuto = new AuthoredAssaultRoute(
+            "auto:direct", "Old", AuthoredAssaultRouteSource.Auto);
+        var newAuto = new AuthoredAssaultRoute(
+            "auto:bridge:0", "New", AuthoredAssaultRouteSource.Auto);
+
+        List<AuthoredAssaultRoute> result = CombatAssaultRouteBaker.ReplaceAutomaticRoutes(
+            new[] { oldAuto, manual },
+            new[] { newAuto });
+
+        Assert.That(result, Is.EqualTo(new[] { manual, newAuto }));
+    }
+
+    [Test]
     public void Build_RiverPathMeandersAwayFromStraightChord()
     {
         AuthoredMapDefinition definition = CreateDefinition();

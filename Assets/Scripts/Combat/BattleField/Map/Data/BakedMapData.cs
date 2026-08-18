@@ -57,6 +57,14 @@ namespace WarSimulation.Combat.Map
             public Vector3 Scale;
         }
 
+        [Serializable]
+        private struct AssaultRouteRecord
+        {
+            public string RouteId;
+            public string DisplayName;
+            public Vector3[] Corners;
+        }
+
         [SerializeField] private int _width;
         [SerializeField] private int _height;
         [SerializeField] private float _cellSize;
@@ -72,8 +80,16 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private LakeRecord[] _lakes;
         [SerializeField] private MountainRecord[] _mountains;
         [SerializeField] private ForestRecord[] _forests;
+        [SerializeField] private int _assaultRouteFingerprint;
+        [SerializeField] private AssaultRouteRecord[] _assaultRoutes;
+        [SerializeField] private bool _assaultRoutesValidated;
 
         public int BakeFingerprint => _bakeFingerprint;
+        public int AssaultRouteFingerprint => _assaultRouteFingerprint;
+        public bool HasAssaultRoutesData => _assaultRoutes != null && _assaultRoutes.Length > 0;
+
+        public bool HasValidAssaultRoutes(int fingerprint) =>
+            _assaultRoutesValidated && _assaultRouteFingerprint == fingerprint && HasAssaultRoutesData;
 
         public bool IsValidFor(int fingerprint)
         {
@@ -129,6 +145,7 @@ namespace WarSimulation.Combat.Map
             AddLakes(map);
             AddMountains(map);
             AddForests(map);
+            AddAssaultRoutes(map);
             return map;
         }
 
@@ -181,6 +198,34 @@ namespace WarSimulation.Combat.Map
             CaptureLakes(map.Lakes);
             CaptureMountains(map.Mountains);
             CaptureForests(map.ForestRegions);
+        }
+
+        public void CaptureAssaultRoutes(IReadOnlyList<AssaultRoute> routes, int fingerprint)
+        {
+            _assaultRoutes = new AssaultRouteRecord[routes != null ? routes.Count : 0];
+            if (routes != null)
+            {
+                for (int i = 0; i < routes.Count; i++)
+                {
+                    AssaultRoute route = routes[i];
+                    var corners = new Vector3[route?.Corners.Count ?? 0];
+                    for (int c = 0; c < corners.Length; c++) corners[c] = route.Corners[c];
+                    _assaultRoutes[i] = new AssaultRouteRecord
+                    {
+                        RouteId = route?.RouteId ?? string.Empty,
+                        DisplayName = route?.DisplayName ?? string.Empty,
+                        Corners = corners,
+                    };
+                }
+            }
+
+            _assaultRouteFingerprint = fingerprint;
+            _assaultRoutesValidated = true;
+        }
+
+        public void InvalidateAssaultRoutes()
+        {
+            _assaultRoutesValidated = false;
         }
 
         private bool IsStructurallyValid()
@@ -267,6 +312,19 @@ namespace WarSimulation.Combat.Map
                     forest.Radius,
                     forest.NoiseAmplitude,
                     forest.NoiseFrequency));
+            }
+        }
+
+        private void AddAssaultRoutes(MapData map)
+        {
+            if (!_assaultRoutesValidated || _assaultRoutes == null) return;
+            for (int i = 0; i < _assaultRoutes.Length; i++)
+            {
+                AssaultRouteRecord route = _assaultRoutes[i];
+                map.AddAssaultRoute(new AssaultRoute(
+                    route.RouteId,
+                    route.DisplayName,
+                    route.Corners ?? Array.Empty<Vector3>()));
             }
         }
 

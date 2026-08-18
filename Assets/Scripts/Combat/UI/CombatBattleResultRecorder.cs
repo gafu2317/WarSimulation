@@ -132,16 +132,8 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
 
     public CombatBattleResult CurrentResult => _currentResult;
 
-    private void OnEnable()
-    {
-        CombatDamageEvents.Resolved += OnDamageResolved;
-        CombatHealingEvents.Resolved += OnHealingResolved;
-    }
-
     private void OnDisable()
     {
-        CombatDamageEvents.Resolved -= OnDamageResolved;
-        CombatHealingEvents.Resolved -= OnHealingResolved;
         Clear();
     }
 
@@ -153,6 +145,7 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         _battleStartTime = Time.time;
         AddCharacters(allies, CombatTeam.Ally, _allyCharacters);
         AddCharacters(enemies, CombatTeam.Enemy, _enemyCharacters);
+        SubscribeCombatEvents();
         SubscribeCharacterHealth();
 
         _magicStoneSystem = CombatMagicStoneSystemResolver.Resolve();
@@ -181,6 +174,7 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
             enemies);
 
         _isRecording = false;
+        UnsubscribeCombatEvents();
         UnsubscribeCharacterHealth();
         UnsubscribeMagicStoneEvents();
         return _currentResult;
@@ -189,6 +183,7 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
     public void Clear()
     {
         _isRecording = false;
+        UnsubscribeCombatEvents();
         UnsubscribeCharacterHealth();
         UnsubscribeMagicStoneEvents();
         _characterResults.Clear();
@@ -198,6 +193,19 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         _battleStartTime = 0f;
         _allyMagicStoneDamage = 0;
         _enemyMagicStoneDamage = 0;
+    }
+
+    private void SubscribeCombatEvents()
+    {
+        UnsubscribeCombatEvents();
+        CombatDamageEvents.Resolved += OnDamageResolved;
+        CombatHealingEvents.Resolved += OnHealingResolved;
+    }
+
+    private void UnsubscribeCombatEvents()
+    {
+        CombatDamageEvents.Resolved -= OnDamageResolved;
+        CombatHealingEvents.Resolved -= OnHealingResolved;
     }
 
     private void AddCharacters(

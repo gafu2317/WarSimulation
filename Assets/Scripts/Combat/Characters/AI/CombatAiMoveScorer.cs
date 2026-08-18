@@ -256,13 +256,13 @@ public static class CombatAiMoveScorer
 
     private static bool TryFindAssaultRoute(
         CombatAiContext context,
-        int routeKey,
+        string routeKey,
         out CombatAiAssaultRoute route)
     {
         for (int i = 0; i < context.AssaultRoutes.Count; i++)
         {
             CombatAiAssaultRoute candidate = context.AssaultRoutes[i];
-            if (candidate.BridgeFeatureIndex != routeKey) continue;
+            if (!string.Equals(candidate.RouteId, routeKey, System.StringComparison.Ordinal)) continue;
             route = candidate;
             return true;
         }
@@ -279,33 +279,13 @@ public static class CombatAiMoveScorer
     {
         if (ally.HasIntendedDestination)
         {
-            if (IsNearAssaultRouteAnchor(context, ally.IntendedDestination, route, nearThreshold))
+            if (IsNearAssaultRouteCorridor(ally.IntendedDestination, route, nearThreshold))
             {
                 return true;
             }
         }
 
-        if (!CombatAiPositioning.IsAdvancingAlly(context, ally)) return false;
         return IsNearAssaultRouteCorridor(ally.CurrentPosition, route, nearThreshold);
-    }
-
-    private static bool IsNearAssaultRouteAnchor(
-        CombatAiContext context,
-        Vector3 position,
-        CombatAiAssaultRoute route,
-        float nearThreshold)
-    {
-        if (route.HasBridgeWaypoints)
-        {
-            if (HorizontalDistance(position, route.EnterWorld) <= nearThreshold) return true;
-            if (HorizontalDistance(position, route.ExitWorld) <= nearThreshold) return true;
-            return context.HasEnemyStonePosition &&
-                HorizontalDistance(position, context.EnemyStonePosition) <= nearThreshold + 2.5f &&
-                HorizontalDistance(position, route.ExitWorld) <= nearThreshold + 6f;
-        }
-
-        return context.HasEnemyStonePosition &&
-            HorizontalDistance(position, context.EnemyStonePosition) <= nearThreshold + 2.5f;
     }
 
     private static bool IsNearAssaultRouteCorridor(
@@ -313,12 +293,13 @@ public static class CombatAiMoveScorer
         CombatAiAssaultRoute route,
         float nearThreshold)
     {
-        if (!route.HasBridgeWaypoints)
+        if (route.Corners == null || route.Corners.Count < 2) return false;
+        for (int i = 0; i + 1 < route.Corners.Count; i++)
         {
-            return false;
+            if (DistanceToSegmentHorizontal(position, route.Corners[i], route.Corners[i + 1]) <= nearThreshold)
+                return true;
         }
-
-        return DistanceToSegmentHorizontal(position, route.EnterWorld, route.ExitWorld) <= nearThreshold;
+        return false;
     }
 
     private static float DistanceToSegmentHorizontal(Vector3 point, Vector3 a, Vector3 b)

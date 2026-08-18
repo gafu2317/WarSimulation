@@ -14,10 +14,6 @@ public static class CombatPlaytestDebugSettings
     public static bool CharacterRoutesShowAlly { get; private set; } = true;
     public static bool CharacterRoutesShowEnemy { get; private set; } = true;
 
-    public static CombatTeam AssaultAttackingTeam { get; private set; } = CombatTeam.Ally;
-    public static bool AssaultAllowRiverCrossing { get; private set; }
-    public static bool AssaultShowEndpointMarkers { get; private set; } = true;
-
     public static bool LabelShowObjective { get; private set; } = true;
     public static bool LabelShowWeapon { get; private set; } = true;
     public static bool LabelShowPersonality { get; private set; } = true;
@@ -36,25 +32,6 @@ public static class CombatPlaytestDebugSettings
 
     public static void SetCharacterRoutesShowAlly(bool value) => Set(CharacterRoutesShowAlly, v => CharacterRoutesShowAlly = v, value);
     public static void SetCharacterRoutesShowEnemy(bool value) => Set(CharacterRoutesShowEnemy, v => CharacterRoutesShowEnemy = v, value);
-
-    public static void SetAssaultAttackingTeam(CombatTeam value)
-    {
-        if (AssaultAttackingTeam == value)
-        {
-            ApplyToScene();
-            return;
-        }
-
-        AssaultAttackingTeam = value;
-        ApplyToScene();
-        Changed?.Invoke();
-    }
-
-    public static void SetAssaultAllowRiverCrossing(bool value) =>
-        Set(AssaultAllowRiverCrossing, v => AssaultAllowRiverCrossing = v, value);
-
-    public static void SetAssaultShowEndpointMarkers(bool value) =>
-        Set(AssaultShowEndpointMarkers, v => AssaultShowEndpointMarkers = v, value);
 
     public static void SetLabelShowObjective(bool value) => Set(LabelShowObjective, v => LabelShowObjective = v, value);
     public static void SetLabelShowWeapon(bool value) => Set(LabelShowWeapon, v => LabelShowWeapon = v, value);
@@ -75,15 +52,6 @@ public static class CombatPlaytestDebugSettings
     {
         CharacterRoutesShowAlly = true;
         CharacterRoutesShowEnemy = true;
-        ApplyToScene();
-        Changed?.Invoke();
-    }
-
-    public static void ResetAssaultRouteDetailsToDefault()
-    {
-        AssaultAttackingTeam = CombatTeam.Ally;
-        AssaultAllowRiverCrossing = false;
-        AssaultShowEndpointMarkers = true;
         ApplyToScene();
         Changed?.Invoke();
     }
@@ -116,7 +84,6 @@ public static class CombatPlaytestDebugSettings
         SetEnabled<CombatVisionDebugRayView>(ShowVision);
 
         ApplyDetails<CombatCharacterRouteDebugView>(view => view.ApplyPlaytestSettings());
-        ApplyDetails<CombatStoneAssaultRouteDebugView>(view => view.ApplyPlaytestSettings());
         ApplyDetails<CombatAiWorldLabelDebugView>(view => view.ApplyPlaytestSettings());
         ApplyDetails<CombatVisionDebugRayView>(view => view.ApplyPlaytestSettings());
 

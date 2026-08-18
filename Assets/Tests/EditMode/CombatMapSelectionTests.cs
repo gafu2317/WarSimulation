@@ -36,7 +36,8 @@ public sealed class CombatMapSelectionTests
         fixture.SetRoutes();
         AssertReason(fixture.Definition, false, CombatMapUnavailableReason.MissingPreview);
         fixture.SetPreview();
-        Assert.That(CombatMapAvailability.Evaluate(fixture.Definition, false).CanStartBattle, Is.True);
+        CombatMapAvailability ready = CombatMapAvailability.Evaluate(fixture.Definition, false);
+        Assert.That(ready.CanStartBattle, Is.True, $"{ready.Reason}: {ready.Message}");
 
         fixture.AddStone(FeatureType.OwnMainStone, new Vector2(2f, 2f));
         fixture.CaptureMap();
@@ -66,7 +67,23 @@ public sealed class CombatMapSelectionTests
         fixture.SetRoutes();
         AssertReason(fixture.Definition, false, CombatMapUnavailableReason.StalePreview);
         fixture.SetPreview();
-        Assert.That(CombatMapAvailability.Evaluate(fixture.Definition, false).CanStartBattle, Is.True);
+        CombatMapAvailability ready = CombatMapAvailability.Evaluate(fixture.Definition, false);
+        Assert.That(ready.CanStartBattle, Is.True, $"{ready.Reason}: {ready.Message}");
+    }
+
+    [Test]
+    public void CombatMapAvailabilityRejectsDeletedAuthoredRoutes()
+    {
+        using var fixture = new MapFixture();
+        fixture.AddPairedStones();
+        fixture.CaptureMap();
+        fixture.SetNavMesh();
+        fixture.SetRoutes();
+        fixture.SetPreview();
+
+        fixture.Definition.AssaultRoutes.Clear();
+
+        AssertReason(fixture.Definition, false, CombatMapUnavailableReason.MissingAssaultRoutes);
     }
 
     [Test]
@@ -290,16 +307,21 @@ public sealed class CombatMapSelectionTests
 
         public void SetRoutes()
         {
-            Definition.SetBakedAssaultRoutes(
-                new List<AuthoredBakedAssaultRoute>(),
-                new List<AuthoredBakedAssaultRoute>(),
-                Definition.ComputeBakeFingerprint());
+            Definition.AssaultRoutes.Clear();
+            Definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
+                "route-main", "Main", AuthoredAssaultRouteSource.Manual));
+            _bakedMap.CaptureAssaultRoutes(
+                new[]
+                {
+                    new AssaultRoute("route-main", "Main", new[] { Vector3.zero, Vector3.one }),
+                },
+                Definition.ComputeAssaultRouteFingerprint());
         }
 
         public void SetPreview()
         {
             if (_preview == null) _preview = new Texture2D(2, 2);
-            Definition.SetBakedPreview(_preview, Definition.ComputeBakeFingerprint());
+            Definition.SetBakedPreview(_preview, Definition.ComputeAssaultRouteFingerprint());
         }
 
         public void Dispose()

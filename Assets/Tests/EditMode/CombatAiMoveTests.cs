@@ -7,6 +7,24 @@ using static CombatEditModeTestUtil;
 public sealed class CombatAiMoveTests
 {
     [Test]
+    public void RouteProgress_SelectsCornerAheadOfCurrentPosition()
+    {
+        Vector3[] corners =
+        {
+            Vector3.zero,
+            new Vector3(4f, 0f, 0f),
+            new Vector3(8f, 0f, 0f),
+            new Vector3(12f, 0f, 0f),
+        };
+
+        bool found = CombatAiPlanner.TryFindNextRouteCorner(
+            new Vector3(6f, 0f, 0.5f), corners, 1f, out Vector3 destination);
+
+        Assert.That(found, Is.True);
+        Assert.That(destination, Is.EqualTo(new Vector3(8f, 0f, 0f)));
+    }
+
+    [Test]
     public void Planner_DoesNotMoveTowardDeadSupportTarget()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -276,10 +294,15 @@ public sealed class CombatAiMoveTests
                 assaultRoutes: new[]
                 {
                     new CombatAiAssaultRoute(
-                        bridgeFeatureIndex: 0,
-                        hasBridgeWaypoints: true,
-                        enterWorld: new Vector3(0f, 0f, 10f),
-                        exitWorld: new Vector3(2f, 0f, 10f)),
+                        "route-detour",
+                        "迂回",
+                        new[]
+                        {
+                            Vector3.zero,
+                            new Vector3(0f, 0f, 10f),
+                            new Vector3(2f, 0f, 10f),
+                            new Vector3(10f, 0f, 0f),
+                        }),
                 });
 
             CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, null);
@@ -315,8 +338,10 @@ public sealed class CombatAiMoveTests
             Vector3 routeBEnter = new Vector3(12f, 0f, 0f);
             CombatAiAssaultRoute[] routes =
             {
-                new CombatAiAssaultRoute(0, true, routeAEnter, new Vector3(0f, 0f, 14f)),
-                new CombatAiAssaultRoute(1, true, routeBEnter, new Vector3(14f, 0f, 0f)),
+                new CombatAiAssaultRoute(
+                    "route-a", "A", new[] { Vector3.zero, routeAEnter, new Vector3(0f, 0f, 14f) }),
+                new CombatAiAssaultRoute(
+                    "route-b", "B", new[] { Vector3.zero, routeBEnter, new Vector3(14f, 0f, 0f) }),
             };
             CombatAiContext context = CreatePlannerContext(
                 owner,

@@ -67,14 +67,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Button _debugAiLabelsButton;
     private Button _debugVisionButton;
     private Button _debugCharacterRoutesSettingsButton;
-    private Button _debugAssaultRoutesSettingsButton;
     private Button _debugAiLabelsSettingsButton;
     private Button _debugVisionSettingsButton;
     private RectTransform _headerRoot;
     private enum DebugSettingsKind
     {
         CharacterRoutes,
-        AssaultRoutes,
         AiLabels,
         Vision,
     }
@@ -410,7 +408,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ClearDebugToggle(_debugAiLabelsButton);
         ClearDebugToggle(_debugVisionButton);
         ClearDebugToggle(_debugCharacterRoutesSettingsButton);
-        ClearDebugToggle(_debugAssaultRoutesSettingsButton);
         ClearDebugToggle(_debugAiLabelsSettingsButton);
         ClearDebugToggle(_debugVisionSettingsButton);
         _debugCharacterRoutesButton = null;
@@ -418,7 +415,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _debugAiLabelsButton = null;
         _debugVisionButton = null;
         _debugCharacterRoutesSettingsButton = null;
-        _debugAssaultRoutesSettingsButton = null;
         _debugAiLabelsSettingsButton = null;
         _debugVisionSettingsButton = null;
         _headerRoot = null;
@@ -517,9 +513,9 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 CombatPlaytestDebugSettings.SetShowAssaultRoutes(!CombatPlaytestDebugSettings.ShowAssaultRoutes);
                 RefreshDebugToggleButtons();
             },
-            () => OpenDebugSettings(DebugSettingsKind.AssaultRoutes),
+            null,
             out _debugAssaultRoutesButton,
-            out _debugAssaultRoutesSettingsButton);
+            out _);
         CreateDebugControl(
             debugRow,
             "AiLabels",
@@ -571,12 +567,17 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         cellLayout.flexibleWidth = 1f;
         cellLayout.minWidth = 140f;
 
-        toggleButton = CreateButton(cell, objectName + "Toggle", 0f, 44f, onToggle, flexibleWidth: 1f);
-        settingsButton = CreateButton(cell, objectName + "Settings", 0f, 36f, onSettings, flexibleWidth: 1f);
+        float toggleHeight = onSettings != null ? 44f : 84f;
+        toggleButton = CreateButton(cell, objectName + "Toggle", 0f, toggleHeight, onToggle, flexibleWidth: 1f);
+        settingsButton = onSettings != null
+            ? CreateButton(cell, objectName + "Settings", 0f, 36f, onSettings, flexibleWidth: 1f)
+            : null;
         ConfigureToolbarLabel(toggleButton, 20f);
-        ConfigureToolbarLabel(settingsButton, 20f);
-        SetButtonLabel(settingsButton, "設定");
-        ConfigureToolbarLabel(settingsButton, 20f);
+        if (settingsButton != null)
+        {
+            SetButtonLabel(settingsButton, "設定");
+            ConfigureToolbarLabel(settingsButton, 20f);
+        }
     }
 
     private static RectTransform CreateHorizontalRow(
@@ -610,7 +611,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             FormatDebugToggle("移動の線", CombatPlaytestDebugSettings.ShowCharacterRoutes));
         SetButtonLabel(
             _debugAssaultRoutesButton,
-            FormatDebugToggle("魔石ルート", CombatPlaytestDebugSettings.ShowAssaultRoutes));
+            FormatDebugToggle("侵攻ルート", CombatPlaytestDebugSettings.ShowAssaultRoutes));
         SetButtonLabel(
             _debugAiLabelsButton,
             FormatDebugToggle("頭上テキスト", CombatPlaytestDebugSettings.ShowAiLabels));
@@ -666,47 +667,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                     value =>
                     {
                         CombatPlaytestDebugSettings.SetCharacterRoutesShowEnemy(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                break;
-
-            case DebugSettingsKind.AssaultRoutes:
-                SetPickerTitle("魔石ルート — 詳細設定");
-                SetPickerDescription("魔石から相手の魔石へ向かう、進攻の道候補を見られます。");
-                AddDebugBoolOption(
-                    "味方が敵の魔石へ向かう道を出す",
-                    CombatPlaytestDebugSettings.AssaultAttackingTeam == CombatTeam.Ally,
-                    "味方の魔石を起点に、敵の魔石までの道を出します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetAssaultAttackingTeam(value ? CombatTeam.Ally : CombatTeam.Enemy);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "敵が味方の魔石へ向かう道を出す",
-                    CombatPlaytestDebugSettings.AssaultAttackingTeam == CombatTeam.Enemy,
-                    "敵の魔石を起点に、味方の魔石までの道を出します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetAssaultAttackingTeam(value ? CombatTeam.Enemy : CombatTeam.Ally);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "川を渡る道も候補に含める",
-                    CombatPlaytestDebugSettings.AssaultAllowRiverCrossing,
-                    "通常は川を避けます。ONにすると、川越えの道も候補に入ります。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetAssaultAllowRiverCrossing(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "道の入口と出口を点で示す",
-                    CombatPlaytestDebugSettings.AssaultShowEndpointMarkers,
-                    "ルートの始まり・終わりや橋の近くを、点でわかりやすく示します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetAssaultShowEndpointMarkers(value);
                         RebuildDebugSettingsPicker(kind);
                     });
                 break;
@@ -792,9 +752,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             case DebugSettingsKind.CharacterRoutes:
                 CombatPlaytestDebugSettings.ResetCharacterRouteDetailsToDefault();
-                break;
-            case DebugSettingsKind.AssaultRoutes:
-                CombatPlaytestDebugSettings.ResetAssaultRouteDetailsToDefault();
                 break;
             case DebugSettingsKind.AiLabels:
                 CombatPlaytestDebugSettings.ResetLabelDetailsToDefault();

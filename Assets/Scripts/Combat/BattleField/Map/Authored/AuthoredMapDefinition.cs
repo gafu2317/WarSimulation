@@ -5,8 +5,35 @@ using UnityEngine.AI;
 
 namespace WarSimulation.Combat.Map
 {
+    public enum AuthoredAssaultRouteSource
+    {
+        Auto,
+        Manual,
+    }
+
+    [Serializable]
+    public sealed class AuthoredAssaultRoute
+    {
+        public string RouteId;
+        public string DisplayName;
+        public AuthoredAssaultRouteSource Source;
+        public List<Vector2> Waypoints = new();
+
+        public AuthoredAssaultRoute(
+            string routeId,
+            string displayName,
+            AuthoredAssaultRouteSource source,
+            IEnumerable<Vector2> waypoints = null)
+        {
+            RouteId = routeId ?? string.Empty;
+            DisplayName = displayName ?? string.Empty;
+            Source = source;
+            Waypoints = waypoints != null ? new List<Vector2>(waypoints) : new List<Vector2>();
+        }
+    }
+
     /// <summary>
-    /// Editor ベイク済みの進攻ルート 1 本分（マップローカル座標）。
+    /// Editor ベイク済みの侵攻ルート 1 本分（マップローカル座標）。
     /// </summary>
     [Serializable]
     public struct AuthoredBakedAssaultRoute
@@ -44,10 +71,14 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private NavMeshData _bakedNavMesh;
         [SerializeField] private int _navMeshBakeFingerprint;
         [SerializeField] private BakedMapData _bakedMapData;
-        [SerializeField] private List<AuthoredBakedAssaultRoute> _bakedAllyAssaultRoutes = new();
-        [SerializeField] private List<AuthoredBakedAssaultRoute> _bakedEnemyAssaultRoutes = new();
-        [SerializeField] private int _assaultRouteBakeFingerprint;
-        [SerializeField] private bool _hasBakedAssaultRoutes;
+        [SerializeField, HideInInspector] private List<AuthoredBakedAssaultRoute> _bakedAllyAssaultRoutes = new();
+        [SerializeField, HideInInspector] private List<AuthoredBakedAssaultRoute> _bakedEnemyAssaultRoutes = new();
+        [SerializeField, HideInInspector] private int _assaultRouteBakeFingerprint;
+        [SerializeField, HideInInspector] private bool _hasBakedAssaultRoutes;
+        [SerializeField, HideInInspector] private bool _legacyAssaultRoutesMigrated;
+
+        [Header("Assault Routes")]
+        [SerializeField] private List<AuthoredAssaultRoute> _assaultRoutes = new();
 
         [Header("Baked Preview")]
         [SerializeField] private Texture2D _bakedPreview;
@@ -94,23 +125,35 @@ namespace WarSimulation.Combat.Map
         public List<AuthoredPointFeaturePlacement> Trees => _trees;
         public List<AuthoredPointFeaturePlacement> Rocks => _rocks;
         public List<AuthoredMagicStonePlacement> MagicStones => _magicStones;
+        public List<AuthoredAssaultRoute> AssaultRoutes => _assaultRoutes;
 
         public bool HasValidBakedNavMesh =>
-            _bakedNavMesh != null && _navMeshBakeFingerprint == ComputeBakeFingerprint();
+            _bakedNavMesh != null && _navMeshBakeFingerprint == ComputeGeometryFingerprint();
 
         public bool HasValidBakedMapData =>
-            _bakedMapData != null && _bakedMapData.IsValidFor(ComputeBakeFingerprint());
+            _bakedMapData != null && _bakedMapData.IsValidFor(ComputeGeometryFingerprint());
 
         public bool HasValidBakedAssaultRoutes =>
-            _hasBakedAssaultRoutes && _assaultRouteBakeFingerprint == ComputeBakeFingerprint();
+            (_bakedMapData != null && _bakedMapData.HasValidAssaultRoutes(ComputeAssaultRouteFingerprint())) ||
+            HasValidLegacyBakedAssaultRoutes;
 
-        public bool HasBakedAssaultRoutesData => _hasBakedAssaultRoutes;
+        public bool HasValidLegacyBakedAssaultRoutes =>
+            (_assaultRoutes == null || _assaultRoutes.Count == 0) &&
+            _hasBakedAssaultRoutes && _bakedAllyAssaultRoutes != null && _bakedAllyAssaultRoutes.Count > 0 &&
+            _assaultRouteBakeFingerprint == ComputeGeometryFingerprint();
+
+        public bool HasBakedAssaultRoutesData =>
+            (_bakedMapData != null && _bakedMapData.HasAssaultRoutesData) ||
+            ((_assaultRoutes == null || _assaultRoutes.Count == 0) && _hasBakedAssaultRoutes);
 
         public bool HasValidBakedPreview =>
-            _bakedPreview != null && _previewBakeFingerprint == ComputeBakeFingerprint();
+            _bakedPreview != null && _previewBakeFingerprint ==
+                ((_assaultRoutes != null && _assaultRoutes.Count > 0)
+                    ? ComputeAssaultRouteFingerprint()
+                    : ComputeGeometryFingerprint());
 
         /// <summary>マップ内容が変わると変わる fingerprint。ベイク鮮度判定用（Editor/Runtime で同一・決定的）。</summary>
-        public int ComputeBakeFingerprint()
+        public int ComputeGeometryFingerprint()
         {
             unchecked
             {
@@ -125,6 +168,76 @@ namespace WarSimulation.Combat.Map
                 hash = MixMagicStones(hash, _magicStones);
                 return hash;
             }
+        }
+
+        public int ComputeAssaultRouteFingerprint()
+        {
+            unchecked
+            {
+                int hash = ComputeGeometryFingerprint();
+                hash = Mix(hash, _assaultRoutes != null ? _assaultRoutes.Count : 0);
+                if (_assaultRoutes == null) return hash;
+                for (int i = 0; i < _assaultRoutes.Count; i++)
+                {
+                    AuthoredAssaultRoute route = _assaultRoutes[i];
+                    if (route == null) continue;
+                    hash = Mix(hash, StableStringHash(route.RouteId));
+                    hash = Mix(hash, StableStringHash(route.DisplayName));
+                    hash = Mix(hash, (int)route.Source);
+                    hash = Mix(hash, route.Waypoints != null ? route.Waypoints.Count : 0);
+                    if (route.Waypoints == null) continue;
+                    for (int p = 0; p < route.Waypoints.Count; p++)
+                        hash = Mix(hash, route.Waypoints[p]);
+                }
+
+                return hash;
+            }
+        }
+
+        public int ComputeBakeFingerprint() => ComputeGeometryFingerprint();
+
+        public bool MigrateLegacyAssaultRoutes()
+        {
+            if (_legacyAssaultRoutesMigrated) return false;
+            _assaultRoutes ??= new List<AuthoredAssaultRoute>();
+            if (_assaultRoutes.Count == 0 && _hasBakedAssaultRoutes && _bakedAllyAssaultRoutes != null)
+            {
+                for (int i = 0; i < _bakedAllyAssaultRoutes.Count; i++)
+                {
+                    AuthoredBakedAssaultRoute legacy = _bakedAllyAssaultRoutes[i];
+                    bool direct = !legacy.HasBridgeWaypoints;
+                    var waypoints = new List<Vector2>();
+                    if (!direct)
+                    {
+                        waypoints.Add(new Vector2(legacy.EnterLocal.x, legacy.EnterLocal.z));
+                        waypoints.Add(new Vector2(legacy.ExitLocal.x, legacy.ExitLocal.z));
+                    }
+
+                    int bridgeIndex = FindAuthoredBridgeIndex(legacy.BridgeFeatureIndex);
+                    string id = direct ? "auto:direct" : $"auto:bridge:{bridgeIndex}";
+                    _assaultRoutes.Add(new AuthoredAssaultRoute(
+                        id,
+                        direct ? "直進" : $"橋ルート {bridgeIndex + 1}",
+                        AuthoredAssaultRouteSource.Auto,
+                        waypoints));
+                }
+            }
+
+            _legacyAssaultRoutesMigrated = true;
+            return true;
+        }
+
+        private int FindAuthoredBridgeIndex(int legacyBridgeFeatureIndex)
+        {
+            if (_bridges == null) return legacyBridgeFeatureIndex;
+            int featureIndex = -1;
+            for (int i = 0; i < _bridges.Count; i++)
+            {
+                if (_bridges[i] == null) continue;
+                featureIndex++;
+                if (featureIndex == legacyBridgeFeatureIndex) return i;
+            }
+            return legacyBridgeFeatureIndex;
         }
 
         private static int MixConfig(int hash, MapConfig config)

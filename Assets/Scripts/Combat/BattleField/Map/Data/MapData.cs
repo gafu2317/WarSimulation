@@ -30,6 +30,7 @@ namespace WarSimulation.Combat.Map
         public List<LakeRegion> Lakes { get; }
         public List<MountainRegion> Mountains { get; }
         public List<ForestRegion> ForestRegions { get; }
+        public List<AssaultRoute> AssaultRoutes { get; }
         public int Seed { get; }
 
         /// <summary>
@@ -48,6 +49,7 @@ namespace WarSimulation.Combat.Map
             Lakes = new List<LakeRegion>();
             Mountains = new List<MountainRegion>();
             ForestRegions = new List<ForestRegion>();
+            AssaultRoutes = new List<AssaultRoute>();
         }
 
         public void AddFeature(PlacedFeature feature) => Features.Add(feature);
@@ -59,6 +61,11 @@ namespace WarSimulation.Combat.Map
         public void AddMountain(MountainRegion mountain) => Mountains.Add(mountain);
 
         public void AddForestRegion(ForestRegion region) => ForestRegions.Add(region);
+
+        public void AddAssaultRoute(AssaultRoute route)
+        {
+            if (route != null) AssaultRoutes.Add(route);
+        }
 
         public string GetBiomeId(int x, int z)
         {

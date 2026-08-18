@@ -15,7 +15,7 @@ public readonly struct CombatMoveTarget
     public Vector3 Destination { get; }
     public Character TargetCharacter { get; }
     public bool HasAssaultRouteKey { get; }
-    public int AssaultRouteKey { get; }
+    public string AssaultRouteKey { get; }
     public bool HasDestination => Kind == CombatMoveTargetKind.Position || Kind == CombatMoveTargetKind.Character;
 
     private CombatMoveTarget(CombatMoveTargetKind kind)
@@ -24,10 +24,10 @@ public readonly struct CombatMoveTarget
         Destination = default;
         TargetCharacter = null;
         HasAssaultRouteKey = false;
-        AssaultRouteKey = 0;
+        AssaultRouteKey = null;
     }
 
-    private CombatMoveTarget(Vector3 destination, bool hasAssaultRouteKey, int assaultRouteKey)
+    private CombatMoveTarget(Vector3 destination, bool hasAssaultRouteKey, string assaultRouteKey)
     {
         Kind = CombatMoveTargetKind.Position;
         Destination = destination;
@@ -42,15 +42,15 @@ public readonly struct CombatMoveTarget
         TargetCharacter = target;
         Destination = target != null ? target.transform.position : default;
         HasAssaultRouteKey = false;
-        AssaultRouteKey = 0;
+        AssaultRouteKey = null;
     }
 
     public static CombatMoveTarget ForPosition(Vector3 destination)
     {
-        return new CombatMoveTarget(destination, false, 0);
+        return new CombatMoveTarget(destination, false, null);
     }
 
-    public static CombatMoveTarget ForPosition(Vector3 destination, int assaultRouteKey)
+    public static CombatMoveTarget ForPosition(Vector3 destination, string assaultRouteKey)
     {
         return new CombatMoveTarget(destination, true, assaultRouteKey);
     }

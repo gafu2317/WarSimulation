@@ -11,38 +11,11 @@ public static class CombatStoneAssaultRoutes
 {
     public sealed class Candidate
     {
-        public string Label;
         public int BridgeFeatureIndex;
         public List<Vector3> Corners;
         public bool HasBridgeWaypoints;
         public Vector3 EnterWorld;
         public Vector3 ExitWorld;
-    }
-
-    public readonly struct BridgeEndpointDebug
-    {
-        public readonly int FeatureIndex;
-        public readonly Vector3 IdealA;
-        public readonly Vector3 IdealB;
-        public readonly Vector3 SampledA;
-        public readonly Vector3 SampledB;
-        public readonly bool Sampled;
-
-        public BridgeEndpointDebug(
-            int featureIndex,
-            Vector3 idealA,
-            Vector3 idealB,
-            Vector3 sampledA,
-            Vector3 sampledB,
-            bool sampled)
-        {
-            FeatureIndex = featureIndex;
-            IdealA = idealA;
-            IdealB = idealB;
-            SampledA = sampledA;
-            SampledB = sampledB;
-            Sampled = sampled;
-        }
     }
 
     public sealed class BuildSettings
@@ -57,8 +30,7 @@ public static class CombatStoneAssaultRoutes
         Vector3 startWorld,
         Vector3 goalWorld,
         int areaMask,
-        BuildSettings settings = null,
-        List<BridgeEndpointDebug> endpointDebug = null)
+        BuildSettings settings = null)
     {
         settings ??= new BuildSettings();
         var candidates = new List<Candidate>();
@@ -71,11 +43,9 @@ public static class CombatStoneAssaultRoutes
         {
             candidates.Add(new Candidate
             {
-                Label = "直進",
                 BridgeFeatureIndex = -1,
                 Corners = direct,
             });
-            CollectBridgeEndpointDebug(map, mapOrigin, areaMask, settings, endpointDebug);
             return candidates;
         }
 
@@ -90,13 +60,6 @@ public static class CombatStoneAssaultRoutes
             Vector3 b = idealB;
             bool sampled = TrySamplePosition(idealA, sampleRadius, areaMask, out a) &&
                 TrySamplePosition(idealB, sampleRadius, areaMask, out b);
-            endpointDebug?.Add(new BridgeEndpointDebug(
-                featureIndex,
-                idealA,
-                idealB,
-                a,
-                b,
-                sampled));
             if (!sampled) continue;
 
             if (!TryBuildBridgeRoute(
@@ -124,7 +87,6 @@ public static class CombatStoneAssaultRoutes
         {
             candidates.Add(new Candidate
             {
-                Label = "直進",
                 BridgeFeatureIndex = -1,
                 Corners = direct,
             });
@@ -133,50 +95,8 @@ public static class CombatStoneAssaultRoutes
         return candidates;
     }
 
-    private static void CollectBridgeEndpointDebug(
-        MapData map,
-        Transform mapOrigin,
-        int areaMask,
-        BuildSettings settings,
-        List<BridgeEndpointDebug> endpointDebug)
+    public static int CreateAreaMask()
     {
-        if (endpointDebug == null) return;
-        for (int featureIndex = 0; featureIndex < map.Features.Count; featureIndex++)
-        {
-            PlacedFeature bridge = map.Features[featureIndex];
-            if (bridge.Type != FeatureType.Bridge || bridge.Scale.z <= 0f) continue;
-            GetBridgeEndpointIdeals(bridge, mapOrigin, settings, out Vector3 idealA, out Vector3 idealB);
-            float sampleRadius = GetEndpointSampleRadius(bridge, settings);
-            Vector3 a = idealA;
-            Vector3 b = idealB;
-            bool sampled = TrySamplePosition(idealA, sampleRadius, areaMask, out a) &&
-                TrySamplePosition(idealB, sampleRadius, areaMask, out b);
-            endpointDebug.Add(new BridgeEndpointDebug(
-                featureIndex,
-                idealA,
-                idealB,
-                a,
-                b,
-                sampled));
-        }
-    }
-
-    public static List<Candidate> TakeUpTo(List<Candidate> candidates, int maximumCount)
-    {
-        var selected = new List<Candidate>();
-        if (candidates == null || maximumCount <= 0) return selected;
-        for (int i = 0; i < candidates.Count && selected.Count < maximumCount; i++)
-        {
-            selected.Add(candidates[i]);
-        }
-
-        return selected;
-    }
-
-    public static int CreateAreaMask(bool allowRiverCrossing)
-    {
-        if (allowRiverCrossing) return NavMesh.AllAreas;
-
         int areaMask = NavMesh.AllAreas;
         int riverArea = NavMesh.GetAreaFromName(CombatNavMeshAreaGridBuilder.RiverAreaName);
         int lakeArea = NavMesh.GetAreaFromName(CombatNavMeshAreaGridBuilder.LakeAreaName);
@@ -239,7 +159,6 @@ public static class CombatStoneAssaultRoutes
 
         candidate = new Candidate
         {
-            Label = "橋" + featureIndex,
             BridgeFeatureIndex = featureIndex,
             Corners = corners,
             HasBridgeWaypoints = true,

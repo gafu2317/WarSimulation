@@ -15,8 +15,10 @@ namespace WarSimulation.Tests.EditMode
             try
             {
                 baked.Capture(source, 42);
+                baked.CaptureAssaultRoutes(source.AssaultRoutes, 84);
 
                 Assert.That(baked.IsValidFor(42), Is.True);
+                Assert.That(baked.HasValidAssaultRoutes(84), Is.True);
                 MapData loaded = baked.CreateRuntimeMap();
 
                 Assert.That(loaded.Height.Width, Is.EqualTo(source.Height.Width));
@@ -50,6 +52,31 @@ namespace WarSimulation.Tests.EditMode
                 Assert.That(loaded.Mountains[0].Kind, Is.EqualTo(source.Mountains[0].Kind));
                 Assert.That(loaded.ForestRegions.Count, Is.EqualTo(source.ForestRegions.Count));
                 Assert.That(loaded.ForestRegions[0].Center, Is.EqualTo(source.ForestRegions[0].Center));
+                Assert.That(loaded.AssaultRoutes.Count, Is.EqualTo(1));
+                Assert.That(loaded.AssaultRoutes[0].RouteId, Is.EqualTo("route-main"));
+                Assert.That(loaded.AssaultRoutes[0].Corners, Is.EqualTo(
+                    new[] { Vector3.zero, Vector3.one }));
+            }
+            finally
+            {
+                Object.DestroyImmediate(baked);
+            }
+        }
+
+        [Test]
+        public void InvalidateAssaultRoutesStopsRuntimeRestoration()
+        {
+            MapData source = CreateMap();
+            BakedMapData baked = ScriptableObject.CreateInstance<BakedMapData>();
+            try
+            {
+                baked.Capture(source, 42);
+                baked.CaptureAssaultRoutes(source.AssaultRoutes, 84);
+
+                baked.InvalidateAssaultRoutes();
+
+                Assert.That(baked.HasValidAssaultRoutes(84), Is.False);
+                Assert.That(baked.CreateRuntimeMap().AssaultRoutes, Is.Empty);
             }
             finally
             {
@@ -117,6 +144,8 @@ namespace WarSimulation.Tests.EditMode
                 0.25f,
                 null));
             map.AddForestRegion(new ForestRegion(new Vector2(2f, 4f), 5f, 0.15f, 0.2f));
+            map.AddAssaultRoute(new AssaultRoute(
+                "route-main", "Main", new[] { Vector3.zero, Vector3.one }));
             return map;
         }
     }

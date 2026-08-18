@@ -70,13 +70,13 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateEnemyStoneTarget(CombatAiContext context)
     {
-        return CreateEnemyStoneTarget(context, hasAssaultRouteKey: false, assaultRouteKey: 0);
+        return CreateEnemyStoneTarget(context, hasAssaultRouteKey: false, assaultRouteKey: null);
     }
 
     private static CombatMoveTarget CreateEnemyStoneTarget(
         CombatAiContext context,
         bool hasAssaultRouteKey,
-        int assaultRouteKey)
+        string assaultRouteKey)
     {
         if (!context.HasEnemyStonePosition || context.Owner == null) return CombatMoveTarget.None;
 
@@ -124,30 +124,62 @@ public static partial class CombatAiPlanner
 
         const float arriveThreshold = 2f;
         Vector3 ownerPosition = context.Owner.transform.position;
-        int routeKey = route.BridgeFeatureIndex;
-
-        if (route.HasBridgeWaypoints)
+        if (TryFindNextRouteCorner(ownerPosition, route.Corners, arriveThreshold, out Vector3 nextCorner))
         {
-            if (HorizontalDistance(ownerPosition, route.EnterWorld) > arriveThreshold)
-            {
-                code = CombatAiMoveCode.AdvanceViaBridge;
-                japanese = "橋を経由して敵魔石へ前進";
-                target = CombatMoveTarget.ForPosition(route.EnterWorld, routeKey);
-                return;
-            }
-
-            if (HorizontalDistance(ownerPosition, route.ExitWorld) > arriveThreshold)
-            {
-                code = CombatAiMoveCode.AdvanceViaBridge;
-                japanese = "橋を経由して敵魔石へ前進";
-                target = CombatMoveTarget.ForPosition(route.ExitWorld, routeKey);
-                return;
-            }
+            code = CombatAiMoveCode.AdvanceViaBridge;
+            japanese = "進攻ルートを経由して敵魔石へ前進";
+            target = CombatMoveTarget.ForPosition(nextCorner, route.RouteId);
+            return;
         }
 
         code = CombatAiMoveCode.AdvanceEnemyStone;
         japanese = "敵魔石へ前進";
-        target = CreateEnemyStoneTarget(context, hasAssaultRouteKey: true, assaultRouteKey: routeKey);
+        target = CreateEnemyStoneTarget(context, hasAssaultRouteKey: true, assaultRouteKey: route.RouteId);
+    }
+
+    public static bool TryFindNextRouteCorner(
+        Vector3 position,
+        IReadOnlyList<Vector3> corners,
+        float arriveThreshold,
+        out Vector3 destination)
+    {
+        destination = default;
+        if (corners == null || corners.Count < 2) return false;
+
+        float bestDistance = float.PositiveInfinity;
+        float bestProgress = 0f;
+        float progress = 0f;
+        for (int i = 0; i < corners.Count - 1; i++)
+        {
+            Vector2 a = new(corners[i].x, corners[i].z);
+            Vector2 b = new(corners[i + 1].x, corners[i + 1].z);
+            Vector2 p = new(position.x, position.z);
+            Vector2 segment = b - a;
+            float length = segment.magnitude;
+            float t = length > 0.0001f
+                ? Mathf.Clamp01(Vector2.Dot(p - a, segment) / (length * length))
+                : 0f;
+            float distance = Vector2.Distance(p, a + segment * t);
+            float candidateProgress = progress + length * t;
+            if (distance < bestDistance - 0.0001f ||
+                (Mathf.Abs(distance - bestDistance) <= 0.0001f && candidateProgress > bestProgress))
+            {
+                bestDistance = distance;
+                bestProgress = candidateProgress;
+            }
+            progress += length;
+        }
+
+        progress = 0f;
+        for (int i = 1; i < corners.Count; i++)
+        {
+            progress += HorizontalDistance(corners[i - 1], corners[i]);
+            if (progress <= bestProgress + arriveThreshold) continue;
+            destination = corners[i];
+            return true;
+        }
+
+        return false;
     }
 
     private static CombatMoveTarget CreateOwnStoneTarget(CombatAiContext context)

@@ -16,6 +16,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         River,
         Bridge,
         MagicStone,
+        AssaultRoute,
     }
 
     public enum MapAuthoringSelectionKind
@@ -28,6 +29,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         River,
         Bridge,
         MagicStone,
+        AssaultRoute,
     }
 
     public enum MapAuthoringRightTab
@@ -78,11 +80,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private bool _hasPendingRiverStart;
         private Vector2 _pendingRiverStart;
         private int _selectionEndpoint = -1;
+        private int _selectedAssaultRoute = -1;
+        private int _selectedAssaultWaypoint = -1;
+        private List<CombatAssaultRouteValidationFailure> _assaultRouteFailures = new();
+        private List<AssaultRoute> _validatedPreviewRoutes = new();
 
         private Texture2D _previewTex;
         private MapData _lastPreviewMap;
         private double _rebuildAt;
         private bool _rebuildQueued;
+        private bool _assaultRouteValidationQueued;
         private string _status;
         private Vector2 _paletteScroll;
         private Vector2 _listScroll;
@@ -90,6 +97,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private Vector2 _sharedScroll;
         private Vector2 _stampDetailScroll;
         private bool _dragging;
+        private bool _assaultWaypointInsertedDuringDrag;
+        private Vector2 _assaultWaypointPositionBeforeDrag;
+        private AuthoredAssaultRouteSource _assaultRouteSourceBeforeDrag;
+        private string _assaultRouteIdBeforeDrag;
+        private AuthoredMapBakeStatus _bakeStatus;
         private Editor _sharedConfigEditor;
         private Editor _stampEditor;
 
@@ -127,6 +139,10 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private void OnUndoRedo()
         {
+            _status = null;
+            _assaultRouteFailures.Clear();
+            if (_definition != null && _definition.AssaultRoutes.Count > 0)
+                _assaultRouteValidationQueued = true;
             QueuePreviewRebuild();
             Repaint();
         }
@@ -134,6 +150,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private void OnEditorUpdate()
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+            if (_assaultRouteValidationQueued)
+            {
+                _assaultRouteValidationQueued = false;
+                ValidateAssaultRoutes();
+            }
             if (!_rebuildQueued) return;
             if (EditorApplication.timeSinceStartup < _rebuildAt) return;
             _rebuildQueued = false;
@@ -143,6 +164,9 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private void OnGUI()
         {
+            _bakeStatus = AuthoredMapBakeStatus.Evaluate(
+                _definition,
+                Object.FindAnyObjectByType<MapSceneHost>());
             DrawToolbar();
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -165,6 +189,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     ClearPendingRiverStart();
                     DestroyCachedEditors();
                     QueuePreviewRebuild(immediate: true);
+                    if (_tool == MapAuthoringTool.AssaultRoute &&
+                        _definition != null && _definition.AssaultRoutes.Count > 0)
+                    {
+                        _assaultRouteValidationQueued = true;
+                    }
                 }
 
                 if (GUILayout.Button("新規", EditorStyles.toolbarButton, GUILayout.Width(44f)))
@@ -175,8 +204,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     ReloadStampPalette();
 
                 GUILayout.FlexibleSpace();
+                Color previousBackground = GUI.backgroundColor;
+                if (RequiresGeometryBake()) GUI.backgroundColor = new Color(1f, 0.72f, 0.25f);
                 if (GUILayout.Button("シーンへ3D反映", EditorStyles.toolbarButton, GUILayout.Width(110f)))
                     ApplyToScene3D();
+                GUI.backgroundColor = previousBackground;
             }
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
@@ -189,6 +221,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 DrawToolToggle(MapAuthoringTool.River, "川");
                 DrawToolToggle(MapAuthoringTool.Bridge, "橋");
                 DrawToolToggle(MapAuthoringTool.MagicStone, "魔石");
+                DrawToolToggle(MapAuthoringTool.AssaultRoute, "侵攻ルート");
                 GUILayout.FlexibleSpace();
                 if (!string.IsNullOrEmpty(_status))
                     GUILayout.Label(_status, EditorStyles.miniLabel);
@@ -203,6 +236,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 _tool = tool;
                 ClearPendingRiverStart();
                 SyncStampKindFromTool();
+                if (tool == MapAuthoringTool.AssaultRoute &&
+                    _definition != null && _definition.AssaultRoutes.Count > 0)
+                {
+                    _assaultRouteValidationQueued = true;
+                }
             }
         }
 
@@ -243,6 +281,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 EditorGUI.DrawRect(localDraw, new Color(0.25f, 0.45f, 0.28f, 1f));
 
             DrawPlacementMarkersLocal(localDraw, world);
+            DrawAssaultRoutesLocal(localDraw, world);
             DrawPendingRiverLocal(localDraw, world, rect);
             GUI.EndClip();
 
@@ -386,6 +425,290 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
         }
 
+        private void DrawAssaultRoutesLocal(Rect localDraw, float world)
+        {
+            if (_definition == null) return;
+            var colors = new[]
+            {
+                new Color(1f, 0.85f, 0.2f),
+                new Color(0.2f, 0.85f, 1f),
+                new Color(1f, 0.35f, 0.85f),
+                new Color(0.5f, 1f, 0.3f),
+            };
+
+            for (int i = 0; i < _validatedPreviewRoutes.Count; i++)
+            {
+                AssaultRoute route = _validatedPreviewRoutes[i];
+                Color routeColor = colors[i % colors.Length];
+                DrawRoutePolyline(
+                    localDraw, world, route.Corners, width: 10f, new Color(0f, 0f, 0f, 0.75f));
+                DrawRoutePolyline(localDraw, world, route.Corners, width: 6f, routeColor);
+                if (_tool == MapAuthoringTool.AssaultRoute &&
+                    _selectedAssaultRoute >= 0 &&
+                    _selectedAssaultRoute < _definition.AssaultRoutes.Count &&
+                    _definition.AssaultRoutes[_selectedAssaultRoute].RouteId == route.RouteId)
+                {
+                    DrawRouteArrow(localDraw, world, route.Corners, routeColor);
+                }
+            }
+
+            if (TryGetAuthoredStoneCenter(FeatureType.OwnMainStone, out Vector2 own) &&
+                TryGetAuthoredStoneCenter(FeatureType.EnemyMainStone, out Vector2 enemy))
+            {
+                for (int i = 0; i < _definition.AssaultRoutes.Count; i++)
+                {
+                    AuthoredAssaultRoute route = _definition.AssaultRoutes[i];
+                    if (route == null) continue;
+                    var points = new List<Vector2> { own };
+                    if (route.Waypoints != null) points.AddRange(route.Waypoints);
+                    points.Add(enemy);
+                    CombatAssaultRouteValidationFailure? failure = FindFailure(route.RouteId);
+                    if (failure.HasValue && failure.Value.SegmentIndex >= 0 &&
+                        failure.Value.SegmentIndex + 1 < points.Count)
+                    {
+                        int segment = failure.Value.SegmentIndex;
+                        Vector2 a = MapAuthoringPreview2D.MapToGui(localDraw, points[segment], world);
+                        Vector2 b = MapAuthoringPreview2D.MapToGui(localDraw, points[segment + 1], world);
+                        DrawGuiLine(a, b, 10f, new Color(0f, 0f, 0f, 0.75f));
+                        DrawGuiLine(a, b, 6f, Color.red);
+                    }
+
+                    if (_tool != MapAuthoringTool.AssaultRoute || _selectedAssaultRoute != i) continue;
+                    Color waypointColor = colors[i % colors.Length];
+                    for (int p = 0; p < route.Waypoints.Count; p++)
+                    {
+                        Vector2 gui = MapAuthoringPreview2D.MapToGui(localDraw, route.Waypoints[p], world);
+                        float size = _selectedAssaultWaypoint == p ? 12f : 8f;
+                        EditorGUI.DrawRect(
+                            new Rect(gui.x - size * 0.5f, gui.y - size * 0.5f, size, size),
+                            _selectedAssaultWaypoint == p ? Color.white : waypointColor);
+                    }
+
+                }
+            }
+        }
+
+        private static void DrawRoutePolyline(
+            Rect localDraw,
+            float world,
+            IReadOnlyList<Vector3> corners,
+            float width,
+            Color color)
+        {
+            if (corners == null) return;
+            for (int i = 0; i + 1 < corners.Count; i++)
+            {
+                Vector2 a = MapAuthoringPreview2D.MapToGui(
+                    localDraw, new Vector2(corners[i].x, corners[i].z), world);
+                Vector2 b = MapAuthoringPreview2D.MapToGui(
+                    localDraw, new Vector2(corners[i + 1].x, corners[i + 1].z), world);
+                DrawGuiLine(a, b, width, color);
+            }
+        }
+
+        private static void DrawRouteArrow(
+            Rect localDraw,
+            float world,
+            IReadOnlyList<Vector3> points,
+            Color color)
+        {
+            if (points == null || points.Count < 2) return;
+            Vector3 end = points[points.Count - 1];
+            Vector3 beforeEnd = points[points.Count - 2];
+            Vector2 tip = MapAuthoringPreview2D.MapToGui(localDraw, new Vector2(end.x, end.z), world);
+            Vector2 previous = MapAuthoringPreview2D.MapToGui(
+                localDraw, new Vector2(beforeEnd.x, beforeEnd.z), world);
+            Vector2 direction = (tip - previous).normalized;
+            Vector2 side = new(-direction.y, direction.x);
+            DrawGuiLine(tip, tip - direction * 12f + side * 6f, 3f, color);
+            DrawGuiLine(tip, tip - direction * 12f - side * 6f, 3f, color);
+        }
+
+        private static void DrawGuiLine(Vector2 start, Vector2 end, float width, Color color)
+        {
+            Vector2 delta = end - start;
+            if (delta.sqrMagnitude <= Mathf.Epsilon) return;
+
+            Matrix4x4 previousMatrix = GUI.matrix;
+            try
+            {
+                float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+                GUIUtility.RotateAroundPivot(angle, start);
+                EditorGUI.DrawRect(
+                    new Rect(start.x, start.y - width * 0.5f, delta.magnitude, width),
+                    color);
+            }
+            finally
+            {
+                GUI.matrix = previousMatrix;
+            }
+        }
+
+        private CombatAssaultRouteValidationFailure? FindFailure(string routeId)
+        {
+            for (int i = 0; i < _assaultRouteFailures.Count; i++)
+            {
+                if (_assaultRouteFailures[i].RouteId == routeId) return _assaultRouteFailures[i];
+            }
+            return null;
+        }
+
+        private bool TryGetAuthoredStoneCenter(FeatureType type, out Vector2 center)
+        {
+            center = default;
+            for (int i = 0; i < _definition.MagicStones.Count; i++)
+            {
+                AuthoredMagicStonePlacement stone = _definition.MagicStones[i];
+                if (stone == null || stone.Type != type) continue;
+                center = stone.Center;
+                return true;
+            }
+            return false;
+        }
+
+        private void HandleAssaultRouteInput(Rect drawRect, float world)
+        {
+            Event e = Event.current;
+            int id = GUIUtility.GetControlID(FocusType.Passive);
+            if (e.type == EventType.KeyDown &&
+                (e.keyCode == KeyCode.Delete || e.keyCode == KeyCode.Backspace))
+            {
+                DeleteSelectedAssaultWaypoint();
+                e.Use();
+                return;
+            }
+
+            if (_selectedAssaultRoute < 0 || _selectedAssaultRoute >= _definition.AssaultRoutes.Count)
+                return;
+            AuthoredAssaultRoute route = _definition.AssaultRoutes[_selectedAssaultRoute];
+            if (route == null) return;
+
+            if (e.type == EventType.MouseDown && e.button == 0 &&
+                MapAuthoringPreview2D.TryMapPoint(drawRect, e.mousePosition, world, out Vector2 mapXZ))
+            {
+                int waypoint = FindNearestWaypoint(route, mapXZ);
+                _assaultWaypointInsertedDuringDrag = waypoint < 0;
+                _assaultWaypointPositionBeforeDrag = waypoint >= 0
+                    ? route.Waypoints[waypoint]
+                    : default;
+                _assaultRouteSourceBeforeDrag = route.Source;
+                _assaultRouteIdBeforeDrag = route.RouteId;
+                RecordUndo(waypoint >= 0 ? "侵攻ルート経由点を移動" : "侵攻ルート経由点を追加");
+                if (waypoint < 0)
+                {
+                    waypoint = FindRouteInsertionIndex(route, mapXZ);
+                    route.Waypoints.Insert(waypoint, mapXZ);
+                    ManualizeRoute(route);
+                }
+                _selectedAssaultWaypoint = waypoint;
+                _dragging = true;
+                GUIUtility.hotControl = id;
+                MarkDirty();
+                e.Use();
+                return;
+            }
+
+            if (e.type == EventType.MouseDrag && _dragging && GUIUtility.hotControl == id &&
+                MapAuthoringPreview2D.TryMapPoint(drawRect, e.mousePosition, world, out Vector2 dragXZ))
+            {
+                route.Waypoints[_selectedAssaultWaypoint] = ClampToMap(dragXZ);
+                ManualizeRoute(route);
+                MarkDirty();
+                e.Use();
+                return;
+            }
+
+            if (e.type == EventType.MouseUp && GUIUtility.hotControl == id)
+            {
+                _dragging = false;
+                GUIUtility.hotControl = 0;
+                ValidateAssaultRoutes();
+                if (DidSelectedAssaultWaypointFailPlacement(route))
+                {
+                    RestoreAssaultWaypointBeforeDrag(route);
+                    ValidateAssaultRoutes();
+                    _status = "経由点をNavMesh上へ配置できないため、変更を取り消しました";
+                }
+                _assaultWaypointInsertedDuringDrag = false;
+                e.Use();
+            }
+        }
+
+        private bool DidSelectedAssaultWaypointFailPlacement(AuthoredAssaultRoute route)
+        {
+            if (_selectedAssaultWaypoint < 0 ||
+                _selectedAssaultWaypoint >= route.Waypoints.Count)
+                return false;
+            CombatAssaultRouteValidationFailure? failure = FindFailure(route.RouteId);
+            if (failure.HasValue && failure.Value.WaypointIndex == _selectedAssaultWaypoint)
+                return true;
+            if (_assaultRouteFailures.Count == 0) return false;
+
+            MapSceneHost host = Object.FindAnyObjectByType<MapSceneHost>();
+            return host != null && !CombatAssaultRouteBaker.CanPlaceWaypoint(
+                host.transform,
+                route.Waypoints[_selectedAssaultWaypoint]);
+        }
+
+        private void RestoreAssaultWaypointBeforeDrag(AuthoredAssaultRoute route)
+        {
+            if (_assaultWaypointInsertedDuringDrag)
+            {
+                route.Waypoints.RemoveAt(_selectedAssaultWaypoint);
+                _selectedAssaultWaypoint = -1;
+            }
+            else
+            {
+                route.Waypoints[_selectedAssaultWaypoint] = _assaultWaypointPositionBeforeDrag;
+            }
+
+            route.Source = _assaultRouteSourceBeforeDrag;
+            route.RouteId = _assaultRouteIdBeforeDrag;
+            MarkDirty();
+        }
+
+        private int FindNearestWaypoint(AuthoredAssaultRoute route, Vector2 mapXZ)
+        {
+            float best = PickRadiusMeters * PickRadiusMeters;
+            int result = -1;
+            for (int i = 0; i < route.Waypoints.Count; i++)
+            {
+                float sq = (route.Waypoints[i] - mapXZ).sqrMagnitude;
+                if (sq >= best) continue;
+                best = sq;
+                result = i;
+            }
+            return result;
+        }
+
+        private int FindRouteInsertionIndex(AuthoredAssaultRoute route, Vector2 point)
+        {
+            if (!TryGetAuthoredStoneCenter(FeatureType.OwnMainStone, out Vector2 own) ||
+                !TryGetAuthoredStoneCenter(FeatureType.EnemyMainStone, out Vector2 enemy))
+                return route.Waypoints.Count;
+            var points = new List<Vector2> { own };
+            points.AddRange(route.Waypoints);
+            points.Add(enemy);
+            float best = float.PositiveInfinity;
+            int result = route.Waypoints.Count;
+            for (int i = 0; i + 1 < points.Count; i++)
+            {
+                float distance = DistanceToSegment(point, points[i], points[i + 1]);
+                if (distance >= best) continue;
+                best = distance;
+                result = i;
+            }
+            return result;
+        }
+
+        private static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b)
+        {
+            Vector2 ab = b - a;
+            if (ab.sqrMagnitude <= 0.0001f) return Vector2.Distance(point, a);
+            float t = Mathf.Clamp01(Vector2.Dot(point - a, ab) / ab.sqrMagnitude);
+            return Vector2.Distance(point, a + ab * t);
+        }
+
         private static void DrawBridgeOrientation(
             Rect localDraw, float world, AuthoredBridgePlacement bridge, bool selected)
         {
@@ -440,6 +763,12 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         private void HandleCanvasInput(Rect drawRect, float world)
         {
+            if (_tool == MapAuthoringTool.AssaultRoute)
+            {
+                HandleAssaultRouteInput(drawRect, world);
+                return;
+            }
+
             Event e = Event.current;
             int id = GUIUtility.GetControlID(FocusType.Passive);
 
@@ -548,6 +877,14 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     return;
                 }
 
+                DrawBakeStatusPanel();
+
+                if (_tool == MapAuthoringTool.AssaultRoute)
+                {
+                    DrawAssaultRoutePanel();
+                    return;
+                }
+
                 _rightTab = (MapAuthoringRightTab)GUILayout.Toolbar(
                     (int)_rightTab,
                     new[] { "配置", "共通", "スタンプ" });
@@ -567,6 +904,82 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 }
             }
         }
+
+        private void DrawBakeStatusPanel()
+        {
+            EditorGUILayout.LabelField("ベイク状態", EditorStyles.boldLabel);
+            DrawBakeStage("MapData", _bakeStatus.MapData);
+            DrawBakeStage("NavMesh", _bakeStatus.NavMesh);
+            DrawBakeStage("侵攻ルート", _bakeStatus.AssaultRoutes);
+            DrawBakeStage("プレビュー", _bakeStatus.Preview);
+            DrawBakeStage("シーン3D", _bakeStatus.Scene3D);
+
+            EditorGUILayout.HelpBox(
+                _bakeStatus.AllCurrent ? "ベイク済み" : "未ベイク項目があります",
+                _bakeStatus.AllCurrent ? MessageType.Info : MessageType.Warning);
+
+            if (RequiresGeometryBake())
+            {
+                EditorGUILayout.HelpBox(
+                    "MapData・NavMeshを更新するには「シーンへ3D反映」を実行してください。",
+                    MessageType.Warning);
+            }
+            else if (_bakeStatus.AssaultRoutes != AuthoredMapBakeStageState.Current)
+            {
+                string guidance = _bakeStatus.AssaultRoutes == AuthoredMapBakeStageState.NotConfigured
+                    ? "侵攻ルートを追加するか、自動ルートを更新してください。"
+                    : "最新NavMeshで侵攻ルートを自動検証するか、「全ルートを今すぐ再検証」を実行してください。";
+                EditorGUILayout.HelpBox(guidance, MessageType.Info);
+            }
+            else if (_bakeStatus.Preview != AuthoredMapBakeStageState.Current)
+            {
+                EditorGUILayout.HelpBox(
+                    "侵攻ルートを再検証してプレビューを更新してください。",
+                    MessageType.Info);
+            }
+            else if (_bakeStatus.Scene3D != AuthoredMapBakeStageState.Current)
+            {
+                EditorGUILayout.HelpBox(
+                    "シーン3Dは最新ではありませんが、保存済みNavMeshによる侵攻ルート検証は可能です。",
+                    MessageType.Info);
+            }
+
+            EditorGUILayout.Space(6f);
+        }
+
+        private static void DrawBakeStage(string label, AuthoredMapBakeStageState state)
+        {
+            GUIStyle style = new(EditorStyles.label);
+            style.normal.textColor = state == AuthoredMapBakeStageState.Current
+                ? new Color(0.35f, 0.8f, 0.45f)
+                : new Color(1f, 0.68f, 0.25f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField(label, GUILayout.Width(90f));
+                EditorGUILayout.LabelField(GetBakeStageLabel(label, state), style);
+            }
+        }
+
+        private static string GetBakeStageLabel(string label, AuthoredMapBakeStageState state)
+        {
+            return state switch
+            {
+                AuthoredMapBakeStageState.Current => "最新",
+                AuthoredMapBakeStageState.NotConfigured => "未設定",
+                AuthoredMapBakeStageState.Deferred => "判定保留",
+                AuthoredMapBakeStageState.MissingSceneData => "生成物不足",
+                AuthoredMapBakeStageState.Stale when label == "侵攻ルート" => "要再検証",
+                AuthoredMapBakeStageState.Stale when label == "プレビュー" => "要再生成",
+                AuthoredMapBakeStageState.Stale when label == "シーン3D" => "未反映",
+                AuthoredMapBakeStageState.Stale => "要再ベイク",
+                AuthoredMapBakeStageState.Missing when label == "侵攻ルート" => "未ベイク",
+                _ => "未生成",
+            };
+        }
+
+        private bool RequiresGeometryBake() =>
+            _bakeStatus.MapData != AuthoredMapBakeStageState.Current ||
+            _bakeStatus.NavMesh != AuthoredMapBakeStageState.Current;
 
         private void DrawPlacementTab()
         {
@@ -597,6 +1010,198 @@ namespace WarSimulation.Combat.Map.EditorOnly
             {
                 EditorGUILayout.EndScrollView();
             }
+        }
+
+        private void DrawAssaultRoutePanel()
+        {
+            _panelScroll = EditorGUILayout.BeginScrollView(_panelScroll);
+            try
+            {
+                EditorGUILayout.LabelField("侵攻ルート", EditorStyles.boldLabel);
+                if (!TryGetAuthoredStoneCenter(FeatureType.OwnMainStone, out _) ||
+                    !TryGetAuthoredStoneCenter(FeatureType.EnemyMainStone, out _))
+                {
+                    EditorGUILayout.HelpBox("自軍・敵軍の主魔石を1つずつ配置してください。", MessageType.Warning);
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("手動ルートを追加")) AddManualAssaultRoute();
+                    if (GUILayout.Button("自動ルートを更新")) AutoGenerateAssaultRoutes();
+                }
+                if (GUILayout.Button("全ルートを今すぐ再検証")) ValidateAssaultRoutes();
+
+                EditorGUILayout.Space(6f);
+                for (int i = 0; i < _definition.AssaultRoutes.Count; i++)
+                {
+                    AuthoredAssaultRoute route = _definition.AssaultRoutes[i];
+                    if (route == null) continue;
+                    bool selected = i == _selectedAssaultRoute;
+                    string state = FindFailure(route.RouteId).HasValue
+                        ? "エラー"
+                        : IsValidatedRoute(route.RouteId)
+                            ? "検証済み"
+                            : "未検証";
+                    if (GUILayout.Toggle(
+                            selected,
+                            $"{route.DisplayName}  [{route.Source}]  {state}",
+                            EditorStyles.miniButton) && !selected)
+                    {
+                        _selectedAssaultRoute = i;
+                        _selectedAssaultWaypoint = -1;
+                    }
+                }
+
+                if (_selectedAssaultRoute >= 0 && _selectedAssaultRoute < _definition.AssaultRoutes.Count)
+                {
+                    AuthoredAssaultRoute selected = _definition.AssaultRoutes[_selectedAssaultRoute];
+                    EditorGUILayout.Space(8f);
+                    EditorGUI.BeginChangeCheck();
+                    string displayName = EditorGUILayout.DelayedTextField("表示名", selected.DisplayName);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        RecordUndo("侵攻ルート名を変更");
+                        selected.DisplayName = displayName;
+                        ManualizeRoute(selected);
+                        MarkDirty();
+                        ValidateAssaultRoutes();
+                    }
+
+                    EditorGUILayout.LabelField("Route ID", selected.RouteId, EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField("経由点", selected.Waypoints.Count.ToString());
+                    CombatAssaultRouteValidationFailure? failure = FindFailure(selected.RouteId);
+                    if (failure.HasValue)
+                        EditorGUILayout.HelpBox(failure.Value.Message, MessageType.Error);
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        using (new EditorGUI.DisabledScope(_selectedAssaultWaypoint < 0))
+                        {
+                            if (GUILayout.Button("選択経由点を削除")) DeleteSelectedAssaultWaypoint();
+                        }
+                        if (GUILayout.Button("ルートを削除")) DeleteSelectedAssaultRoute();
+                    }
+                }
+
+                EditorGUILayout.Space(8f);
+                EditorGUILayout.HelpBox(
+                    string.IsNullOrEmpty(_status)
+                        ? "表示される線はNavMesh検証済み経路です。経由点はクリックで追加、ドラッグ終了時に自動再検証します。"
+                        : _status,
+                    MessageType.Info);
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
+        }
+
+        private void AddManualAssaultRoute()
+        {
+            if (!TryGetAuthoredStoneCenter(FeatureType.OwnMainStone, out _) ||
+                !TryGetAuthoredStoneCenter(FeatureType.EnemyMainStone, out _))
+            {
+                _status = "自軍・敵軍の主魔石を配置してください";
+                return;
+            }
+            RecordUndo("手動侵攻ルートを追加");
+            _definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
+                System.Guid.NewGuid().ToString("N"),
+                $"手動ルート {_definition.AssaultRoutes.Count + 1}",
+                AuthoredAssaultRouteSource.Manual));
+            _selectedAssaultRoute = _definition.AssaultRoutes.Count - 1;
+            _selectedAssaultWaypoint = -1;
+            _assaultRouteFailures.Clear();
+            MarkDirty();
+            ValidateAssaultRoutes();
+        }
+
+        private void AutoGenerateAssaultRoutes()
+        {
+            MapSceneHost host = Object.FindAnyObjectByType<MapSceneHost>();
+            if (AuthoredMapNavBake.AutoGenerateAndSave(_definition, host, out string status))
+            {
+                _selectedAssaultRoute = _definition.AssaultRoutes.Count > 0 ? 0 : -1;
+                _selectedAssaultWaypoint = -1;
+                _assaultRouteFailures.Clear();
+                QueuePreviewRebuild(immediate: true);
+            }
+            _status = status;
+        }
+
+        private void ValidateAssaultRoutes()
+        {
+            if (_definition == null || _definition.AssaultRoutes.Count == 0)
+            {
+                _assaultRouteFailures.Clear();
+                _status = "侵攻ルートがありません";
+                QueuePreviewRebuild(immediate: true);
+                return;
+            }
+            MapSceneHost host = Object.FindAnyObjectByType<MapSceneHost>();
+            if (AuthoredMapNavBake.ValidateAndSave(
+                    _definition,
+                    host,
+                    _definition.AssaultRoutes,
+                    out List<CombatAssaultRouteValidationFailure> failures,
+                    out string status))
+            {
+                _assaultRouteFailures = failures;
+                QueuePreviewRebuild(immediate: true);
+            }
+            else
+            {
+                _assaultRouteFailures = failures;
+                QueuePreviewRebuild(immediate: true);
+            }
+            _status = status;
+        }
+
+        private bool IsValidatedRoute(string routeId)
+        {
+            if (!_definition.HasValidBakedAssaultRoutes) return false;
+            for (int i = 0; i < _validatedPreviewRoutes.Count; i++)
+            {
+                if (_validatedPreviewRoutes[i].RouteId == routeId) return true;
+            }
+            return false;
+        }
+
+        private void DeleteSelectedAssaultWaypoint()
+        {
+            if (_selectedAssaultRoute < 0 || _selectedAssaultRoute >= _definition.AssaultRoutes.Count)
+                return;
+            AuthoredAssaultRoute route = _definition.AssaultRoutes[_selectedAssaultRoute];
+            if (_selectedAssaultWaypoint < 0 || _selectedAssaultWaypoint >= route.Waypoints.Count) return;
+            RecordUndo("侵攻ルート経由点を削除");
+            route.Waypoints.RemoveAt(_selectedAssaultWaypoint);
+            _selectedAssaultWaypoint = -1;
+            ManualizeRoute(route);
+            MarkDirty();
+            ValidateAssaultRoutes();
+        }
+
+        private void DeleteSelectedAssaultRoute()
+        {
+            if (_selectedAssaultRoute < 0 || _selectedAssaultRoute >= _definition.AssaultRoutes.Count)
+                return;
+            RecordUndo("侵攻ルートを削除");
+            _definition.AssaultRoutes.RemoveAt(_selectedAssaultRoute);
+            _selectedAssaultRoute = Mathf.Min(_selectedAssaultRoute, _definition.AssaultRoutes.Count - 1);
+            _selectedAssaultWaypoint = -1;
+            _assaultRouteFailures.Clear();
+            MarkDirty();
+            if (_definition.AssaultRoutes.Count > 0)
+                ValidateAssaultRoutes();
+            else
+                QueuePreviewRebuild(immediate: true);
+        }
+
+        private static void ManualizeRoute(AuthoredAssaultRoute route)
+        {
+            if (route.Source == AuthoredAssaultRouteSource.Manual) return;
+            route.Source = AuthoredAssaultRouteSource.Manual;
+            route.RouteId = System.Guid.NewGuid().ToString("N");
         }
 
         private void DrawSharedTab()
@@ -1571,8 +2176,10 @@ namespace WarSimulation.Combat.Map.EditorOnly
             {
                 _status = "シーンへ反映中…（3D描画 → NavMesh/ルート保存）";
                 Repaint();
-                AuthoredMapNavBake.BakeAndSave(_definition, host, out string status);
+                bool baked = AuthoredMapNavBake.BakeAndSave(_definition, host, out string status);
                 _status = status;
+                if (baked && _definition.AssaultRoutes.Count > 0)
+                    ValidateAssaultRoutes();
             }
             catch (System.Exception ex)
             {
@@ -1674,12 +2281,18 @@ namespace WarSimulation.Combat.Map.EditorOnly
         {
             DestroyPreview();
             _lastPreviewMap = null;
+            _validatedPreviewRoutes.Clear();
             if (_definition == null || _definition.SharedConfig == null) return;
 
             try
             {
                 _lastPreviewMap = AuthoredMapBuilder.Build(_definition);
                 _previewTex = MapAuthoringPreview2D.Build(_lastPreviewMap);
+                if (_definition.HasValidBakedAssaultRoutes)
+                {
+                    MapData baked = _definition.BakedMapData.CreateRuntimeMap();
+                    _validatedPreviewRoutes.AddRange(baked.AssaultRoutes);
+                }
             }
             catch (System.Exception ex)
             {
@@ -1755,6 +2368,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
         {
             if (_definition != null)
                 EditorUtility.SetDirty(_definition);
+            _status = null;
+            _assaultRouteFailures.Clear();
         }
     }
 }

@@ -12,6 +12,7 @@ namespace WarSimulation.Combat.Map
     {
         [SerializeField] private MapConfig _config;
         [SerializeField] private int _bakedRenderFingerprint;
+        [SerializeField] private bool _hasBakedRenderFingerprint;
 
         public MapConfig Config
         {
@@ -20,6 +21,9 @@ namespace WarSimulation.Combat.Map
         }
 
         public MapData LastAppliedMap { get; private set; }
+        public int BakedRenderFingerprint => _bakedRenderFingerprint;
+        public bool HasBakedRenderFingerprint =>
+            _hasBakedRenderFingerprint || _bakedRenderFingerprint != 0;
 
         /// <summary>
         /// 既存の MapData（手作りマップなど）を CurrentMap に載せ、必要なら 3D 描画する。
@@ -52,6 +56,7 @@ namespace WarSimulation.Combat.Map
         public void SetBakedRenderFingerprint(int fingerprint)
         {
             _bakedRenderFingerprint = fingerprint;
+            _hasBakedRenderFingerprint = true;
         }
 
         public bool LoadBakedMap(MapData map, NavMeshData prebakedNavMesh, int fingerprint)
@@ -65,7 +70,7 @@ namespace WarSimulation.Combat.Map
             if (!HasBakedRenderData(map, fingerprint))
             {
                 Debug.LogError(
-                    $"[{nameof(MapSceneHost)}] Generated map render data is missing from the scene.",
+                    $"[{nameof(MapSceneHost)}] Scene 3D does not match the baked map.",
                     this);
                 return false;
             }
@@ -81,6 +86,18 @@ namespace WarSimulation.Combat.Map
             SetCombatMapSystemCurrentMap(map);
             return true;
         }
+
+        /// <summary>3D生成物を変更せず、侵攻ルート検証に使う保存済みNavMeshだけをロードする。</summary>
+        public bool LoadBakedNavMeshForValidation(NavMeshData prebakedNavMesh)
+        {
+            if (prebakedNavMesh == null) return false;
+            CombatNavMeshBuilder navMeshBuilder = GetOrAddComponent<CombatNavMeshBuilder>();
+            return navMeshBuilder.Load(prebakedNavMesh);
+        }
+
+        /// <summary>シーン3Dが指定したベイク済みマップと一致するかを副作用なしで返す。</summary>
+        public bool HasBakedRenderDataFor(MapData map, int fingerprint) =>
+            map != null && HasBakedRenderData(map, fingerprint);
 
         public void Render3D(MapData map) => Render3D(map, bakeNavMesh: true, prebakedNavMesh: null);
 

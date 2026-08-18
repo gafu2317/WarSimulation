@@ -65,6 +65,36 @@ public sealed class AuthoredMapValidatorTests
         }
     }
 
+    [Test]
+    public void ValidateRejectsDuplicateRouteIdsAndOutsideWaypoints()
+    {
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
+        var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        try
+        {
+            SetPrivateField(config, "_worldSize", 20f);
+            SetPrivateField(config, "_cellsPerSide", 20);
+            definition.SharedConfig = config;
+            definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
+                "same", "First", AuthoredAssaultRouteSource.Manual));
+            definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
+                "same",
+                "Second",
+                AuthoredAssaultRouteSource.Manual,
+                new[] { new Vector2(21f, 1f) }));
+
+            List<AuthoredMapValidationIssue> issues = AuthoredMapValidator.Validate(definition);
+
+            Assert.That(issues.Exists(i => i.IsError && i.Message.Contains("duplicated")), Is.True);
+            Assert.That(issues.Exists(i => i.IsError && i.Message.Contains("outside")), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+            Object.DestroyImmediate(definition);
+        }
+    }
+
     private static void SetPrivateField<T>(Object target, string fieldName, T value)
     {
         FieldInfo field = target.GetType().GetField(

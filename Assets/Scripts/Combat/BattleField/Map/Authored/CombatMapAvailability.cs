@@ -59,7 +59,7 @@ namespace WarSimulation.Combat.Map
                     "魔石反転に必要な自軍・敵軍の数が一致しません");
             }
 
-            int fingerprint = definition.ComputeBakeFingerprint();
+            int fingerprint = definition.ComputeGeometryFingerprint();
             if (definition.BakedMapData == null)
                 return Unavailable(CombatMapUnavailableReason.MissingBakedMapData, "MapDataが未ベイクです");
             if (!definition.BakedMapData.IsValidFor(fingerprint))
@@ -68,13 +68,19 @@ namespace WarSimulation.Combat.Map
                 return Unavailable(CombatMapUnavailableReason.MissingBakedNavMesh, "NavMeshが未ベイクです");
             if (definition.NavMeshBakeFingerprint != fingerprint)
                 return Unavailable(CombatMapUnavailableReason.StaleBakedNavMesh, "マップ変更後にNavMeshが再ベイクされていません");
+            if ((definition.AssaultRoutes == null || definition.AssaultRoutes.Count == 0) &&
+                !definition.HasValidLegacyBakedAssaultRoutes)
+                return Unavailable(CombatMapUnavailableReason.MissingAssaultRoutes, "侵攻ルートが設定されていません");
             if (!definition.HasBakedAssaultRoutesData)
-                return Unavailable(CombatMapUnavailableReason.MissingAssaultRoutes, "進攻ルートが未ベイクです");
-            if (definition.AssaultRouteBakeFingerprint != fingerprint)
-                return Unavailable(CombatMapUnavailableReason.StaleAssaultRoutes, "マップ変更後に進攻ルートが再ベイクされていません");
+                return Unavailable(CombatMapUnavailableReason.MissingAssaultRoutes, "侵攻ルートが未ベイクです");
+            if (!definition.HasValidBakedAssaultRoutes)
+                return Unavailable(CombatMapUnavailableReason.StaleAssaultRoutes, "マップ変更後に侵攻ルートが再ベイクされていません");
             if (definition.BakedPreview == null)
                 return Unavailable(CombatMapUnavailableReason.MissingPreview, "プレビューが未生成です");
-            if (definition.PreviewBakeFingerprint != fingerprint)
+            int previewFingerprint = definition.AssaultRoutes != null && definition.AssaultRoutes.Count > 0
+                ? definition.ComputeAssaultRouteFingerprint()
+                : fingerprint;
+            if (definition.PreviewBakeFingerprint != previewFingerprint)
                 return Unavailable(CombatMapUnavailableReason.StalePreview, "マップ変更後にプレビューが再生成されていません");
 
             return new CombatMapAvailability(CombatMapUnavailableReason.None, string.Empty);

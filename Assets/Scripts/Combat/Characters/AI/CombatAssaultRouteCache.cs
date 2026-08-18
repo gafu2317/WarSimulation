@@ -2,78 +2,45 @@ using System.Collections.Generic;
 using UnityEngine;
 using WarSimulation.Combat.Map;
 
-/// <summary>
-/// 進攻ルート候補のキャッシュ。BuildCandidates は重いのでマップ＋NavMesh 準備後に一度だけ作る。
-/// AuthoredMap にベイク済みがあれば hydrate、無ければランタイム列挙。
-/// </summary>
 public static class CombatAssaultRouteCache
 {
-    private const float StoneSampleRadius = 8f;
-
     private static MapData _cachedMap;
     private static Transform _cachedOrigin;
     private static bool _buildCompleted;
-    private static bool _hasRouteOrientation;
-    private static bool _routesMatchReversedPositions;
-    private static MapData _rebuildFallbackLoggedForMap;
-    private static readonly List<CombatAiAssaultRoute> AllyRoutes = new List<CombatAiAssaultRoute>();
-    private static readonly List<CombatAiAssaultRoute> EnemyRoutes = new List<CombatAiAssaultRoute>();
+    private static readonly List<CombatAiAssaultRoute> ForwardRoutes = new();
+    private static readonly List<CombatAiAssaultRoute> ReverseRoutes = new();
 
     public static void Invalidate()
     {
         _cachedMap = null;
         _cachedOrigin = null;
         _buildCompleted = false;
-        _hasRouteOrientation = false;
-        _routesMatchReversedPositions = false;
-        AllyRoutes.Clear();
-        EnemyRoutes.Clear();
+        ForwardRoutes.Clear();
+        ReverseRoutes.Clear();
     }
 
     public static IReadOnlyList<CombatAiAssaultRoute> GetRoutes(
         CombatTeam team,
         bool stonePositionReversed)
     {
-        bool useOppositeTeamRoutes = _hasRouteOrientation &&
-            _routesMatchReversedPositions != stonePositionReversed;
-        bool useEnemyRoutes = team == CombatTeam.Enemy;
-        if (useOppositeTeamRoutes) useEnemyRoutes = !useEnemyRoutes;
-        return useEnemyRoutes ? EnemyRoutes : AllyRoutes;
+        bool reverse = team == CombatTeam.Enemy;
+        if (stonePositionReversed) reverse = !reverse;
+        return reverse ? ReverseRoutes : ForwardRoutes;
     }
 
     public static void EnsureBuilt(CombatMapSystem mapSystem)
     {
-        if (mapSystem == null) return;
-
+        if (mapSystem == null || mapSystem.CurrentMap == null) return;
         MapData map = mapSystem.CurrentMap;
         Transform origin = mapSystem.MapOrigin;
-        if (map == null) return;
-        if (_buildCompleted &&
-            ReferenceEquals(_cachedMap, map) &&
-            ReferenceEquals(_cachedOrigin, origin))
-        {
+        if (_buildCompleted && ReferenceEquals(_cachedMap, map) && ReferenceEquals(_cachedOrigin, origin))
             return;
-        }
-
-        if (TryHydrateFromAuthored(mapSystem.AuthoredMap, map, origin))
-        {
-            return;
-        }
-
-        // Procedural / test maps often have no AuthoredMap; only warn when an authored
-        // map is present but baked routes could not be hydrated.
-        AuthoredMapDefinition authored = mapSystem.AuthoredMap;
-        if (authored != null && !ReferenceEquals(_rebuildFallbackLoggedForMap, map))
-        {
-            _rebuildFallbackLoggedForMap = map;
-            Debug.LogWarning(
-                $"[{nameof(CombatAssaultRouteCache)}] AssaultRoutes: Rebuild (runtime fallback). " +
-                $"hasBakedData={authored.HasBakedAssaultRoutesData} " +
-                $"storedFp={authored.AssaultRouteBakeFingerprint} " +
-                $"currentFp={authored.ComputeBakeFingerprint()}");
-        }
-
-        Rebuild(map, origin, mapSystem.IsStonePositionReversed);
+        if (map.AssaultRoutes.Count > 0)
+            Hydrate(map, origin);
+        else if (mapSystem.AuthoredMap != null && mapSystem.AuthoredMap.HasValidBakedAssaultRoutes)
+            HydrateLegacy(mapSystem.AuthoredMap, map, origin);
+        else
+            Hydrate(map, origin);
     }
 
     public static bool TryHydrateFromAuthored(
@@ -81,89 +48,12 @@ public static class CombatAssaultRouteCache
         MapData map,
         Transform mapOrigin)
     {
-        if (authored == null || map == null || !authored.HasValidBakedAssaultRoutes)
-        {
+        if (authored == null || map == null)
             return false;
-        }
-
-        Invalidate();
-        _cachedMap = map;
-        _cachedOrigin = mapOrigin;
-        HydrateTeam(authored.BakedAllyAssaultRoutes, mapOrigin, AllyRoutes);
-        HydrateTeam(authored.BakedEnemyAssaultRoutes, mapOrigin, EnemyRoutes);
-        _hasRouteOrientation = true;
-        _routesMatchReversedPositions = false;
-        _buildCompleted = true;
+        if (map.AssaultRoutes.Count > 0) Hydrate(map, mapOrigin);
+        else if (authored.HasValidBakedAssaultRoutes) HydrateLegacy(authored, map, mapOrigin);
+        else return false;
         return true;
-    }
-
-    public static void Rebuild(
-        MapData map,
-        Transform mapOrigin,
-        bool stonePositionReversed = false)
-    {
-        Invalidate();
-        if (map == null) return;
-
-        _cachedMap = map;
-        _cachedOrigin = mapOrigin;
-        int areaMask = CombatStoneAssaultRoutes.CreateAreaMask(allowRiverCrossing: false);
-
-        if (!TryFindMainStoneWorld(map, mapOrigin, FeatureType.OwnMainStone, out Vector3 ownStone) ||
-            !TryFindMainStoneWorld(map, mapOrigin, FeatureType.EnemyMainStone, out Vector3 enemyStone))
-        {
-            // 魔石が無いマップは再試行不要
-            _hasRouteOrientation = true;
-            _routesMatchReversedPositions = stonePositionReversed;
-            _buildCompleted = true;
-            return;
-        }
-
-        if (!CombatStoneAssaultRoutes.TrySamplePosition(ownStone, StoneSampleRadius, areaMask, out Vector3 allyStart) ||
-            !CombatStoneAssaultRoutes.TrySamplePosition(enemyStone, StoneSampleRadius, areaMask, out Vector3 allyGoal) ||
-            !CombatStoneAssaultRoutes.TrySamplePosition(enemyStone, StoneSampleRadius, areaMask, out Vector3 enemyStart) ||
-            !CombatStoneAssaultRoutes.TrySamplePosition(ownStone, StoneSampleRadius, areaMask, out Vector3 enemyGoal))
-        {
-            // NavMesh 未準備。次の Collect で再試行する
-            return;
-        }
-
-        BuildTeamRoutes(map, mapOrigin, allyStart, allyGoal, areaMask, AllyRoutes);
-        BuildTeamRoutes(map, mapOrigin, enemyStart, enemyGoal, areaMask, EnemyRoutes);
-        _hasRouteOrientation = true;
-        _routesMatchReversedPositions = stonePositionReversed;
-        _buildCompleted = true;
-    }
-
-    /// <summary>Editor ベイク用。ワールド座標の候補をマップローカル POD に変換する。</summary>
-    public static List<AuthoredBakedAssaultRoute> BuildBakedRoutesForTeam(
-        MapData map,
-        Transform mapOrigin,
-        Vector3 startWorld,
-        Vector3 goalWorld,
-        int areaMask)
-    {
-        var baked = new List<AuthoredBakedAssaultRoute>();
-        List<CombatStoneAssaultRoutes.Candidate> candidates = CombatStoneAssaultRoutes.BuildCandidates(
-            map,
-            mapOrigin,
-            startWorld,
-            goalWorld,
-            areaMask);
-        for (int i = 0; i < candidates.Count; i++)
-        {
-            CombatStoneAssaultRoutes.Candidate candidate = candidates[i];
-            if (candidate == null) continue;
-            Vector3 enterLocal = ToLocal(mapOrigin, candidate.EnterWorld);
-            Vector3 exitLocal = ToLocal(mapOrigin, candidate.ExitWorld);
-            baked.Add(new AuthoredBakedAssaultRoute(
-                candidate.BridgeFeatureIndex,
-                candidate.HasBridgeWaypoints,
-                enterLocal,
-                exitLocal));
-        }
-
-        return baked;
     }
 
     public static bool TryFindMainStoneWorld(
@@ -173,6 +63,7 @@ public static class CombatAssaultRouteCache
         out Vector3 world)
     {
         world = default;
+        if (map == null) return false;
         for (int i = 0; i < map.Features.Count; i++)
         {
             PlacedFeature feature = map.Features[i];
@@ -186,78 +77,78 @@ public static class CombatAssaultRouteCache
         return false;
     }
 
-    private static void HydrateTeam(
-        IReadOnlyList<AuthoredBakedAssaultRoute> baked,
-        Transform mapOrigin,
-        List<CombatAiAssaultRoute> destination)
+    private static void Hydrate(MapData map, Transform origin)
     {
-        destination.Clear();
-        if (baked == null) return;
-        for (int i = 0; i < baked.Count; i++)
+        Invalidate();
+        _cachedMap = map;
+        _cachedOrigin = origin;
+        for (int i = 0; i < map.AssaultRoutes.Count; i++)
         {
-            AuthoredBakedAssaultRoute route = baked[i];
-            destination.Add(new CombatAiAssaultRoute(
-                route.BridgeFeatureIndex,
-                route.HasBridgeWaypoints,
-                ToWorld(mapOrigin, route.EnterLocal),
-                ToWorld(mapOrigin, route.ExitLocal)));
+            AssaultRoute route = map.AssaultRoutes[i];
+            var forward = new Vector3[route.Corners.Count];
+            var reverse = new Vector3[route.Corners.Count];
+            for (int c = 0; c < route.Corners.Count; c++)
+            {
+                forward[c] = ToWorld(origin, route.Corners[c]);
+                reverse[route.Corners.Count - 1 - c] = forward[c];
+            }
+
+            ForwardRoutes.Add(new CombatAiAssaultRoute(route.RouteId, route.DisplayName, forward));
+            ReverseRoutes.Add(new CombatAiAssaultRoute(route.RouteId, route.DisplayName, reverse));
         }
+
+        _buildCompleted = true;
     }
 
-    private static void BuildTeamRoutes(
+    private static void HydrateLegacy(
+        AuthoredMapDefinition authored,
         MapData map,
-        Transform mapOrigin,
-        Vector3 start,
-        Vector3 goal,
-        int areaMask,
-        List<CombatAiAssaultRoute> destination)
+        Transform origin)
     {
-        destination.Clear();
-        List<CombatStoneAssaultRoutes.Candidate> candidates = CombatStoneAssaultRoutes.BuildCandidates(
-            map,
-            mapOrigin,
-            start,
-            goal,
-            areaMask);
-        for (int i = 0; i < candidates.Count; i++)
+        Invalidate();
+        _cachedMap = map;
+        _cachedOrigin = origin;
+        TryFindMainStoneWorld(map, origin, FeatureType.OwnMainStone, out Vector3 ownStone);
+        TryFindMainStoneWorld(map, origin, FeatureType.EnemyMainStone, out Vector3 enemyStone);
+        IReadOnlyList<AuthoredBakedAssaultRoute> legacyRoutes = authored.BakedAllyAssaultRoutes;
+        for (int i = 0; i < legacyRoutes.Count; i++)
         {
-            CombatStoneAssaultRoutes.Candidate candidate = candidates[i];
-            if (candidate == null) continue;
-            destination.Add(new CombatAiAssaultRoute(
-                candidate.BridgeFeatureIndex,
-                candidate.HasBridgeWaypoints,
-                candidate.EnterWorld,
-                candidate.ExitWorld));
+            AuthoredBakedAssaultRoute legacy = legacyRoutes[i];
+            string id = legacy.HasBridgeWaypoints
+                ? $"auto:bridge:{legacy.BridgeFeatureIndex}"
+                : "auto:direct";
+            var forward = legacy.HasBridgeWaypoints
+                ? new[]
+                {
+                    ownStone,
+                    ToWorld(origin, legacy.EnterLocal),
+                    ToWorld(origin, legacy.ExitLocal),
+                    enemyStone,
+                }
+                : new[] { ownStone, enemyStone };
+            var reverse = new Vector3[forward.Length];
+            for (int c = 0; c < forward.Length; c++) reverse[forward.Length - 1 - c] = forward[c];
+            string name = legacy.HasBridgeWaypoints ? $"橋ルート {i + 1}" : "直進";
+            ForwardRoutes.Add(new CombatAiAssaultRoute(id, name, forward));
+            ReverseRoutes.Add(new CombatAiAssaultRoute(id, name, reverse));
         }
+        _buildCompleted = true;
     }
 
-    private static Vector3 ToLocal(Transform mapOrigin, Vector3 world)
-    {
-        return mapOrigin != null ? mapOrigin.InverseTransformPoint(world) : world;
-    }
-
-    private static Vector3 ToWorld(Transform mapOrigin, Vector3 local)
-    {
-        return mapOrigin != null ? mapOrigin.TransformPoint(local) : local;
-    }
+    private static Vector3 ToWorld(Transform origin, Vector3 local) =>
+        origin != null ? origin.TransformPoint(local) : local;
 }
 
 public readonly struct CombatAiAssaultRoute
 {
-    public int BridgeFeatureIndex { get; }
-    public bool HasBridgeWaypoints { get; }
-    public Vector3 EnterWorld { get; }
-    public Vector3 ExitWorld { get; }
+    public string RouteId { get; }
+    public string DisplayName { get; }
+    public IReadOnlyList<Vector3> Corners { get; }
 
-    public CombatAiAssaultRoute(
-        int bridgeFeatureIndex,
-        bool hasBridgeWaypoints,
-        Vector3 enterWorld,
-        Vector3 exitWorld)
+    public CombatAiAssaultRoute(string routeId, string displayName, IReadOnlyList<Vector3> corners)
     {
-        BridgeFeatureIndex = bridgeFeatureIndex;
-        HasBridgeWaypoints = hasBridgeWaypoints;
-        EnterWorld = enterWorld;
-        ExitWorld = exitWorld;
+        RouteId = routeId ?? string.Empty;
+        DisplayName = displayName ?? string.Empty;
+        Corners = corners ?? System.Array.Empty<Vector3>();
     }
 }

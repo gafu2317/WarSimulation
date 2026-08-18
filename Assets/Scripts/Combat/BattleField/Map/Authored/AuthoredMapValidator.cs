@@ -41,7 +41,40 @@ namespace WarSimulation.Combat.Map
             ValidateForests(definition.Forests, world, issues);
             ValidateBridges(definition.Bridges, world, issues);
             ValidateMagicStones(definition.MagicStones, config, world, issues);
+            ValidateAssaultRoutes(definition.AssaultRoutes, world, issues);
             return issues;
+        }
+
+        private static void ValidateAssaultRoutes(
+            List<AuthoredAssaultRoute> routes,
+            float world,
+            List<AuthoredMapValidationIssue> issues)
+        {
+            if (routes == null || routes.Count == 0)
+            {
+                issues.Add(Warning("No assault routes are authored."));
+                return;
+            }
+
+            var ids = new HashSet<string>();
+            for (int i = 0; i < routes.Count; i++)
+            {
+                AuthoredAssaultRoute route = routes[i];
+                if (route == null)
+                {
+                    issues.Add(Error($"AssaultRoute[{i}] is null."));
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(route.RouteId) || !ids.Add(route.RouteId))
+                    issues.Add(Error($"AssaultRoute[{i}] RouteId is empty or duplicated."));
+                if (route.Waypoints == null) continue;
+                for (int p = 0; p < route.Waypoints.Count; p++)
+                {
+                    if (!IsInsideMap(route.Waypoints[p], world))
+                        issues.Add(Error($"AssaultRoute[{i}] waypoint[{p}] is outside the map."));
+                }
+            }
         }
 
         public static bool HasErrors(IReadOnlyList<AuthoredMapValidationIssue> issues)

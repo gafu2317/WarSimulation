@@ -70,6 +70,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             OverlayForests(tex, map, cellSize);
             OverlayTrees(tex, map, cellSize);
             OverlayFeatureDots(tex, map, cellSize);
+            OverlayAssaultRoutes(tex, map, cellSize);
             tex.Apply(false);
             return tex;
         }
@@ -289,6 +290,72 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 int px = Mathf.Clamp(Mathf.FloorToInt(f.WorldPosition.x / cellSize), 0, tex.width - 1);
                 int py = Mathf.Clamp(Mathf.FloorToInt(f.WorldPosition.z / cellSize), 0, tex.height - 1);
                 tex.SetPixel(px, py, color.Value);
+            }
+        }
+
+        private static void OverlayAssaultRoutes(Texture2D tex, MapData map, float cellSize)
+        {
+            if (map.AssaultRoutes == null) return;
+            var colors = new[]
+            {
+                new Color32(255, 220, 60, 255),
+                new Color32(60, 230, 255, 255),
+                new Color32(255, 110, 220, 255),
+                new Color32(145, 255, 100, 255),
+            };
+            for (int r = 0; r < map.AssaultRoutes.Count; r++)
+            {
+                IReadOnlyList<Vector3> corners = map.AssaultRoutes[r].Corners;
+                for (int i = 0; i + 1 < corners.Count; i++)
+                    DrawMapLine(tex, corners[i], corners[i + 1], cellSize, colors[r % colors.Length]);
+            }
+        }
+
+        private static void DrawMapLine(
+            Texture2D tex,
+            Vector3 a,
+            Vector3 b,
+            float cellSize,
+            Color32 color)
+        {
+            int ax = Mathf.Clamp(Mathf.FloorToInt(a.x / cellSize), 0, tex.width - 1);
+            int ay = Mathf.Clamp(Mathf.FloorToInt(a.z / cellSize), 0, tex.height - 1);
+            int bx = Mathf.Clamp(Mathf.FloorToInt(b.x / cellSize), 0, tex.width - 1);
+            int by = Mathf.Clamp(Mathf.FloorToInt(b.z / cellSize), 0, tex.height - 1);
+            int steps = Mathf.Max(Mathf.Abs(bx - ax), Mathf.Abs(by - ay));
+            DrawMapLinePass(tex, ax, ay, bx, by, steps, 2, new Color32(20, 20, 20, 255));
+            DrawMapLinePass(tex, ax, ay, bx, by, steps, 1, color);
+        }
+
+        private static void DrawMapLinePass(
+            Texture2D tex,
+            int ax,
+            int ay,
+            int bx,
+            int by,
+            int steps,
+            int radius,
+            Color32 color)
+        {
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = steps > 0 ? i / (float)steps : 0f;
+                int x = Mathf.RoundToInt(Mathf.Lerp(ax, bx, t));
+                int y = Mathf.RoundToInt(Mathf.Lerp(ay, by, t));
+                DrawRoutePixel(tex, x, y, radius, color);
+            }
+        }
+
+        private static void DrawRoutePixel(Texture2D tex, int centerX, int centerY, int radius, Color32 color)
+        {
+            for (int y = centerY - radius; y <= centerY + radius; y++)
+            {
+                if (y < 0 || y >= tex.height) continue;
+                for (int x = centerX - radius; x <= centerX + radius; x++)
+                {
+                    if (x < 0 || x >= tex.width) continue;
+                    tex.SetPixel(x, y, color);
+                }
             }
         }
 

@@ -29,8 +29,14 @@ MonoBehaviour:
     ExitLocal: {x: 0, y: 0, z: 0}
   _assaultRouteBakeFingerprint: 1901960103
   _hasBakedAssaultRoutes: 1
+  _legacyAssaultRoutesMigrated: 0
+  _assaultRoutes:
+  - RouteId: auto:direct
+    DisplayName: "\u76F4\u9032"
+    Source: 0
+    Waypoints: []
   _bakedPreview: {fileID: 2800000, guid: e73ca2ea8801b4dc9a20fcdba30ccc14, type: 3}
-  _previewBakeFingerprint: 1901960103
+  _previewBakeFingerprint: -1963772846
   _mountains:
   - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
     Kind: 1

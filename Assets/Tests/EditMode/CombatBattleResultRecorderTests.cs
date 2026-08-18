@@ -16,7 +16,7 @@ public sealed class CombatBattleResultRecorderTests
             CombatBattleResultRecorder recorder = recorderObject.AddComponent<CombatBattleResultRecorder>();
             CombatMagicStoneSystem stoneSystem = stoneSystemObject.AddComponent<CombatMagicStoneSystem>();
             stoneSystem.Initialize(CreateMapWithMainStones());
-            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, 95);
+            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, 100, 95);
             Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, 25);
             ally.EquipWeapon(new Sword());
 
@@ -80,11 +80,15 @@ public sealed class CombatBattleResultRecorderTests
         }
     }
 
-    private static Character CreateCharacter(GameObject target, CombatTeam team, int maxHp)
+    private static Character CreateCharacter(
+        GameObject target,
+        CombatTeam team,
+        int maxHp,
+        int currentHp = -1)
     {
         Character character = target.AddComponent<Character>();
         character.SetTeam(team);
-        character.Health.Initialize(maxHp);
+        character.Health.Initialize(maxHp, currentHp);
         return character;
     }
 

@@ -10,12 +10,10 @@ using WarSimulation.Combat.Map;
 namespace WarSimulation.Combat.Map.EditorOnly
 {
     /// <summary>
-    /// Authored マップの NavMesh / 進攻ルートを Editor でベイクしてアセット保存する。
+    /// Authored マップの NavMesh / 侵攻ルートを Editor でベイクしてアセット保存する。
     /// </summary>
     internal static class AuthoredMapNavBake
     {
-        private const float StoneSampleRadius = 8f;
-
         public static bool BakeAndSave(AuthoredMapDefinition definition, MapSceneHost host, out string status)
         {
             status = null;
@@ -49,17 +47,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return false;
             }
 
-            int fingerprint = definition.ComputeBakeFingerprint();
-            if (!TryBuildAssaultRoutes(
-                    map,
-                    host.transform,
-                    out List<AuthoredBakedAssaultRoute> allyRoutes,
-                    out List<AuthoredBakedAssaultRoute> enemyRoutes,
-                    out string routeError))
-            {
-                status = routeError;
-                return false;
-            }
+            bool migrated = definition.MigrateLegacyAssaultRoutes();
+            int fingerprint = definition.ComputeGeometryFingerprint();
 
             if (!SaveNavMeshAsset(definition, builder.Surface.navMeshData, fingerprint, out string navError))
             {
@@ -72,12 +61,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 status = mapError;
                 return false;
             }
-
-            if (!SavePreviewAsset(definition, map, fingerprint, out string previewError))
-            {
-                status = previewError;
-                return false;
-            }
+            definition.BakedMapData.InvalidateAssaultRoutes();
+            EditorUtility.SetDirty(definition.BakedMapData);
 
             if (!builder.Load(definition.BakedNavMesh))
             {
@@ -85,12 +70,131 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return false;
             }
 
-            definition.SetBakedAssaultRoutes(allyRoutes, enemyRoutes, fingerprint);
             host.SetBakedRenderFingerprint(fingerprint);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(host.gameObject.scene);
-            status = "シーンへ3D反映完了 / MapData・NavMesh・進攻ルート・プレビューを保存しました（シーンを保存してください）";
+            status = "シーンへ3D反映完了 / MapData・NavMeshを保存し、侵攻ルートを未検証に戻しました（シーンを保存してください）";
+            if (migrated) status += " / 旧侵攻ルートを移行しました";
+            return true;
+        }
+
+        public static bool AutoGenerateAndSave(
+            AuthoredMapDefinition definition,
+            MapSceneHost host,
+            out string status)
+        {
+            status = null;
+            if (!TryGetCurrentMapAndNavMesh(definition, host, out MapData map, out status)) return false;
+            if (!CombatAssaultRouteBaker.TryBuildAutomaticRoutes(
+                    map,
+                    host.transform,
+                    definition.Bridges,
+                    out List<AuthoredAssaultRoute> generated,
+                    out _,
+                    out string error))
+            {
+                status = error;
+                return false;
+            }
+
+            List<AuthoredAssaultRoute> combined = CombatAssaultRouteBaker.ReplaceAutomaticRoutes(
+                definition.AssaultRoutes,
+                generated);
+
+            if (!CombatAssaultRouteBaker.TryValidateRoutes(
+                    map, host.transform, combined, out List<AssaultRoute> baked, out _))
+            {
+                status = "自動候補を含む侵攻ルートの検証に失敗しました";
+                return false;
+            }
+
+            Undo.RecordObject(definition, "侵攻ルートを自動設定");
+            definition.AssaultRoutes.Clear();
+            definition.AssaultRoutes.AddRange(combined);
+            return SaveRoutesAndPreview(definition, map, baked, out status);
+        }
+
+        public static bool ValidateAndSave(
+            AuthoredMapDefinition definition,
+            MapSceneHost host,
+            IReadOnlyList<AuthoredAssaultRoute> routes,
+            out List<CombatAssaultRouteValidationFailure> failures,
+            out string status)
+        {
+            failures = new List<CombatAssaultRouteValidationFailure>();
+            status = null;
+            if (!TryGetCurrentMapAndNavMesh(definition, host, out MapData map, out status)) return false;
+            CombatAssaultRouteBaker.TryValidateRoutes(
+                map, host.transform, routes, out List<AssaultRoute> baked, out failures);
+            if (baked.Count == 0)
+            {
+                status = failures.Count > 0 ? failures[0].Message : "有効な侵攻ルートがありません";
+                return false;
+            }
+
+            if (!SaveRoutesAndPreview(definition, map, baked, out status)) return false;
+            if (failures.Count > 0) status += $" / {failures.Count} 本は検証失敗";
+            return true;
+        }
+
+        private static bool TryGetCurrentMapAndNavMesh(
+            AuthoredMapDefinition definition,
+            MapSceneHost host,
+            out MapData map,
+            out string status)
+        {
+            map = null;
+            status = null;
+            if (definition == null)
+            {
+                status = "マップが選択されていません";
+                return false;
+            }
+
+            if (host == null)
+            {
+                status = "シーンに MapSceneHost がありません";
+                return false;
+            }
+
+            if (!definition.HasValidBakedMapData || !definition.HasValidBakedNavMesh)
+            {
+                status = "地形・NavMeshの再ベイクが必要です。「シーンへ3D反映」を実行してください";
+                return false;
+            }
+
+            map = definition.BakedMapData.CreateRuntimeMap();
+            if (!host.LoadBakedNavMeshForValidation(definition.BakedNavMesh))
+            {
+                status = "保存済みNavMeshDataを検証用にロードできませんでした";
+                map = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool SaveRoutesAndPreview(
+            AuthoredMapDefinition definition,
+            MapData map,
+            List<AssaultRoute> routes,
+            out string status)
+        {
+            map.AssaultRoutes.Clear();
+            map.AssaultRoutes.AddRange(routes);
+            int fingerprint = definition.ComputeAssaultRouteFingerprint();
+            definition.BakedMapData.CaptureAssaultRoutes(routes, fingerprint);
+            EditorUtility.SetDirty(definition.BakedMapData);
+            if (!SavePreviewAsset(definition, map, fingerprint, out string error))
+            {
+                status = error;
+                return false;
+            }
+
+            EditorUtility.SetDirty(definition);
+            AssetDatabase.SaveAssets();
+            status = $"侵攻ルート {routes.Count} 本を検証・保存しました";
             return true;
         }
 
@@ -235,42 +339,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
 
             definition.SetBakedNavMesh(saved, fingerprint);
-            return true;
-        }
-
-        private static bool TryBuildAssaultRoutes(
-            MapData map,
-            Transform mapOrigin,
-            out List<AuthoredBakedAssaultRoute> allyRoutes,
-            out List<AuthoredBakedAssaultRoute> enemyRoutes,
-            out string error)
-        {
-            allyRoutes = new List<AuthoredBakedAssaultRoute>();
-            enemyRoutes = new List<AuthoredBakedAssaultRoute>();
-            error = null;
-            int areaMask = CombatStoneAssaultRoutes.CreateAreaMask(allowRiverCrossing: false);
-
-            if (!CombatAssaultRouteCache.TryFindMainStoneWorld(
-                    map, mapOrigin, FeatureType.OwnMainStone, out Vector3 ownStone) ||
-                !CombatAssaultRouteCache.TryFindMainStoneWorld(
-                    map, mapOrigin, FeatureType.EnemyMainStone, out Vector3 enemyStone))
-            {
-                return true;
-            }
-
-            if (!CombatStoneAssaultRoutes.TrySamplePosition(ownStone, StoneSampleRadius, areaMask, out Vector3 allyStart) ||
-                !CombatStoneAssaultRoutes.TrySamplePosition(enemyStone, StoneSampleRadius, areaMask, out Vector3 allyGoal) ||
-                !CombatStoneAssaultRoutes.TrySamplePosition(enemyStone, StoneSampleRadius, areaMask, out Vector3 enemyStart) ||
-                !CombatStoneAssaultRoutes.TrySamplePosition(ownStone, StoneSampleRadius, areaMask, out Vector3 enemyGoal))
-            {
-                error = "進攻ルート用の NavMesh Sample に失敗しました";
-                return false;
-            }
-
-            allyRoutes = CombatAssaultRouteCache.BuildBakedRoutesForTeam(
-                map, mapOrigin, allyStart, allyGoal, areaMask);
-            enemyRoutes = CombatAssaultRouteCache.BuildBakedRoutesForTeam(
-                map, mapOrigin, enemyStart, enemyGoal, areaMask);
             return true;
         }
 
