@@ -23,6 +23,8 @@ public sealed class CombatFlow : MonoBehaviour
 
     private readonly List<Character> _allyCandidates = new();
     private readonly List<Character> _enemies = new();
+    private CombatBattleResultRecorder _battleResultRecorder;
+    private CombatBattleResultView _battleResultView;
     private CombatBattleHudView _battleHudView;
     private float _selectedBattleSpeed = 1f;
     private bool _isPaused;
@@ -87,6 +89,8 @@ public sealed class CombatFlow : MonoBehaviour
             _mapSelectionView.SelectionChanged -= OnMapSelectionChanged;
         }
 
+        _battleResultRecorder?.Clear();
+        _battleResultView?.Clear();
         _backToSelectionButton?.onClick.RemoveListener(ShowSelection);
         ClearBattleControlListeners();
         RestoreNormalSpeed();
@@ -126,6 +130,9 @@ public sealed class CombatFlow : MonoBehaviour
         ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
 
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
+        _battleResultRecorder?.Begin(
+            _characterSystem.AllyCharacters,
+            _characterSystem.EnemyCharacters);
         _battleFlow.StartBattleOnCurrentMap();
 
         if (_battleFlow.State != CombatBattleState.Running)
@@ -144,6 +151,9 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ShowResult(CombatBattleState outcome)
     {
+        CombatBattleResult result = _battleResultRecorder?.Complete(outcome);
+        _battleResultView?.Show(result);
+
         if (_resultTitle != null)
         {
             _resultTitle.text = outcome == CombatBattleState.Victory ? "勝利" : "敗北";
@@ -166,6 +176,8 @@ public sealed class CombatFlow : MonoBehaviour
     {
         RestoreNormalSpeed();
         SetPauseMenuVisible(false);
+        _battleResultRecorder?.Clear();
+        _battleResultView?.Clear();
         _battleFlow.AbortBattle();
         _characterSystem.SetParticipants(_allyCandidates, _enemies);
         if (_mapSelectionView != null)
@@ -379,6 +391,14 @@ public sealed class CombatFlow : MonoBehaviour
         _characterSystem ??= context != null ? context.CharacterSystem : null;
         _battleFlow ??= context != null ? context.BattleFlow : null;
         _mapSystem ??= context != null ? context.MapSystem : null;
+        _battleResultRecorder ??= GetComponent<CombatBattleResultRecorder>();
+        _battleResultRecorder ??= gameObject.AddComponent<CombatBattleResultRecorder>();
+        if (_resultPanel != null)
+        {
+            _battleResultView ??= _resultPanel.GetComponent<CombatBattleResultView>();
+            _battleResultView ??= _resultPanel.AddComponent<CombatBattleResultView>();
+            _battleResultView.EnsureBuilt();
+        }
         if (_mapSelectionView == null && _characterSelectionPanel != null)
             _mapSelectionView = _characterSelectionPanel.GetComponentInChildren<CombatMapSelectionView>(true);
         _characterSystem ??= FindAnyObjectByType<CombatCharacterSystem>();
