@@ -70,6 +70,18 @@ public readonly struct TerrainTraversalInfo
     }
 }
 
+public enum CombatMapApplyFailure
+{
+    None,
+    MissingDefinition,
+    MissingSharedConfig,
+    MissingBakedMapData,
+    MissingBakedNavMesh,
+    MissingMapSceneHost,
+    RuntimeMapCreationFailed,
+    RenderOrNavMeshLoadFailed,
+}
+
 public class CombatMapSystem : MonoBehaviour
 {
     [FormerlySerializedAs("_mapGenerator")]
@@ -406,6 +418,75 @@ public class CombatMapSystem : MonoBehaviour
             _mapSceneHost.Clear3D();
 
         return BuildAuthoredAndSetCurrentMap(render3D);
+    }
+
+    public bool TryApplyBakedAuthoredMap(
+        AuthoredMapDefinition definition,
+        out MapData map,
+        out CombatMapApplyFailure failure)
+    {
+        map = null;
+        failure = CombatMapApplyFailure.None;
+        if (definition == null)
+        {
+            failure = CombatMapApplyFailure.MissingDefinition;
+            return false;
+        }
+
+        if (definition.SharedConfig == null)
+        {
+            failure = CombatMapApplyFailure.MissingSharedConfig;
+            return false;
+        }
+
+        if (!definition.HasValidBakedMapData)
+        {
+            failure = CombatMapApplyFailure.MissingBakedMapData;
+            return false;
+        }
+
+        if (!definition.HasValidBakedNavMesh)
+        {
+            failure = CombatMapApplyFailure.MissingBakedNavMesh;
+            return false;
+        }
+
+        if (_mapSceneHost == null)
+        {
+            failure = CombatMapApplyFailure.MissingMapSceneHost;
+            return false;
+        }
+
+        try
+        {
+            map = definition.BakedMapData.CreateRuntimeMap();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogException(ex, this);
+            failure = CombatMapApplyFailure.RuntimeMapCreationFailed;
+            return false;
+        }
+
+        _mapSceneHost.Config = definition.SharedConfig;
+        _mapSceneHost.Clear3D();
+        bool applied = _mapSceneHost.ApplyMapData(
+            map,
+            render3D: true,
+            bakeNavMesh: false,
+            prebakedNavMesh: definition.BakedNavMesh);
+        if (!applied)
+        {
+            map = null;
+            SetCurrentMap(null);
+            failure = CombatMapApplyFailure.RenderOrNavMeshLoadFailed;
+            return false;
+        }
+
+        _authoredMap = definition;
+        _isNavMeshReady = true;
+        CombatAssaultRouteCache.EnsureBuilt(this);
+        return true;
     }
 
     private MapData BuildAuthoredAndSetCurrentMap(bool render3D)

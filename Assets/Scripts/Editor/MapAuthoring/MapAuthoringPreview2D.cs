@@ -18,6 +18,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
         public static Texture2D Build(MapData map)
         {
+            return BuildBackground(map);
+        }
+
+        public static Texture2D BuildBackground(MapData map)
+        {
             if (map == null) return null;
 
             HeightMap h = map.Height;
@@ -278,8 +283,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 {
                     FeatureType.Bridge => new Color32(140, 90, 40, 255),
                     FeatureType.Rock => new Color32(110, 110, 110, 255),
-                    FeatureType.OwnMainStone => new Color32(70, 140, 255, 255),
-                    FeatureType.EnemyMainStone => new Color32(255, 80, 80, 255),
                     _ => null,
                 };
                 if (!color.HasValue) continue;

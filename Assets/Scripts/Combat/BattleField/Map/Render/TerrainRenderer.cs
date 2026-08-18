@@ -109,8 +109,17 @@ namespace WarSimulation.Combat.Map
         public void Clear()
         {
             if (_terrain == null) return;
-            if (Application.isPlaying) Destroy(_terrain.gameObject);
-            else DestroyImmediate(_terrain.gameObject);
+            GameObject terrainObject = _terrain.gameObject;
+            if (Application.isPlaying)
+            {
+                terrainObject.name = $"{GeneratedTerrainName}.PendingDestroy";
+                terrainObject.SetActive(false);
+                Destroy(terrainObject);
+            }
+            else
+            {
+                DestroyImmediate(terrainObject);
+            }
             _terrain = null;
         }
 

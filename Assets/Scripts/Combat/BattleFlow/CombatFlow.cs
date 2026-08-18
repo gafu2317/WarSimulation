@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using WarSimulation.Combat.Map;
 
 public sealed class CombatFlow : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public sealed class CombatFlow : MonoBehaviour
     [SerializeField] private CombatCharacterSystem _characterSystem;
     [SerializeField] private CombatBattleFlow _battleFlow;
     [SerializeField] private CombatCharacterSelection _characterSelection;
+    [SerializeField] private CombatMapSelectionView _mapSelectionView;
     [SerializeField] private CombatMapSystem _mapSystem;
     [SerializeField] private GameObject _characterSelectionPanel;
     [SerializeField] private List<GameObject> _battleUiObjects = new();
@@ -46,7 +48,8 @@ public sealed class CombatFlow : MonoBehaviour
     private void Start()
     {
         ResolveDependencies();
-        if (_characterSystem == null || _battleFlow == null || _characterSelection == null)
+        if (_characterSystem == null || _battleFlow == null || _characterSelection == null ||
+            _mapSelectionView == null || _mapSystem == null)
         {
             Debug.LogError($"[{nameof(CombatFlow)}] Required references are not configured.", this);
             enabled = false;
@@ -59,8 +62,11 @@ public sealed class CombatFlow : MonoBehaviour
         EnsureBattleControls();
         _battleFlow.BattleEnded += ShowResult;
         _characterSelection.StonePositionReversedChanged += OnStonePositionReversedChanged;
+        _mapSelectionView.SelectionChanged += OnMapSelectionChanged;
         _backToSelectionButton?.onClick.AddListener(ShowSelection);
         _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
+        _mapSelectionView.Initialize(_mapSystem.AuthoredMap, _characterSelection.IsStonePositionReversed);
+        RefreshStartAvailability();
         ShowSelection();
     }
 
@@ -76,6 +82,11 @@ public sealed class CombatFlow : MonoBehaviour
             _characterSelection.StonePositionReversedChanged -= OnStonePositionReversedChanged;
         }
 
+        if (_mapSelectionView != null)
+        {
+            _mapSelectionView.SelectionChanged -= OnMapSelectionChanged;
+        }
+
         _backToSelectionButton?.onClick.RemoveListener(ShowSelection);
         ClearBattleControlListeners();
         RestoreNormalSpeed();
@@ -85,27 +96,49 @@ public sealed class CombatFlow : MonoBehaviour
         IReadOnlyList<CombatParticipantSetup> selectedAllies,
         IReadOnlyList<CombatParticipantSetup> selectedEnemies)
     {
+        CombatMapAvailability availability = CombatMapAvailability.Evaluate(
+            _mapSelectionView.SelectedMap,
+            _characterSelection.IsStonePositionReversed);
+        if (!availability.CanStartBattle)
+        {
+            _mapSelectionView.ShowFailure(availability.Message);
+            RefreshStartAvailability();
+            return;
+        }
+
+        _mapSelectionView.ClearFailure();
+        _mapSelectionView.SetInteractionEnabled(false);
+        _characterSelection.SetExternalStartAllowed(false);
+        if (!_mapSystem.TryApplyBakedAuthoredMap(
+                _mapSelectionView.SelectedMap,
+                out _,
+                out CombatMapApplyFailure mapFailure))
+        {
+            ShowStartFailure(MapFailureMessage(mapFailure));
+            return;
+        }
+
         if (!TryApplyStonePositionReversed(_characterSelection.IsStonePositionReversed))
         {
-            ShowSelection();
+            ShowStartFailure("魔石位置の反転を適用できませんでした");
             return;
         }
         ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
 
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
+        _battleFlow.StartBattleOnCurrentMap();
+
+        if (_battleFlow.State != CombatBattleState.Running)
+        {
+            ShowStartFailure("戦闘を開始できませんでした");
+            return;
+        }
+
         SetVisible(_characterSelectionPanel, false);
         SetBattleUiVisible(true);
         SetVisible(_resultPanel, false);
         SetBattleControlsVisible(true);
         SetPauseMenuVisible(false);
-        _battleFlow.StartBattleOnCurrentMap();
-
-        if (_battleFlow.State != CombatBattleState.Running)
-        {
-            ShowSelection();
-            return;
-        }
-
         ApplySelectedBattleSpeed();
     }
 
@@ -126,10 +159,21 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ShowSelection()
     {
+        ShowSelectionInternal(clearMapFailure: true);
+    }
+
+    private void ShowSelectionInternal(bool clearMapFailure)
+    {
         RestoreNormalSpeed();
         SetPauseMenuVisible(false);
         _battleFlow.AbortBattle();
         _characterSystem.SetParticipants(_allyCandidates, _enemies);
+        if (_mapSelectionView != null)
+        {
+            _mapSelectionView.SetInteractionEnabled(true);
+            if (clearMapFailure) _mapSelectionView.ClearFailure();
+        }
+        RefreshStartAvailability();
         SetVisible(_characterSelectionPanel, true);
         SetBattleUiVisible(false);
         SetBattleControlsVisible(false);
@@ -138,10 +182,38 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void OnStonePositionReversedChanged(bool reversed)
     {
-        if (TryApplyStonePositionReversed(reversed)) return;
-
-        _characterSelection.SetStonePositionReversedState(!reversed);
+        _mapSelectionView.SetStonePositionsReversed(reversed);
+        RefreshStartAvailability();
     }
+
+    private void OnMapSelectionChanged()
+    {
+        RefreshStartAvailability();
+    }
+
+    private void RefreshStartAvailability()
+    {
+        if (_characterSelection == null || _mapSelectionView == null) return;
+        _characterSelection.SetExternalStartAllowed(_mapSelectionView.CanStartBattle);
+    }
+
+    private void ShowStartFailure(string message)
+    {
+        ShowSelectionInternal(clearMapFailure: false);
+        _mapSelectionView.ShowFailure(message);
+    }
+
+    private static string MapFailureMessage(CombatMapApplyFailure failure) => failure switch
+    {
+        CombatMapApplyFailure.MissingDefinition => "戦闘マップが選択されていません",
+        CombatMapApplyFailure.MissingSharedConfig => "共通マップ設定がありません",
+        CombatMapApplyFailure.MissingBakedMapData => "ベイク済みMapDataを読み込めません",
+        CombatMapApplyFailure.MissingBakedNavMesh => "ベイク済みNavMeshを読み込めません",
+        CombatMapApplyFailure.MissingMapSceneHost => "MapSceneHostが設定されていません",
+        CombatMapApplyFailure.RuntimeMapCreationFailed => "ベイク済みMapDataの復元に失敗しました",
+        CombatMapApplyFailure.RenderOrNavMeshLoadFailed => "マップ描画またはNavMesh読込に失敗しました",
+        _ => "戦闘マップを適用できませんでした",
+    };
 
     private void ApplyCombatCamera(bool reversed)
     {
@@ -307,6 +379,8 @@ public sealed class CombatFlow : MonoBehaviour
         _characterSystem ??= context != null ? context.CharacterSystem : null;
         _battleFlow ??= context != null ? context.BattleFlow : null;
         _mapSystem ??= context != null ? context.MapSystem : null;
+        if (_mapSelectionView == null && _characterSelectionPanel != null)
+            _mapSelectionView = _characterSelectionPanel.GetComponentInChildren<CombatMapSelectionView>(true);
         _characterSystem ??= FindAnyObjectByType<CombatCharacterSystem>();
         _battleFlow ??= FindAnyObjectByType<CombatBattleFlow>();
         _mapSystem ??= FindAnyObjectByType<CombatMapSystem>();

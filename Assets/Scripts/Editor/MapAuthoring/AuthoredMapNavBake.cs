@@ -73,6 +73,12 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return false;
             }
 
+            if (!SavePreviewAsset(definition, map, fingerprint, out string previewError))
+            {
+                status = previewError;
+                return false;
+            }
+
             if (!builder.Load(definition.BakedNavMesh))
             {
                 status = "保存済みNavMeshDataの再ロードに失敗しました";
@@ -84,7 +90,69 @@ namespace WarSimulation.Combat.Map.EditorOnly
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(host.gameObject.scene);
-            status = "シーンへ3D反映完了 / MapData・NavMesh・進攻ルートを保存しました（シーンを保存してください）";
+            status = "シーンへ3D反映完了 / MapData・NavMesh・進攻ルート・プレビューを保存しました（シーンを保存してください）";
+            return true;
+        }
+
+        internal static bool SavePreviewAsset(
+            AuthoredMapDefinition definition,
+            MapData map,
+            int fingerprint,
+            out string error)
+        {
+            error = null;
+            string definitionPath = AssetDatabase.GetAssetPath(definition);
+            if (string.IsNullOrEmpty(definitionPath))
+            {
+                error = "AuthoredMap のアセットパスを取得できません";
+                return false;
+            }
+
+            Texture2D preview = MapAuthoringPreview2D.BuildBackground(map);
+            if (preview == null)
+            {
+                error = "プレビュー画像を生成できませんでした";
+                return false;
+            }
+
+            string dir = Path.GetDirectoryName(definitionPath)?.Replace('\\', '/') ?? "Assets";
+            string assetPath = $"{dir}/{definition.name}_Preview.png";
+            string absolutePath = Path.GetFullPath(assetPath);
+            try
+            {
+                File.WriteAllBytes(absolutePath, preview.EncodeToPNG());
+            }
+            catch (System.Exception ex)
+            {
+                error = $"プレビュー画像を保存できませんでした: {ex.Message}";
+                return false;
+            }
+            finally
+            {
+                Object.DestroyImmediate(preview);
+            }
+
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            if (AssetImporter.GetAtPath(assetPath) is TextureImporter importer)
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = false;
+                importer.filterMode = FilterMode.Point;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.textureCompression = TextureImporterCompression.Compressed;
+                importer.SaveAndReimport();
+            }
+
+            Texture2D saved = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            if (saved == null)
+            {
+                error = "保存したプレビュー画像を読み込めませんでした";
+                return false;
+            }
+
+            definition.SetBakedPreview(saved, fingerprint);
+            EditorUtility.SetDirty(definition);
             return true;
         }
 

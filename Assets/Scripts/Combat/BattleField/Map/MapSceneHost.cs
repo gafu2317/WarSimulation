@@ -36,11 +36,17 @@ namespace WarSimulation.Combat.Map
                 return false;
             }
 
+            if (!render3D)
+            {
+                LastAppliedMap = map;
+                SetCombatMapSystemCurrentMap(map);
+                return true;
+            }
+
+            if (!Render3D(map, bakeNavMesh, prebakedNavMesh)) return false;
             LastAppliedMap = map;
             SetCombatMapSystemCurrentMap(map);
-            if (!render3D)
-                return true;
-            return Render3D(map, bakeNavMesh, prebakedNavMesh);
+            return true;
         }
 
         public void SetBakedRenderFingerprint(int fingerprint)

@@ -49,6 +49,10 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private int _assaultRouteBakeFingerprint;
         [SerializeField] private bool _hasBakedAssaultRoutes;
 
+        [Header("Baked Preview")]
+        [SerializeField] private Texture2D _bakedPreview;
+        [SerializeField] private int _previewBakeFingerprint;
+
         [SerializeField] private List<AuthoredMountainPlacement> _mountains = new();
         [SerializeField] private List<AuthoredRiverPlacement> _rivers = new();
         [SerializeField] private List<AuthoredLakePlacement> _lakes = new();
@@ -78,6 +82,8 @@ namespace WarSimulation.Combat.Map
         public IReadOnlyList<AuthoredBakedAssaultRoute> BakedAllyAssaultRoutes => _bakedAllyAssaultRoutes;
         public IReadOnlyList<AuthoredBakedAssaultRoute> BakedEnemyAssaultRoutes => _bakedEnemyAssaultRoutes;
         public int AssaultRouteBakeFingerprint => _assaultRouteBakeFingerprint;
+        public Texture2D BakedPreview => _bakedPreview;
+        public int PreviewBakeFingerprint => _previewBakeFingerprint;
 
         public List<AuthoredMountainPlacement> Mountains => _mountains;
         public List<AuthoredRiverPlacement> Rivers => _rivers;
@@ -99,6 +105,9 @@ namespace WarSimulation.Combat.Map
             _hasBakedAssaultRoutes && _assaultRouteBakeFingerprint == ComputeBakeFingerprint();
 
         public bool HasBakedAssaultRoutesData => _hasBakedAssaultRoutes;
+
+        public bool HasValidBakedPreview =>
+            _bakedPreview != null && _previewBakeFingerprint == ComputeBakeFingerprint();
 
         /// <summary>マップ内容が変わると変わる fingerprint。ベイク鮮度判定用（Editor/Runtime で同一・決定的）。</summary>
         public int ComputeBakeFingerprint()
@@ -379,6 +388,12 @@ namespace WarSimulation.Combat.Map
             _bakedEnemyAssaultRoutes = enemyRoutes ?? new List<AuthoredBakedAssaultRoute>();
             _assaultRouteBakeFingerprint = fingerprint;
             _hasBakedAssaultRoutes = true;
+        }
+
+        public void SetBakedPreview(Texture2D preview, int fingerprint)
+        {
+            _bakedPreview = preview;
+            _previewBakeFingerprint = fingerprint;
         }
     }
 }

@@ -97,10 +97,18 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Action<int> _pendingWeaponSelectionCommit;
     private bool _detailSettingsOpen;
     private bool _stonePositionReversed;
+    private bool _externalStartAllowed = true;
 
     public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
     public bool IsStonePositionReversed => _stonePositionReversed;
     public event Action<bool> StonePositionReversedChanged;
+
+    public void SetExternalStartAllowed(bool allowed)
+    {
+        if (_externalStartAllowed == allowed) return;
+        _externalStartAllowed = allowed;
+        Refresh();
+    }
 
     public void Initialize(
         IReadOnlyList<Character> allyCandidates,
@@ -1976,7 +1984,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_startBattleButton != null)
         {
             _startBattleButton.interactable = allyCount > 0 && enemyCount > 0 &&
-                                              _weaponOptions.Count > 0 && _personalityOptions.Count > 0;
+                                              _weaponOptions.Count > 0 && _personalityOptions.Count > 0 &&
+                                              _externalStartAllowed;
         }
     }
 
