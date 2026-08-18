@@ -193,7 +193,16 @@ public class CombatMapSystem : MonoBehaviour
             return false;
         }
 
-        if (!_mapSceneHost.LoadBakedMap(map, _authoredMap.BakedNavMesh, currentFingerprint)) return false;
+        _mapSceneHost.Config = _authoredMap.SharedConfig;
+        _mapSceneHost.Clear3D();
+        if (!_mapSceneHost.ApplyMapData(
+                map,
+                render3D: true,
+                bakeNavMesh: false,
+                prebakedNavMesh: _authoredMap.BakedNavMesh))
+        {
+            return false;
+        }
 
         _isNavMeshReady = true;
         CombatAssaultRouteCache.EnsureBuilt(this);

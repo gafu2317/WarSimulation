@@ -346,7 +346,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         CombatAutoBattleRole[] enemies,
         int seed)
     {
-        // Separate map-pick stream from battle RNG so ApplyAuthoredMap side effects stay reproducible.
+        // Separate map-pick stream from battle RNG so map loading side effects stay reproducible.
         int mapSeed = seed * 397 + 17;
         UnityEngine.Random.InitState(mapSeed);
         AuthoredMapDefinition mapDefinition = _mapCandidates[UnityEngine.Random.Range(0, _mapCandidates.Length)];
@@ -354,9 +354,14 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         bool mapChanged = _lastAppliedMap != mapDefinition;
         if (mapChanged)
         {
-            MapData map = _mapSystem.ApplyAuthoredMap(mapDefinition, render3D: true);
-            if (map == null)
-                throw new InvalidOperationException($"マップ '{mapDefinition.name}' の適用に失敗しました。");
+            if (!_mapSystem.TryApplyBakedAuthoredMap(
+                    mapDefinition,
+                    out MapData map,
+                    out CombatMapApplyFailure failure))
+            {
+                throw new InvalidOperationException(
+                    $"マップ '{mapDefinition.name}' の適用に失敗しました: {failure}");
+            }
             _lastAppliedMap = mapDefinition;
             yield return null;
         }

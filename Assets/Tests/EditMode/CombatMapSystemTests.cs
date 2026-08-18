@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.AI;
 using WarSimulation.Combat.Map;
 
 public sealed class CombatMapSystemTests
@@ -265,7 +266,6 @@ public sealed class CombatMapSystemTests
     [Test]
     public void AssaultRoutes_ReverseTeamAssignmentWithoutChangingBakedRoutes()
     {
-        AuthoredMapDefinition definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
         MapData map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), 1);
         try
         {
@@ -275,7 +275,7 @@ public sealed class CombatMapSystemTests
                 new[] { Vector3.zero, Vector3.right, Vector3.one }));
             CombatAssaultRouteCache.Invalidate();
 
-            Assert.That(CombatAssaultRouteCache.TryHydrateFromAuthored(definition, map, null), Is.True);
+            Assert.That(CombatAssaultRouteCache.TryHydrate(map, null), Is.True);
             IReadOnlyList<CombatAiAssaultRoute> normalAlly =
                 CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: false);
             IReadOnlyList<CombatAiAssaultRoute> reversedAlly =
@@ -293,6 +293,71 @@ public sealed class CombatMapSystemTests
         finally
         {
             CombatAssaultRouteCache.Invalidate();
+        }
+    }
+
+    [Test]
+    public void TryApplyBakedAuthoredMapRestoresFeaturesAndAssaultRoutesTogether()
+    {
+        GameObject systemObject = new GameObject("CombatMapSystem");
+        GameObject hostObject = new GameObject("MapSceneHost");
+        AuthoredMapDefinition definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
+        BakedMapData bakedMap = ScriptableObject.CreateInstance<BakedMapData>();
+        NavMeshData navMesh = new NavMeshData();
+        try
+        {
+            definition.SharedConfig = config;
+            definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
+                "route-main",
+                "Main",
+                AuthoredAssaultRouteSource.Manual));
+            MapData source = new MapData(
+                new HeightMap(4, 4, 1f),
+                new GroundStateGrid(4, 4, 1f),
+                seed: 7);
+            source.AddFeature(new PlacedFeature(
+                FeatureType.Tree,
+                new Vector3(2f, 0f, 3f)));
+            var bakedRoute = new AssaultRoute(
+                "route-main",
+                "Main",
+                new[] { Vector3.zero, new Vector3(3f, 0f, 3f) });
+            int geometryFingerprint = definition.ComputeGeometryFingerprint();
+            bakedMap.Capture(source, geometryFingerprint);
+            bakedMap.CaptureAssaultRoutes(
+                new[] { bakedRoute },
+                definition.ComputeAssaultRouteFingerprint());
+            definition.SetBakedMapData(bakedMap);
+            definition.SetBakedNavMesh(navMesh, geometryFingerprint);
+
+            CombatMapSystem system = systemObject.AddComponent<CombatMapSystem>();
+            MapSceneHost host = hostObject.AddComponent<MapSceneHost>();
+            SetPrivateField(system, "_mapSceneHost", host);
+
+            bool applied = system.TryApplyBakedAuthoredMap(
+                definition,
+                out MapData loaded,
+                out CombatMapApplyFailure failure);
+
+            Assert.That(applied, Is.True, failure.ToString());
+            Assert.That(loaded.Features.Count, Is.EqualTo(1));
+            Assert.That(loaded.Features[0].Type, Is.EqualTo(FeatureType.Tree));
+            Assert.That(loaded.Features[0].WorldPosition, Is.EqualTo(new Vector3(2f, 0f, 3f)));
+            Assert.That(loaded.AssaultRoutes.Count, Is.EqualTo(1));
+            Assert.That(loaded.AssaultRoutes[0].Corners, Is.EqualTo(bakedRoute.Corners));
+            Assert.That(
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: false).Count,
+                Is.EqualTo(1));
+        }
+        finally
+        {
+            CombatAssaultRouteCache.Invalidate();
+            Object.DestroyImmediate(hostObject);
+            Object.DestroyImmediate(systemObject);
+            Object.DestroyImmediate(navMesh);
+            Object.DestroyImmediate(bakedMap);
+            Object.DestroyImmediate(config);
             Object.DestroyImmediate(definition);
         }
     }

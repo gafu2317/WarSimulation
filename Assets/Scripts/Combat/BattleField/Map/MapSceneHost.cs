@@ -158,25 +158,31 @@ namespace WarSimulation.Combat.Map
         {
             if (_bakedRenderFingerprint != fingerprint) return false;
             if (transform.Find("GeneratedTerrain") == null) return false;
-            if (map.Rivers.Count > 0 && transform.Find("GeneratedRivers") == null) return false;
-            if (map.Lakes.Count > 0 && transform.Find("GeneratedLakes") == null) return false;
+            if (!HasExpectedChildren("GeneratedRivers", map.Rivers.Count)) return false;
+            if (!HasExpectedChildren("GeneratedLakes", map.Lakes.Count)) return false;
 
-            bool hasBridge = false;
-            bool hasFeature = false;
+            int bridgeCount = 0;
+            int featureCount = 0;
             for (int i = 0; i < map.Features.Count; i++)
             {
                 FeatureType type = map.Features[i].Type;
-                if (type == FeatureType.Bridge) hasBridge = true;
+                if (type == FeatureType.Bridge) bridgeCount++;
                 if (type == FeatureType.Tree || type == FeatureType.Rock ||
                     type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone)
                 {
-                    hasFeature = true;
+                    featureCount++;
                 }
             }
 
-            if (hasBridge && transform.Find("GeneratedBridges") == null) return false;
-            if (hasFeature && transform.Find("GeneratedFeatures") == null) return false;
-            return true;
+            return HasExpectedChildren("GeneratedBridges", bridgeCount) &&
+                HasExpectedChildren("GeneratedFeatures", featureCount);
+        }
+
+        private bool HasExpectedChildren(string rootName, int expectedCount)
+        {
+            Transform root = transform.Find(rootName);
+            return expectedCount == 0 ? root == null || root.childCount == 0 :
+                root != null && root.childCount == expectedCount;
         }
 
         private static void SetCombatMapSystemCurrentMap(MapData map)

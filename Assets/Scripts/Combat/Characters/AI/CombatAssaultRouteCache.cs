@@ -35,24 +35,13 @@ public static class CombatAssaultRouteCache
         Transform origin = mapSystem.MapOrigin;
         if (_buildCompleted && ReferenceEquals(_cachedMap, map) && ReferenceEquals(_cachedOrigin, origin))
             return;
-        if (map.AssaultRoutes.Count > 0)
-            Hydrate(map, origin);
-        else if (mapSystem.AuthoredMap != null && mapSystem.AuthoredMap.HasValidBakedAssaultRoutes)
-            HydrateLegacy(mapSystem.AuthoredMap, map, origin);
-        else
-            Hydrate(map, origin);
+        Hydrate(map, origin);
     }
 
-    public static bool TryHydrateFromAuthored(
-        AuthoredMapDefinition authored,
-        MapData map,
-        Transform mapOrigin)
+    public static bool TryHydrate(MapData map, Transform mapOrigin)
     {
-        if (authored == null || map == null)
-            return false;
-        if (map.AssaultRoutes.Count > 0) Hydrate(map, mapOrigin);
-        else if (authored.HasValidBakedAssaultRoutes) HydrateLegacy(authored, map, mapOrigin);
-        else return false;
+        if (map == null || map.AssaultRoutes.Count == 0) return false;
+        Hydrate(map, mapOrigin);
         return true;
     }
 
@@ -97,41 +86,6 @@ public static class CombatAssaultRouteCache
             ReverseRoutes.Add(new CombatAiAssaultRoute(route.RouteId, route.DisplayName, reverse));
         }
 
-        _buildCompleted = true;
-    }
-
-    private static void HydrateLegacy(
-        AuthoredMapDefinition authored,
-        MapData map,
-        Transform origin)
-    {
-        Invalidate();
-        _cachedMap = map;
-        _cachedOrigin = origin;
-        TryFindMainStoneWorld(map, origin, FeatureType.OwnMainStone, out Vector3 ownStone);
-        TryFindMainStoneWorld(map, origin, FeatureType.EnemyMainStone, out Vector3 enemyStone);
-        IReadOnlyList<AuthoredBakedAssaultRoute> legacyRoutes = authored.BakedAllyAssaultRoutes;
-        for (int i = 0; i < legacyRoutes.Count; i++)
-        {
-            AuthoredBakedAssaultRoute legacy = legacyRoutes[i];
-            string id = legacy.HasBridgeWaypoints
-                ? $"auto:bridge:{legacy.BridgeFeatureIndex}"
-                : "auto:direct";
-            var forward = legacy.HasBridgeWaypoints
-                ? new[]
-                {
-                    ownStone,
-                    ToWorld(origin, legacy.EnterLocal),
-                    ToWorld(origin, legacy.ExitLocal),
-                    enemyStone,
-                }
-                : new[] { ownStone, enemyStone };
-            var reverse = new Vector3[forward.Length];
-            for (int c = 0; c < forward.Length; c++) reverse[forward.Length - 1 - c] = forward[c];
-            string name = legacy.HasBridgeWaypoints ? $"橋ルート {i + 1}" : "直進";
-            ForwardRoutes.Add(new CombatAiAssaultRoute(id, name, forward));
-            ReverseRoutes.Add(new CombatAiAssaultRoute(id, name, reverse));
-        }
         _buildCompleted = true;
     }
 

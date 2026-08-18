@@ -86,6 +86,27 @@ namespace WarSimulation.Tests.EditMode
         }
 
         [Test]
+        public void Scene3DReportsMissingFeatureChild()
+        {
+            using var fixture = new BakeFixture();
+            MapData map = BakeFixture.CreateMap();
+            map.AddFeature(new PlacedFeature(FeatureType.Tree, new Vector3(0.5f, 0f, 0.5f)));
+            map.AddFeature(new PlacedFeature(FeatureType.Rock, new Vector3(1.5f, 0f, 1.5f)));
+            fixture.BakeAssets(map);
+            fixture.Host.SetBakedRenderFingerprint(fixture.Definition.ComputeGeometryFingerprint());
+            var terrain = new GameObject("GeneratedTerrain");
+            terrain.transform.SetParent(fixture.Host.transform, false);
+            fixture.Host.gameObject.AddComponent<FeatureRenderer>().Render(map);
+
+            Object.DestroyImmediate(fixture.Host.transform.Find("GeneratedFeatures/Tree_0").gameObject);
+            AuthoredMapBakeStatus status = AuthoredMapBakeStatus.Evaluate(
+                fixture.Definition,
+                fixture.Host);
+
+            Assert.That(status.Scene3D, Is.EqualTo(AuthoredMapBakeStageState.MissingSceneData));
+        }
+
+        [Test]
         public void CurrentSavedNavMeshLoadsForRouteValidationWithoutGeneratedTerrain()
         {
             using var fixture = new BakeFixture();
@@ -157,10 +178,10 @@ namespace WarSimulation.Tests.EditMode
                 Host = new GameObject("MapSceneHost-Test").AddComponent<MapSceneHost>();
             }
 
-            public void BakeAssets()
+            public void BakeAssets(MapData map = null)
             {
                 int geometryFingerprint = Definition.ComputeGeometryFingerprint();
-                BakedMap.Capture(CreateMap(), geometryFingerprint);
+                BakedMap.Capture(map ?? CreateMap(), geometryFingerprint);
                 Definition.SetBakedMapData(BakedMap);
                 Definition.SetBakedNavMesh(NavMesh, geometryFingerprint);
                 Definition.AssaultRoutes.Add(new AuthoredAssaultRoute(
@@ -196,7 +217,7 @@ namespace WarSimulation.Tests.EditMode
                 Object.DestroyImmediate(Definition);
             }
 
-            private static MapData CreateMap()
+            public static MapData CreateMap()
             {
                 var height = new HeightMap(2, 2, 1f);
                 var ground = new GroundStateGrid(2, 2, 1f);
