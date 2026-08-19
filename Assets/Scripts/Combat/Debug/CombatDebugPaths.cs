@@ -41,6 +41,9 @@ public static class CombatDebugPaths
 
     public static string GetLogsDirectory(string folderName)
     {
+        if (CombatAutoBattleConfigLoader.TryGetOutputDirectory(out string outputDirectory))
+            return Path.Combine(outputDirectory, folderName);
+
         string projectRoot = FindProjectRoot();
         if (!string.IsNullOrEmpty(projectRoot))
             return Path.Combine(projectRoot, "Logs", folderName);

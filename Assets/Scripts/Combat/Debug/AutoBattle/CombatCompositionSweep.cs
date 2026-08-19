@@ -21,15 +21,35 @@ public sealed class CombatCompositionSweepConfig
     public int BaseSeed = 12000;
     public int MinPartySize = 4;
     public int MaxPartySize = 6;
-    public float TimeoutSeconds = 480f;
+    public float TimeoutSeconds = 600f;
     public float TimeScale = 32f;
+    public bool EnumerateAllCandidates;
+    public bool EvaluateBothStonePositions;
+    public bool UseCommonSeeds;
+    public bool DisableDiagnostics;
+    public int CandidateOffset;
+    public int CandidateLimit;
 }
 
 [Serializable]
 public sealed class CombatCompositionCandidateResult
 {
     public int Index;
+    public string CandidateKey;
     public CombatAutoBattleRole[] Roles = Array.Empty<CombatAutoBattleRole>();
+    public int MatchCount;
+    public int Wins;
+    public int Losses;
+    public int Timeouts;
+    public float WinRate;
+    public List<CombatCompositionScenarioResult> Scenarios = new();
+}
+
+[Serializable]
+public sealed class CombatCompositionScenarioResult
+{
+    public string MapName;
+    public bool StonePositionsReversed;
     public int MatchCount;
     public int Wins;
     public int Losses;
@@ -205,6 +225,9 @@ public static class CombatCompositionSweepGenerator
             return results;
         }
 
+        if (config.EnumerateAllCandidates)
+            return GenerateAll(config, minSize, maxSize);
+
         var rng = new System.Random(config.BaseSeed);
         int target = Mathf.Max(1, config.CandidateCount);
         int attempts = 0;
@@ -220,6 +243,64 @@ public static class CombatCompositionSweepGenerator
             Debug.LogWarning($"[編成探索] 候補を {results.Count}/{target} 件しか生成できませんでした。");
 
         return results;
+    }
+
+    private static List<CombatCompositionCandidate> GenerateAll(
+        CombatCompositionSweepConfig config,
+        int minSize,
+        int maxSize)
+    {
+        var roleOptions = new List<CombatAutoBattleRole>();
+        for (int w = 0; w < AllWeapons.Length; w++)
+        {
+            WeaponKind weapon = AllWeapons[w];
+            CombatAiPersonalityKind[] personalities = AffinitiesFor(weapon);
+            for (int p = 0; p < personalities.Length; p++)
+            {
+                roleOptions.Add(new CombatAutoBattleRole
+                {
+                    Weapon = weapon,
+                    Personality = personalities[p],
+                });
+            }
+        }
+
+        var all = new List<CombatCompositionCandidate>();
+        for (int size = minSize; size <= maxSize; size++)
+        {
+            var roles = new CombatAutoBattleRole[size];
+            AddCombinations(roleOptions, roles, depth: 0, optionStart: 0, all);
+        }
+
+        int offset = Mathf.Clamp(config.CandidateOffset, 0, all.Count);
+        int available = all.Count - offset;
+        int count = config.CandidateLimit > 0
+            ? Mathf.Min(config.CandidateLimit, available)
+            : available;
+        return all.GetRange(offset, count);
+    }
+
+    private static void AddCombinations(
+        List<CombatAutoBattleRole> options,
+        CombatAutoBattleRole[] roles,
+        int depth,
+        int optionStart,
+        List<CombatCompositionCandidate> destination)
+    {
+        if (depth == roles.Length)
+        {
+            var weapons = new WeaponKind[roles.Length];
+            for (int i = 0; i < roles.Length; i++) weapons[i] = roles[i].Weapon;
+            if (IsLegalWeaponComposition(weapons, roles.Length, roles.Length))
+                destination.Add(CloneCandidate(roles));
+            return;
+        }
+
+        for (int i = optionStart; i < options.Count; i++)
+        {
+            roles[depth] = options[i];
+            AddCombinations(options, roles, depth + 1, i, destination);
+        }
     }
 
     private static CombatAutoBattleRole[] GenerateOne(System.Random rng, int minSize, int maxSize)
@@ -308,7 +389,7 @@ public static class CombatCompositionSweepGenerator
         }
     }
 
-    private static string BuildKey(CombatAutoBattleRole[] roles)
+    public static string BuildKey(CombatAutoBattleRole[] roles)
     {
         var sorted = new List<CombatAutoBattleRole>(roles);
         sorted.Sort((a, b) =>

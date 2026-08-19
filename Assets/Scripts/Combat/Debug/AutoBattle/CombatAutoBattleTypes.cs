@@ -20,8 +20,9 @@ public sealed class CombatAutoBattleConfig
     public CombatAutoBattleRole[] Enemies;
     public int MatchCount = 10;
     public int BaseSeed = 1;
-    public float TimeoutSeconds = 480f;
+    public float TimeoutSeconds = 600f;
     public float TimeScale = 32f;
+    public bool DisableDiagnostics;
 }
 
 [Serializable]
@@ -30,6 +31,7 @@ public sealed class CombatAutoBattleMatchResult
     public int Index;
     public int Seed;
     public string MapName;
+    public bool StonePositionsReversed;
     public string Outcome;
     public float GameSeconds;
     public float RealSeconds;
@@ -54,6 +56,7 @@ public static class CombatAutoBattleConfigLoader
 {
     public const string CommandLineArgument = "-autoBattleConfig";
     public const string SweepCommandLineArgument = "-autoBattleSweepConfig";
+    public const string OutputDirectoryCommandLineArgument = "-autoBattleOutputDirectory";
 
     private static string _lastConfigPath;
 
@@ -61,6 +64,13 @@ public static class CombatAutoBattleConfigLoader
     {
         path = _lastConfigPath;
         return !string.IsNullOrEmpty(path);
+    }
+
+    public static bool TryGetOutputDirectory(out string path)
+    {
+        if (!TryFindArgument(OutputDirectoryCommandLineArgument, out path)) return false;
+        path = Path.GetFullPath(path);
+        return true;
     }
 
     public static bool TryLoadFromCommandLine(out CombatAutoBattleConfig config, out string path)

@@ -104,4 +104,52 @@ public sealed class CombatCompositionSweepGeneratorTests
             CombatAutoBattleOutcomes.FromBattleState(CombatBattleState.Victory, timedOut: true),
             Is.EqualTo(CombatAutoBattleOutcomes.Timeout));
     }
+
+    [Test]
+    public void Generate_EnumeratesEveryLegalFiveMemberComposition()
+    {
+        var config = new CombatCompositionSweepConfig
+        {
+            EnumerateAllCandidates = true,
+            MinPartySize = 5,
+            MaxPartySize = 5,
+        };
+
+        List<CombatCompositionCandidate> candidates = CombatCompositionSweepGenerator.Generate(config);
+        var keys = new HashSet<string>();
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            Assert.That(candidates[i].Roles.Length, Is.EqualTo(5));
+            Assert.That(keys.Add(CombatCompositionSweepGenerator.BuildKey(candidates[i].Roles)), Is.True);
+        }
+
+        Assert.That(candidates.Count, Is.EqualTo(6993));
+    }
+
+    [Test]
+    public void Generate_SlicesEnumeratedCandidatesWithoutChangingTheirOrder()
+    {
+        var allConfig = new CombatCompositionSweepConfig
+        {
+            EnumerateAllCandidates = true,
+            MinPartySize = 5,
+            MaxPartySize = 5,
+        };
+        List<CombatCompositionCandidate> all = CombatCompositionSweepGenerator.Generate(allConfig);
+
+        var sliceConfig = new CombatCompositionSweepConfig
+        {
+            EnumerateAllCandidates = true,
+            MinPartySize = 5,
+            MaxPartySize = 5,
+            CandidateOffset = 100,
+            CandidateLimit = 3,
+        };
+        List<CombatCompositionCandidate> slice = CombatCompositionSweepGenerator.Generate(sliceConfig);
+
+        Assert.That(slice.Count, Is.EqualTo(3));
+        Assert.That(
+            CombatCompositionSweepGenerator.BuildKey(slice[0].Roles),
+            Is.EqualTo(CombatCompositionSweepGenerator.BuildKey(all[100].Roles)));
+    }
 }
