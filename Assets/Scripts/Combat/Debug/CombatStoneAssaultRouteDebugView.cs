@@ -18,6 +18,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
 
     private readonly List<LineRenderer> _lines = new();
     private Transform _generatedRoot;
+    private CombatMapSystem _subscribedMapSystem;
 
     private void OnEnable()
     {
@@ -35,6 +36,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
 
         CombatNavMeshBuilder.Built += RefreshRoutes;
         CombatNavMeshBuilder.Cleared += HideLines;
+        SubscribeCurrentMapChanged();
         RefreshRoutes();
     }
 
@@ -42,6 +44,7 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     {
         CombatNavMeshBuilder.Built -= RefreshRoutes;
         CombatNavMeshBuilder.Cleared -= HideLines;
+        UnsubscribeCurrentMapChanged();
         DestroyGeneratedRoot();
     }
 
@@ -49,14 +52,33 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
     {
         CombatNavMeshBuilder.Built -= RefreshRoutes;
         CombatNavMeshBuilder.Cleared -= HideLines;
+        UnsubscribeCurrentMapChanged();
         DestroyGeneratedRoot();
+    }
+
+    private void SubscribeCurrentMapChanged()
+    {
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (_subscribedMapSystem == mapSystem) return;
+
+        UnsubscribeCurrentMapChanged();
+        _subscribedMapSystem = mapSystem;
+        if (_subscribedMapSystem != null)
+            _subscribedMapSystem.CurrentMapChanged += RefreshRoutes;
+    }
+
+    private void UnsubscribeCurrentMapChanged()
+    {
+        if (_subscribedMapSystem == null) return;
+
+        _subscribedMapSystem.CurrentMapChanged -= RefreshRoutes;
+        _subscribedMapSystem = null;
     }
 
     private void RefreshRoutes()
     {
         if (!Application.isPlaying || !isActiveAndEnabled) return;
-        CombatMapSystem mapSystem = CombatSceneContext.Instance?.MapSystem;
-        mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
+        CombatMapSystem mapSystem = _subscribedMapSystem ?? ResolveMapSystem();
         if (mapSystem == null || mapSystem.CurrentMap == null)
         {
             HideLines();
@@ -73,6 +95,12 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
             if (i < routes.Count) RenderLine(_lines[i], routes[i].Corners, mapSystem);
             else HideLine(_lines[i]);
         }
+    }
+
+    private static CombatMapSystem ResolveMapSystem()
+    {
+        CombatMapSystem mapSystem = CombatSceneContext.Instance?.MapSystem;
+        return mapSystem != null ? mapSystem : FindAnyObjectByType<CombatMapSystem>();
     }
 
     private void EnsureLines(int count)

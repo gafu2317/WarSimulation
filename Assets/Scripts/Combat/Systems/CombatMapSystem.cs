@@ -106,6 +106,7 @@ public class CombatMapSystem : MonoBehaviour
     public float MaximumTerrainHeight { get; private set; }
     public bool IsStonePositionReversed { get; private set; }
     public event Action StonePositionsChanged;
+    public event Action CurrentMapChanged;
 
     private TerrainData _cachedTerrainData;
     private float _cachedTerrainMinimumHeight;
@@ -221,6 +222,7 @@ public class CombatMapSystem : MonoBehaviour
         CombatAssaultRouteCache.Invalidate();
         UpdateTerrainHeightRange(map);
         InitializeMagicStoneSystem(map);
+        if (!isSameMap) CurrentMapChanged?.Invoke();
     }
 
     public bool TrySetStonePositionsReversed(bool reversed)

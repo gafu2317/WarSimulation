@@ -255,6 +255,8 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         Character user = result?.Action.Actor;
         if (_writer == null || user == null || result.Outcome == CombatSkillActionOutcome.Failed) return;
 
+        WriteMagicStoneTargetDiagnostics(result, user);
+
         Character target = result.Action.Context.PrimaryTarget;
         if (target == null)
         {
@@ -275,6 +277,56 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         if (!string.IsNullOrEmpty(line))
         {
             WriteLine(line);
+        }
+    }
+
+    private void WriteMagicStoneTargetDiagnostics(CombatSkillActionResult result, Character user)
+    {
+        for (int i = 0; i < result.Effects.Count; i++)
+        {
+            CombatActionEffect effect = result.Effects[i];
+            if (effect.Kind != CombatActionEffectKind.MagicStoneDamage) continue;
+
+            MagicStone view = null;
+            IReadOnlyList<MagicStone> resolvedStones = result.Action.Context.ResolvedStones;
+            for (int s = 0; s < resolvedStones.Count; s++)
+            {
+                MagicStone candidate = resolvedStones[s];
+                if (candidate != null && candidate.FeatureIndex == effect.MagicStoneFeatureIndex)
+                {
+                    view = candidate;
+                    break;
+                }
+            }
+
+            MagicStoneRuntimeState state = null;
+            _magicStoneSystem?.TryGetState(
+                effect.MagicStoneFeatureIndex,
+                out state);
+            CombatMapSystem mapSystem = CombatSceneContext.Instance?.MapSystem;
+            mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
+            Camera camera = Camera.main;
+            OrbitCameraController orbit = camera != null
+                ? camera.GetComponent<OrbitCameraController>()
+                : null;
+            EditorStyleCameraController editorStyle = camera != null
+                ? camera.GetComponent<EditorStyleCameraController>()
+                : null;
+
+            string line =
+                $"[STONE_TARGET] actor={user.name} team={user.Team} " +
+                $"featureIndex={effect.MagicStoneFeatureIndex} " +
+                $"viewType={(view != null ? view.FeatureType.ToString() : "none")} " +
+                $"stateType={(state != null ? state.Type.ToString() : "none")} " +
+                $"targetPos={(view != null ? view.transform.position.ToString() : "none")} " +
+                $"reversed={(mapSystem != null && mapSystem.IsStonePositionReversed)} " +
+                $"orbitEnabled={(orbit != null && orbit.enabled)} " +
+                $"editorStyleEnabled={(editorStyle != null && editorStyle.enabled)} " +
+                $"cameraPos={(camera != null ? camera.transform.position.ToString() : "none")} " +
+                $"cameraRot={(camera != null ? camera.transform.eulerAngles.ToString() : "none")} " +
+                $"amount={effect.Amount}";
+            WriteLine(line);
+            Debug.Log(line, this);
         }
     }
 

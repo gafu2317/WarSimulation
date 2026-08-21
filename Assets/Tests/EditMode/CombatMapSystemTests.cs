@@ -264,6 +264,37 @@ public sealed class CombatMapSystemTests
     }
 
     [Test]
+    public void SetCurrentMap_NotifiesAfterAssigningChangedMapOnly()
+    {
+        GameObject go = new GameObject("CombatMapSystem");
+        try
+        {
+            CombatMapSystem system = go.AddComponent<CombatMapSystem>();
+            MapData firstMap = CreateTestMap();
+            MapData secondMap = CreateTestMap();
+            int notificationCount = 0;
+            MapData observedMap = null;
+            system.CurrentMapChanged += () =>
+            {
+                notificationCount++;
+                observedMap = system.CurrentMap;
+            };
+
+            system.SetCurrentMap(firstMap);
+            system.SetCurrentMap(secondMap);
+            system.SetCurrentMap(secondMap);
+
+            Assert.That(notificationCount, Is.EqualTo(2));
+            Assert.That(observedMap, Is.SameAs(secondMap));
+        }
+        finally
+        {
+            CombatAssaultRouteCache.Invalidate();
+            Object.DestroyImmediate(go);
+        }
+    }
+
+    [Test]
     public void AssaultRoutes_ReverseTeamAssignmentWithoutChangingBakedRoutes()
     {
         MapData map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), 1);
