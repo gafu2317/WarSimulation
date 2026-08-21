@@ -18,10 +18,14 @@ public class EditorStyleCameraController : MonoBehaviour
 
     private void Start()
     {
-        // カメラの初期の回転角度を取得して適用
+        SyncStateFromTransform();
+    }
+
+    public void SyncStateFromTransform()
+    {
         Vector3 angles = transform.eulerAngles;
-        pitch = angles.x;
-        yaw = angles.y;
+        pitch = angles.x > 180f ? angles.x - 360f : angles.x;
+        yaw = angles.y > 180f ? angles.y - 360f : angles.y;
     }
 
     private void Update()

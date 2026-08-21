@@ -84,6 +84,7 @@ namespace WarSimulation.Combat.Map
 
         /// <summary>魔石を地面から少し浮かせて「光っている結晶感」を出す量（メートル）。</summary>
         private const float MagicStoneFloatOffset = 0.05f;
+        private Transform _generatedRoot;
 
         public void Render(MapData map)
         {
@@ -101,6 +102,7 @@ namespace WarSimulation.Combat.Map
 
             var root = new GameObject(RootName);
             root.transform.SetParent(transform, worldPositionStays: false);
+            _generatedRoot = root.transform;
 
             Material trunkMat = CreateLitTexturedMaterial(
                 "AutoTreeTrunk", _trunkTexture, _trunkTextureTiling, new Color(0.36f, 0.22f, 0.11f));
@@ -153,7 +155,7 @@ namespace WarSimulation.Combat.Map
         {
             if (map == null) return false;
 
-            Transform root = transform.Find(RootName);
+            Transform root = _generatedRoot != null ? _generatedRoot : transform.Find(RootName);
             bool hasMagicStones = false;
             for (int i = 0; i < map.Features.Count; i++)
             {
@@ -165,7 +167,7 @@ namespace WarSimulation.Combat.Map
             }
 
             if (!hasMagicStones) return true;
-            if (root == null) return false;
+            if (root == null || !root.gameObject.activeInHierarchy) return false;
 
             MagicStone[] views = root.GetComponentsInChildren<MagicStone>(includeInactive: true);
             var viewsByFeatureIndex = new Dictionary<int, MagicStone>(views.Length);
@@ -226,7 +228,8 @@ namespace WarSimulation.Combat.Map
 
         public void Clear()
         {
-            var existing = transform.Find(RootName);
+            Transform existing = _generatedRoot != null ? _generatedRoot : transform.Find(RootName);
+            _generatedRoot = null;
             if (existing == null) return;
 
             GameObject existingGameObject = existing.gameObject;

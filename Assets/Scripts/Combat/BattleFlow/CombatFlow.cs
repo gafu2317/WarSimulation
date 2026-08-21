@@ -127,7 +127,7 @@ public sealed class CombatFlow : MonoBehaviour
             ShowStartFailure("魔石位置の反転を適用できませんでした");
             return;
         }
-        ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
+        ApplyCombatCamera(_characterSelection != null && _characterSelection.IsStonePositionReversed);
 
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
         _battleResultRecorder?.Begin(
@@ -185,6 +185,7 @@ public sealed class CombatFlow : MonoBehaviour
             _mapSelectionView.SetInteractionEnabled(true);
             if (clearMapFailure) _mapSelectionView.ClearFailure();
         }
+        ApplyCombatCamera(_characterSelection != null && _characterSelection.IsStonePositionReversed);
         RefreshStartAvailability();
         SetVisible(_characterSelectionPanel, true);
         SetBattleUiVisible(false);
@@ -195,6 +196,7 @@ public sealed class CombatFlow : MonoBehaviour
     private void OnStonePositionReversedChanged(bool reversed)
     {
         _mapSelectionView.SetStonePositionsReversed(reversed);
+        ApplyCombatCamera(reversed);
         RefreshStartAvailability();
     }
 
@@ -234,6 +236,7 @@ public sealed class CombatFlow : MonoBehaviour
 
         camera.transform.position = reversed ? ReversedCameraPosition : NormalCameraPosition;
         camera.transform.rotation = Quaternion.Euler(40f, reversed ? 180f : 0f, 0f);
+        camera.GetComponent<EditorStyleCameraController>()?.SyncStateFromTransform();
     }
 
     private bool TryApplyStonePositionReversed(bool reversed)
