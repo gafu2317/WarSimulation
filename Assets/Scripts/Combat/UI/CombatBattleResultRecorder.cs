@@ -68,15 +68,18 @@ public sealed class CombatBattleCharacterResult
 {
     public CombatBattleCharacterResult(
         string displayName,
+        string personalityDisplayName,
         string weaponDisplayName,
         bool isAlive,
         int damageDealt,
         int magicStoneDamage,
         int damageTaken,
         int healingDone,
-        int defeats)
+        int defeats,
+        int deaths)
     {
         DisplayName = displayName;
+        PersonalityDisplayName = personalityDisplayName;
         WeaponDisplayName = weaponDisplayName;
         IsAlive = isAlive;
         DamageDealt = damageDealt;
@@ -84,9 +87,11 @@ public sealed class CombatBattleCharacterResult
         DamageTaken = damageTaken;
         HealingDone = healingDone;
         Defeats = defeats;
+        Deaths = deaths;
     }
 
     public string DisplayName { get; }
+    public string PersonalityDisplayName { get; }
     public string WeaponDisplayName { get; }
     public bool IsAlive { get; }
     public int DamageDealt { get; }
@@ -94,6 +99,7 @@ public sealed class CombatBattleCharacterResult
     public int DamageTaken { get; }
     public int HealingDone { get; }
     public int Defeats { get; }
+    public int Deaths { get; }
 }
 
 [DisallowMultipleComponent]
@@ -115,6 +121,7 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         public int HealingDone { get; set; }
         public int DamagePrevented { get; set; }
         public int Defeats { get; set; }
+        public int Deaths { get; set; }
     }
 
     private readonly Dictionary<Character, MutableCharacterResult> _characterResults =
@@ -300,8 +307,14 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
 
     private void OnCharacterDefeated(Character victim, Character killer)
     {
-        if (!_isRecording || killer == null) return;
-        if (_characterResults.TryGetValue(killer, out MutableCharacterResult killerResult))
+        if (!_isRecording) return;
+
+        if (victim != null && _characterResults.TryGetValue(victim, out MutableCharacterResult victimResult))
+        {
+            victimResult.Deaths++;
+        }
+
+        if (killer != null && _characterResults.TryGetValue(killer, out MutableCharacterResult killerResult))
         {
             killerResult.Defeats++;
         }
@@ -350,13 +363,15 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
             damagePrevented += stats.DamagePrevented;
             characterResults.Add(new CombatBattleCharacterResult(
                 character != null ? character.DisplayName : string.Empty,
+                PersonalityDisplayName(character),
                 WeaponDisplayName(character),
                 isAlive,
                 stats.DamageDealt,
                 stats.MagicStoneDamage,
                 stats.DamageTaken,
                 stats.HealingDone,
-                stats.Defeats));
+                stats.Defeats,
+                stats.Deaths));
         }
 
         int stoneHp = 0;
@@ -401,5 +416,12 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         }
 
         return CombatAiDebugLabels.WeaponShort(character.EquippedWeapon);
+    }
+
+    private static string PersonalityDisplayName(Character character)
+    {
+        return character != null
+            ? CombatAiDebugLabels.PersonalityShort(character.PersonalityProfile)
+            : "なし";
     }
 }

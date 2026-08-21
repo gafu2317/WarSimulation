@@ -1,0 +1,64 @@
+{
+  "MapNames": [
+    "AuthoredMap",
+    "AuthoredMap 1",
+    "AuthoredMap 2",
+    "AuthoredMap 3",
+    "AuthoredMap 4",
+    "AuthoredMap 5",
+    "AuthoredMap 6",
+    "AuthoredMap 7",
+    "AuthoredMap 8",
+    "AuthoredMap 9"
+  ],
+  "Candidates": [
+    {
+      "Roles": [
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 3, "Personality": 19 },
+        { "Weapon": 3, "Personality": 2 },
+        { "Weapon": 2, "Personality": 9 },
+        { "Weapon": 6, "Personality": 16 }
+      ]
+    },
+    {
+      "Roles": [
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 3, "Personality": 7 },
+        { "Weapon": 2, "Personality": 1 },
+        { "Weapon": 6, "Personality": 9 }
+      ]
+    },
+    {
+      "Roles": [
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 3, "Personality": 19 },
+        { "Weapon": 2, "Personality": 1 },
+        { "Weapon": 6, "Personality": 9 }
+      ]
+    },
+    {
+      "Roles": [
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 3, "Personality": 19 },
+        { "Weapon": 3, "Personality": 19 },
+        { "Weapon": 2, "Personality": 1 }
+      ]
+    }
+  ],
+  "EnumerateAllCandidates": true,
+  "EvaluateBothStonePositions": true,
+  "UseCommonSeeds": true,
+  "DisableDiagnostics": true,
+  "MatchesPerCandidate": 1,
+  "BaseSeed": 12000,
+  "MinPartySize": 5,
+  "MaxPartySize": 5,
+  "CandidateOffset": 0,
+  "CandidateLimit": 0,
+  "TimeoutSeconds": 1200.0,
+  "TimeScale": 16.0
+}

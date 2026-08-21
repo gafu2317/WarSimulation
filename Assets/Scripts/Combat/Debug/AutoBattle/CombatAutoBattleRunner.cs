@@ -45,6 +45,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private bool _running;
     private bool _audioPaused;
     private bool _diagnosticsEnabled = true;
+    private float _previousFixedDeltaTime;
 
     private void Awake()
     {
@@ -335,6 +336,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = -1;
         Application.runInBackground = true;
+        _previousFixedDeltaTime = Time.fixedDeltaTime;
+        Time.fixedDeltaTime = _previousFixedDeltaTime * _timeScale;
         if (AudioListener.pause == false)
         {
             AudioListener.pause = true;
@@ -357,6 +360,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         int exitCode)
     {
         RestoreRuntimeSettings(previousTimeScale, previousVSync, previousTargetFrameRate, previousRunInBackground);
+        Time.fixedDeltaTime = _previousFixedDeltaTime;
         CleanupTemporaryObjects();
         _lastAppliedMap = null;
         _running = false;
@@ -437,6 +441,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             _battleFlow.BattleEnded -= OnBattleEnded;
             throw new InvalidOperationException("戦闘を開始できませんでした。");
         }
+
+        Time.timeScale = _timeScale;
 
         yield return null;
         string diagnosticLogPath = GetCurrentDiagnosticLogPath();

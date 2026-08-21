@@ -8,8 +8,9 @@ using UnityEngine.UI;
 public sealed class CombatBattleResultView : MonoBehaviour
 {
     private const string SummaryRootName = "BattleSummary";
-    private const float CardWidth = 560f;
+    private const float CardWidth = 720f;
     private const float CardHeight = 440f;
+    private const float PersonalityColumnWidth = 110f;
     private const float NameColumnWidth = 170f;
     private const float WeaponColumnWidth = 70f;
     private const float MetricColumnWidth = 54f;
@@ -49,8 +50,8 @@ public sealed class CombatBattleResultView : MonoBehaviour
         _font = sourceText.font;
         _fontMaterial = sourceText.fontSharedMaterial;
         _summaryRoot = CreateRoot();
-        _allyUi = CreateTeamUi("AlliesCard", "味方", new Vector2(-290f, 0f), new Color(0.08f, 0.16f, 0.26f, 0.96f));
-        _enemyUi = CreateTeamUi("EnemiesCard", "敵", new Vector2(290f, 0f), new Color(0.26f, 0.12f, 0.12f, 0.96f));
+        _allyUi = CreateTeamUi("AlliesCard", "味方", new Vector2(-370f, 0f), new Color(0.08f, 0.16f, 0.26f, 0.96f));
+        _enemyUi = CreateTeamUi("EnemiesCard", "敵", new Vector2(370f, 0f), new Color(0.26f, 0.12f, 0.12f, 0.96f));
 
         MoveChild("ResultTitle", new Vector2(0f, 285f));
         MoveChild("BackToSelectionButton", new Vector2(0f, -300f));
@@ -87,7 +88,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         root.anchorMax = new Vector2(0.5f, 0.5f);
         root.pivot = new Vector2(0.5f, 0.5f);
         root.anchoredPosition = new Vector2(0f, -10f);
-        root.sizeDelta = new Vector2(1140f, 520f);
+        root.sizeDelta = new Vector2(1460f, 520f);
 
         Image image = root.GetComponent<Image>();
         image.color = new Color(0f, 0f, 0f, 0.22f);
@@ -190,19 +191,20 @@ public sealed class CombatBattleResultView : MonoBehaviour
         rowElement.preferredHeight = isHeader ? 38f : 32f;
 
         var rowUi = new RowUi { Root = rowObject };
-        string[] labels = { "名前", "武器", "キャラ\n与ダメ", "魔石\n与ダメ", "被ダメ", "回復", "撃破" };
+        string[] labels = { "名前", "性格", "武器", "キャラ\n与ダメ", "魔石\n与ダメ", "被ダメ", "回復", "撃破", "死亡" };
         for (int i = 0; i < labels.Length; i++)
         {
-            TextAlignmentOptions alignment = i == 0 || isHeader
-                ? (i == 0 ? TextAlignmentOptions.Left : TextAlignmentOptions.Center)
-                : TextAlignmentOptions.Right;
+            TextAlignmentOptions alignment = i <= 1
+                ? TextAlignmentOptions.Left
+                : (isHeader ? TextAlignmentOptions.Center : TextAlignmentOptions.Right);
             rowUi.Cells.Add(CreateCell(
                 row,
                 labels[i],
                 alignment,
                 isHeader,
                 i == 0,
-                i == 1));
+                i == 1,
+                i == 2));
         }
 
         return rowUi;
@@ -214,6 +216,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         TextAlignmentOptions alignment,
         bool isHeader,
         bool isName,
+        bool isPersonality,
         bool isWeapon)
     {
         GameObject cellObject = new GameObject(
@@ -229,6 +232,11 @@ public sealed class CombatBattleResultView : MonoBehaviour
         {
             element.preferredWidth = NameColumnWidth;
             element.flexibleWidth = 1f;
+        }
+        else if (isPersonality)
+        {
+            element.minWidth = PersonalityColumnWidth;
+            element.preferredWidth = PersonalityColumnWidth;
         }
         else if (isWeapon)
         {
@@ -249,7 +257,9 @@ public sealed class CombatBattleResultView : MonoBehaviour
         text.alignment = alignment;
         text.color = Color.white;
         text.enableWordWrapping = false;
-        text.overflowMode = isName ? TextOverflowModes.Ellipsis : TextOverflowModes.Overflow;
+        text.overflowMode = isName || isPersonality
+            ? TextOverflowModes.Ellipsis
+            : TextOverflowModes.Overflow;
         text.raycastTarget = false;
         return text;
     }
@@ -298,22 +308,26 @@ public sealed class CombatBattleResultView : MonoBehaviour
         SetRowValues(teamUi.HeaderRow, new[]
         {
             "名前",
+            "性格",
             "武器",
             "キャラ\n与ダメ",
             "魔石\n与ダメ",
             "被ダメ",
             "回復",
             "撃破",
+            "死亡",
         });
         SetRowValues(teamUi.TotalRow, new[]
         {
             "合計",
+            string.Empty,
             string.Empty,
             result.DamageDealt.ToString(CultureInfo.InvariantCulture),
             result.MagicStoneDamage.ToString(CultureInfo.InvariantCulture),
             result.DamageTaken.ToString(CultureInfo.InvariantCulture),
             result.HealingDone.ToString(CultureInfo.InvariantCulture),
             SumDefeats(result).ToString(CultureInfo.InvariantCulture),
+            SumDeaths(result).ToString(CultureInfo.InvariantCulture),
         });
         teamUi.DefenseText.text = "無効化ダメージ " + result.DamagePrevented.ToString(CultureInfo.InvariantCulture);
         ClearRows(teamUi.Rows);
@@ -331,12 +345,14 @@ public sealed class CombatBattleResultView : MonoBehaviour
             SetRowValues(row, new[]
             {
                 character.DisplayName,
+                character.PersonalityDisplayName,
                 character.WeaponDisplayName,
                 character.DamageDealt.ToString(CultureInfo.InvariantCulture),
                 character.MagicStoneDamage.ToString(CultureInfo.InvariantCulture),
                 character.DamageTaken.ToString(CultureInfo.InvariantCulture),
                 character.HealingDone.ToString(CultureInfo.InvariantCulture),
                 character.Defeats.ToString(CultureInfo.InvariantCulture),
+                character.Deaths.ToString(CultureInfo.InvariantCulture),
             });
         }
     }
@@ -350,6 +366,17 @@ public sealed class CombatBattleResultView : MonoBehaviour
         }
 
         return defeats;
+    }
+
+    private static int SumDeaths(CombatBattleTeamResult result)
+    {
+        int deaths = 0;
+        for (int i = 0; i < result.Characters.Count; i++)
+        {
+            deaths += result.Characters[i].Deaths;
+        }
+
+        return deaths;
     }
 
     private static void SetRowValues(RowUi row, IReadOnlyList<string> values)

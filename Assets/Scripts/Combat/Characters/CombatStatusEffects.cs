@@ -397,26 +397,63 @@ public sealed class CombatStatusEffects : MonoBehaviour
         if (ownerHealth == null) return;
 
         float now = Time.time;
+        var effectKeys = new List<string>(_effects.Count);
         for (int i = 0; i < _effects.Count; i++)
         {
-            ActiveEffect effect = _effects[i];
+            effectKeys.Add(_effects[i].Key);
+        }
+
+        for (int keyIndex = 0; keyIndex < effectKeys.Count; keyIndex++)
+        {
+            if (!TryGetEffectIndex(effectKeys[keyIndex], out int effectIndex)) continue;
+
+            ActiveEffect effect = _effects[effectIndex];
             if (effect.TickIntervalSeconds <= 0f) continue;
             if (effect.Magnitude <= 0f) continue;
 
-            bool changed = false;
             while (now >= effect.NextTickAt && effect.NextTickAt <= effect.ExpiresAt)
             {
                 int appliedAmount = ApplyTickEffect(ownerHealth, effect);
                 RaiseChanged(effect, CombatStatusEffectChangeKind.Tick, appliedAmount);
                 effect.NextTickAt += effect.TickIntervalSeconds;
-                changed = true;
-            }
 
-            if (changed)
-            {
-                _effects[i] = effect;
+                if (!TryCommitPeriodicEffect(effect, out effect)) break;
             }
         }
+    }
+
+    private bool TryGetEffectIndex(string key, out int index)
+    {
+        for (int i = 0; i < _effects.Count; i++)
+        {
+            if (_effects[i].Key != key) continue;
+
+            index = i;
+            return true;
+        }
+
+        index = -1;
+        return false;
+    }
+
+    private bool TryCommitPeriodicEffect(ActiveEffect tickedEffect, out ActiveEffect currentEffect)
+    {
+        if (!TryGetEffectIndex(tickedEffect.Key, out int index))
+        {
+            currentEffect = default;
+            return false;
+        }
+
+        currentEffect = _effects[index];
+        if (currentEffect.Type != tickedEffect.Type ||
+            !Mathf.Approximately(currentEffect.TickIntervalSeconds, tickedEffect.TickIntervalSeconds))
+        {
+            return false;
+        }
+
+        currentEffect.NextTickAt = tickedEffect.NextTickAt;
+        _effects[index] = currentEffect;
+        return true;
     }
 
     private static int ApplyTickEffect(CombatHealth ownerHealth, ActiveEffect effect)

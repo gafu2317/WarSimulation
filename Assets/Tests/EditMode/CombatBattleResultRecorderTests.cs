@@ -11,6 +11,7 @@ public sealed class CombatBattleResultRecorderTests
         GameObject stoneSystemObject = new GameObject("MagicStoneSystem");
         GameObject allyObject = new GameObject("Ally");
         GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile personality = null;
         try
         {
             CombatBattleResultRecorder recorder = recorderObject.AddComponent<CombatBattleResultRecorder>();
@@ -18,6 +19,8 @@ public sealed class CombatBattleResultRecorderTests
             stoneSystem.Initialize(CreateMapWithMainStones());
             Character ally = CreateCharacter(allyObject, CombatTeam.Ally, 100, 95);
             Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, 25);
+            personality = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Devoted);
+            ally.ConfigureForBattle(null, personality);
             ally.EquipWeapon(new Sword());
 
             recorder.Begin(new[] { ally }, new[] { enemy });
@@ -37,9 +40,11 @@ public sealed class CombatBattleResultRecorderTests
             Assert.That(result.Allies.DamagePrevented, Is.EqualTo(7));
             Assert.That(result.Allies.MagicStoneDamage, Is.EqualTo(12));
             Assert.That(result.Allies.Characters[0].MagicStoneDamage, Is.EqualTo(12));
+            Assert.That(result.Allies.Characters[0].PersonalityDisplayName, Is.EqualTo("献身的"));
             Assert.That(result.Allies.Characters[0].WeaponDisplayName, Is.EqualTo("剣"));
             Assert.That(result.Allies.HealingDone, Is.EqualTo(5));
             Assert.That(result.Allies.Characters[0].Defeats, Is.EqualTo(1));
+            Assert.That(result.Enemies.Characters[0].Deaths, Is.EqualTo(1));
             Assert.That(result.Enemies.Characters[0].IsAlive, Is.False);
         }
         finally
@@ -48,6 +53,32 @@ public sealed class CombatBattleResultRecorderTests
             Object.DestroyImmediate(stoneSystemObject);
             Object.DestroyImmediate(allyObject);
             Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(personality);
+        }
+    }
+
+    [Test]
+    public void CombatBattleResultRecorder_ReportsDeathWithoutKiller()
+    {
+        GameObject recorderObject = new GameObject("ResultRecorder");
+        GameObject characterObject = new GameObject("Character");
+        try
+        {
+            CombatBattleResultRecorder recorder = recorderObject.AddComponent<CombatBattleResultRecorder>();
+            Character character = CreateCharacter(characterObject, CombatTeam.Ally, 30);
+
+            recorder.Begin(new[] { character }, System.Array.Empty<Character>());
+            character.Health.TakeDamage(30);
+
+            CombatBattleResult result = recorder.Complete(CombatBattleState.Defeat);
+
+            Assert.That(result.Allies.Characters[0].Deaths, Is.EqualTo(1));
+            Assert.That(result.Allies.Characters[0].Defeats, Is.EqualTo(0));
+        }
+        finally
+        {
+            Object.DestroyImmediate(recorderObject);
+            Object.DestroyImmediate(characterObject);
         }
     }
 

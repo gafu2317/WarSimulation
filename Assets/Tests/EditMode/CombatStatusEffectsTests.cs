@@ -331,6 +331,43 @@ public sealed class CombatStatusEffectsTests
         }
     }
 
+    [Test]
+    public void CombatStatusEffects_TickEventCanRemoveEffectsWithoutBreakingPeriodicUpdate()
+    {
+        GameObject characterGo = new GameObject("Character");
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            character.Health.Initialize(maxHP: 30);
+            CombatStatusEffects statusEffects = character.StatusEffects;
+            void HandleChange(CombatStatusEffectChange change)
+            {
+                if (change.Target == character && change.Kind == CombatStatusEffectChangeKind.Tick)
+                {
+                    statusEffects.ClearAll();
+                }
+            }
+
+            CombatStatusEffectEvents.Changed += HandleChange;
+            try
+            {
+                statusEffects.ApplyPoison(4, 5f, 1f);
+                ForceAllPeriodicEffectsReadyNow(statusEffects);
+
+                Assert.DoesNotThrow(() => statusEffects.GetActiveEffectSnapshots());
+                Assert.That(statusEffects.GetActiveEffectSnapshots(), Is.Empty);
+            }
+            finally
+            {
+                CombatStatusEffectEvents.Changed -= HandleChange;
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
     private static void ExpireAllEffects(CombatStatusEffects statusEffects)
     {
         FieldInfo effectsField = typeof(CombatStatusEffects).GetField(
