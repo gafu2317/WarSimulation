@@ -6,6 +6,7 @@ using UnityEditor;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
+using System.Reflection;
 using UnityCliBridge.Handlers;
 
 // Conditionally include Input System namespace only if available
@@ -29,6 +30,14 @@ namespace UnityCliBridge.Tests
         private Mouse mouse;
         private Gamepad gamepad;
         private Touchscreen touchscreen;
+        private bool inputSystemSaved;
+
+        private static readonly MethodInfo SaveAndResetMethod = typeof(InputSystem).GetMethod(
+            "SaveAndReset",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo RestoreMethod = typeof(InputSystem).GetMethod(
+            "Restore",
+            BindingFlags.Static | BindingFlags.NonPublic);
 
         [OneTimeSetUp]
         public void OneTimeSetup()
@@ -44,19 +53,12 @@ namespace UnityCliBridge.Tests
         [SetUp]
         public void Setup()
         {
-            // Clean up any existing devices. Iterate in reverse so that removing devices
-            // does not invalidate our index and guard against null entries that can appear
-            // in InputSystem.devices during teardown of previous tests.
-            for (var i = InputSystem.devices.Count - 1; i >= 0; i--)
-            {
-                var device = InputSystem.devices[i];
-                if (device != null)
-                {
-                    InputSystem.RemoveDevice(device);
-                }
-            }
+            InputSystemHandler.ResetSimulation(new JObject());
+            Assert.NotNull(SaveAndResetMethod, "Input System test isolation is unavailable.");
+            Assert.NotNull(RestoreMethod, "Input System test restoration is unavailable.");
+            SaveAndResetMethod.Invoke(null, new object[] { false, null });
+            inputSystemSaved = true;
 
-            // Add test devices
             keyboard = InputSystem.AddDevice<Keyboard>();
             mouse = InputSystem.AddDevice<Mouse>();
             gamepad = InputSystem.AddDevice<Gamepad>();
@@ -66,21 +68,27 @@ namespace UnityCliBridge.Tests
         [TearDown]
         public void TearDown()
         {
-            if (!inputSystemAvailable)
+            try
             {
-                return;
+                if (keyboard != null && keyboard.added) InputSystem.RemoveDevice(keyboard);
+                if (mouse != null && mouse.added) InputSystem.RemoveDevice(mouse);
+                if (gamepad != null && gamepad.added) InputSystem.RemoveDevice(gamepad);
+                if (touchscreen != null && touchscreen.added) InputSystem.RemoveDevice(touchscreen);
             }
+            finally
+            {
+                InputSystemHandler.ResetSimulation(new JObject());
+                if (inputSystemSaved)
+                {
+                    RestoreMethod.Invoke(null, null);
+                    inputSystemSaved = false;
+                }
 
-            // Clean up test devices
-            if (keyboard != null) InputSystem.RemoveDevice(keyboard);
-            if (mouse != null) InputSystem.RemoveDevice(mouse);
-            if (gamepad != null) InputSystem.RemoveDevice(gamepad);
-            if (touchscreen != null) InputSystem.RemoveDevice(touchscreen);
-
-            keyboard = null;
-            mouse = null;
-            gamepad = null;
-            touchscreen = null;
+                keyboard = null;
+                mouse = null;
+                gamepad = null;
+                touchscreen = null;
+            }
         }
 
         #region Keyboard Tests

@@ -29,6 +29,7 @@ namespace UnityCliBridge.Handlers
         private const string VirtualTouchscreenName = "UnityCliVirtualTouchscreen";
 
         private static Dictionary<string, InputDevice> activeDevices = new Dictionary<string, InputDevice>();
+        private static readonly HashSet<InputDevice> ownedDevices = new HashSet<InputDevice>();
         private static List<InputEventPtr> queuedEvents = new List<InputEventPtr>();
         private static bool isSimulationActive = false;
 
@@ -84,6 +85,53 @@ namespace UnityCliBridge.Handlers
             InputSystem.onAfterUpdate += ProcessScheduledReleases;
             EditorApplication.update -= ProcessScheduledReleases;
             EditorApplication.update += ProcessScheduledReleases;
+        }
+
+        public static object ResetSimulation(JObject parameters)
+        {
+            foreach (var device in ownedDevices.ToList())
+            {
+                if (device != null && device.added)
+                {
+                    InputSystem.RemoveDevice(device);
+                }
+            }
+
+            ownedDevices.Clear();
+            activeDevices.Clear();
+            scheduledReleases.Clear();
+            queuedEvents.Clear();
+            virtualKeyboard = null;
+            pressedKeys.Clear();
+            simulatedTypedText = string.Empty;
+            simulatedMousePosition = Vector2.zero;
+            simulatedMouseLeftButton = false;
+            simulatedMouseRightButton = false;
+            simulatedMouseMiddleButton = false;
+            simulatedMouseScroll = Vector2.zero;
+            simulatedGamepadButtonA = false;
+            simulatedGamepadButtonB = false;
+            simulatedGamepadButtonX = false;
+            simulatedGamepadButtonY = false;
+            simulatedGamepadStart = false;
+            simulatedGamepadSelect = false;
+            simulatedGamepadLeftShoulder = false;
+            simulatedGamepadRightShoulder = false;
+            simulatedGamepadLeftStickButton = false;
+            simulatedGamepadRightStickButton = false;
+            simulatedGamepadLeftStick = Vector2.zero;
+            simulatedGamepadRightStick = Vector2.zero;
+            simulatedGamepadLeftTrigger = 0f;
+            simulatedGamepadRightTrigger = 0f;
+            simulatedGamepadDpad = Vector2.zero;
+            simulatedActiveTouches.Clear();
+            simulatedTouchPressCount = 0;
+            simulatedTouchReleaseCount = 0;
+            simulatedTouchMaxSimultaneous = 0;
+            simulatedTouchLast = "none";
+            isSimulationActive = false;
+
+            return new { success = true };
         }
 
         /// <summary>
@@ -414,14 +462,16 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static Keyboard GetVirtualKeyboard()
         {
-            // Prefer any existing keyboard device (e.g., provided by tests)
-            var existingKeyboard = InputSystem.devices
-                .OfType<Keyboard>()
-                .FirstOrDefault(k => k.added && !IsManagedVirtualKeyboard(k));
-            if (existingKeyboard != null)
+            if (!Application.isPlaying)
             {
-                existingKeyboard.MakeCurrent();
-                return existingKeyboard;
+                var existingKeyboard = InputSystem.devices
+                    .OfType<Keyboard>()
+                    .FirstOrDefault(k => k.added && !IsManagedVirtualKeyboard(k));
+                if (existingKeyboard != null)
+                {
+                    existingKeyboard.MakeCurrent();
+                    return existingKeyboard;
+                }
             }
 
             if (virtualKeyboard == null || !virtualKeyboard.added)
@@ -433,6 +483,7 @@ namespace UnityCliBridge.Handlers
                 if (virtualKeyboard == null)
                 {
                     virtualKeyboard = InputSystem.AddDevice<Keyboard>(VirtualKeyboardName);
+                    ownedDevices.Add(virtualKeyboard);
                     BridgeLogger.Log("InputSystemHandler", "Created virtual keyboard device");
                 }
             }
@@ -515,6 +566,7 @@ namespace UnityCliBridge.Handlers
             if (Application.isPlaying)
             {
                 device = InputSystem.AddDevice<T>(GetVirtualDeviceName<T>(deviceName));
+                ownedDevices.Add(device);
                 device.MakeCurrent();
             }
 
@@ -526,6 +578,7 @@ namespace UnityCliBridge.Handlers
             if (device == null)
             {
                 device = InputSystem.AddDevice<T>();
+                ownedDevices.Add(device);
             }
 
             activeDevices[deviceName] = device;
@@ -560,6 +613,8 @@ namespace UnityCliBridge.Handlers
                 {
                     activeDevices.Remove(key);
                 }
+
+                ownedDevices.Remove(device);
 
                 if (virtualKeyboard == device)
                 {

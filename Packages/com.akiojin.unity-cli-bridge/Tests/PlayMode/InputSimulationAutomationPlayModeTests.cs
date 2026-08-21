@@ -19,12 +19,28 @@ namespace UnityCliBridge.Tests.PlayMode
         [TearDown]
         public void TearDown()
         {
+            ResetInputHandler();
+
             foreach (var go in _created.Where(go => go != null))
             {
                 Object.Destroy(go);
             }
 
             _created.Clear();
+        }
+
+        private static void ResetInputHandler()
+        {
+            var handlerType = FindType("UnityCliBridge.Handlers.InputSystemHandler");
+            var method = handlerType?.GetMethod(
+                "ResetSimulation",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (method == null)
+            {
+                return;
+            }
+
+            method.Invoke(null, new object[] { new JObject() });
         }
 
         [UnityTest]
