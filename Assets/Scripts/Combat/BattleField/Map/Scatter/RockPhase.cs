@@ -37,7 +37,8 @@ namespace WarSimulation.Combat.Map
 
             float ratio = Mathf.Clamp01(config.RockTopHeightExclusionRatio);
             GetMapHeightRange(map.Height, out float minH, out float maxH);
-            float allowedMaxHeight = minH + (1f - ratio) * (maxH - minH);
+            float heightRangeMin = Mathf.Max(0f, minH);
+            float allowedMaxHeight = heightRangeMin + (1f - ratio) * (maxH - heightRangeMin);
 
             for (int attempt = 0; attempt < maxAttempts && placed < target; attempt++)
             {

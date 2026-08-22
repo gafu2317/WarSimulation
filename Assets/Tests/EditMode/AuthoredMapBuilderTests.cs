@@ -73,6 +73,37 @@ public sealed class AuthoredMapBuilderTests
     }
 
     [Test]
+    public void RockPhase_AllowsBaseHeightWhenDepressedTerrainSetsNegativeMinimum()
+    {
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
+        try
+        {
+            SetPrivateField(config, "_worldSize", 10f);
+            SetPrivateField(config, "_cellsPerSide", 10);
+            SetPrivateField(config, "_rockCount", 1);
+            SetPrivateField(config, "_rockMinDistance", 0f);
+            SetPrivateField(config, "_rockPlacementMargin", 0f);
+            SetPrivateField(config, "_rockTopHeightExclusionRatio", 0.3f);
+
+            MapData map = new MapData(
+                new HeightMap(10, 10, 1f),
+                new GroundStateGrid(10, 10, 1f),
+                seed: 1);
+            map.Height.SetHeight(0, 0, -1f);
+
+            new RockPhase().Execute(map, new SequenceRandom(0.25f, 0.25f), config);
+
+            Assert.That(map.Features.Count, Is.EqualTo(1));
+            Assert.That(map.Features[0].Type, Is.EqualTo(FeatureType.Rock));
+            Assert.That(map.Features[0].WorldPosition.y, Is.EqualTo(0f).Within(0.0001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
+    [Test]
     public void Fingerprints_RouteChangeDoesNotInvalidateGeometry()
     {
         AuthoredMapDefinition definition = CreateDefinition();
@@ -385,5 +416,28 @@ public sealed class AuthoredMapBuilderTests
             BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.That(field, Is.Not.Null, $"Missing field {fieldName}");
         field.SetValue(target, value);
+    }
+
+    private sealed class SequenceRandom : IRandom
+    {
+        private readonly float[] _floats;
+        private int _floatIndex;
+
+        public SequenceRandom(params float[] floats)
+        {
+            _floats = floats;
+        }
+
+        public int NextInt(int minInclusive, int maxExclusive) => minInclusive;
+
+        public float NextFloat()
+        {
+            if (_floats == null || _floats.Length == 0)
+                return 0f;
+
+            float value = _floats[Mathf.Min(_floatIndex, _floats.Length - 1)];
+            _floatIndex++;
+            return value;
+        }
     }
 }
