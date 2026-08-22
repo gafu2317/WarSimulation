@@ -501,7 +501,10 @@ public sealed class CombatStatusEffects : MonoBehaviour
             effect.Type,
             kind,
             effect.Source,
-            amount));
+            amount,
+            effect.Stat,
+            effect.Multiplier,
+            Mathf.Max(0f, effect.ExpiresAt - Time.time)));
     }
 
     private CombatHealth ResolveOwnerHealth()

@@ -58,6 +58,72 @@ public sealed class CombatBattleResultRecorderTests
     }
 
     [Test]
+    public void CombatBattleResultRecorder_ReportsStatusEffectUsageFromApplyAndRefresh()
+    {
+        GameObject recorderObject = new GameObject("ResultRecorder");
+        GameObject allyObject = new GameObject("Ally");
+        GameObject enemyObject = new GameObject("Enemy");
+        try
+        {
+            CombatBattleResultRecorder recorder = recorderObject.AddComponent<CombatBattleResultRecorder>();
+            Character ally = CreateCharacter(allyObject, CombatTeam.Ally, 100);
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, 100);
+
+            recorder.Begin(new[] { ally }, new[] { enemy });
+            enemy.StatusEffects.Apply(
+                CombatStatusEffects.StatKind.STR,
+                1.25f,
+                5f,
+                "RecorderBuff",
+                ally);
+            enemy.StatusEffects.Apply(
+                CombatStatusEffects.StatKind.STR,
+                1.25f,
+                5f,
+                "RecorderBuff",
+                ally);
+            ally.StatusEffects.Apply(
+                CombatStatusEffects.StatKind.INT,
+                0.7f,
+                5f,
+                "RecorderDebuff",
+                enemy);
+
+            CombatBattleResult result = recorder.Complete(CombatBattleState.Victory);
+
+            CombatBattleCharacterResult allyResult = result.Allies.Characters[0];
+            CombatBattleCharacterResult enemyResult = result.Enemies.Characters[0];
+            Assert.That(allyResult.SupportSummary.BuffActivationCount, Is.EqualTo(2));
+            Assert.That(allyResult.SupportSummary.BuffTargetCount, Is.EqualTo(1));
+            Assert.That(allyResult.SupportEffects, Has.Count.EqualTo(1));
+            Assert.That(allyResult.SupportEffects[0].Stat, Is.EqualTo(CombatStatusEffects.StatKind.STR));
+            Assert.That(allyResult.SupportEffects[0].IsBuff, Is.True);
+            Assert.That(result.Allies.SupportSummary.BuffActivationCount, Is.EqualTo(2));
+            Assert.That(enemyResult.SupportSummary.DebuffActivationCount, Is.EqualTo(1));
+            Assert.That(enemyResult.SupportSummary.DebuffTargetCount, Is.EqualTo(1));
+            Assert.That(enemyResult.SupportEffects, Has.Count.EqualTo(1));
+            Assert.That(enemyResult.SupportEffects[0].Stat, Is.EqualTo(CombatStatusEffects.StatKind.INT));
+            Assert.That(enemyResult.SupportEffects[0].IsBuff, Is.False);
+            Assert.That(result.Enemies.SupportSummary.DebuffActivationCount, Is.EqualTo(1));
+
+            enemy.StatusEffects.Apply(
+                CombatStatusEffects.StatKind.FAI,
+                1.25f,
+                5f,
+                "AfterCompleteBuff",
+                ally);
+            Assert.That(recorder.Complete(CombatBattleState.Victory), Is.SameAs(result));
+            Assert.That(result.Allies.SupportSummary.BuffActivationCount, Is.EqualTo(2));
+        }
+        finally
+        {
+            Object.DestroyImmediate(recorderObject);
+            Object.DestroyImmediate(allyObject);
+            Object.DestroyImmediate(enemyObject);
+        }
+    }
+
+    [Test]
     public void CombatBattleResultRecorder_ReportsDeathWithoutKiller()
     {
         GameObject recorderObject = new GameObject("ResultRecorder");

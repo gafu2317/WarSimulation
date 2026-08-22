@@ -23,6 +23,58 @@ public sealed class CombatBattleResult
     public CombatBattleTeamResult Enemies { get; }
 }
 
+public sealed class CombatBattleStatusEffectResult
+{
+    public CombatBattleStatusEffectResult(
+        CombatStatusEffects.StatKind stat,
+        bool isBuff,
+        int activationCount,
+        int targetCount,
+        float durationSeconds)
+    {
+        Stat = stat;
+        IsBuff = isBuff;
+        ActivationCount = activationCount;
+        TargetCount = targetCount;
+        DurationSeconds = durationSeconds;
+    }
+
+    public CombatStatusEffects.StatKind Stat { get; }
+    public bool IsBuff { get; }
+    public int ActivationCount { get; }
+    public int TargetCount { get; }
+    public float DurationSeconds { get; }
+}
+
+public sealed class CombatBattleSupportSummary
+{
+    public static readonly CombatBattleSupportSummary Empty =
+        new CombatBattleSupportSummary(0, 0, 0f, 0, 0, 0f);
+
+    public CombatBattleSupportSummary(
+        int buffActivationCount,
+        int buffTargetCount,
+        float buffDurationSeconds,
+        int debuffActivationCount,
+        int debuffTargetCount,
+        float debuffDurationSeconds)
+    {
+        BuffActivationCount = buffActivationCount;
+        BuffTargetCount = buffTargetCount;
+        BuffDurationSeconds = buffDurationSeconds;
+        DebuffActivationCount = debuffActivationCount;
+        DebuffTargetCount = debuffTargetCount;
+        DebuffDurationSeconds = debuffDurationSeconds;
+    }
+
+    public int BuffActivationCount { get; }
+    public int BuffTargetCount { get; }
+    public float BuffDurationSeconds { get; }
+    public int DebuffActivationCount { get; }
+    public int DebuffTargetCount { get; }
+    public float DebuffDurationSeconds { get; }
+}
+
 public sealed class CombatBattleTeamResult
 {
     public CombatBattleTeamResult(
@@ -37,6 +89,35 @@ public sealed class CombatBattleTeamResult
         int magicStoneHp,
         int magicStoneMaxHp,
         IReadOnlyList<CombatBattleCharacterResult> characters)
+        : this(
+            team,
+            participantCount,
+            aliveCount,
+            damageDealt,
+            damageTaken,
+            healingDone,
+            damagePrevented,
+            magicStoneDamage,
+            magicStoneHp,
+            magicStoneMaxHp,
+            characters,
+            CombatBattleSupportSummary.Empty)
+    {
+    }
+
+    public CombatBattleTeamResult(
+        CombatTeam team,
+        int participantCount,
+        int aliveCount,
+        int damageDealt,
+        int damageTaken,
+        int healingDone,
+        int damagePrevented,
+        int magicStoneDamage,
+        int magicStoneHp,
+        int magicStoneMaxHp,
+        IReadOnlyList<CombatBattleCharacterResult> characters,
+        CombatBattleSupportSummary supportSummary)
     {
         Team = team;
         ParticipantCount = participantCount;
@@ -49,6 +130,7 @@ public sealed class CombatBattleTeamResult
         MagicStoneHp = magicStoneHp;
         MagicStoneMaxHp = magicStoneMaxHp;
         Characters = characters;
+        SupportSummary = supportSummary ?? CombatBattleSupportSummary.Empty;
     }
 
     public CombatTeam Team { get; }
@@ -62,6 +144,7 @@ public sealed class CombatBattleTeamResult
     public int MagicStoneHp { get; }
     public int MagicStoneMaxHp { get; }
     public IReadOnlyList<CombatBattleCharacterResult> Characters { get; }
+    public CombatBattleSupportSummary SupportSummary { get; }
 }
 
 public sealed class CombatBattleCharacterResult
@@ -77,6 +160,35 @@ public sealed class CombatBattleCharacterResult
         int healingDone,
         int defeats,
         int deaths)
+        : this(
+            displayName,
+            personalityDisplayName,
+            weaponDisplayName,
+            isAlive,
+            damageDealt,
+            magicStoneDamage,
+            damageTaken,
+            healingDone,
+            defeats,
+            deaths,
+            CombatBattleSupportSummary.Empty,
+            Array.Empty<CombatBattleStatusEffectResult>())
+    {
+    }
+
+    public CombatBattleCharacterResult(
+        string displayName,
+        string personalityDisplayName,
+        string weaponDisplayName,
+        bool isAlive,
+        int damageDealt,
+        int magicStoneDamage,
+        int damageTaken,
+        int healingDone,
+        int defeats,
+        int deaths,
+        CombatBattleSupportSummary supportSummary,
+        IReadOnlyList<CombatBattleStatusEffectResult> supportEffects)
     {
         DisplayName = displayName;
         PersonalityDisplayName = personalityDisplayName;
@@ -88,6 +200,8 @@ public sealed class CombatBattleCharacterResult
         HealingDone = healingDone;
         Defeats = defeats;
         Deaths = deaths;
+        SupportSummary = supportSummary ?? CombatBattleSupportSummary.Empty;
+        SupportEffects = supportEffects ?? Array.Empty<CombatBattleStatusEffectResult>();
     }
 
     public string DisplayName { get; }
@@ -100,6 +214,8 @@ public sealed class CombatBattleCharacterResult
     public int HealingDone { get; }
     public int Defeats { get; }
     public int Deaths { get; }
+    public CombatBattleSupportSummary SupportSummary { get; }
+    public IReadOnlyList<CombatBattleStatusEffectResult> SupportEffects { get; }
 }
 
 [DisallowMultipleComponent]
@@ -129,6 +245,8 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
     private readonly List<Character> _allyCharacters = new List<Character>();
     private readonly List<Character> _enemyCharacters = new List<Character>();
     private readonly List<CombatHealth> _subscribedHealth = new List<CombatHealth>();
+    private readonly CombatBattleStatusEffectTracker _statusEffectTracker =
+        new CombatBattleStatusEffectTracker();
 
     private CombatMagicStoneSystem _magicStoneSystem;
     private CombatBattleResult _currentResult;
@@ -152,6 +270,7 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         _battleStartTime = Time.time;
         AddCharacters(allies, CombatTeam.Ally, _allyCharacters);
         AddCharacters(enemies, CombatTeam.Enemy, _enemyCharacters);
+        _statusEffectTracker.Begin(_allyCharacters, _enemyCharacters, _battleStartTime);
         SubscribeCombatEvents();
         SubscribeCharacterHealth();
 
@@ -172,11 +291,13 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
             return _currentResult;
         }
 
+        float battleEndTime = Time.time;
+        _statusEffectTracker.Complete(battleEndTime);
         CombatBattleTeamResult allies = BuildTeamResult(CombatTeam.Ally, _allyCharacters);
         CombatBattleTeamResult enemies = BuildTeamResult(CombatTeam.Enemy, _enemyCharacters);
         _currentResult = new CombatBattleResult(
             outcome,
-            Mathf.Max(0f, Time.time - _battleStartTime),
+            Mathf.Max(0f, battleEndTime - _battleStartTime),
             allies,
             enemies);
 
@@ -196,6 +317,7 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         _characterResults.Clear();
         _allyCharacters.Clear();
         _enemyCharacters.Clear();
+        _statusEffectTracker.Clear();
         _currentResult = null;
         _battleStartTime = 0f;
         _allyMagicStoneDamage = 0;
@@ -207,12 +329,14 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         UnsubscribeCombatEvents();
         CombatDamageEvents.Resolved += OnDamageResolved;
         CombatHealingEvents.Resolved += OnHealingResolved;
+        CombatStatusEffectEvents.Changed += OnStatusEffectChanged;
     }
 
     private void UnsubscribeCombatEvents()
     {
         CombatDamageEvents.Resolved -= OnDamageResolved;
         CombatHealingEvents.Resolved -= OnHealingResolved;
+        CombatStatusEffectEvents.Changed -= OnStatusEffectChanged;
     }
 
     private void AddCharacters(
@@ -305,6 +429,13 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
         }
     }
 
+    private void OnStatusEffectChanged(CombatStatusEffectChange change)
+    {
+        if (!_isRecording) return;
+
+        _statusEffectTracker.Record(change, Time.time);
+    }
+
     private void OnCharacterDefeated(Character victim, Character killer)
     {
         if (!_isRecording) return;
@@ -371,7 +502,9 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
                 stats.DamageTaken,
                 stats.HealingDone,
                 stats.Defeats,
-                stats.Deaths));
+                stats.Deaths,
+                _statusEffectTracker.GetSupportSummary(character),
+                _statusEffectTracker.GetEffectResults(character)));
         }
 
         int stoneHp = 0;
@@ -403,7 +536,8 @@ public sealed class CombatBattleResultRecorder : MonoBehaviour
             magicStoneDamage,
             stoneHp,
             stoneMaxHp,
-            characterResults);
+            characterResults,
+            _statusEffectTracker.GetTeamSupportSummary(team));
     }
 
     private static string WeaponDisplayName(Character character)

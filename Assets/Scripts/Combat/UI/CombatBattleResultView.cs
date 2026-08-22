@@ -9,11 +9,16 @@ public sealed class CombatBattleResultView : MonoBehaviour
 {
     private const string SummaryRootName = "BattleSummary";
     private const float CardWidth = 720f;
-    private const float CardHeight = 440f;
+    private const float CardHeight = 620f;
+    private const float TeamCardScale = 1.2f;
     private const float PersonalityColumnWidth = 110f;
     private const float NameColumnWidth = 170f;
     private const float WeaponColumnWidth = 70f;
     private const float MetricColumnWidth = 54f;
+    private const float SupportNameColumnWidth = 135f;
+    private const float SupportEffectColumnWidth = 220f;
+    private const float SupportUsageColumnWidth = 160f;
+    private const float SupportDurationColumnWidth = 145f;
 
     private sealed class RowUi
     {
@@ -27,7 +32,9 @@ public sealed class CombatBattleResultView : MonoBehaviour
         public RectTransform Rows { get; set; }
         public RowUi HeaderRow { get; set; }
         public RowUi TotalRow { get; set; }
-        public TMP_Text DefenseText { get; set; }
+        public TMP_Text SupportSummaryText { get; set; }
+        public TMP_Text SupportDurationText { get; set; }
+        public RectTransform SupportRows { get; set; }
     }
 
     private RectTransform _summaryRoot;
@@ -50,11 +57,11 @@ public sealed class CombatBattleResultView : MonoBehaviour
         _font = sourceText.font;
         _fontMaterial = sourceText.fontSharedMaterial;
         _summaryRoot = CreateRoot();
-        _allyUi = CreateTeamUi("AlliesCard", "味方", new Vector2(-370f, 0f), new Color(0.08f, 0.16f, 0.26f, 0.96f));
-        _enemyUi = CreateTeamUi("EnemiesCard", "敵", new Vector2(370f, 0f), new Color(0.26f, 0.12f, 0.12f, 0.96f));
+        _allyUi = CreateTeamUi("AlliesCard", "味方", new Vector2(-450f, -20f), new Color(0.08f, 0.16f, 0.26f, 0.96f));
+        _enemyUi = CreateTeamUi("EnemiesCard", "敵", new Vector2(450f, -20f), new Color(0.26f, 0.12f, 0.12f, 0.96f));
 
-        MoveChild("ResultTitle", new Vector2(0f, 285f));
-        MoveChild("BackToSelectionButton", new Vector2(0f, -300f));
+        MoveChild("ResultTitle", new Vector2(0f, 450f));
+        MoveChild("BackToSelectionButton", new Vector2(0f, -490f));
         _summaryRoot.gameObject.SetActive(false);
     }
 
@@ -88,7 +95,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         root.anchorMax = new Vector2(0.5f, 0.5f);
         root.pivot = new Vector2(0.5f, 0.5f);
         root.anchoredPosition = new Vector2(0f, -10f);
-        root.sizeDelta = new Vector2(1460f, 520f);
+        root.sizeDelta = new Vector2(1800f, 860f);
 
         Image image = root.GetComponent<Image>();
         image.color = new Color(0f, 0f, 0f, 0.22f);
@@ -114,6 +121,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         card.pivot = new Vector2(0.5f, 0.5f);
         card.anchoredPosition = anchoredPosition;
         card.sizeDelta = new Vector2(CardWidth, CardHeight);
+        card.localScale = Vector3.one * TeamCardScale;
 
         Image image = cardObject.GetComponent<Image>();
         image.color = cardColor;
@@ -152,14 +160,52 @@ public sealed class CombatBattleResultView : MonoBehaviour
         rowsLayout.childForceExpandHeight = false;
 
         teamUi.TotalRow = CreateRow(card, "TotalRow", isHeader: false, rowColor: new Color(0f, 0f, 0f, 0.26f));
-        teamUi.DefenseText = CreateLabel(
+        CreateLabel(
             card,
-            "DefenseTotal",
-            "無効化ダメージ 0",
+            "SupportHeader",
+            "支援・弱体",
             16f,
-            TextAlignmentOptions.Right,
+            TextAlignmentOptions.Left,
             24f,
-            new Color(1f, 1f, 1f, 0.82f));
+            new Color(1f, 1f, 1f, 0.92f));
+        teamUi.SupportSummaryText = CreateLabel(
+            card,
+            "SupportSummary",
+            string.Empty,
+            14f,
+            TextAlignmentOptions.Left,
+            22f,
+            new Color(1f, 1f, 1f, 0.86f));
+        teamUi.SupportSummaryText.richText = true;
+        teamUi.SupportDurationText = CreateLabel(
+            card,
+            "SupportDuration",
+            string.Empty,
+            14f,
+            TextAlignmentOptions.Left,
+            22f,
+            new Color(1f, 1f, 1f, 0.86f));
+        teamUi.SupportDurationText.richText = true;
+
+        RowUi supportHeader = CreateSupportRow(card, "SupportHeaderRow", true, new Color(0f, 0f, 0f, 0.18f));
+        SetSupportRowValues(supportHeader, new[] { "名前", "付与内容", "使用量", "累積効果時間" });
+
+        GameObject supportRowsObject = new GameObject(
+            "SupportRows",
+            typeof(RectTransform),
+            typeof(VerticalLayoutGroup),
+            typeof(LayoutElement));
+        teamUi.SupportRows = supportRowsObject.GetComponent<RectTransform>();
+        teamUi.SupportRows.SetParent(card, false);
+        LayoutElement supportRowsElement = supportRowsObject.GetComponent<LayoutElement>();
+        supportRowsElement.flexibleHeight = 1f;
+        VerticalLayoutGroup supportRowsLayout = supportRowsObject.GetComponent<VerticalLayoutGroup>();
+        supportRowsLayout.spacing = 2f;
+        supportRowsLayout.childAlignment = TextAnchor.UpperCenter;
+        supportRowsLayout.childControlWidth = true;
+        supportRowsLayout.childControlHeight = true;
+        supportRowsLayout.childForceExpandWidth = true;
+        supportRowsLayout.childForceExpandHeight = false;
         return teamUi;
     }
 
@@ -208,6 +254,74 @@ public sealed class CombatBattleResultView : MonoBehaviour
         }
 
         return rowUi;
+    }
+
+    private RowUi CreateSupportRow(Transform parent, string objectName, bool isHeader, Color rowColor)
+    {
+        GameObject rowObject = new GameObject(
+            objectName,
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement));
+        RectTransform row = rowObject.GetComponent<RectTransform>();
+        row.SetParent(parent, false);
+
+        Image image = rowObject.GetComponent<Image>();
+        image.color = rowColor;
+        image.raycastTarget = false;
+
+        HorizontalLayoutGroup layout = rowObject.GetComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(6, 6, 2, 2);
+        layout.spacing = 4f;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = true;
+
+        LayoutElement rowElement = rowObject.GetComponent<LayoutElement>();
+        rowElement.preferredHeight = isHeader ? 25f : 24f;
+
+        var rowUi = new RowUi { Root = rowObject };
+        rowUi.Cells.Add(CreateSupportCell(row, "名前", isHeader, SupportNameColumnWidth, TextAlignmentOptions.Left));
+        rowUi.Cells.Add(CreateSupportCell(row, "付与内容", isHeader, SupportEffectColumnWidth, TextAlignmentOptions.Left));
+        rowUi.Cells.Add(CreateSupportCell(row, "使用量", isHeader, SupportUsageColumnWidth, TextAlignmentOptions.Right));
+        rowUi.Cells.Add(CreateSupportCell(row, "累積効果時間", isHeader, SupportDurationColumnWidth, TextAlignmentOptions.Right));
+        return rowUi;
+    }
+
+    private TMP_Text CreateSupportCell(
+        Transform parent,
+        string textValue,
+        bool isHeader,
+        float width,
+        TextAlignmentOptions alignment)
+    {
+        GameObject cellObject = new GameObject(
+            "Cell",
+            typeof(RectTransform),
+            typeof(TextMeshProUGUI),
+            typeof(LayoutElement));
+        RectTransform cell = cellObject.GetComponent<RectTransform>();
+        cell.SetParent(parent, false);
+
+        LayoutElement element = cellObject.GetComponent<LayoutElement>();
+        element.minWidth = width;
+        element.preferredWidth = width;
+
+        TextMeshProUGUI text = cellObject.GetComponent<TextMeshProUGUI>();
+        text.font = _font;
+        text.fontSharedMaterial = _fontMaterial;
+        text.text = textValue;
+        text.fontSize = isHeader ? 13f : 13.5f;
+        text.alignment = alignment;
+        text.color = Color.white;
+        text.enableWordWrapping = false;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        text.raycastTarget = false;
+        text.richText = true;
+        return text;
     }
 
     private TMP_Text CreateCell(
@@ -329,7 +443,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
             SumDefeats(result).ToString(CultureInfo.InvariantCulture),
             SumDeaths(result).ToString(CultureInfo.InvariantCulture),
         });
-        teamUi.DefenseText.text = "無効化ダメージ " + result.DamagePrevented.ToString(CultureInfo.InvariantCulture);
+        PopulateSupport(teamUi, result);
         ClearRows(teamUi.Rows);
 
         for (int i = 0; i < result.Characters.Count; i++)
@@ -357,6 +471,109 @@ public sealed class CombatBattleResultView : MonoBehaviour
         }
     }
 
+    private void PopulateSupport(TeamUi teamUi, CombatBattleTeamResult result)
+    {
+        CombatBattleSupportSummary summary = result.SupportSummary;
+        teamUi.SupportSummaryText.text = FormatSupportSummary(summary);
+        teamUi.SupportDurationText.text = FormatSupportDurationSummary(summary, result.DamagePrevented);
+        ClearRows(teamUi.SupportRows);
+
+        for (int i = 0; i < result.Characters.Count; i++)
+        {
+            CombatBattleCharacterResult character = result.Characters[i];
+            RowUi row = CreateSupportRow(
+                teamUi.SupportRows,
+                "SupportCharacterRow",
+                false,
+                i % 2 == 0
+                    ? new Color(0f, 0f, 0f, 0.12f)
+                    : new Color(0f, 0f, 0f, 0.04f));
+            SetSupportRowValues(row, new[]
+            {
+                character.DisplayName,
+                FormatEffectNames(character.SupportEffects),
+                FormatUsage(character.SupportSummary),
+                FormatDuration(character.SupportSummary),
+            });
+        }
+    }
+
+    private static string FormatSupportSummary(CombatBattleSupportSummary summary)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "<color=#8FE3A1>↑バフ {0}回 / {1}人</color>    <color=#C59BFF>↓デバフ {2}回 / {3}人</color>",
+            summary.BuffActivationCount,
+            summary.BuffTargetCount,
+            summary.DebuffActivationCount,
+            summary.DebuffTargetCount);
+    }
+
+    private static string FormatSupportDurationSummary(
+        CombatBattleSupportSummary summary,
+        int damagePrevented)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "累積効果時間 <color=#8FE3A1>↑{0:0.0}秒</color> / <color=#C59BFF>↓{1:0.0}秒</color>    無効化D {2}",
+            summary.BuffDurationSeconds,
+            summary.DebuffDurationSeconds,
+            damagePrevented);
+    }
+
+    private static string FormatEffectNames(IReadOnlyList<CombatBattleStatusEffectResult> effects)
+    {
+        if (effects == null || effects.Count == 0) return "—";
+
+        var names = new List<string>(effects.Count);
+        for (int i = 0; i < effects.Count; i++)
+        {
+            CombatBattleStatusEffectResult effect = effects[i];
+            string color = effect.IsBuff ? "#8FE3A1" : "#C59BFF";
+            names.Add(string.Format(
+                CultureInfo.InvariantCulture,
+                "<color={0}>{1}</color>",
+                color,
+                effect.Stat));
+        }
+
+        return string.Join("・", names);
+    }
+
+    private static string FormatUsage(CombatBattleSupportSummary summary)
+    {
+        string buff = string.Format(
+            CultureInfo.InvariantCulture,
+            "<color=#8FE3A1>↑{0}回/{1}人</color>",
+            summary.BuffActivationCount,
+            summary.BuffTargetCount);
+        string debuff = string.Format(
+            CultureInfo.InvariantCulture,
+            "<color=#C59BFF>↓{0}回/{1}人</color>",
+            summary.DebuffActivationCount,
+            summary.DebuffTargetCount);
+        if (summary.BuffActivationCount == 0 && summary.DebuffActivationCount == 0) return "—";
+        if (summary.BuffActivationCount == 0) return debuff;
+        if (summary.DebuffActivationCount == 0) return buff;
+        return buff + " " + debuff;
+    }
+
+    private static string FormatDuration(CombatBattleSupportSummary summary)
+    {
+        string buff = string.Format(
+            CultureInfo.InvariantCulture,
+            "<color=#8FE3A1>↑{0:0.0}秒</color>",
+            summary.BuffDurationSeconds);
+        string debuff = string.Format(
+            CultureInfo.InvariantCulture,
+            "<color=#C59BFF>↓{0:0.0}秒</color>",
+            summary.DebuffDurationSeconds);
+        if (summary.BuffActivationCount == 0 && summary.DebuffActivationCount == 0) return "—";
+        if (summary.BuffActivationCount == 0) return debuff;
+        if (summary.DebuffActivationCount == 0) return buff;
+        return buff + " " + debuff;
+    }
+
     private static int SumDefeats(CombatBattleTeamResult result)
     {
         int defeats = 0;
@@ -380,6 +597,14 @@ public sealed class CombatBattleResultView : MonoBehaviour
     }
 
     private static void SetRowValues(RowUi row, IReadOnlyList<string> values)
+    {
+        for (int i = 0; i < row.Cells.Count && i < values.Count; i++)
+        {
+            row.Cells[i].text = values[i];
+        }
+    }
+
+    private static void SetSupportRowValues(RowUi row, IReadOnlyList<string> values)
     {
         for (int i = 0; i < row.Cells.Count && i < values.Count; i++)
         {

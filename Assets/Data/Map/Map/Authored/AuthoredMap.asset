@@ -53,20 +53,26 @@ MonoBehaviour:
     Waypoints:
     - {x: 25.050001, y: 23.15}
     - {x: 32.05, y: 23.15}
-  - RouteId: auto:bridge:0
-    DisplayName: "\u6A4B\u30EB\u30FC\u30C8 1"
+  - RouteId: auto:bridge:1
+    DisplayName: "\u6A4B\u30EB\u30FC\u30C8 2"
     Source: 0
     Waypoints:
-    - {x: 23.45, y: 51.850002}
-    - {x: 30.45, y: 51.850002}
+    - {x: 25.050001, y: 23.15}
+    - {x: 32.05, y: 23.15}
   - RouteId: auto:bridge:2
     DisplayName: "\u6A4B\u30EB\u30FC\u30C8 3"
     Source: 0
     Waypoints:
     - {x: 26.85, y: 7.9500003}
     - {x: 33.85, y: 7.9500003}
+  - RouteId: auto:bridge:0
+    DisplayName: "\u6A4B\u30EB\u30FC\u30C8 1"
+    Source: 0
+    Waypoints:
+    - {x: 23.45, y: 51.850002}
+    - {x: 30.45, y: 51.850002}
   _bakedPreview: {fileID: 2800000, guid: 4fe87c87cc5f849e28fc0340cfd69a00, type: 3}
-  _previewBakeFingerprint: 193744431
+  _previewBakeFingerprint: -1519462145
   _mountains: []
   _rivers:
   - Shape: {fileID: 11400000, guid: aaf5385588f594e0e925ede2d7075e27, type: 2}

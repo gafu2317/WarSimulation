@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -127,7 +128,7 @@ public sealed class CombatFlow : MonoBehaviour
             ShowStartFailure("魔石位置の反転を適用できませんでした");
             return;
         }
-        ApplyCombatCamera(_characterSelection != null && _characterSelection.IsStonePositionReversed);
+        ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
 
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
         _battleResultRecorder?.Begin(
@@ -156,7 +157,16 @@ public sealed class CombatFlow : MonoBehaviour
 
         if (_resultTitle != null)
         {
-            _resultTitle.text = outcome == CombatBattleState.Victory ? "勝利" : "敗北";
+            _resultTitle.textWrappingMode = TextWrappingModes.NoWrap;
+            _resultTitle.overflowMode = TextOverflowModes.Overflow;
+            string outcomeText = outcome == CombatBattleState.Victory ? "勝利" : "敗北";
+            _resultTitle.text = result == null
+                ? outcomeText
+                : string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}　戦闘時間 {1}",
+                    outcomeText,
+                    FormatBattleDuration(result.DurationSeconds));
         }
 
         RestoreNormalSpeed();
@@ -165,6 +175,18 @@ public sealed class CombatFlow : MonoBehaviour
         SetBattleUiVisible(false);
         SetBattleControlsVisible(false);
         SetVisible(_resultPanel, true);
+    }
+
+    private static string FormatBattleDuration(float durationSeconds)
+    {
+        int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(durationSeconds));
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0}分{1:00}秒",
+            minutes,
+            seconds);
     }
 
     private void ShowSelection()

@@ -17,7 +17,10 @@ public readonly struct CombatStatusEffectChange
         CombatStatusEffects.EffectType type,
         CombatStatusEffectChangeKind kind,
         CombatEffectSource source,
-        int amount = 0)
+        int amount = 0,
+        CombatStatusEffects.StatKind stat = default,
+        float multiplier = 1f,
+        float remainingSeconds = 0f)
     {
         Target = target;
         Key = key;
@@ -25,6 +28,9 @@ public readonly struct CombatStatusEffectChange
         Kind = kind;
         Source = source;
         Amount = amount;
+        Stat = stat;
+        Multiplier = multiplier;
+        RemainingSeconds = remainingSeconds;
     }
 
     public Character Target { get; }
@@ -33,6 +39,9 @@ public readonly struct CombatStatusEffectChange
     public CombatStatusEffectChangeKind Kind { get; }
     public CombatEffectSource Source { get; }
     public int Amount { get; }
+    public CombatStatusEffects.StatKind Stat { get; }
+    public float Multiplier { get; }
+    public float RemainingSeconds { get; }
 }
 
 public static class CombatStatusEffectEvents
