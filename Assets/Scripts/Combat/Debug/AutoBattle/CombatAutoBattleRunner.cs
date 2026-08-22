@@ -387,6 +387,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             _mapSystem.IsStonePositionReversed != stonePositionsReversed;
         if (mapChanged || orientationChanged)
         {
+            yield return _mapSystem.PrepareMapAsync(mapDefinition);
             if (!_mapSystem.TryApplyBakedAuthoredMap(
                     mapDefinition,
                     out MapData map,
@@ -395,6 +396,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
                 throw new InvalidOperationException(
                     $"マップ '{mapDefinition.name}' の適用に失敗しました: {failure}");
             }
+            if (!_mapSystem.ResetRuntimeMapState())
+                throw new InvalidOperationException($"マップ '{mapDefinition.name}' の状態復元に失敗しました。");
             _lastAppliedMap = mapDefinition;
             yield return null;
         }

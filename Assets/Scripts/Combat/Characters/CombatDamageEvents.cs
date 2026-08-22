@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 public readonly struct CombatDamageEvent
 {
@@ -31,6 +32,14 @@ public static class CombatDamageEvents
     public static event Action<Character, int, Character> DamageApplied;
     public static event Action<Character, int, Character> DamagePrevented;
     public static event Action<CombatDamageEvent> Resolved;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        DamageApplied = null;
+        DamagePrevented = null;
+        Resolved = null;
+    }
 
     public static void RaiseDamageApplied(Character victim, int amount, Character attacker)
     {

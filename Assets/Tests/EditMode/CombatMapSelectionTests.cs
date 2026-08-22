@@ -36,6 +36,8 @@ public sealed class CombatMapSelectionTests
         fixture.SetRoutes();
         AssertReason(fixture.Definition, false, CombatMapUnavailableReason.MissingPreview);
         fixture.SetPreview();
+        AssertReason(fixture.Definition, false, CombatMapUnavailableReason.MissingBakedRuntimeScene);
+        fixture.SetRuntimeScene();
         CombatMapAvailability ready = CombatMapAvailability.Evaluate(fixture.Definition, false);
         Assert.That(ready.CanStartBattle, Is.True, $"{ready.Reason}: {ready.Message}");
 
@@ -44,6 +46,7 @@ public sealed class CombatMapSelectionTests
         fixture.SetNavMesh();
         fixture.SetRoutes();
         fixture.SetPreview();
+        fixture.SetRuntimeScene();
         AssertReason(fixture.Definition, true, CombatMapUnavailableReason.StonePairCountMismatch);
     }
 
@@ -67,6 +70,8 @@ public sealed class CombatMapSelectionTests
         fixture.SetRoutes();
         AssertReason(fixture.Definition, false, CombatMapUnavailableReason.StalePreview);
         fixture.SetPreview();
+        AssertReason(fixture.Definition, false, CombatMapUnavailableReason.MissingBakedRuntimeScene);
+        fixture.SetRuntimeScene();
         CombatMapAvailability ready = CombatMapAvailability.Evaluate(fixture.Definition, false);
         Assert.That(ready.CanStartBattle, Is.True, $"{ready.Reason}: {ready.Message}");
     }
@@ -322,6 +327,13 @@ public sealed class CombatMapSelectionTests
         {
             if (_preview == null) _preview = new Texture2D(2, 2);
             Definition.SetBakedPreview(_preview, Definition.ComputeAssaultRouteFingerprint());
+        }
+
+        public void SetRuntimeScene()
+        {
+            Definition.SetBakedRuntimeScene(
+                "Assets/Scenes/BakedMaps/Test.unity",
+                Definition.ComputeBakeFingerprint());
         }
 
         public void Dispose()

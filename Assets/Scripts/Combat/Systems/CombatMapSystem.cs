@@ -1,7 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Profiling;
 using UnityEngine.Serialization;
+using UnityEngine.SceneManagement;
 using WarSimulation.Combat.Map;
 
 public readonly struct TerrainInfo
@@ -77,13 +80,30 @@ public enum CombatMapApplyFailure
     MissingSharedConfig,
     MissingBakedMapData,
     MissingBakedNavMesh,
+    MissingBakedRenderData,
     MissingMapSceneHost,
     RuntimeMapCreationFailed,
     RenderOrNavMeshLoadFailed,
+    MapNotReady,
+    MissingBakedRuntimeScene,
+    BakedRuntimeSceneLoadFailed,
+}
+
+public enum MapPreparationState
+{
+    Unloaded,
+    Loading,
+    Ready,
+    Failed,
 }
 
 public class CombatMapSystem : MonoBehaviour
 {
+    private static readonly ProfilerMarker PrepareMapMarker =
+        new("CombatLoading.PrepareMap");
+    private static readonly ProfilerMarker ActivateMapMarker =
+        new("CombatLoading.ActivateMap");
+
     [FormerlySerializedAs("_mapGenerator")]
     [SerializeField] private MapSceneHost _mapSceneHost;
     [FormerlySerializedAs("_generateMapOnStart")]
@@ -112,6 +132,17 @@ public class CombatMapSystem : MonoBehaviour
     private float _cachedTerrainMinimumHeight;
     private float _cachedTerrainMaximumHeight;
     private bool _isNavMeshReady;
+    private AuthoredMapDefinition _preparedDefinition;
+    private MapData _preparedMap;
+    private int _preparedFingerprint;
+    private CombatMapApplyFailure _preparationFailure;
+    private readonly HashSet<Vector2Int> _dirtyGroundCells = new();
+    private readonly HashSet<Vector2Int> _dirtyBiomeCells = new();
+    private Scene _loadedRuntimeScene;
+    private int _preparationRequestVersion;
+
+    public MapPreparationState PreparationState { get; private set; }
+    public CombatMapApplyFailure PreparationFailure => _preparationFailure;
 
     // 天気
     public enum Weather { Sunny, Rainy, Hot, Cold, Thunder }
@@ -123,6 +154,7 @@ public class CombatMapSystem : MonoBehaviour
     public Transform MapOrigin => _mapSceneHost != null ? _mapSceneHost.transform : transform;
 
     public AuthoredMapDefinition AuthoredMap => _authoredMap;
+    public MapSceneHost SceneHost => _mapSceneHost;
 
     private void Start()
     {
@@ -162,52 +194,262 @@ public class CombatMapSystem : MonoBehaviour
             return false;
         }
 
-        if (_authoredMap == null || _mapSceneHost == null)
+        if (!TryPrepareMap(_authoredMap, out _)) return false;
+        return TryActivatePreparedMap(_authoredMap, out _);
+    }
+
+    public IEnumerator PrepareMapAsync(AuthoredMapDefinition definition)
+    {
+        if (IsMapReady(definition)) yield break;
+        int requestVersion = ++_preparationRequestVersion;
+        PreparationState = MapPreparationState.Loading;
+        yield return null;
+        CombatMapApplyFailure validationFailure = ValidateBakedDefinition(definition, requireHost: false);
+        if (validationFailure != CombatMapApplyFailure.None)
         {
-            Debug.LogError(
-                $"[{nameof(CombatMapSystem)}] Baked map loading requires AuthoredMap and MapSceneHost.",
-                this);
+            FailPreparation(validationFailure);
+            yield break;
+        }
+
+        MapData map = null;
+        if (_mapSceneHost != null && TryPrepareMap(definition, out map)) yield break;
+        if (!definition.HasValidBakedRuntimeScene)
+        {
+            FailPreparation(CombatMapApplyFailure.MissingBakedRuntimeScene);
+            yield break;
+        }
+
+        if (map == null && !TryCreateRuntimeMap(definition, out map)) yield break;
+
+        AsyncOperation load = SceneManager.LoadSceneAsync(
+            definition.BakedRuntimeScenePath,
+            LoadSceneMode.Additive);
+        if (load == null)
+        {
+            FailPreparation(CombatMapApplyFailure.BakedRuntimeSceneLoadFailed);
+            yield break;
+        }
+
+        while (!load.isDone) yield return null;
+        Scene loadedScene = SceneManager.GetSceneByPath(definition.BakedRuntimeScenePath);
+        if (!loadedScene.IsValid() || !loadedScene.isLoaded)
+        {
+            FailPreparation(CombatMapApplyFailure.BakedRuntimeSceneLoadFailed);
+            yield break;
+        }
+
+        MapSceneHost loadedHost = FindMapSceneHost(loadedScene);
+        int fingerprint = definition.ComputeBakeFingerprint();
+        bool staleRequest = requestVersion != _preparationRequestVersion;
+        bool validHost = loadedHost != null && loadedHost.HasBakedRenderDataFor(map, fingerprint);
+        if (staleRequest || !validHost)
+        {
+            yield return SceneManager.UnloadSceneAsync(loadedScene);
+            if (!staleRequest) FailPreparation(
+                loadedHost == null
+                    ? CombatMapApplyFailure.MissingMapSceneHost
+                    : CombatMapApplyFailure.MissingBakedRenderData);
+            yield break;
+        }
+
+        loadedHost.Config = definition.SharedConfig;
+        if (!loadedHost.LoadBakedMap(map, definition.BakedNavMesh, fingerprint, setCurrentMap: false))
+        {
+            yield return SceneManager.UnloadSceneAsync(loadedScene);
+            FailPreparation(CombatMapApplyFailure.RenderOrNavMeshLoadFailed);
+            yield break;
+        }
+
+        MapSceneHost oldHost = _mapSceneHost;
+        Scene oldRuntimeScene = _loadedRuntimeScene;
+        if (oldHost != null && oldHost != loadedHost)
+        {
+            oldHost.ClearLoadedNavMesh();
+            oldHost.SetBakedRenderVisible(false);
+        }
+
+        loadedHost.gameObject.SetActive(true);
+        loadedHost.SetBakedRenderVisible(true);
+        _mapSceneHost = loadedHost;
+        _loadedRuntimeScene = loadedScene;
+        CompletePreparation(definition, map, fingerprint);
+        TryActivatePreparedMap(definition, out _);
+
+        if (oldRuntimeScene.IsValid() && oldRuntimeScene.isLoaded && oldRuntimeScene != loadedScene)
+            yield return SceneManager.UnloadSceneAsync(oldRuntimeScene);
+    }
+
+    public bool IsMapReady(AuthoredMapDefinition definition)
+    {
+        if (definition == null || PreparationState != MapPreparationState.Ready) return false;
+        return ReferenceEquals(_preparedDefinition, definition) &&
+            _preparedFingerprint == definition.ComputeBakeFingerprint() &&
+            _preparedMap != null && _isNavMeshReady;
+    }
+
+    public bool TryActivatePreparedMap(
+        AuthoredMapDefinition definition,
+        out CombatMapApplyFailure failure)
+    {
+        using var _ = ActivateMapMarker.Auto();
+        failure = CombatMapApplyFailure.None;
+        if (!IsMapReady(definition))
+        {
+            failure = _preparationFailure != CombatMapApplyFailure.None
+                ? _preparationFailure
+                : CombatMapApplyFailure.RuntimeMapCreationFailed;
             return false;
         }
 
-        int currentFingerprint = _authoredMap.ComputeBakeFingerprint();
-        if (!_authoredMap.HasValidBakedMapData || !_authoredMap.HasValidBakedNavMesh)
-        {
-            Debug.LogError(
-                $"[{nameof(CombatMapSystem)}] Baked map data is invalid. " +
-                $"mapData={_authoredMap.BakedMapData != null} " +
-                $"navMesh={_authoredMap.BakedNavMesh != null} " +
-                $"storedNavFp={_authoredMap.NavMeshBakeFingerprint} " +
-                $"currentFp={currentFingerprint}. Re-bake the authored map in the Editor.",
-                this);
-            return false;
-        }
-
-        MapData map;
-        try
-        {
-            map = _authoredMap.BakedMapData.CreateRuntimeMap();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[{nameof(CombatMapSystem)}] Failed to load baked MapData: {ex.Message}", this);
-            return false;
-        }
-
-        _mapSceneHost.Config = _authoredMap.SharedConfig;
-        _mapSceneHost.Clear3D();
-        if (!_mapSceneHost.ApplyMapData(
-                map,
-                render3D: true,
-                bakeNavMesh: false,
-                prebakedNavMesh: _authoredMap.BakedNavMesh))
-        {
-            return false;
-        }
-
+        _authoredMap = definition;
+        if (!ReferenceEquals(CurrentMap, _preparedMap)) SetCurrentMap(_preparedMap);
         _isNavMeshReady = true;
         CombatAssaultRouteCache.EnsureBuilt(this);
         return true;
+    }
+
+    public bool ResetRuntimeMapState()
+    {
+        if (_authoredMap == null || CurrentMap == null || !_authoredMap.HasValidBakedMapData)
+            return false;
+        if (!_authoredMap.BakedMapData.RestoreRuntimeState(
+                CurrentMap,
+                _dirtyGroundCells,
+                _dirtyBiomeCells))
+            return false;
+
+        _dirtyGroundCells.Clear();
+        _dirtyBiomeCells.Clear();
+        bool wasReversed = IsStonePositionReversed;
+        IsStonePositionReversed = false;
+        if (HasMagicStones(CurrentMap))
+        {
+            FeatureRenderer renderer = _mapSceneHost != null
+                ? _mapSceneHost.GetComponent<FeatureRenderer>()
+                : null;
+            if (renderer == null || !renderer.TryRefreshMagicStonePositions(CurrentMap)) return false;
+        }
+
+        if (wasReversed) StonePositionsChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryGetInitialSpawnPositions(
+        CombatTeam team,
+        out IReadOnlyList<Vector3> worldPositions)
+    {
+        worldPositions = Array.Empty<Vector3>();
+        if (_authoredMap == null || CurrentMap == null) return false;
+
+        bool useOwnAnchor = team == CombatTeam.Ally;
+        if (IsStonePositionReversed) useOwnAnchor = !useOwnAnchor;
+        FeatureType anchorType = useOwnAnchor
+            ? FeatureType.OwnMainStone
+            : FeatureType.EnemyMainStone;
+        if (!_authoredMap.BakedMapData.TryGetInitialSpawnPositions(
+                anchorType,
+                _authoredMap.ComputeBakeFingerprint(),
+                out IReadOnlyList<Vector3> localPositions))
+            return false;
+
+        var transformed = new Vector3[localPositions.Count];
+        Transform origin = MapOrigin;
+        for (int i = 0; i < localPositions.Count; i++)
+            transformed[i] = origin != null ? origin.TransformPoint(localPositions[i]) : localPositions[i];
+        worldPositions = transformed;
+        return transformed.Length > 0;
+    }
+
+    private bool TryPrepareMap(AuthoredMapDefinition definition, out MapData map)
+    {
+        using var _ = PrepareMapMarker.Auto();
+        map = null;
+        if (IsMapReady(definition))
+        {
+            map = _preparedMap;
+            return true;
+        }
+
+        PreparationState = MapPreparationState.Loading;
+        _preparationFailure = ValidateBakedDefinition(definition, requireHost: true);
+        if (_preparationFailure != CombatMapApplyFailure.None)
+        {
+            PreparationState = MapPreparationState.Failed;
+            return false;
+        }
+
+        if (!TryCreateRuntimeMap(definition, out map)) return false;
+
+        int fingerprint = definition.ComputeBakeFingerprint();
+        _mapSceneHost.Config = definition.SharedConfig;
+        if (!_mapSceneHost.HasBakedRenderDataFor(map, fingerprint))
+            return FailPreparation(CombatMapApplyFailure.MissingBakedRenderData);
+
+        if (!_mapSceneHost.LoadBakedMap(map, definition.BakedNavMesh, fingerprint))
+            return FailPreparation(CombatMapApplyFailure.RenderOrNavMeshLoadFailed);
+
+        CompletePreparation(definition, map, fingerprint);
+        return true;
+    }
+
+    private CombatMapApplyFailure ValidateBakedDefinition(
+        AuthoredMapDefinition definition,
+        bool requireHost)
+    {
+        if (definition == null) return CombatMapApplyFailure.MissingDefinition;
+        if (definition.SharedConfig == null) return CombatMapApplyFailure.MissingSharedConfig;
+        if (!definition.HasValidBakedMapData) return CombatMapApplyFailure.MissingBakedMapData;
+        if (!definition.HasValidBakedNavMesh) return CombatMapApplyFailure.MissingBakedNavMesh;
+        if (requireHost && _mapSceneHost == null) return CombatMapApplyFailure.MissingMapSceneHost;
+        return CombatMapApplyFailure.None;
+    }
+
+    private bool TryCreateRuntimeMap(AuthoredMapDefinition definition, out MapData map)
+    {
+        try
+        {
+            map = definition.BakedMapData.CreateRuntimeMap();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex, this);
+            map = null;
+            return FailPreparation(CombatMapApplyFailure.RuntimeMapCreationFailed);
+        }
+    }
+
+    private void CompletePreparation(AuthoredMapDefinition definition, MapData map, int fingerprint)
+    {
+        _preparedDefinition = definition;
+        _preparedMap = map;
+        _preparedFingerprint = fingerprint;
+        _preparationFailure = CombatMapApplyFailure.None;
+        PreparationState = MapPreparationState.Ready;
+        _isNavMeshReady = true;
+    }
+
+    private static MapSceneHost FindMapSceneHost(Scene scene)
+    {
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
+        {
+            MapSceneHost host = roots[i].GetComponentInChildren<MapSceneHost>(includeInactive: true);
+            if (host != null) return host;
+        }
+
+        return null;
+    }
+
+    private bool FailPreparation(CombatMapApplyFailure failure)
+    {
+        _preparedDefinition = null;
+        _preparedMap = null;
+        _preparedFingerprint = 0;
+        _preparationFailure = failure;
+        PreparationState = MapPreparationState.Failed;
+        _isNavMeshReady = false;
+        return false;
     }
 
     public void SetCurrentMap(MapData map)
@@ -218,8 +460,10 @@ public class CombatMapSystem : MonoBehaviour
         if (!isSameMap)
         {
             IsStonePositionReversed = false;
+            _dirtyGroundCells.Clear();
+            _dirtyBiomeCells.Clear();
         }
-        CombatAssaultRouteCache.Invalidate();
+        if (!isSameMap) CombatAssaultRouteCache.Invalidate();
         UpdateTerrainHeightRange(map);
         InitializeMagicStoneSystem(map);
         if (!isSameMap) CurrentMapChanged?.Invoke();
@@ -436,67 +680,22 @@ public class CombatMapSystem : MonoBehaviour
         out MapData map,
         out CombatMapApplyFailure failure)
     {
-        map = null;
-        failure = CombatMapApplyFailure.None;
-        if (definition == null)
-        {
-            failure = CombatMapApplyFailure.MissingDefinition;
-            return false;
-        }
-
-        if (definition.SharedConfig == null)
-        {
-            failure = CombatMapApplyFailure.MissingSharedConfig;
-            return false;
-        }
-
-        if (!definition.HasValidBakedMapData)
-        {
-            failure = CombatMapApplyFailure.MissingBakedMapData;
-            return false;
-        }
-
-        if (!definition.HasValidBakedNavMesh)
-        {
-            failure = CombatMapApplyFailure.MissingBakedNavMesh;
-            return false;
-        }
-
-        if (_mapSceneHost == null)
-        {
-            failure = CombatMapApplyFailure.MissingMapSceneHost;
-            return false;
-        }
-
-        try
-        {
-            map = definition.BakedMapData.CreateRuntimeMap();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogException(ex, this);
-            failure = CombatMapApplyFailure.RuntimeMapCreationFailed;
-            return false;
-        }
-
-        _mapSceneHost.Config = definition.SharedConfig;
-        _mapSceneHost.Clear3D();
-        bool applied = _mapSceneHost.ApplyMapData(
-            map,
-            render3D: true,
-            bakeNavMesh: false,
-            prebakedNavMesh: definition.BakedNavMesh);
-        if (!applied)
+        if (!IsMapReady(definition) && !TryPrepareMap(definition, out map))
         {
             map = null;
-            SetCurrentMap(null);
-            failure = CombatMapApplyFailure.RenderOrNavMeshLoadFailed;
+            failure = _preparationFailure != CombatMapApplyFailure.None
+                ? _preparationFailure
+                : CombatMapApplyFailure.MapNotReady;
             return false;
         }
 
-        _authoredMap = definition;
-        _isNavMeshReady = true;
-        CombatAssaultRouteCache.EnsureBuilt(this);
+        if (!TryActivatePreparedMap(definition, out failure))
+        {
+            map = null;
+            return false;
+        }
+
+        map = CurrentMap;
         return true;
     }
 
@@ -664,6 +863,7 @@ public class CombatMapSystem : MonoBehaviour
     public bool SetGroundState(Vector2Int cell, GroundState state)
     {
         if (!IsValidCell(cell)) return false;
+        _dirtyGroundCells.Add(cell);
         CurrentMap.GroundStates.SetCell(cell.x, cell.y, state);
         return true;
     }
@@ -671,6 +871,7 @@ public class CombatMapSystem : MonoBehaviour
     public bool SetBiomeId(Vector2Int cell, string biomeId)
     {
         if (!IsValidCell(cell)) return false;
+        _dirtyBiomeCells.Add(cell);
         CurrentMap.SetBiomeId(cell.x, cell.y, biomeId);
         return true;
     }

@@ -25,6 +25,26 @@ public static class CombatPlaytestDebugSettings
 
     public static event Action Changed;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        ShowCharacterRoutes = false;
+        ShowAssaultRoutes = false;
+        ShowAiLabels = false;
+        ShowVision = false;
+        CharacterRoutesShowAlly = true;
+        CharacterRoutesShowEnemy = true;
+        LabelShowObjective = true;
+        LabelShowWeapon = true;
+        LabelShowPersonality = true;
+        VisionShowLines = true;
+        VisionShowObstructionRays = false;
+        VisionShowFieldOfView = true;
+        LogVisionObstructions = false;
+        Changed = null;
+        CombatVisionObstructionDiagnostics.Clear();
+    }
+
     public static void SetShowCharacterRoutes(bool value) => Set(ShowCharacterRoutes, v => ShowCharacterRoutes = v, value);
     public static void SetShowAssaultRoutes(bool value) => Set(ShowAssaultRoutes, v => ShowAssaultRoutes = v, value);
     public static void SetShowAiLabels(bool value) => Set(ShowAiLabels, v => ShowAiLabels = v, value);

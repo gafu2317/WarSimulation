@@ -152,6 +152,28 @@ public sealed class WeaponConfigTests
     }
 
     [Test]
+    public void Character_InitializeOnBattleStart_ReusesConfiguredLoadout()
+    {
+        GameObject characterGo = new GameObject("Character");
+        WeaponConfig config = CreateConfig(WeaponKind.Sword);
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            character.ConfigureForBattle(config, null);
+            WeaponBase configuredWeapon = character.EquippedWeapon;
+
+            character.InitializeOnBattleStart();
+
+            Assert.That(character.EquippedWeapon, Is.SameAs(configuredWeapon));
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
     public void CreateWeapon_GrantedSkillIds_ArePassedToWeapon()
     {
         WeaponConfig config = CreateConfig(WeaponKind.Wand);

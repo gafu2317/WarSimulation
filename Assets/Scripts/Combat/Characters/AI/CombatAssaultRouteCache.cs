@@ -10,6 +10,12 @@ public static class CombatAssaultRouteCache
     private static readonly List<CombatAiAssaultRoute> ForwardRoutes = new();
     private static readonly List<CombatAiAssaultRoute> ReverseRoutes = new();
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        Invalidate();
+    }
+
     public static void Invalidate()
     {
         _cachedMap = null;

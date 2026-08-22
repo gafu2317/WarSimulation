@@ -84,6 +84,10 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private Texture2D _bakedPreview;
         [SerializeField] private int _previewBakeFingerprint;
 
+        [Header("Baked Runtime Scene")]
+        [SerializeField] private string _bakedRuntimeScenePath;
+        [SerializeField] private int _bakedRuntimeSceneFingerprint;
+
         [SerializeField] private List<AuthoredMountainPlacement> _mountains = new();
         [SerializeField] private List<AuthoredRiverPlacement> _rivers = new();
         [SerializeField] private List<AuthoredLakePlacement> _lakes = new();
@@ -115,6 +119,7 @@ namespace WarSimulation.Combat.Map
         public int AssaultRouteBakeFingerprint => _assaultRouteBakeFingerprint;
         public Texture2D BakedPreview => _bakedPreview;
         public int PreviewBakeFingerprint => _previewBakeFingerprint;
+        public string BakedRuntimeScenePath => _bakedRuntimeScenePath;
 
         public List<AuthoredMountainPlacement> Mountains => _mountains;
         public List<AuthoredRiverPlacement> Rivers => _rivers;
@@ -132,6 +137,10 @@ namespace WarSimulation.Combat.Map
 
         public bool HasValidBakedMapData =>
             _bakedMapData != null && _bakedMapData.IsValidFor(ComputeGeometryFingerprint());
+
+        public bool HasValidBakedInitialSpawnPositions =>
+            _bakedMapData != null &&
+            _bakedMapData.HasValidInitialSpawnPositions(ComputeGeometryFingerprint());
 
         public bool HasValidBakedAssaultRoutes =>
             (_bakedMapData != null && _bakedMapData.HasValidAssaultRoutes(ComputeAssaultRouteFingerprint())) ||
@@ -151,6 +160,10 @@ namespace WarSimulation.Combat.Map
                 ((_assaultRoutes != null && _assaultRoutes.Count > 0)
                     ? ComputeAssaultRouteFingerprint()
                     : ComputeGeometryFingerprint());
+
+        public bool HasValidBakedRuntimeScene =>
+            !string.IsNullOrWhiteSpace(_bakedRuntimeScenePath) &&
+            _bakedRuntimeSceneFingerprint == ComputeGeometryFingerprint();
 
         /// <summary>マップ内容が変わると変わる fingerprint。ベイク鮮度判定用（Editor/Runtime で同一・決定的）。</summary>
         public int ComputeGeometryFingerprint()
@@ -507,6 +520,12 @@ namespace WarSimulation.Combat.Map
         {
             _bakedPreview = preview;
             _previewBakeFingerprint = fingerprint;
+        }
+
+        public void SetBakedRuntimeScene(string scenePath, int fingerprint)
+        {
+            _bakedRuntimeScenePath = scenePath;
+            _bakedRuntimeSceneFingerprint = fingerprint;
         }
     }
 }

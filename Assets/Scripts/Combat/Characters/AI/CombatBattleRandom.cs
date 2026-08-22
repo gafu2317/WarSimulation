@@ -7,6 +7,12 @@ public static class CombatBattleRandom
     private static readonly Dictionary<int, int> DecisionTicks = new();
     private static int _seed;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        Initialize(0);
+    }
+
     public static void Initialize(int seed)
     {
         _seed = seed;

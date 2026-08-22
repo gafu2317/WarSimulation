@@ -32,6 +32,7 @@ public sealed class CombatMapSelectionView : MonoBehaviour
     private bool _stonePositionsReversed;
     private bool _interactionEnabled = true;
     private string _failureMessage;
+    private string _preparationMessage;
 
     public AuthoredMapDefinition SelectedMap =>
         _selectedIndex >= 0 && _selectedIndex < _availableOptions.Count
@@ -80,6 +81,7 @@ public sealed class CombatMapSelectionView : MonoBehaviour
         _stonePositionsReversed = stonePositionsReversed;
         _interactionEnabled = true;
         _failureMessage = null;
+        _preparationMessage = null;
         Refresh();
     }
 
@@ -113,6 +115,19 @@ public sealed class CombatMapSelectionView : MonoBehaviour
         RefreshStatus();
     }
 
+    public void ShowPreparation(string message)
+    {
+        _preparationMessage = message;
+        RefreshStatus();
+    }
+
+    public void ClearPreparation()
+    {
+        if (string.IsNullOrEmpty(_preparationMessage)) return;
+        _preparationMessage = null;
+        RefreshStatus();
+    }
+
     private void OpenOverlay()
     {
         if (!_interactionEnabled || _overlayRoot == null) return;
@@ -139,6 +154,7 @@ public sealed class CombatMapSelectionView : MonoBehaviour
         if (!_interactionEnabled || _availableOptions.Count == 0) return;
         _selectedIndex = (_selectedIndex + offset + _availableOptions.Count) % _availableOptions.Count;
         _failureMessage = null;
+        _preparationMessage = null;
         Refresh();
         SelectionChanged?.Invoke();
     }
@@ -228,7 +244,9 @@ public sealed class CombatMapSelectionView : MonoBehaviour
     {
         string status = !string.IsNullOrEmpty(_failureMessage)
             ? _failureMessage
-            : Availability.Message;
+            : !string.IsNullOrEmpty(_preparationMessage)
+                ? _preparationMessage
+                : Availability.Message;
         SetText(_summaryAvailabilityText, status);
         SetText(_overlayAvailabilityText, status);
     }

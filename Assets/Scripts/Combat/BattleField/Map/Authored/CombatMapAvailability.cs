@@ -13,8 +13,10 @@ namespace WarSimulation.Combat.Map
         StonePairCountMismatch,
         MissingBakedMapData,
         StaleBakedMapData,
+        MissingInitialSpawnPositions,
         MissingBakedNavMesh,
         StaleBakedNavMesh,
+        MissingBakedRuntimeScene,
         MissingAssaultRoutes,
         StaleAssaultRoutes,
         MissingPreview,
@@ -64,6 +66,10 @@ namespace WarSimulation.Combat.Map
                 return Unavailable(CombatMapUnavailableReason.MissingBakedMapData, "MapDataが未ベイクです");
             if (!definition.BakedMapData.IsValidFor(fingerprint))
                 return Unavailable(CombatMapUnavailableReason.StaleBakedMapData, "マップ変更後にMapDataが再ベイクされていません");
+            if (!definition.HasValidBakedInitialSpawnPositions)
+                return Unavailable(
+                    CombatMapUnavailableReason.MissingInitialSpawnPositions,
+                    "初期配置データの再ベイクが必要です");
             if (definition.BakedNavMesh == null)
                 return Unavailable(CombatMapUnavailableReason.MissingBakedNavMesh, "NavMeshが未ベイクです");
             if (definition.NavMeshBakeFingerprint != fingerprint)
@@ -82,6 +88,10 @@ namespace WarSimulation.Combat.Map
                 : fingerprint;
             if (definition.PreviewBakeFingerprint != previewFingerprint)
                 return Unavailable(CombatMapUnavailableReason.StalePreview, "マップ変更後にプレビューが再生成されていません");
+            if (!definition.HasValidBakedRuntimeScene)
+                return Unavailable(
+                    CombatMapUnavailableReason.MissingBakedRuntimeScene,
+                    "ランタイム用マップSceneの再ベイクが必要です");
 
             return new CombatMapAvailability(CombatMapUnavailableReason.None, string.Empty);
         }

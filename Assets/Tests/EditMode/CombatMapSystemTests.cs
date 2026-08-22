@@ -363,7 +363,7 @@ public sealed class CombatMapSystemTests
             definition.SetBakedNavMesh(navMesh, geometryFingerprint);
 
             CombatMapSystem system = systemObject.AddComponent<CombatMapSystem>();
-            MapSceneHost host = hostObject.AddComponent<MapSceneHost>();
+            MapSceneHost host = CreateBakedMapHost(hostObject, source, geometryFingerprint);
             SetPrivateField(system, "_mapSceneHost", host);
 
             bool applied = system.TryApplyBakedAuthoredMap(
@@ -380,6 +380,16 @@ public sealed class CombatMapSystemTests
             Assert.That(
                 CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: false).Count,
                 Is.EqualTo(1));
+
+            Transform generatedTerrain = host.transform.Find("GeneratedTerrain");
+            bool appliedAgain = system.TryApplyBakedAuthoredMap(
+                definition,
+                out MapData loadedAgain,
+                out CombatMapApplyFailure repeatedFailure);
+
+            Assert.That(appliedAgain, Is.True, repeatedFailure.ToString());
+            Assert.That(loadedAgain, Is.SameAs(loaded));
+            Assert.That(host.transform.Find("GeneratedTerrain"), Is.SameAs(generatedTerrain));
         }
         finally
         {
@@ -479,6 +489,43 @@ public sealed class CombatMapSystemTests
         }
 
         return hostObject;
+    }
+
+    private static MapSceneHost CreateBakedMapHost(
+        GameObject hostObject,
+        MapData map,
+        int fingerprint)
+    {
+        MapSceneHost host = hostObject.AddComponent<MapSceneHost>();
+        hostObject.AddComponent<CombatNavMeshBuilder>();
+        host.SetBakedRenderFingerprint(fingerprint);
+
+        GameObject terrain = new GameObject("GeneratedTerrain");
+        terrain.transform.SetParent(host.transform, false);
+
+        int featureCount = 0;
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            FeatureType type = map.Features[i].Type;
+            if (type == FeatureType.Tree || type == FeatureType.Rock ||
+                type == FeatureType.OwnMainStone || type == FeatureType.EnemyMainStone)
+            {
+                featureCount++;
+            }
+        }
+
+        if (featureCount > 0)
+        {
+            GameObject featureRoot = new GameObject("GeneratedFeatures");
+            featureRoot.transform.SetParent(host.transform, false);
+            for (int i = 0; i < featureCount; i++)
+            {
+                GameObject feature = new GameObject($"Feature{i}");
+                feature.transform.SetParent(featureRoot.transform, false);
+            }
+        }
+
+        return host;
     }
 
     private static void SetPrivateField(object target, string fieldName, object value)

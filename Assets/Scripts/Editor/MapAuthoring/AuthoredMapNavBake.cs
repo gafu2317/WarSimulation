@@ -71,10 +71,15 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
 
             host.SetBakedRenderFingerprint(fingerprint);
+            if (!AuthoredMapRuntimeSceneBake.TryBake(definition, out string runtimeSceneError))
+            {
+                status = runtimeSceneError;
+                return false;
+            }
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(host.gameObject.scene);
-            status = "シーンへ3D反映完了 / MapData・NavMeshを保存し、侵攻ルートを未検証に戻しました（シーンを保存してください）";
+            status = "シーンへ3D反映完了 / MapData・NavMesh・ランタイムSceneを保存し、侵攻ルートを未検証に戻しました（シーンを保存してください）";
             if (migrated) status += " / 旧侵攻ルートを移行しました";
             return true;
         }

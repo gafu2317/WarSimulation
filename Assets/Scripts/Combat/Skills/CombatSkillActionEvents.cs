@@ -117,6 +117,15 @@ public static class CombatSkillActionEvents
     public static event Action<CombatSkillActionResult> Completed;
     public static event Action<CombatSkillActionResult> Cancelled;
 
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        ResetBattle();
+        Started = null;
+        Completed = null;
+        Cancelled = null;
+    }
+
     public static void ResetBattle()
     {
         _nextActionId = 1;

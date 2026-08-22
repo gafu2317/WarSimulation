@@ -211,11 +211,17 @@ public sealed class CombatCharacterSystemTests
         GameObject allyObjectB = new GameObject("AllyB");
         GameObject enemyObjectA = new GameObject("EnemyA");
         GameObject enemyObjectB = new GameObject("EnemyB");
+        AuthoredMapDefinition definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        BakedMapData bakedMap = ScriptableObject.CreateInstance<BakedMapData>();
 
         try
         {
             CombatMapSystem mapSystem = mapObject.AddComponent<CombatMapSystem>();
-            mapSystem.SetCurrentMap(CreateStoneTestMap());
+            MapData map = CreateStoneTestMap();
+            bakedMap.Capture(map, definition.ComputeBakeFingerprint());
+            definition.SetBakedMapData(bakedMap);
+            CombatEditModeTestUtil.SetPrivateField(mapSystem, "_authoredMap", definition);
+            mapSystem.SetCurrentMap(map);
 
             CombatCharacterSystem characterSystem = characterSystemObject.AddComponent<CombatCharacterSystem>();
             CombatEditModeTestUtil.WireMapSystem(characterSystem, mapSystem);
@@ -255,6 +261,8 @@ public sealed class CombatCharacterSystemTests
         }
         finally
         {
+            Object.DestroyImmediate(bakedMap);
+            Object.DestroyImmediate(definition);
             Object.DestroyImmediate(enemyObjectB);
             Object.DestroyImmediate(enemyObjectA);
             Object.DestroyImmediate(allyObjectB);

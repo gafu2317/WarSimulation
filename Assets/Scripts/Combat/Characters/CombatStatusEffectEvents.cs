@@ -49,6 +49,13 @@ public static class CombatStatusEffectEvents
     public static event Action<Character, CombatStatusEffects.EffectType, Character> Applied;
     public static event Action<CombatStatusEffectChange> Changed;
 
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        Applied = null;
+        Changed = null;
+    }
+
     public static void RaiseApplied(Character target, CombatStatusEffects.EffectType type, Character source)
     {
         RaiseChanged(new CombatStatusEffectChange(

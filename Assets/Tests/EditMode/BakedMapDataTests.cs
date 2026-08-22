@@ -111,6 +111,87 @@ namespace WarSimulation.Tests.EditMode
             }
         }
 
+        [Test]
+        public void CaptureBakesOrderedSpacedInitialSpawnPositions()
+        {
+            var map = new MapData(
+                new HeightMap(20, 20, 1f),
+                new GroundStateGrid(20, 20, 1f),
+                seed: 7);
+            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(2f, 0f, 2f)));
+            map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(17f, 0f, 17f)));
+            BakedMapData baked = ScriptableObject.CreateInstance<BakedMapData>();
+            try
+            {
+                baked.Capture(map, 42);
+
+                Assert.That(baked.HasValidInitialSpawnPositions(42), Is.True);
+                Assert.That(
+                    baked.TryGetInitialSpawnPositions(
+                        FeatureType.OwnMainStone,
+                        42,
+                        out System.Collections.Generic.IReadOnlyList<Vector3> positions),
+                    Is.True);
+                Assert.That(positions.Count, Is.EqualTo(InitialSpawnPositionBaker.PositionsPerTeam));
+                for (int i = 1; i < positions.Count; i++)
+                {
+                    float previousDistance = HorizontalDistanceSqr(positions[i - 1], new Vector3(2f, 0f, 2f));
+                    float distance = HorizontalDistanceSqr(positions[i], new Vector3(2f, 0f, 2f));
+                    Assert.That(distance, Is.GreaterThanOrEqualTo(previousDistance));
+                    for (int p = 0; p < i; p++)
+                    {
+                        Assert.That(
+                            HorizontalDistanceSqr(positions[i], positions[p]),
+                            Is.GreaterThanOrEqualTo(
+                                InitialSpawnPositionBaker.CharacterSpacingDistance *
+                                InitialSpawnPositionBaker.CharacterSpacingDistance));
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(baked);
+            }
+        }
+
+        [Test]
+        public void RestoreRuntimeStateRestoresOnlyDirtyCellsAndAllFeatures()
+        {
+            MapData source = CreateMap();
+            BakedMapData baked = ScriptableObject.CreateInstance<BakedMapData>();
+            try
+            {
+                baked.Capture(source, 42);
+                MapData runtime = baked.CreateRuntimeMap();
+                runtime.GroundStates.SetCell(0, 1, GroundState.Swamp);
+                runtime.GroundStates.SetCell(1, 1, GroundState.Water);
+                runtime.SetBiomeId(2, 1, "changed");
+                runtime.Features[0] = new PlacedFeature(FeatureType.Bridge, Vector3.zero);
+
+                bool restored = baked.RestoreRuntimeState(
+                    runtime,
+                    new[] { new Vector2Int(0, 1) },
+                    new[] { new Vector2Int(2, 1) });
+
+                Assert.That(restored, Is.True);
+                Assert.That(runtime.GroundStates.GetCell(0, 1), Is.EqualTo(GroundState.Snow));
+                Assert.That(runtime.GroundStates.GetCell(1, 1), Is.EqualTo(GroundState.Water));
+                Assert.That(runtime.GetBiomeId(2, 1), Is.EqualTo("test-biome"));
+                Assert.That(runtime.Features[0].WorldPosition, Is.EqualTo(source.Features[0].WorldPosition));
+            }
+            finally
+            {
+                Object.DestroyImmediate(baked);
+            }
+        }
+
+        private static float HorizontalDistanceSqr(Vector3 a, Vector3 b)
+        {
+            float dx = a.x - b.x;
+            float dz = a.z - b.z;
+            return dx * dx + dz * dz;
+        }
+
         private static MapData CreateMap()
         {
             var height = new HeightMap(3, 2, 2f);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
@@ -63,13 +64,14 @@ public sealed class CombatFlow : MonoBehaviour
         CopyCharacters(_characterSystem.EnemyCharacters, _enemies);
         CombatPlaytestDebugSettings.ApplyToScene();
         EnsureBattleControls();
+        _characterSystem.CandidatesReady += OnCandidatesReady;
         _battleFlow.BattleEnded += ShowResult;
         _characterSelection.StonePositionReversedChanged += OnStonePositionReversedChanged;
         _mapSelectionView.SelectionChanged += OnMapSelectionChanged;
         _backToSelectionButton?.onClick.AddListener(ShowSelection);
         _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
         _mapSelectionView.Initialize(_mapSystem.AuthoredMap, _characterSelection.IsStonePositionReversed);
-        RefreshStartAvailability();
+        BeginMapPreparation();
         ShowSelection();
     }
 
@@ -79,6 +81,8 @@ public sealed class CombatFlow : MonoBehaviour
         {
             _battleFlow.BattleEnded -= ShowResult;
         }
+        if (_characterSystem != null)
+            _characterSystem.CandidatesReady -= OnCandidatesReady;
 
         if (_characterSelection != null)
         {
@@ -111,6 +115,14 @@ public sealed class CombatFlow : MonoBehaviour
             return;
         }
 
+        if (!_mapSystem.IsMapReady(_mapSelectionView.SelectedMap))
+        {
+            _mapSelectionView.ShowPreparation("マップ準備中です");
+            RefreshStartAvailability();
+            BeginMapPreparation();
+            return;
+        }
+
         _mapSelectionView.ClearFailure();
         _mapSelectionView.SetInteractionEnabled(false);
         _characterSelection.SetExternalStartAllowed(false);
@@ -120,6 +132,12 @@ public sealed class CombatFlow : MonoBehaviour
                 out CombatMapApplyFailure mapFailure))
         {
             ShowStartFailure(MapFailureMessage(mapFailure));
+            return;
+        }
+
+        if (!_mapSystem.ResetRuntimeMapState())
+        {
+            ShowStartFailure("戦闘マップの状態を初期化できませんでした");
             return;
         }
 
@@ -200,7 +218,8 @@ public sealed class CombatFlow : MonoBehaviour
         SetPauseMenuVisible(false);
         _battleResultRecorder?.Clear();
         _battleResultView?.Clear();
-        _battleFlow.AbortBattle();
+        if (_mapSystem != null && _mapSystem.CurrentMap != null)
+            _battleFlow.AbortBattle();
         _characterSystem.SetParticipants(_allyCandidates, _enemies);
         if (_mapSelectionView != null)
         {
@@ -231,13 +250,53 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void OnMapSelectionChanged()
     {
+        BeginMapPreparation();
+    }
+
+    private void OnCandidatesReady()
+    {
+        CopyCharacters(_characterSystem.AllyCharacters, _allyCandidates);
+        CopyCharacters(_characterSystem.EnemyCharacters, _enemies);
+        _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
         RefreshStartAvailability();
     }
 
     private void RefreshStartAvailability()
     {
         if (_characterSelection == null || _mapSelectionView == null) return;
-        _characterSelection.SetExternalStartAllowed(_mapSelectionView.CanStartBattle);
+        bool ready = _mapSystem != null && _mapSystem.IsMapReady(_mapSelectionView.SelectedMap);
+        _characterSelection.SetExternalStartAllowed(_mapSelectionView.CanStartBattle && ready);
+    }
+
+    private void BeginMapPreparation()
+    {
+        if (_mapSystem == null || _mapSelectionView == null) return;
+        AuthoredMapDefinition selected = _mapSelectionView.SelectedMap;
+        _mapSelectionView.ClearFailure();
+        if (selected == null)
+        {
+            _mapSelectionView.ClearPreparation();
+            RefreshStartAvailability();
+            return;
+        }
+
+        _mapSelectionView.ShowPreparation("マップ準備中です");
+        RefreshStartAvailability();
+        StartCoroutine(PrepareSelectedMap(selected));
+    }
+
+    private IEnumerator PrepareSelectedMap(AuthoredMapDefinition selected)
+    {
+        yield return _mapSystem.PrepareMapAsync(selected);
+        if (_mapSelectionView == null || _mapSelectionView.SelectedMap != selected) yield break;
+
+        _mapSelectionView.ClearPreparation();
+        if (!_mapSystem.IsMapReady(selected))
+            _mapSelectionView.ShowFailure(MapFailureMessage(_mapSystem.PreparationFailure));
+        else if (_characterSelection != null &&
+                 _mapSystem.TrySetStonePositionsReversed(_characterSelection.IsStonePositionReversed))
+            ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
+        RefreshStartAvailability();
     }
 
     private void ShowStartFailure(string message)
@@ -252,9 +311,13 @@ public sealed class CombatFlow : MonoBehaviour
         CombatMapApplyFailure.MissingSharedConfig => "共通マップ設定がありません",
         CombatMapApplyFailure.MissingBakedMapData => "ベイク済みMapDataを読み込めません",
         CombatMapApplyFailure.MissingBakedNavMesh => "ベイク済みNavMeshを読み込めません",
+        CombatMapApplyFailure.MissingBakedRenderData => "シーンのベイク済み3Dがマップと一致しません。再ベイクしてください",
         CombatMapApplyFailure.MissingMapSceneHost => "MapSceneHostが設定されていません",
         CombatMapApplyFailure.RuntimeMapCreationFailed => "ベイク済みMapDataの復元に失敗しました",
         CombatMapApplyFailure.RenderOrNavMeshLoadFailed => "マップ描画またはNavMesh読込に失敗しました",
+        CombatMapApplyFailure.MapNotReady => "マップ準備中です",
+        CombatMapApplyFailure.MissingBakedRuntimeScene => "ランタイム用マップSceneの再ベイクが必要です",
+        CombatMapApplyFailure.BakedRuntimeSceneLoadFailed => "ランタイム用マップSceneを読み込めません",
         _ => "戦闘マップを適用できませんでした",
     };
 

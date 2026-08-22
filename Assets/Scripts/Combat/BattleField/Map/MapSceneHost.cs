@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.Profiling;
 using UnityEngine.Scripting.APIUpdating;
 
 namespace WarSimulation.Combat.Map
@@ -10,6 +11,13 @@ namespace WarSimulation.Combat.Map
     [MovedFrom(true, "WarSimulation.Combat.Map", "Assembly-CSharp", "MapGenerator")]
     public sealed class MapSceneHost : MonoBehaviour
     {
+        private static readonly ProfilerMarker LoadBakedMapMarker =
+            new("CombatLoading.LoadBakedMap");
+        private static readonly ProfilerMarker Render3DMarker =
+            new("CombatLoading.Render3D");
+        private static readonly ProfilerMarker Clear3DMarker =
+            new("CombatLoading.Clear3D");
+
         [SerializeField] private MapConfig _config;
         [SerializeField] private int _bakedRenderFingerprint;
         [SerializeField] private bool _hasBakedRenderFingerprint;
@@ -59,8 +67,13 @@ namespace WarSimulation.Combat.Map
             _hasBakedRenderFingerprint = true;
         }
 
-        public bool LoadBakedMap(MapData map, NavMeshData prebakedNavMesh, int fingerprint)
+        public bool LoadBakedMap(
+            MapData map,
+            NavMeshData prebakedNavMesh,
+            int fingerprint,
+            bool setCurrentMap = true)
         {
+            using var _ = LoadBakedMapMarker.Auto();
             if (map == null || prebakedNavMesh == null)
             {
                 Debug.LogError($"[{nameof(MapSceneHost)}] Baked map and NavMeshData are required.", this);
@@ -83,8 +96,24 @@ namespace WarSimulation.Combat.Map
             }
 
             if (!navMeshBuilder.Load(prebakedNavMesh)) return false;
-            SetCombatMapSystemCurrentMap(map);
+            LastAppliedMap = map;
+            if (setCurrentMap) SetCombatMapSystemCurrentMap(map);
             return true;
+        }
+
+        public void SetBakedRenderVisible(bool visible)
+        {
+            SetGeneratedRootVisible("GeneratedTerrain", visible);
+            SetGeneratedRootVisible("GeneratedTerrainSkirt", visible);
+            SetGeneratedRootVisible("GeneratedRivers", visible);
+            SetGeneratedRootVisible("GeneratedLakes", visible);
+            SetGeneratedRootVisible("GeneratedBridges", visible);
+            SetGeneratedRootVisible("GeneratedFeatures", visible);
+        }
+
+        public void ClearLoadedNavMesh()
+        {
+            GetComponent<CombatNavMeshBuilder>()?.Clear();
         }
 
         /// <summary>3D生成物を変更せず、侵攻ルート検証に使う保存済みNavMeshだけをロードする。</summary>
@@ -104,6 +133,7 @@ namespace WarSimulation.Combat.Map
         /// <returns>NavMesh を用意できたかどうか。ベイクもロードもしない場合は true。</returns>
         public bool Render3D(MapData map, bool bakeNavMesh, NavMeshData prebakedNavMesh = null)
         {
+            using var _ = Render3DMarker.Auto();
             if (map == null)
             {
                 Debug.LogWarning($"[{nameof(MapSceneHost)}] Render3D called with null MapData.");
@@ -145,6 +175,7 @@ namespace WarSimulation.Combat.Map
 
         public void Clear3D()
         {
+            using var _ = Clear3DMarker.Auto();
             GetComponent<CombatNavMeshBuilder>()?.Clear();
             GetComponent<FeatureRenderer>()?.Clear();
             GetComponent<BridgeRenderer>()?.Clear();
@@ -183,6 +214,12 @@ namespace WarSimulation.Combat.Map
             Transform root = transform.Find(rootName);
             return expectedCount == 0 ? root == null || root.childCount == 0 :
                 root != null && root.childCount == expectedCount;
+        }
+
+        private void SetGeneratedRootVisible(string rootName, bool visible)
+        {
+            Transform root = transform.Find(rootName);
+            if (root != null) root.gameObject.SetActive(visible);
         }
 
         private static void SetCombatMapSystemCurrentMap(MapData map)

@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 public readonly struct CombatHealingEvent
 {
@@ -18,6 +19,13 @@ public static class CombatHealingEvents
 {
     public static event Action<Character, int> HealingApplied;
     public static event Action<CombatHealingEvent> Resolved;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        HealingApplied = null;
+        Resolved = null;
+    }
 
     public static void RaiseHealingApplied(Character target, int amount)
     {

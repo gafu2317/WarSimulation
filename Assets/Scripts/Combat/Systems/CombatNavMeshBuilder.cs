@@ -2,16 +2,28 @@ using System;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.Profiling;
 using WarSimulation.Combat.Map;
 
 [DisallowMultipleComponent]
 public sealed class CombatNavMeshBuilder : MonoBehaviour
 {
+    private static readonly ProfilerMarker BuildMarker = new("CombatLoading.NavMeshBuild");
+    private static readonly ProfilerMarker LoadMarker = new("CombatLoading.NavMeshLoad");
+    private static readonly ProfilerMarker ClearMarker = new("CombatLoading.NavMeshClear");
+
     /// <summary>Render3D 後など、現行マップの NavMesh がベイク完了したときに発火する。</summary>
     public static event Action Built;
 
     /// <summary>NavMesh データが破棄されたときに発火する。</summary>
     public static event Action Cleared;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetEventsForPlay()
+    {
+        Built = null;
+        Cleared = null;
+    }
 
     private const float MinRelativeAreaCost = 0.01f;
     private const float MinNavMeshAreaCost = 1f;
@@ -63,6 +75,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
 
     public bool Build(MapData map)
     {
+        using var _ = BuildMarker.Auto();
         if (map == null)
         {
             Debug.LogWarning($"[{nameof(CombatNavMeshBuilder)}] Build called with null MapData.");
@@ -89,6 +102,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
     /// </summary>
     public bool Load(NavMeshData bakedNavMesh)
     {
+        using var _ = LoadMarker.Auto();
         if (bakedNavMesh == null)
         {
             Debug.LogWarning($"[{nameof(CombatNavMeshBuilder)}] Load called with null NavMeshData.");
@@ -114,6 +128,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
 
     public void Clear()
     {
+        using var _ = ClearMarker.Auto();
         if (_surface == null) return;
         _surface.RemoveData();
         _surface.navMeshData = null;

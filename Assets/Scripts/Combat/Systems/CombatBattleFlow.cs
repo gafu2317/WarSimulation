@@ -26,6 +26,12 @@ public sealed class CombatBattleFlow : MonoBehaviour
     public static bool IsRunning => s_instance != null && s_instance._state == CombatBattleState.Running;
     public static bool AllowsCombatActions => s_instance == null || s_instance._state == CombatBattleState.Running;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlay()
+    {
+        s_instance = null;
+    }
+
     private void Awake()
     {
         s_instance = this;

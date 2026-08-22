@@ -1,16 +1,15 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System;
 using System.Collections.Generic;
 using Unity.Profiling;
 using WarSimulation.Combat.Map;
 
 public class CombatCharacterSystem : MonoBehaviour
 {
+    public event Action CandidatesReady;
     private const int CandidateCountPerTeam = 10;
     private const string GeneratedCharactersRootName = "GeneratedCombatCharacters";
-    private const float FlatCellMaxSlopeDeg = 8f;
-    private const float CharacterSpacingDistance = 1.5f;
-    private const float InitialFeatureClearanceDistance = 3f;
     private static readonly string[] DefaultAllyCandidateNames =
     {
         "砂狼シロコ", "小鳥遊ホシノ", "陸八魔アル", "空崎ヒナ", "浅黄ムツキ",
@@ -26,6 +25,10 @@ public class CombatCharacterSystem : MonoBehaviour
     private static readonly ProfilerMarker ShareAiVisionMarker = new("CombatAI.ShareVision");
     private static readonly ProfilerMarker PrepareAiDecisionsMarker = new("CombatAI.PrepareDecisions");
     private static readonly ProfilerMarker ExecuteAiDecisionsMarker = new("CombatAI.ExecuteDecisions");
+    private static readonly ProfilerMarker InitialPlacementMarker =
+        new("CombatLoading.InitialCharacterPlacement");
+    private static readonly ProfilerMarker CharacterResetMarker =
+        new("CombatLoading.CharacterReset");
 
     [SerializeField, Min(0.05f)] private float _aiDecisionIntervalSeconds = 0.5f;
     public List<Character> AllyCharacters = new List<Character>();
@@ -144,10 +147,13 @@ public class CombatCharacterSystem : MonoBehaviour
 
     public void ResetCharactersForBattle()
     {
-        AssignBattleParticipantIds();
-        ResetCharactersForBattle(AllyCharacters);
-        ResetCharactersForBattle(EnemyCharacters);
-        ResetAiDecisionSchedule(Time.time);
+        using (CharacterResetMarker.Auto())
+        {
+            AssignBattleParticipantIds();
+            ResetCharactersForBattle(AllyCharacters);
+            ResetCharactersForBattle(EnemyCharacters);
+            ResetAiDecisionSchedule(Time.time);
+        }
     }
 
     public int TickAiDecisionsNow(float currentTime)
@@ -212,12 +218,13 @@ public class CombatCharacterSystem : MonoBehaviour
 
     public bool TryRelocateCharactersNearMainStones()
     {
+        using var _ = InitialPlacementMarker.Auto();
         CombatMapSystem mapSystem = ResolveMapSystem();
         MapData map = mapSystem != null ? mapSystem.CurrentMap : null;
         if (map == null) return false;
 
-        bool movedAllies = TryRelocateTeamNearMainStone(AllyCharacters, CombatTeam.Ally, mapSystem, map);
-        bool movedEnemies = TryRelocateTeamNearMainStone(EnemyCharacters, CombatTeam.Enemy, mapSystem, map);
+        bool movedAllies = TryRelocateTeamNearMainStone(AllyCharacters, CombatTeam.Ally, mapSystem);
+        bool movedEnemies = TryRelocateTeamNearMainStone(EnemyCharacters, CombatTeam.Enemy, mapSystem);
         return movedAllies && movedEnemies;
     }
 
@@ -239,13 +246,10 @@ public class CombatCharacterSystem : MonoBehaviour
     private bool TryRelocateTeamNearMainStone(
         List<Character> characters,
         CombatTeam team,
-        CombatMapSystem mapSystem,
-        MapData map)
+        CombatMapSystem mapSystem)
     {
         if (characters == null || characters.Count == 0) return true;
-        if (!TryGetMainStonePositionForTeam(team, out Vector3 anchorPosition)) return false;
-        if (!TryCollectFlatPositionsNearAnchor(mapSystem, map, anchorPosition, out List<Vector3> candidates))
-            return false;
+        if (!mapSystem.TryGetInitialSpawnPositions(team, out IReadOnlyList<Vector3> candidates)) return false;
 
         var placed = new List<Vector3>(characters.Count);
         for (int i = 0; i < characters.Count; i++)
@@ -253,102 +257,24 @@ public class CombatCharacterSystem : MonoBehaviour
             Character character = characters[i];
             if (character == null) continue;
 
-            Vector3 destination = default;
-            bool found = false;
-            for (int c = 0; c < candidates.Count; c++)
+            if (placed.Count >= candidates.Count) return false;
+            Vector3 destination = candidates[placed.Count];
+            if (Application.isPlaying)
             {
-                if (!HasEnoughSpacing(candidates[c], placed)) continue;
-                destination = candidates[c];
-                found = true;
-                break;
+                float validationRadius = mapSystem.CurrentMap.GroundStates.CellSize;
+                if (!NavMesh.SamplePosition(
+                        destination,
+                        out NavMeshHit hit,
+                        validationRadius,
+                        NavMesh.AllAreas))
+                    return false;
+                destination = hit.position;
             }
-
-            if (!found) return false;
             PlaceCharacter(character, destination);
             placed.Add(destination);
         }
 
         return placed.Count > 0;
-    }
-
-    private static bool TryCollectFlatPositionsNearAnchor(
-        CombatMapSystem mapSystem,
-        MapData map,
-        Vector3 anchorPosition,
-        out List<Vector3> candidates)
-    {
-        candidates = new List<Vector3>();
-        GroundStateGrid ground = map.GroundStates;
-        HeightMap height = map.Height;
-
-        for (int z = 0; z < ground.Height; z++)
-        {
-            for (int x = 0; x < ground.Width; x++)
-            {
-                if (ground.GetCell(x, z) == GroundState.Water) continue;
-                if (height.IsCliffFaceCell(x, z)) continue;
-
-                Vector3 mapLocal = GetCellCenterLocalPosition(ground, x, z);
-                if (height.SampleSlopeDeg(mapLocal) > FlatCellMaxSlopeDeg) continue;
-
-                Vector3 worldPosition = mapSystem.MapLocalToSurfaceWorldPosition(mapLocal);
-                if (!IsClearOfSolidFeatures(mapSystem, map, worldPosition)) continue;
-
-                candidates.Add(worldPosition);
-            }
-        }
-
-        candidates.Sort((a, b) =>
-            HorizontalDistanceSqr(anchorPosition, a).CompareTo(HorizontalDistanceSqr(anchorPosition, b)));
-        return candidates.Count > 0;
-    }
-
-    private static bool IsClearOfSolidFeatures(
-        CombatMapSystem mapSystem,
-        MapData map,
-        Vector3 worldPosition)
-    {
-        float clearanceSqr = InitialFeatureClearanceDistance * InitialFeatureClearanceDistance;
-        Transform origin = mapSystem.MapOrigin;
-        List<PlacedFeature> features = map.Features;
-        for (int i = 0; i < features.Count; i++)
-        {
-            PlacedFeature feature = features[i];
-            if (feature.Type == FeatureType.Bridge) continue;
-
-            Vector3 featurePosition = origin != null
-                ? origin.TransformPoint(feature.WorldPosition)
-                : feature.WorldPosition;
-            if (HorizontalDistanceSqr(worldPosition, featurePosition) < clearanceSqr)
-                return false;
-        }
-
-        return true;
-    }
-
-    private static bool HasEnoughSpacing(Vector3 candidate, List<Vector3> placedPositions)
-    {
-        float minSqr = CharacterSpacingDistance * CharacterSpacingDistance;
-        for (int i = 0; i < placedPositions.Count; i++)
-        {
-            if (HorizontalDistanceSqr(candidate, placedPositions[i]) < minSqr)
-                return false;
-        }
-
-        return true;
-    }
-
-    private static float HorizontalDistanceSqr(Vector3 a, Vector3 b)
-    {
-        float dx = a.x - b.x;
-        float dz = a.z - b.z;
-        return dx * dx + dz * dz;
-    }
-
-    private static Vector3 GetCellCenterLocalPosition(GroundStateGrid ground, int x, int z)
-    {
-        float cellSize = ground.CellSize;
-        return new Vector3((x + 0.5f) * cellSize, 0f, (z + 0.5f) * cellSize);
     }
 
     private static void PlaceCharacter(Character character, Vector3 worldPosition)
@@ -425,20 +351,42 @@ public class CombatCharacterSystem : MonoBehaviour
             }
 
             CombatMapSystem mapSystem = ResolveMapSystem();
-            if (mapSystem == null || !mapSystem.EnsureMapAndNavMeshInitialized())
+            if (mapSystem == null)
             {
-                Debug.LogError(
-                    $"[{nameof(CombatCharacterSystem)}] Cannot generate runtime candidates before the map NavMesh is ready.",
-                    this);
+                Debug.LogError($"[{nameof(CombatCharacterSystem)}] CombatMapSystem is missing.", this);
                 enabled = false;
                 return;
             }
 
-            GenerateCandidates();
+            if (mapSystem.CurrentMap != null)
+            {
+                GenerateCandidates();
+            }
+            else
+            {
+                mapSystem.CurrentMapChanged += OnRuntimeMapReady;
+            }
         }
 
         AssignTeamsFromLists();
         ResetAiDecisionSchedule(Time.time);
+    }
+
+    private void OnDestroy()
+    {
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem != null) mapSystem.CurrentMapChanged -= OnRuntimeMapReady;
+    }
+
+    private void OnRuntimeMapReady()
+    {
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        if (mapSystem == null || mapSystem.CurrentMap == null) return;
+        mapSystem.CurrentMapChanged -= OnRuntimeMapReady;
+        GenerateCandidates();
+        AssignTeamsFromLists();
+        ResetAiDecisionSchedule(Time.time);
+        CandidatesReady?.Invoke();
     }
 
     private void Update()

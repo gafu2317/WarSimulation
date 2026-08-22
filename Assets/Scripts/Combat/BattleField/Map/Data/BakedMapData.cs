@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace WarSimulation.Combat.Map
 {
     [CreateAssetMenu(menuName = "WarSim/Map/Baked Map Data", fileName = "BakedMapData")]
     public sealed class BakedMapData : ScriptableObject
     {
+        private static readonly ProfilerMarker CreateRuntimeMapMarker =
+            new("CombatLoading.CreateRuntimeMap");
+
         [Serializable]
         private struct RiverRecord
         {
@@ -83,13 +87,37 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private int _assaultRouteFingerprint;
         [SerializeField] private AssaultRouteRecord[] _assaultRoutes;
         [SerializeField] private bool _assaultRoutesValidated;
+        [SerializeField] private int _initialSpawnPositionFingerprint;
+        [SerializeField] private Vector3[] _ownMainSpawnPositions;
+        [SerializeField] private Vector3[] _enemyMainSpawnPositions;
 
         public int BakeFingerprint => _bakeFingerprint;
         public int AssaultRouteFingerprint => _assaultRouteFingerprint;
         public bool HasAssaultRoutesData => _assaultRoutes != null && _assaultRoutes.Length > 0;
+        public bool HasInitialSpawnPositions =>
+            _ownMainSpawnPositions != null && _ownMainSpawnPositions.Length > 0 &&
+            _enemyMainSpawnPositions != null && _enemyMainSpawnPositions.Length > 0;
 
         public bool HasValidAssaultRoutes(int fingerprint) =>
             _assaultRoutesValidated && _assaultRouteFingerprint == fingerprint && HasAssaultRoutesData;
+
+        public bool HasValidInitialSpawnPositions(int fingerprint) =>
+            _initialSpawnPositionFingerprint == fingerprint && HasInitialSpawnPositions;
+
+        public bool TryGetInitialSpawnPositions(
+            FeatureType anchorType,
+            int fingerprint,
+            out IReadOnlyList<Vector3> positions)
+        {
+            positions = Array.Empty<Vector3>();
+            if (!HasValidInitialSpawnPositions(fingerprint)) return false;
+            positions = anchorType == FeatureType.OwnMainStone
+                ? _ownMainSpawnPositions
+                : anchorType == FeatureType.EnemyMainStone
+                    ? _enemyMainSpawnPositions
+                    : Array.Empty<Vector3>();
+            return positions.Count > 0;
+        }
 
         public bool IsValidFor(int fingerprint)
         {
@@ -107,6 +135,7 @@ namespace WarSimulation.Combat.Map
 
         public MapData CreateRuntimeMap()
         {
+            using var _ = CreateRuntimeMapMarker.Auto();
             if (!IsStructurallyValid())
                 throw new InvalidOperationException($"{nameof(BakedMapData)} '{name}' is incomplete.");
 
@@ -198,6 +227,58 @@ namespace WarSimulation.Combat.Map
             CaptureLakes(map.Lakes);
             CaptureMountains(map.Mountains);
             CaptureForests(map.ForestRegions);
+            CaptureInitialSpawnPositions(map, fingerprint);
+        }
+
+        public void CaptureInitialSpawnPositions(MapData map, int fingerprint)
+        {
+            if (map == null) throw new ArgumentNullException(nameof(map));
+            _ownMainSpawnPositions = InitialSpawnPositionBaker.Build(map, FeatureType.OwnMainStone);
+            _enemyMainSpawnPositions = InitialSpawnPositionBaker.Build(map, FeatureType.EnemyMainStone);
+            _initialSpawnPositionFingerprint = fingerprint;
+        }
+
+        public bool RestoreRuntimeState(
+            MapData map,
+            IReadOnlyCollection<Vector2Int> dirtyGroundCells,
+            IReadOnlyCollection<Vector2Int> dirtyBiomeCells)
+        {
+            if (map == null || !IsStructurallyValid()) return false;
+            FeatureRecord[] features = _features ?? Array.Empty<FeatureRecord>();
+            if (map.Features.Count != features.Length) return false;
+
+            if (dirtyGroundCells != null)
+            {
+                foreach (Vector2Int cell in dirtyGroundCells)
+                {
+                    if (!map.GroundStates.IsInBounds(cell.x, cell.y)) continue;
+                    map.GroundStates.SetCell(cell.x, cell.y, _groundStates[cell.y * _width + cell.x]);
+                }
+            }
+
+            if (dirtyBiomeCells != null)
+            {
+                foreach (Vector2Int cell in dirtyBiomeCells)
+                {
+                    if (!map.GroundStates.IsInBounds(cell.x, cell.y)) continue;
+                    string biome = _biomeIds != null && _biomeIds.Length == _width * _height
+                        ? _biomeIds[cell.y * _width + cell.x]
+                        : MapData.UnsetBiomeId;
+                    map.SetBiomeId(cell.x, cell.y, biome);
+                }
+            }
+
+            for (int i = 0; i < features.Length; i++)
+            {
+                FeatureRecord feature = features[i];
+                map.Features[i] = new PlacedFeature(
+                    feature.Type,
+                    feature.WorldPosition,
+                    feature.Rotation,
+                    feature.Scale);
+            }
+
+            return true;
         }
 
         public void CaptureAssaultRoutes(IReadOnlyList<AssaultRoute> routes, int fingerprint)

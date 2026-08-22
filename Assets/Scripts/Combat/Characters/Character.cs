@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.Profiling;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(CombatCharacterBody))]
@@ -12,6 +13,8 @@ using UnityEngine.AI;
 [RequireComponent(typeof(CombatSkillCaster))]
 public class Character : MonoBehaviour
 {
+    private static readonly ProfilerMarker RebuildSkillsMarker =
+        new("CombatLoading.RebuildCharacterSkills");
     [SerializeField] private CombatTeam _team = CombatTeam.Ally;
     [SerializeField] private WeaponConfig _initialWeaponConfig;
     [SerializeField] private CombatAiPersonalityProfile _personalityProfile;
@@ -265,6 +268,7 @@ public class Character : MonoBehaviour
             ? _runtimeWeaponConfig
             : _initialWeaponConfig;
         if (weaponConfig == null) return;
+        if (ReferenceEquals(EquippedWeaponConfig, weaponConfig) && EquippedWeapon != null) return;
 
         EquipWeapon(weaponConfig.CreateWeapon(), weaponConfig);
     }
@@ -327,6 +331,7 @@ public class Character : MonoBehaviour
 
     public void RebuildCombatSkills()
     {
+        using var _ = RebuildSkillsMarker.Auto();
         _availableCombatSkills.Clear();
 
         WeaponBase weapon = EquippedWeapon;
@@ -379,7 +384,6 @@ public class Character : MonoBehaviour
     public void InitializeOnBattleStart()
     {
         ApplyInitialWeaponFromConfig();
-        RebuildCombatSkills();
         _vision ??= GetComponent<CombatVision>();
         _vision?.Initialize();
         GetComponent<CombatAiBrain>()?.ResetForBattle();
