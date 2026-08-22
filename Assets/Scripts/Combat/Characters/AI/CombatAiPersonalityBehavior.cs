@@ -29,6 +29,7 @@ public static class CombatAiPersonalityBehavior
             score += profile.Kind switch
             {
                 CombatAiPersonalityKind.BattleJunkie when objective == CombatObjective.AttackEnemy => ForcedSelectionScore,
+                CombatAiPersonalityKind.BattleJunkie when objective == CombatObjective.DestroyEnemyStone && !HasAttackTarget(context) => ForcedSelectionScore,
                 CombatAiPersonalityKind.BattleJunkie => ForcedRejectionScore,
                 CombatAiPersonalityKind.Cunning when objective == CombatObjective.DestroyEnemyStone => 160f,
                 CombatAiPersonalityKind.Cunning when objective == CombatObjective.AttackEnemy => -36f,
@@ -82,7 +83,7 @@ public static class CombatAiPersonalityBehavior
         score += profile.Kind switch
         {
             CombatAiPersonalityKind.BattleJunkie when code == CombatAiMoveCode.PursueEnemy => 72f,
-            CombatAiPersonalityKind.BattleJunkie when code == CombatAiMoveCode.AdvanceEnemyStone || code == CombatAiMoveCode.AdvanceViaBridge => -80f,
+            CombatAiPersonalityKind.BattleJunkie when (code == CombatAiMoveCode.AdvanceEnemyStone || code == CombatAiMoveCode.AdvanceViaBridge) && objective != CombatObjective.DestroyEnemyStone => -80f,
             CombatAiPersonalityKind.Cunning when code == CombatAiMoveCode.AdvanceViaBridge => 72f,
             CombatAiPersonalityKind.Cunning when code == CombatAiMoveCode.AdvanceEnemyStone => 56f,
             CombatAiPersonalityKind.Cunning when code == CombatAiMoveCode.PursueEnemy => -48f,
@@ -135,6 +136,28 @@ public static class CombatAiPersonalityBehavior
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private static bool HasAttackTarget(CombatAiContext context)
+    {
+        if (context == null) return false;
+
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
+
+            int pendingDamage = 0;
+            for (int j = 0; j < context.AllyPendingDamage.Count; j++)
+            {
+                CombatAiPendingDamage pending = context.AllyPendingDamage[j];
+                if (pending.Target == enemy.Character) pendingDamage += pending.Damage;
+            }
+
+            if (enemy.HP - pendingDamage > 0) return true;
         }
 
         return false;

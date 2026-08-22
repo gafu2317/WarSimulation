@@ -113,6 +113,41 @@ public sealed class CombatAiPersonalityBehaviorTests
         }
     }
 
+    [TestCase(WeaponKind.Sword)]
+    [TestCase(WeaponKind.Wand)]
+    public void 戦闘狂は敵未確認時に敵魔石へ進む(WeaponKind weaponKind)
+    {
+        GameObject ownerObject = new GameObject("Owner");
+        GameObject enemyObject = new GameObject("Enemy");
+        CombatAiPersonalityProfile profile = null;
+        try
+        {
+            Character owner = CreateCharacter(ownerObject, CombatTeam.Ally, Vector3.zero);
+            owner.EquipWeapon(weaponKind == WeaponKind.Wand ? new Wand() : new Sword());
+            Character enemy = CreateCharacter(enemyObject, CombatTeam.Enemy, new Vector3(4f, 0f, 0f));
+            profile = CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BattleJunkie);
+            CombatAiContext context = CreateContext(
+                owner,
+                enemy,
+                enemyStonePosition: new Vector3(20f, 0f, 0f),
+                enemyKnown: false);
+
+            CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+            Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+            Assert.That(plan.MoveTarget.HasDestination, Is.True);
+            Assert.That(
+                Vector3.Distance(plan.MoveTarget.Destination, new Vector3(20f, 0f, 0f)),
+                Is.EqualTo(1.7f).Within(0.01f));
+        }
+        finally
+        {
+            if (profile != null) UnityEngine.Object.DestroyImmediate(profile);
+            UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(ownerObject);
+        }
+    }
+
     [Test]
     public void 献身的は低HPの味方のもとへ移動する()
     {
@@ -333,9 +368,10 @@ public sealed class CombatAiPersonalityBehaviorTests
         Character owner,
         Character enemy,
         Character ally = null,
-        Vector3? enemyStonePosition = null)
+        Vector3? enemyStonePosition = null,
+        bool enemyKnown = true)
     {
-        CombatCharacterIntel enemyIntel = CreateIntel(enemy);
+        CombatCharacterIntel enemyIntel = CreateIntel(enemy, enemyKnown);
         CombatCharacterIntel[] allyIntel = ally != null ? new[] { CreateIntel(ally) } : Array.Empty<CombatCharacterIntel>();
         return new CombatAiContext(
             owner,
@@ -354,16 +390,16 @@ public sealed class CombatAiPersonalityBehaviorTests
             enemyStonePosition.HasValue ? 100 : 0);
     }
 
-    private static CombatCharacterIntel CreateIntel(Character character)
+    private static CombatCharacterIntel CreateIntel(Character character, bool known = true)
     {
         return new CombatCharacterIntel(
             character,
             character.Team,
             character.transform.position,
-            true,
+            known,
             false,
-            true,
-            character.transform.position,
+            known,
+            known ? character.transform.position : default,
             float.PositiveInfinity,
             false,
             character.Health.HP,
