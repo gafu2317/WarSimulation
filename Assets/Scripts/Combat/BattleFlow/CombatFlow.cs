@@ -7,8 +7,8 @@ using WarSimulation.Combat.Map;
 public sealed class CombatFlow : MonoBehaviour
 {
     private static readonly float[] BattleSpeedOptions = { 1f, 2f, 4f, 8f };
-    private static readonly Vector3 NormalCameraPosition = new Vector3(30f, 20f, -10f);
-    private static readonly Vector3 ReversedCameraPosition = new Vector3(30f, 20f, 70f);
+    private static readonly Vector3 LowSideCameraPosition = new Vector3(30f, 20f, -10f);
+    private static readonly Vector3 HighSideCameraPosition = new Vector3(30f, 20f, 70f);
 
     [SerializeField] private CombatCharacterSystem _characterSystem;
     [SerializeField] private CombatBattleFlow _battleFlow;
@@ -185,7 +185,11 @@ public sealed class CombatFlow : MonoBehaviour
             _mapSelectionView.SetInteractionEnabled(true);
             if (clearMapFailure) _mapSelectionView.ClearFailure();
         }
-        ApplyCombatCamera(_characterSelection != null && _characterSelection.IsStonePositionReversed);
+        bool reversed = _characterSelection != null && _characterSelection.IsStonePositionReversed;
+        if (TryApplySelectionStonePositionReversed(reversed))
+        {
+            ApplyCombatCamera(reversed);
+        }
         RefreshStartAvailability();
         SetVisible(_characterSelectionPanel, true);
         SetBattleUiVisible(false);
@@ -196,7 +200,10 @@ public sealed class CombatFlow : MonoBehaviour
     private void OnStonePositionReversedChanged(bool reversed)
     {
         _mapSelectionView.SetStonePositionsReversed(reversed);
-        ApplyCombatCamera(reversed);
+        if (TryApplySelectionStonePositionReversed(reversed))
+        {
+            ApplyCombatCamera(reversed);
+        }
         RefreshStartAvailability();
     }
 
@@ -234,9 +241,17 @@ public sealed class CombatFlow : MonoBehaviour
         Camera camera = Camera.main;
         if (camera == null) return;
 
-        camera.transform.position = reversed ? ReversedCameraPosition : NormalCameraPosition;
-        camera.transform.rotation = Quaternion.Euler(40f, reversed ? 180f : 0f, 0f);
+        camera.transform.position = reversed ? LowSideCameraPosition : HighSideCameraPosition;
+        camera.transform.rotation = Quaternion.Euler(40f, reversed ? 0f : 180f, 0f);
         camera.GetComponent<EditorStyleCameraController>()?.SyncStateFromTransform();
+    }
+
+    private bool TryApplySelectionStonePositionReversed(bool reversed)
+    {
+        ResolveDependencies();
+        if (_mapSystem == null || _mapSystem.CurrentMap == null || _mapSelectionView == null) return false;
+        if (_mapSelectionView.SelectedMap != _mapSystem.AuthoredMap) return false;
+        return _mapSystem.TrySetStonePositionsReversed(reversed);
     }
 
     private bool TryApplyStonePositionReversed(bool reversed)

@@ -91,6 +91,20 @@ namespace UnityCliBridge.Tests
             }
         }
 
+        [Test]
+        public void ResetSimulation_RestoresCurrentPhysicalDevices()
+        {
+            var virtualMouse = InputSystem.AddDevice<Mouse>("UnityCliVirtualMouse");
+            var virtualKeyboard = InputSystem.AddDevice<Keyboard>("UnityCliVirtualKeyboard");
+            virtualMouse.MakeCurrent();
+            virtualKeyboard.MakeCurrent();
+
+            InputSystemHandler.ResetSimulation(new JObject());
+
+            Assert.AreSame(mouse, Mouse.current);
+            Assert.AreSame(keyboard, Keyboard.current);
+        }
+
         #region Keyboard Tests
 
         [Test]

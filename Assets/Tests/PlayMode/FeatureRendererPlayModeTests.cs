@@ -26,14 +26,14 @@ public sealed class FeatureRendererPlayModeTests
             yield return null;
 
             applyCamera.Invoke(flow, new object[] { true });
-            Assert.That(camera.transform.position, Is.EqualTo(new Vector3(30f, 20f, 70f)));
-            Assert.That(camera.transform.eulerAngles.y, Is.EqualTo(180f).Within(0.001f));
-            Assert.That(GetPrivateField<float>(controller, "yaw"), Is.EqualTo(180f).Within(0.001f));
-
-            applyCamera.Invoke(flow, new object[] { false });
             Assert.That(camera.transform.position, Is.EqualTo(new Vector3(30f, 20f, -10f)));
             Assert.That(camera.transform.eulerAngles.y, Is.EqualTo(0f).Within(0.001f));
             Assert.That(GetPrivateField<float>(controller, "yaw"), Is.EqualTo(0f).Within(0.001f));
+
+            applyCamera.Invoke(flow, new object[] { false });
+            Assert.That(camera.transform.position, Is.EqualTo(new Vector3(30f, 20f, 70f)));
+            Assert.That(camera.transform.eulerAngles.y, Is.EqualTo(180f).Within(0.001f));
+            Assert.That(GetPrivateField<float>(controller, "yaw"), Is.EqualTo(180f).Within(0.001f));
         }
         finally
         {

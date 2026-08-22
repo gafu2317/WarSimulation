@@ -85,11 +85,16 @@ namespace UnityCliBridge.Handlers
             InputSystem.onAfterUpdate += ProcessScheduledReleases;
             EditorApplication.update -= ProcessScheduledReleases;
             EditorApplication.update += ProcessScheduledReleases;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
         public static object ResetSimulation(JObject parameters)
         {
-            foreach (var device in ownedDevices.ToList())
+            foreach (var device in InputSystem.devices
+                .Where(IsManagedVirtualDevice)
+                .Concat(ownedDevices)
+                .Distinct()
+                .ToList())
             {
                 if (device != null && device.added)
                 {
@@ -130,8 +135,50 @@ namespace UnityCliBridge.Handlers
             simulatedTouchMaxSimultaneous = 0;
             simulatedTouchLast = "none";
             isSimulationActive = false;
+            RestoreCurrentDevices();
 
             return new { success = true };
+        }
+
+        private static void RestoreCurrentDevices()
+        {
+            InputSystem.devices
+                .OfType<Mouse>()
+                .FirstOrDefault(device => device.added && !IsManagedVirtualDevice(device))
+                ?.MakeCurrent();
+            InputSystem.devices
+                .OfType<Keyboard>()
+                .FirstOrDefault(device => device.added && !IsManagedVirtualDevice(device))
+                ?.MakeCurrent();
+            InputSystem.devices
+                .OfType<Gamepad>()
+                .FirstOrDefault(device => device.added && !IsManagedVirtualDevice(device))
+                ?.MakeCurrent();
+            InputSystem.devices
+                .OfType<Touchscreen>()
+                .FirstOrDefault(device => device.added && !IsManagedVirtualDevice(device))
+                ?.MakeCurrent();
+        }
+
+        private static bool IsManagedVirtualDevice(InputDevice device)
+        {
+            if (device == null || string.IsNullOrEmpty(device.name))
+            {
+                return false;
+            }
+
+            return string.Equals(device.name, VirtualMouseName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(device.name, VirtualKeyboardName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(device.name, VirtualGamepadName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(device.name, VirtualTouchscreenName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode)
+            {
+                ResetSimulation(null);
+            }
         }
 
         /// <summary>
