@@ -1,0 +1,45 @@
+{
+  "MapNames": [
+    "AuthoredMap",
+    "AuthoredMap 1",
+    "AuthoredMap 2",
+    "AuthoredMap 3",
+    "AuthoredMap 4",
+    "AuthoredMap 5",
+    "AuthoredMap 6",
+    "AuthoredMap 7",
+    "AuthoredMap 8",
+    "AuthoredMap 9"
+  ],
+  "Enemy": [
+    { "Weapon": 3, "Personality": 0 },
+    { "Weapon": 3, "Personality": 0 },
+    { "Weapon": 5, "Personality": 9 },
+    { "Weapon": 6, "Personality": 9 },
+    { "Weapon": 4, "Personality": 2 }
+  ],
+  "BaseSeed": 12000,
+  "TimeoutSeconds": 600,
+  "TimeScale": 6,
+  "DisableDiagnostics": true,
+  "AdaptiveSearch": {
+    "PartySize": 5,
+    "InitialCandidates": 300,
+    "ProbeCandidates": 100,
+    "TopPredicted": 60,
+    "LowInformation": 20,
+    "RoleNeighbors": 20,
+    "ProbeMatches": 3,
+    "FinalCandidates": 10,
+    "FinalMatches": 20,
+    "SelectionSeed": 12000,
+    "Ridge": 1.0,
+    "ParallelProcesses": 5,
+    "MatchesPerJob": 5,
+    "JobWorkerCount": 1
+  },
+  "Batch": {
+    "Executable": ".unity/CombatAutoBattleLight/CombatAutoBattleLight.app",
+    "OutputRoot": "Logs/AutoBattleAdaptive"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "MapNames": [
+    "AuthoredMap",
+    "AuthoredMap 1"
+  ],
+  "Candidates": [
+    {
+      "Roles": [
+        { "Weapon": 1, "Personality": 2 },
+        { "Weapon": 2, "Personality": 9 },
+        { "Weapon": 3, "Personality": 19 }
+      ]
+    },
+    {
+      "Roles": [
+        { "Weapon": 1, "Personality": 7 },
+        { "Weapon": 3, "Personality": 2 },
+        { "Weapon": 6, "Personality": 16 }
+      ]
+    }
+  ],
+  "Enemy": [
+    { "Weapon": 1, "Personality": 0 },
+    { "Weapon": 2, "Personality": 0 },
+    { "Weapon": 3, "Personality": 0 }
+  ],
+  "MatchesPerCandidate": 20,
+  "BaseSeed": 12000,
+  "MinPartySize": 1,
+  "MaxPartySize": 10,
+  "TimeoutSeconds": 600.0,
+  "TimeScale": 6.0,
+  "EvaluateBothStonePositions": true,
+  "UseCommonSeeds": true,
+  "DisableDiagnostics": true,
+  "PreserveFixedDeltaTime": false,
+  "Batch": {
+    "MapExecution": "each",
+    "MatchesPerJob": 5,
+    "ParallelProcesses": 5,
+    "JobWorkerCount": 1,
+    "OutputRoot": "Logs/AutoBattleBatch"
+  }
+}

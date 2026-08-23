@@ -114,6 +114,13 @@ public sealed class CombatBattleFlowTests
             pauseButton.onClick.Invoke();
             Assert.That(Time.timeScale, Is.EqualTo(2f));
 
+            speedButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(4f));
+
+            speedButton.onClick.Invoke();
+            Assert.That(Time.timeScale, Is.EqualTo(6f));
+            Assert.That(speedText.text, Is.EqualTo("6x"));
+
             Button smokeButton = hudObject.transform.Find("UserCommandPanel/Smoke/Image").GetComponent<Button>();
             Button weatherButton = hudObject.transform.Find("UserCommandPanel/WeatherChange/Image/Option1").GetComponent<Button>();
             Assert.That(smokeButton.interactable, Is.False);

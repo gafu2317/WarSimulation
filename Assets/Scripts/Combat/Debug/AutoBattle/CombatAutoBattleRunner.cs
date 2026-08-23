@@ -7,9 +7,6 @@ using WarSimulation.Combat.Map;
 [DefaultExecutionOrder(-50)]
 public sealed class CombatAutoBattleRunner : MonoBehaviour
 {
-    private const float PreviousDefaultTimeScale = 16f;
-    private const float DefaultTimeScale = 32f;
-
     [SerializeField] private AuthoredMapDefinition[] _mapCandidates = Array.Empty<AuthoredMapDefinition>();
     [SerializeField] private WeaponConfig[] _weaponConfigs = Array.Empty<WeaponConfig>();
     [SerializeField] private CombatAutoBattleRole[] _allies = CreateDefaultParty();
@@ -17,7 +14,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     [SerializeField, Min(1)] private int _matchCount = 10;
     [SerializeField] private int _baseSeed = 1;
     [SerializeField, Min(1f)] private float _timeoutSeconds = 600f;
-    [SerializeField, Min(0.1f)] private float _timeScale = 32f;
+    [SerializeField, Min(0.1f)] private float _timeScale = 6f;
 
     private static CombatAutoBattleRole[] CreateDefaultParty()
     {
@@ -45,13 +42,9 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private bool _running;
     private bool _audioPaused;
     private bool _diagnosticsEnabled = true;
+    private bool _fixedSeed;
+    private bool _preserveFixedDeltaTime;
     private float _previousFixedDeltaTime;
-
-    private void Awake()
-    {
-        if (Mathf.Approximately(_timeScale, PreviousDefaultTimeScale))
-            _timeScale = DefaultTimeScale;
-    }
 
     private void Start()
     {
@@ -63,6 +56,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             {
                 if (sweepConfig.TimeoutSeconds > 0f) _timeoutSeconds = sweepConfig.TimeoutSeconds;
                 if (sweepConfig.TimeScale > 0f) _timeScale = sweepConfig.TimeScale;
+                _preserveFixedDeltaTime = sweepConfig.PreserveFixedDeltaTime;
                 Debug.Log($"[自動戦闘] 編成探索設定を読み込みました: {sweepPath}", this);
                 StartCoroutine(RunSweep(sweepConfig));
             }
@@ -115,11 +109,17 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             yield break;
         }
 
+        yield return null;
+
         try
         {
             CaptureCharacterPools(Mathf.Max(_allies.Length, _enemies.Length));
             LoadWeapons();
+            ValidateRoles(_allies);
+            ValidateRoles(_enemies);
+            ValidateMapAvailability(evaluateBothStonePositions: false);
             if (_diagnosticsEnabled) EnsureBattleEventLogger();
+            LogPreflight(Mathf.Max(_allies.Length, _enemies.Length));
         }
         catch (Exception ex)
         {
@@ -137,7 +137,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         for (int i = 0; i < _matchCount; i++)
         {
             Exception matchError = null;
-            yield return Drive(RunMatch(i, _allies, _enemies, _baseSeed + i), error => matchError = error);
+            int seed = ResolveSingleSeed(_baseSeed, i, _fixedSeed);
+            yield return Drive(RunMatch(i, _allies, _enemies, seed), error => matchError = error);
             if (matchError != null)
             {
                 exitCode = 1;
@@ -214,11 +215,21 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         for (int i = 0; i < candidates.Count; i++)
             maxParty = Mathf.Max(maxParty, candidates[i].Roles.Length);
 
+        yield return null;
+
         try
         {
             CaptureCharacterPools(maxParty);
             LoadWeapons();
+            ValidateRoles(enemies);
+            for (int i = 0; i < candidates.Count; i++)
+                ValidateRoles(candidates[i].Roles);
+            ValidateMapAvailability(
+                config.EvaluateBothStonePositions,
+                config.UseFixedStonePosition,
+                config.StonePositionsReversed);
             if (_diagnosticsEnabled) EnsureBattleEventLogger();
+            LogPreflight(maxParty);
         }
         catch (Exception ex)
         {
@@ -235,6 +246,11 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             CandidateCount = candidates.Count,
             MatchesPerCandidate = matchesPerCandidate,
             CompletedCandidates = 0,
+            TimeScale = _timeScale,
+            FixedDeltaTime = Time.fixedDeltaTime,
+            PreserveFixedDeltaTime = _preserveFixedDeltaTime,
+            PlayerBuildGuid = Application.buildGUID,
+            UnityVersion = Application.unityVersion,
         };
 
         int exitCode = 0;
@@ -252,19 +268,22 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             });
         }
 
-        int positionCount = config.EvaluateBothStonePositions ? 2 : 1;
-        for (int p = 0; p < positionCount; p++)
+        int positionCount = config.UseFixedStonePosition || !config.EvaluateBothStonePositions ? 1 : 2;
+        int totalMatchesPerCandidate = config.TotalMatchesPerCandidate > 0
+            ? config.TotalMatchesPerCandidate
+            : matchesPerCandidate;
+        for (int c = 0; c < candidates.Count; c++)
         {
-            bool stonePositionsReversed = p == 1;
-            for (int c = 0; c < candidates.Count; c++)
+            CombatCompositionCandidate candidate = candidates[c];
+            CombatCompositionCandidateResult candidateResult = candidateResults[c];
+            for (int p = 0; p < positionCount; p++)
             {
-                CombatCompositionCandidate candidate = candidates[c];
-                CombatCompositionCandidateResult candidateResult = candidateResults[c];
+                bool stonePositionsReversed = config.UseFixedStonePosition
+                    ? config.StonePositionsReversed
+                    : p == 1;
                 for (int m = 0; m < matchesPerCandidate; m++)
                 {
-                    int seed = config.UseCommonSeeds
-                        ? config.BaseSeed + m
-                        : config.BaseSeed + c * matchesPerCandidate + m;
+                    int seed = ResolveSweepSeed(config, c, m, totalMatchesPerCandidate);
                     _results.Clear();
                     Exception matchError = null;
                     yield return Drive(
@@ -282,34 +301,28 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
                 }
 
                 if (exitCode != 0) break;
-
-                if (p == positionCount - 1)
-                {
-                    candidateResult.MatchCount = candidateResult.Wins + candidateResult.Losses + candidateResult.Timeouts;
-                    candidateResult.WinRate = candidateResult.MatchCount > 0
-                        ? (float)candidateResult.Wins / candidateResult.MatchCount
-                        : 0f;
-                    report.Ranking.Add(candidateResult);
-                    report.CompletedCandidates = report.Ranking.Count;
-
-                    try
-                    {
-                        CombatCompositionSweepReportWriter.Write(report, reportPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        exitCode = 1;
-                        Debug.LogException(ex, this);
-                        break;
-                    }
-
-                    Debug.Log(
-                        $"[自動戦闘] 候補 {c + 1}/{candidates.Count} 完了 WinRate={candidateResult.WinRate:P0} ({candidateResult.Wins}/{candidateResult.MatchCount})",
-                        this);
-                }
             }
 
             if (exitCode != 0) break;
+
+            CompleteResult(candidateResult);
+            report.Ranking.Add(candidateResult);
+            report.CompletedCandidates = report.Ranking.Count;
+
+            try
+            {
+                CombatCompositionSweepReportWriter.Write(report, reportPath);
+            }
+            catch (Exception ex)
+            {
+                exitCode = 1;
+                Debug.LogException(ex, this);
+                break;
+            }
+
+            Debug.Log(
+                $"[自動戦闘] 候補 {c + 1}/{candidates.Count} 完了 WinRate={candidateResult.WinRate:P0} ({candidateResult.Wins}/{candidateResult.MatchCount})",
+                this);
         }
 
         if (exitCode == 0)
@@ -337,7 +350,9 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         Application.targetFrameRate = -1;
         Application.runInBackground = true;
         _previousFixedDeltaTime = Time.fixedDeltaTime;
-        Time.fixedDeltaTime = _previousFixedDeltaTime * _timeScale;
+        Time.fixedDeltaTime = _preserveFixedDeltaTime
+            ? _previousFixedDeltaTime
+            : _previousFixedDeltaTime * _timeScale;
         if (AudioListener.pause == false)
         {
             AudioListener.pause = true;
@@ -487,6 +502,13 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             Outcome = outcome,
             GameSeconds = Mathf.Max(0f, Time.time - startedAt),
             RealSeconds = Mathf.Max(0f, Time.realtimeSinceStartup - startedAtRealtime),
+            TimeScale = _timeScale,
+            FixedDeltaTime = Time.fixedDeltaTime,
+            PreserveFixedDeltaTime = _preserveFixedDeltaTime,
+            FixedSeed = _fixedSeed,
+            SkippedAiDecisionCount = _characterSystem.TotalSkippedAiDecisionCount,
+            PlayerBuildGuid = Application.buildGUID,
+            UnityVersion = Application.unityVersion,
             DiagnosticLogPath = diagnosticLogPath,
         });
 
@@ -512,6 +534,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         if (config.TimeScale > 0f)
             _timeScale = config.TimeScale;
         _diagnosticsEnabled = !config.DisableDiagnostics;
+        _fixedSeed = config.FixedSeed;
+        _preserveFixedDeltaTime = config.PreserveFixedDeltaTime;
     }
 
     private static void RecordResult(
@@ -521,6 +545,12 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         if (matchResult.Outcome == CombatAutoBattleOutcomes.Victory) candidateResult.Wins++;
         else if (matchResult.Outcome == CombatAutoBattleOutcomes.Defeat) candidateResult.Losses++;
         else candidateResult.Timeouts++;
+        candidateResult.TotalGameSeconds += matchResult.GameSeconds;
+        candidateResult.TotalRealSeconds += matchResult.RealSeconds;
+        candidateResult.TotalSkippedAiDecisionCount += matchResult.SkippedAiDecisionCount;
+        candidateResult.GameSecondsSamples.Add(matchResult.GameSeconds);
+        if (matchResult.Outcome != CombatAutoBattleOutcomes.Timeout)
+            candidateResult.DecidedGameSecondsSamples.Add(matchResult.GameSeconds);
 
         CombatCompositionScenarioResult scenario = null;
         for (int i = 0; i < candidateResult.Scenarios.Count; i++)
@@ -545,8 +575,66 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         if (matchResult.Outcome == CombatAutoBattleOutcomes.Victory) scenario.Wins++;
         else if (matchResult.Outcome == CombatAutoBattleOutcomes.Defeat) scenario.Losses++;
         else scenario.Timeouts++;
+        scenario.TotalGameSeconds += matchResult.GameSeconds;
+        scenario.TotalRealSeconds += matchResult.RealSeconds;
+        scenario.TotalSkippedAiDecisionCount += matchResult.SkippedAiDecisionCount;
+        scenario.GameSecondsSamples.Add(matchResult.GameSeconds);
+        if (matchResult.Outcome != CombatAutoBattleOutcomes.Timeout)
+            scenario.DecidedGameSecondsSamples.Add(matchResult.GameSeconds);
         scenario.MatchCount = scenario.Wins + scenario.Losses + scenario.Timeouts;
         scenario.WinRate = scenario.MatchCount > 0 ? (float)scenario.Wins / scenario.MatchCount : 0f;
+        scenario.AverageGameSeconds = scenario.MatchCount > 0
+            ? scenario.TotalGameSeconds / scenario.MatchCount
+            : 0f;
+        scenario.AverageRealSeconds = scenario.MatchCount > 0
+            ? scenario.TotalRealSeconds / scenario.MatchCount
+            : 0f;
+    }
+
+    public static int ResolveSweepSeed(
+        CombatCompositionSweepConfig config,
+        int localCandidateIndex,
+        int localMatchIndex,
+        int totalMatchesPerCandidate)
+    {
+        int matchIndex = config.MatchOffset + localMatchIndex;
+        if (config.UseCommonSeeds) return config.BaseSeed + matchIndex;
+
+        int candidateIndex = config.EnumerateAllCandidates
+            ? config.CandidateOffset + localCandidateIndex
+            : localCandidateIndex;
+        return config.BaseSeed + candidateIndex * totalMatchesPerCandidate + matchIndex;
+    }
+
+    public static int ResolveSingleSeed(int baseSeed, int matchIndex, bool fixedSeed)
+    {
+        return fixedSeed ? baseSeed : baseSeed + matchIndex;
+    }
+
+    private static void CompleteResult(CombatCompositionCandidateResult result)
+    {
+        result.MatchCount = result.Wins + result.Losses + result.Timeouts;
+        result.WinRate = result.MatchCount > 0 ? (float)result.Wins / result.MatchCount : 0f;
+        result.AverageGameSeconds = result.MatchCount > 0
+            ? result.TotalGameSeconds / result.MatchCount
+            : 0f;
+        result.AverageRealSeconds = result.MatchCount > 0
+            ? result.TotalRealSeconds / result.MatchCount
+            : 0f;
+        result.MedianGameSeconds = CombatAutoBattleStatistics.Median(result.GameSecondsSamples);
+        result.MinGameSeconds = CombatAutoBattleStatistics.Min(result.GameSecondsSamples);
+        result.MaxGameSeconds = CombatAutoBattleStatistics.Max(result.GameSecondsSamples);
+        result.MedianDecidedGameSeconds = CombatAutoBattleStatistics.Median(result.DecidedGameSecondsSamples);
+        for (int i = 0; i < result.Scenarios.Count; i++)
+            CompleteDurationStatistics(result.Scenarios[i]);
+    }
+
+    private static void CompleteDurationStatistics(CombatCompositionScenarioResult result)
+    {
+        result.MedianGameSeconds = CombatAutoBattleStatistics.Median(result.GameSecondsSamples);
+        result.MinGameSeconds = CombatAutoBattleStatistics.Min(result.GameSecondsSamples);
+        result.MaxGameSeconds = CombatAutoBattleStatistics.Max(result.GameSecondsSamples);
+        result.MedianDecidedGameSeconds = CombatAutoBattleStatistics.Median(result.DecidedGameSecondsSamples);
     }
 
     private AuthoredMapDefinition[] FilterMapsByName(string[] names)
@@ -758,6 +846,60 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             throw new InvalidOperationException(
                 "WeaponConfig を解決できません。Runner の Weapon Configs に割り当てるか、CombatCharacterSelection の Weapon Options を設定してください。");
         }
+    }
+
+    private void ValidateRoles(IReadOnlyList<CombatAutoBattleRole> roles)
+    {
+        if (roles == null || roles.Count == 0)
+            throw new InvalidOperationException("編成が空です。");
+
+        for (int i = 0; i < roles.Count; i++)
+        {
+            CombatAutoBattleRole role = roles[i];
+            if (role == null)
+                throw new InvalidOperationException($"編成の位置{i}がnullです。");
+            if (!_weapons.ContainsKey(role.Weapon))
+                throw new InvalidOperationException($"編成の位置{i}で使用する武器 {role.Weapon} のWeaponConfigがありません。");
+        }
+    }
+
+    private void ValidateMapAvailability(
+        bool evaluateBothStonePositions,
+        bool useFixedStonePosition = false,
+        bool stonePositionsReversed = false)
+    {
+        bool validateNormal = !useFixedStonePosition || !stonePositionsReversed;
+        bool validateReversed = useFixedStonePosition
+            ? stonePositionsReversed
+            : evaluateBothStonePositions;
+        for (int i = 0; i < _mapCandidates.Length; i++)
+        {
+            AuthoredMapDefinition map = _mapCandidates[i];
+            if (validateNormal)
+            {
+                CombatMapAvailability normal = CombatMapAvailability.Evaluate(map, stonePositionsReversed: false);
+                if (!normal.CanStartBattle)
+                    throw new InvalidOperationException($"マップ '{map.name}' の通常配置を開始できません: {normal.Reason}");
+            }
+
+            if (validateReversed)
+            {
+                CombatMapAvailability reversed = CombatMapAvailability.Evaluate(map, stonePositionsReversed: true);
+                if (!reversed.CanStartBattle)
+                    throw new InvalidOperationException($"マップ '{map.name}' の反転配置を開始できません: {reversed.Reason}");
+            }
+        }
+    }
+
+    private void LogPreflight(int requiredPerSide)
+    {
+        Debug.Log(
+            $"[自動戦闘][Preflight] maps=[{DescribeMapCandidates()}] " +
+            $"allies={_allyPool.Count}/{requiredPerSide} enemies={_enemyPool.Count}/{requiredPerSide} " +
+            $"weapons=[{string.Join(", ", _weapons.Keys)}] timeScale={_timeScale} " +
+            $"fixedDeltaTime={Time.fixedDeltaTime} preserveFixedDeltaTime={_preserveFixedDeltaTime} " +
+            $"buildGuid={Application.buildGUID} unity={Application.unityVersion}",
+            this);
     }
 
     private void AddWeapons(IReadOnlyList<WeaponConfig> options, bool overwrite)

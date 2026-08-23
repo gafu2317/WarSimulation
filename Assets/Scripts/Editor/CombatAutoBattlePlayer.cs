@@ -27,6 +27,13 @@ public static class CombatAutoBattlePlayer
         BuildPlayer(run: false, configPath: null, sweep: false, lightweight: true);
     }
 
+    [MenuItem("Tools/War Simulation/Auto Battle/Setup And Build Lightweight Player")]
+    public static void SetupAndBuildLightweight()
+    {
+        if (!CombatAutoBattleSceneSetup.TrySetupCurrentScene()) return;
+        BuildLightweight();
+    }
+
     [MenuItem("Tools/War Simulation/Auto Battle/Build And Run With Config...")]
     public static void BuildAndRunWithConfig()
     {

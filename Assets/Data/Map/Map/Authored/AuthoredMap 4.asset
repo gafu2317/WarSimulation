@@ -15,7 +15,7 @@ MonoBehaviour:
   _sharedConfig: {fileID: 11400000, guid: f2fa3155fa7424bf7876ce40c28805c1, type: 2}
   _buildSeed: 0
   _bakedNavMesh: {fileID: 23800000, guid: d914392a074614993a7a80cbc15d3b9c, type: 2}
-  _navMeshBakeFingerprint: -175055274
+  _navMeshBakeFingerprint: -1495661172
   _bakedMapData: {fileID: 11400000, guid: d30ad6acbc4704c2091e294fdad332be, type: 2}
   _bakedAllyAssaultRoutes:
   - BridgeFeatureIndex: -1
@@ -31,14 +31,29 @@ MonoBehaviour:
   _hasBakedAssaultRoutes: 1
   _legacyAssaultRoutesMigrated: 1
   _assaultRoutes:
-  - RouteId: auto:direct
+  - RouteId: 6398f2e81bda4274ac88902f2d225009
     DisplayName: "\u76F4\u9032"
-    Source: 0
-    Waypoints: []
+    Source: 1
+    Waypoints:
+    - {x: 42.23114, y: 31.30016}
+    - {x: 37.51204, y: 22.632423}
+    - {x: 33.65971, y: 11.171751}
+  - RouteId: 6cec6a621f04449391c8e65c546e3aab
+    DisplayName: "\u624B\u52D5\u30EB\u30FC\u30C8 2"
+    Source: 1
+    Waypoints:
+    - {x: 27.110754, y: 49.791332}
+    - {x: 17.672552, y: 38.715893}
+    - {x: 6.3081865, y: 33.226326}
+  - RouteId: 7f40faa77ac449f4b792943d6fdf2f56
+    DisplayName: "\u624B\u52D5\u30EB\u30FC\u30C8 3"
+    Source: 1
+    Waypoints:
+    - {x: 26.340288, y: 27.255217}
   _bakedPreview: {fileID: 2800000, guid: 5b101c6222a13430489a732dfd533052, type: 3}
-  _previewBakeFingerprint: 2031699715
+  _previewBakeFingerprint: 47747879
   _bakedRuntimeScenePath: Assets/Scenes/BakedMaps/AuthoredMap 4_f929a27d.unity
-  _bakedRuntimeSceneFingerprint: -175055274
+  _bakedRuntimeSceneFingerprint: -1495661172
   _mountains:
   - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
     Kind: 1
@@ -47,28 +62,18 @@ MonoBehaviour:
     Scale: {x: 1, y: 1}
   - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
     Kind: 1
-    Center: {x: 4.4516125, y: 32.709675}
-    RotationDeg: 0
-    Scale: {x: 1, y: 1}
-  - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
-    Kind: 1
-    Center: {x: 21.967743, y: 52.64516}
-    RotationDeg: 0
-    Scale: {x: 1, y: 1}
-  - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
-    Kind: 1
-    Center: {x: 36.48387, y: 6.387098}
-    RotationDeg: 0
-    Scale: {x: 1, y: 1}
-  - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
-    Kind: 1
     Center: {x: 10.064516, y: 8.4193535}
     RotationDeg: 0
     Scale: {x: 1, y: 1}
-  - Shape: {fileID: 11400000, guid: 426a92b7c20a048b487f6ed083536443, type: 2}
+  - Shape: {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
     Kind: 1
-    Center: {x: 53.80645, y: 25.064518}
+    Center: {x: 11.508828, y: 49.791332}
     RotationDeg: 0
+    Scale: {x: 1, y: 1}
+  - Shape: {fileID: 11400000, guid: 94896aca1cc0444bba52a6c1af0aab95, type: 2}
+    Kind: 1
+    Center: {x: 47.142857, y: 11.65329}
+    RotationDeg: 180
     Scale: {x: 1, y: 1}
   _rivers: []
   _lakes: []

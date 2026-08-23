@@ -21,8 +21,10 @@ public sealed class CombatAutoBattleConfig
     public int MatchCount = 10;
     public int BaseSeed = 1;
     public float TimeoutSeconds = 600f;
-    public float TimeScale = 32f;
+    public float TimeScale = 6f;
     public bool DisableDiagnostics;
+    public bool FixedSeed;
+    public bool PreserveFixedDeltaTime;
 }
 
 [Serializable]
@@ -35,7 +37,19 @@ public sealed class CombatAutoBattleMatchResult
     public string Outcome;
     public float GameSeconds;
     public float RealSeconds;
+    public float TimeScale;
+    public float FixedDeltaTime;
+    public bool PreserveFixedDeltaTime;
+    public bool FixedSeed;
+    public int SkippedAiDecisionCount;
+    public string PlayerBuildGuid;
+    public string UnityVersion;
     public string DiagnosticLogPath;
+}
+
+public static class CombatAutoBattleReportSchema
+{
+    public const int CurrentVersion = 2;
 }
 
 public static class CombatAutoBattleOutcomes
@@ -125,12 +139,23 @@ public static class CombatAutoBattleReportWriter
     [Serializable]
     private sealed class Report
     {
+        public int SchemaVersion = CombatAutoBattleReportSchema.CurrentVersion;
         public int MatchCount;
         public int Wins;
         public int Losses;
         public int Timeouts;
         public float AverageGameSeconds;
         public float AverageRealSeconds;
+        public float MedianGameSeconds;
+        public float MinGameSeconds;
+        public float MaxGameSeconds;
+        public float MedianDecidedGameSeconds;
+        public float TimeScale;
+        public float FixedDeltaTime;
+        public bool PreserveFixedDeltaTime;
+        public bool FixedSeed;
+        public string PlayerBuildGuid;
+        public string UnityVersion;
         public List<CombatAutoBattleMatchResult> Matches = new();
     }
 
@@ -144,11 +169,16 @@ public static class CombatAutoBattleReportWriter
         int timeouts = 0;
         float gameSeconds = 0f;
         float realSeconds = 0f;
+        var gameSecondsSamples = new List<float>(matches.Count);
+        var decidedGameSecondsSamples = new List<float>(matches.Count);
         for (int i = 0; i < matches.Count; i++)
         {
             CombatAutoBattleMatchResult match = matches[i];
             gameSeconds += match.GameSeconds;
             realSeconds += match.RealSeconds;
+            gameSecondsSamples.Add(match.GameSeconds);
+            if (match.Outcome != CombatAutoBattleOutcomes.Timeout)
+                decidedGameSecondsSamples.Add(match.GameSeconds);
             if (match.Outcome == CombatAutoBattleOutcomes.Victory) wins++;
             else if (match.Outcome == CombatAutoBattleOutcomes.Defeat) losses++;
             else timeouts++;
@@ -162,8 +192,22 @@ public static class CombatAutoBattleReportWriter
             Timeouts = timeouts,
             AverageGameSeconds = matches.Count > 0 ? gameSeconds / matches.Count : 0f,
             AverageRealSeconds = matches.Count > 0 ? realSeconds / matches.Count : 0f,
+            MedianGameSeconds = CombatAutoBattleStatistics.Median(gameSecondsSamples),
+            MinGameSeconds = CombatAutoBattleStatistics.Min(gameSecondsSamples),
+            MaxGameSeconds = CombatAutoBattleStatistics.Max(gameSecondsSamples),
+            MedianDecidedGameSeconds = CombatAutoBattleStatistics.Median(decidedGameSecondsSamples),
             Matches = new List<CombatAutoBattleMatchResult>(matches),
         };
+        if (matches.Count > 0)
+        {
+            CombatAutoBattleMatchResult first = matches[0];
+            report.TimeScale = first.TimeScale;
+            report.FixedDeltaTime = first.FixedDeltaTime;
+            report.PreserveFixedDeltaTime = first.PreserveFixedDeltaTime;
+            report.FixedSeed = first.FixedSeed;
+            report.PlayerBuildGuid = first.PlayerBuildGuid;
+            report.UnityVersion = first.UnityVersion;
+        }
 
         if (string.IsNullOrEmpty(path))
         {
@@ -187,5 +231,37 @@ public static class CombatAutoBattleReportWriter
     private static string ResolveOutputDirectory()
     {
         return CombatDebugPaths.GetLogsDirectory("AutoBattles");
+    }
+}
+
+public static class CombatAutoBattleStatistics
+{
+    public static float Median(IReadOnlyList<float> values)
+    {
+        if (values == null || values.Count == 0) return 0f;
+        var sorted = new List<float>(values);
+        sorted.Sort();
+        int middle = sorted.Count / 2;
+        return sorted.Count % 2 == 0
+            ? (sorted[middle - 1] + sorted[middle]) * 0.5f
+            : sorted[middle];
+    }
+
+    public static float Min(IReadOnlyList<float> values)
+    {
+        if (values == null || values.Count == 0) return 0f;
+        float minimum = values[0];
+        for (int i = 1; i < values.Count; i++)
+            minimum = Mathf.Min(minimum, values[i]);
+        return minimum;
+    }
+
+    public static float Max(IReadOnlyList<float> values)
+    {
+        if (values == null || values.Count == 0) return 0f;
+        float maximum = values[0];
+        for (int i = 1; i < values.Count; i++)
+            maximum = Mathf.Max(maximum, values[i]);
+        return maximum;
     }
 }

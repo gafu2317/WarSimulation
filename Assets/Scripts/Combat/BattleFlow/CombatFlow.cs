@@ -8,7 +8,7 @@ using WarSimulation.Combat.Map;
 
 public sealed class CombatFlow : MonoBehaviour
 {
-    private static readonly float[] BattleSpeedOptions = { 1f, 2f, 4f, 8f };
+    private static readonly float[] BattleSpeedOptions = { 1f, 2f, 4f, 6f };
     private static readonly Vector3 LowSideCameraPosition = new Vector3(30f, 20f, -10f);
     private static readonly Vector3 HighSideCameraPosition = new Vector3(30f, 20f, 70f);
 

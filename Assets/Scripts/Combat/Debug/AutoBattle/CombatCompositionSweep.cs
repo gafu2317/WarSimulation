@@ -22,13 +22,18 @@ public sealed class CombatCompositionSweepConfig
     public int MinPartySize = 4;
     public int MaxPartySize = 6;
     public float TimeoutSeconds = 600f;
-    public float TimeScale = 32f;
+    public float TimeScale = 6f;
     public bool EnumerateAllCandidates;
     public bool EvaluateBothStonePositions;
+    public bool UseFixedStonePosition;
+    public bool StonePositionsReversed;
     public bool UseCommonSeeds;
     public bool DisableDiagnostics;
     public int CandidateOffset;
     public int CandidateLimit;
+    public int MatchOffset;
+    public int TotalMatchesPerCandidate;
+    public bool PreserveFixedDeltaTime;
 }
 
 [Serializable]
@@ -42,6 +47,17 @@ public sealed class CombatCompositionCandidateResult
     public int Losses;
     public int Timeouts;
     public float WinRate;
+    public float TotalGameSeconds;
+    public float TotalRealSeconds;
+    public float AverageGameSeconds;
+    public float AverageRealSeconds;
+    public float MedianGameSeconds;
+    public float MinGameSeconds;
+    public float MaxGameSeconds;
+    public float MedianDecidedGameSeconds;
+    public int TotalSkippedAiDecisionCount;
+    public List<float> GameSecondsSamples = new();
+    public List<float> DecidedGameSecondsSamples = new();
     public List<CombatCompositionScenarioResult> Scenarios = new();
 }
 
@@ -55,14 +71,31 @@ public sealed class CombatCompositionScenarioResult
     public int Losses;
     public int Timeouts;
     public float WinRate;
+    public float TotalGameSeconds;
+    public float TotalRealSeconds;
+    public float AverageGameSeconds;
+    public float AverageRealSeconds;
+    public float MedianGameSeconds;
+    public float MinGameSeconds;
+    public float MaxGameSeconds;
+    public float MedianDecidedGameSeconds;
+    public int TotalSkippedAiDecisionCount;
+    public List<float> GameSecondsSamples = new();
+    public List<float> DecidedGameSecondsSamples = new();
 }
 
 [Serializable]
 public sealed class CombatCompositionSweepReport
 {
+    public int SchemaVersion = CombatAutoBattleReportSchema.CurrentVersion;
     public int CandidateCount;
     public int MatchesPerCandidate;
     public int CompletedCandidates;
+    public float TimeScale;
+    public float FixedDeltaTime;
+    public bool PreserveFixedDeltaTime;
+    public string PlayerBuildGuid;
+    public string UnityVersion;
     public List<CombatCompositionCandidateResult> Ranking = new();
 }
 

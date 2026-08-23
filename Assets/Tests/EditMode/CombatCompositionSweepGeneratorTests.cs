@@ -152,4 +152,58 @@ public sealed class CombatCompositionSweepGeneratorTests
             CombatCompositionSweepGenerator.BuildKey(slice[0].Roles),
             Is.EqualTo(CombatCompositionSweepGenerator.BuildKey(all[100].Roles)));
     }
+
+    [Test]
+    public void ResolveSweepSeed_KeepsCandidateSeedsStableAcrossMatchJobs()
+    {
+        var config = new CombatCompositionSweepConfig
+        {
+            BaseSeed = 1000,
+            MatchOffset = 20,
+            EnumerateAllCandidates = true,
+            CandidateOffset = 50,
+        };
+
+        int seed = CombatAutoBattleRunner.ResolveSweepSeed(
+            config,
+            localCandidateIndex: 2,
+            localMatchIndex: 3,
+            totalMatchesPerCandidate: 100);
+
+        Assert.That(seed, Is.EqualTo(6223));
+    }
+
+    [Test]
+    public void ResolveSweepSeed_UsesTheSameMatchSeedForEveryCandidateWhenConfigured()
+    {
+        var config = new CombatCompositionSweepConfig
+        {
+            BaseSeed = 1000,
+            MatchOffset = 20,
+            UseCommonSeeds = true,
+        };
+
+        int first = CombatAutoBattleRunner.ResolveSweepSeed(config, 0, 3, 100);
+        int another = CombatAutoBattleRunner.ResolveSweepSeed(config, 12, 3, 100);
+
+        Assert.That(first, Is.EqualTo(1023));
+        Assert.That(another, Is.EqualTo(first));
+    }
+
+    [Test]
+    public void ResolveSingleSeed_RepeatsOrAdvancesAccordingToTheSetting()
+    {
+        Assert.That(CombatAutoBattleRunner.ResolveSingleSeed(100, 3, fixedSeed: true), Is.EqualTo(100));
+        Assert.That(CombatAutoBattleRunner.ResolveSingleSeed(100, 3, fixedSeed: false), Is.EqualTo(103));
+    }
+
+    [Test]
+    public void AutoBattleStatistics_ReportMedianMinimumAndMaximum()
+    {
+        float[] values = { 8f, 2f, 4f, 6f };
+
+        Assert.That(CombatAutoBattleStatistics.Median(values), Is.EqualTo(5f));
+        Assert.That(CombatAutoBattleStatistics.Min(values), Is.EqualTo(2f));
+        Assert.That(CombatAutoBattleStatistics.Max(values), Is.EqualTo(8f));
+    }
 }

@@ -15,11 +15,16 @@ public static class CombatAutoBattleSceneSetup
     [MenuItem("Tools/War Simulation/Auto Battle/Setup Current Scene")]
     public static void SetupCurrentScene()
     {
+        TrySetupCurrentScene();
+    }
+
+    public static bool TrySetupCurrentScene()
+    {
         Scene scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || string.IsNullOrEmpty(scene.path))
         {
             EditorUtility.DisplayDialog("設定失敗", "保存済みの戦闘シーンを開いてください。", "閉じる");
-            return;
+            return false;
         }
 
         if (!TryCollectMaps(out AuthoredMapDefinition[] maps, out string error) ||
@@ -27,7 +32,7 @@ public static class CombatAutoBattleSceneSetup
             !TryValidateScene(scene, out error))
         {
             EditorUtility.DisplayDialog("設定失敗", error, "閉じる");
-            return;
+            return false;
         }
 
         CombatAutoBattleRunner[] existingRunners = FindAllInScene<CombatAutoBattleRunner>(scene);
@@ -46,42 +51,40 @@ public static class CombatAutoBattleSceneSetup
         AssignArray(serializedRunner.FindProperty("_mapCandidates"), maps);
         AssignArray(serializedRunner.FindProperty("_weaponConfigs"), weapons);
         serializedRunner.FindProperty("_timeoutSeconds").floatValue = 600f;
-        serializedRunner.FindProperty("_timeScale").floatValue = 16f;
+        serializedRunner.FindProperty("_timeScale").floatValue = 6f;
         serializedRunner.ApplyModifiedPropertiesWithoutUndo();
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         Debug.Log(
             $"[自動戦闘] {scene.path} の既存Runner {existingRunners.Length}件を専用ルートへ統合し、" +
-            $"有効な10マップを持つ {RootName} を設定しました。");
+            $"利用可能な{maps.Length}マップを持つ {RootName} を設定しました。");
+        return true;
     }
 
     private static bool TryCollectMaps(out AuthoredMapDefinition[] maps, out string error)
     {
-        var collected = new List<AuthoredMapDefinition>(10);
-        for (int i = 0; i < 10; i++)
+        string[] guids = AssetDatabase.FindAssets("t:AuthoredMapDefinition", new[] { MapDirectory });
+        var collected = new List<AuthoredMapDefinition>(guids.Length);
+        for (int i = 0; i < guids.Length; i++)
         {
-            string suffix = i == 0 ? string.Empty : " " + i;
-            string path = $"{MapDirectory}/AuthoredMap{suffix}.asset";
+            string path = AssetDatabase.GUIDToAssetPath(guids[i]);
             AuthoredMapDefinition map = AssetDatabase.LoadAssetAtPath<AuthoredMapDefinition>(path);
-            if (map == null)
-            {
-                maps = null;
-                error = $"マップが見つかりません: {path}";
-                return false;
-            }
+            if (map == null) continue;
 
             CombatMapAvailability normal = CombatMapAvailability.Evaluate(map, stonePositionsReversed: false);
             CombatMapAvailability reversed = CombatMapAvailability.Evaluate(map, stonePositionsReversed: true);
-            if (!normal.CanStartBattle || !reversed.CanStartBattle)
-            {
-                maps = null;
-                error = $"{map.name} を通常・反転の両方で開始できません: " +
-                    $"normal={normal.Reason} reversed={reversed.Reason}";
-                return false;
-            }
+            if (!normal.CanStartBattle && !reversed.CanStartBattle) continue;
 
             collected.Add(map);
+        }
+
+        collected.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        if (collected.Count == 0)
+        {
+            maps = null;
+            error = $"利用可能なマップがありません: {MapDirectory}";
+            return false;
         }
 
         maps = collected.ToArray();
@@ -120,13 +123,13 @@ public static class CombatAutoBattleSceneSetup
             return false;
         }
 
-        bool hasSerializedPool = characterSystem.AllyCharacters.Count >= 5 && characterSystem.EnemyCharacters.Count >= 5;
+        bool hasSerializedPool = characterSystem.AllyCharacters.Count > 0 && characterSystem.EnemyCharacters.Count > 0;
         var serializedSystem = new SerializedObject(characterSystem);
         bool generatesRuntimePool = serializedSystem.FindProperty("_generateCandidatesAtRuntime").boolValue &&
             serializedSystem.FindProperty("_characterPrefab").objectReferenceValue != null;
         if (!hasSerializedPool && !generatesRuntimePool)
         {
-            error = "5人分の味方・敵プールも、有効な実行時候補生成設定もありません。";
+            error = "味方・敵プールも、有効な実行時候補生成設定もありません。";
             return false;
         }
 
