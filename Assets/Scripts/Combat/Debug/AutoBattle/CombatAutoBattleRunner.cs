@@ -111,6 +111,17 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
 
         yield return null;
 
+        Exception mapPreparationError = null;
+        yield return Drive(
+            PrepareMapForCharacterPool(_mapCandidates[0]),
+            error => mapPreparationError = error);
+        if (mapPreparationError != null)
+        {
+            Debug.LogException(mapPreparationError, this);
+            EndRun(previousTimeScale, previousVSync, previousTargetFrameRate, previousRunInBackground, 1);
+            yield break;
+        }
+
         try
         {
             CaptureCharacterPools(Mathf.Max(_allies.Length, _enemies.Length));
@@ -216,6 +227,17 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             maxParty = Mathf.Max(maxParty, candidates[i].Roles.Length);
 
         yield return null;
+
+        Exception mapPreparationError = null;
+        yield return Drive(
+            PrepareMapForCharacterPool(_mapCandidates[0]),
+            error => mapPreparationError = error);
+        if (mapPreparationError != null)
+        {
+            Debug.LogException(mapPreparationError, this);
+            EndRun(previousTimeScale, previousVSync, previousTargetFrameRate, previousRunInBackground, 1);
+            yield break;
+        }
 
         try
         {
@@ -329,6 +351,25 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
             Debug.Log($"[自動戦闘] 編成探索完了: {reportPath}", this);
 
         EndRun(previousTimeScale, previousVSync, previousTargetFrameRate, previousRunInBackground, exitCode);
+    }
+
+    private IEnumerator PrepareMapForCharacterPool(AuthoredMapDefinition mapDefinition)
+    {
+        yield return _mapSystem.PrepareMapAsync(mapDefinition);
+        if (!_mapSystem.TryApplyBakedAuthoredMap(
+                mapDefinition,
+                out MapData map,
+                out CombatMapApplyFailure failure))
+        {
+            throw new InvalidOperationException(
+                $"マップ '{mapDefinition.name}' の初期化に失敗しました: {failure}");
+        }
+
+        if (!_mapSystem.ResetRuntimeMapState())
+            throw new InvalidOperationException($"マップ '{mapDefinition.name}' の初期状態復元に失敗しました。");
+
+        _lastAppliedMap = mapDefinition;
+        yield return null;
     }
 
     private bool BeginRun(

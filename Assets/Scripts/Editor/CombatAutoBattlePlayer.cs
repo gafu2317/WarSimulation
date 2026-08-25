@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -101,7 +102,7 @@ public static class CombatAutoBattlePlayer
 
         BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
-            scenes = new[] { scene.path },
+            scenes = CollectBuildScenes(scene),
             locationPathName = applicationPath,
             target = BuildTarget.StandaloneOSX,
             options = lightweight ? BuildOptions.None : BuildOptions.Development,
@@ -119,6 +120,27 @@ public static class CombatAutoBattlePlayer
         if (!run) return;
 
         Launch(applicationPath, applicationName, configPath, projectRoot, sweep);
+    }
+
+    private static string[] CollectBuildScenes(Scene activeScene)
+    {
+        var scenes = new List<string> { activeScene.path };
+        string[] guids = AssetDatabase.FindAssets(
+            "t:AuthoredMapDefinition",
+            new[] { "Assets/Data/Map/Map/Authored" });
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+            var map = AssetDatabase.LoadAssetAtPath<WarSimulation.Combat.Map.AuthoredMapDefinition>(assetPath);
+            if (map == null || !map.HasValidBakedRuntimeScene ||
+                AssetDatabase.LoadAssetAtPath<SceneAsset>(map.BakedRuntimeScenePath) == null)
+                continue;
+
+            if (!scenes.Contains(map.BakedRuntimeScenePath))
+                scenes.Add(map.BakedRuntimeScenePath);
+        }
+
+        return scenes.ToArray();
     }
 
     private static void Launch(
