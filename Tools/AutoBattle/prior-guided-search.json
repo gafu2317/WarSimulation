@@ -1,0 +1,46 @@
+{
+  "Scenarios": [
+    { "Id": "AuthoredMap_normal", "MapName": "AuthoredMap", "StonePositionsReversed": false },
+    { "Id": "AuthoredMap_reversed", "MapName": "AuthoredMap", "StonePositionsReversed": true },
+    { "Id": "AuthoredMap 2_normal", "MapName": "AuthoredMap 2", "StonePositionsReversed": false },
+    { "Id": "AuthoredMap 2_reversed", "MapName": "AuthoredMap 2", "StonePositionsReversed": true },
+    { "Id": "AuthoredMap 3_normal", "MapName": "AuthoredMap 3", "StonePositionsReversed": false },
+    { "Id": "AuthoredMap 3_reversed", "MapName": "AuthoredMap 3", "StonePositionsReversed": true },
+    { "Id": "AuthoredMap 5_normal", "MapName": "AuthoredMap 5", "StonePositionsReversed": false },
+    { "Id": "AuthoredMap 5_reversed", "MapName": "AuthoredMap 5", "StonePositionsReversed": true },
+    { "Id": "AuthoredMap 6_normal", "MapName": "AuthoredMap 6", "StonePositionsReversed": false },
+    { "Id": "AuthoredMap 6_reversed", "MapName": "AuthoredMap 6", "StonePositionsReversed": true },
+    { "Id": "AuthoredMap 9_normal", "MapName": "AuthoredMap 9", "StonePositionsReversed": false },
+    { "Id": "AuthoredMap 9_reversed", "MapName": "AuthoredMap 9", "StonePositionsReversed": true }
+  ],
+  "Enemy": [
+    { "Weapon": 3, "Personality": 0 },
+    { "Weapon": 3, "Personality": 0 },
+    { "Weapon": 5, "Personality": 9 },
+    { "Weapon": 6, "Personality": 9 },
+    { "Weapon": 4, "Personality": 2 }
+  ],
+  "BaseSeed": 260826,
+  "TimeoutSeconds": 600,
+  "TimeScale": 6,
+  "PreserveFixedDeltaTime": false,
+  "DisableDiagnostics": true,
+  "PriorGuidedSearch": {
+    "CandidateCount": 100,
+    "AnchorCandidates": 10,
+    "NeighborCandidates": 25,
+    "RecombinationCandidates": 25,
+    "UnseenCandidates": 40,
+    "ScreenMatches": 3,
+    "FinalCandidates": 10,
+    "FinalMatches": 20,
+    "ParallelProcesses": 5,
+    "MatchesPerJob": 5,
+    "JobWorkerCount": 1,
+    "SelectionSeed": 260826
+  },
+  "Batch": {
+    "Executable": ".unity/CombatAutoBattleLight/CombatAutoBattleLight.app",
+    "OutputRoot": "Logs/AutoBattleAdaptive"
+  }
+}

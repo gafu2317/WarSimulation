@@ -30,14 +30,14 @@ Auto Battle（連戦・CLI）とは別。Git LFS は使わない。
 | 100MB 未満 | `gh-pages` → GitHub Pages |
 | 100MB 以上 | git に載せない。itch.io にアップロード |
 
-### 今回のビルド結果（2026-08-25）
+### 今回のビルド結果（2026-08-26）
 
-`Build WebGL` は成功。Pages 向け展開後サイズは次のとおりで、最大は wasm の 50.42 MB だった。
+`Build WebGL` は成功。Pages 向け展開後サイズは次のとおりで、最大は wasm の 50.43 MB だった。
 
 | ファイル | 展開後サイズ |
 |---|---:|
-| `CombatPlaytestWebGL.data` | 44.49 MB |
-| `CombatPlaytestWebGL.wasm` | 50.42 MB |
+| `CombatPlaytestWebGL.data` | 44.51 MB |
+| `CombatPlaytestWebGL.wasm` | 50.43 MB |
 | `CombatPlaytestWebGL.framework.js` | 0.47 MB |
 
 このビルドは 100 MB 未満なので、配布先は GitHub Pages。

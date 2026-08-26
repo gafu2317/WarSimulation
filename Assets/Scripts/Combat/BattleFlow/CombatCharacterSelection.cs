@@ -38,6 +38,142 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         CombatAiPersonalityKind.Devoted,
     };
 
+    private static readonly EnemyPresetDefinition[] EnemyTopPresets =
+    {
+        new(
+            "0通常",
+            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Lonely,
+            }),
+        new(
+            "0逆",
+            new[] { WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Lonely,
+                CombatAiPersonalityKind.Lonely,
+            }),
+        new(
+            "2通常",
+            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Bible },
+            new[]
+            {
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "2逆",
+            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Lonely,
+                CombatAiPersonalityKind.Lonely,
+            }),
+        new(
+            "3通常",
+            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Rosary, WeaponKind.Rosary, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "3逆",
+            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Grimoire, WeaponKind.Grimoire },
+            new[]
+            {
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "5通常",
+            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Bible, WeaponKind.Bible, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "5逆",
+            new[] { WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "6通常",
+            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Shield, WeaponKind.Shield },
+            new[]
+            {
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Lonely,
+                CombatAiPersonalityKind.Lonely,
+            }),
+        new(
+            "6逆",
+            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Bible, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Lonely,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "9通常",
+            new[] { WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Lonely,
+                CombatAiPersonalityKind.Lonely,
+            }),
+        new(
+            "9逆",
+            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Bible },
+            new[]
+            {
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Cunning,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Reckless,
+                CombatAiPersonalityKind.Devoted,
+            }),
+    };
+
     [SerializeField] private RectTransform _characterList;
     [SerializeField] private Button _characterItemPrefab;
     [SerializeField] private TMP_Text _selectionCountText;
@@ -55,6 +191,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Button _stonePositionButton;
     private Button _enemyPresetDefaultButton;
     private Button _enemyPresetNeutralButton;
+    private Button _enemyPresetTopButton;
     private Button _formationCodeApplyButton;
     private Button _formationCodeCopyButton;
     private Button _formationCodePasteButton;
@@ -234,6 +371,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
         }
 
+        if (_enemyPresetTopButton != null)
+        {
+            _enemyPresetTopButton.onClick.RemoveListener(OpenEnemyTopPresetPicker);
+        }
+
         if (_formationCodeApplyButton != null)
         {
             _formationCodeApplyButton.onClick.RemoveListener(ApplyFormationCode);
@@ -378,6 +520,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _enemyPresetNeutralButton = null;
         }
 
+        if (_enemyPresetTopButton != null)
+        {
+            _enemyPresetTopButton.onClick.RemoveListener(OpenEnemyTopPresetPicker);
+            _enemyPresetTopButton = null;
+        }
+
         if (_formationCodeApplyButton != null)
         {
             _formationCodeApplyButton.onClick.RemoveListener(ApplyFormationCode);
@@ -486,10 +634,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             presetRow, "EnemyPresetDefaultButton", 0f, 48f, ApplyEnemyPresetDefault, flexibleWidth: 1f);
         _enemyPresetNeutralButton = CreateButton(
             presetRow, "EnemyPresetNeutralButton", 0f, 48f, ApplyEnemyPresetNeutralPersonalities, flexibleWidth: 1f);
+        _enemyPresetTopButton = CreateButton(
+            presetRow, "EnemyPresetTopButton", 0f, 48f, OpenEnemyTopPresetPicker, flexibleWidth: 1f);
         SetButtonLabel(_enemyPresetDefaultButton, "最強編成");
         SetButtonLabel(_enemyPresetNeutralButton, "標準性格");
+        SetButtonLabel(_enemyPresetTopButton, "マップ別トップ");
         ConfigureToolbarLabel(_enemyPresetDefaultButton, 24f);
         ConfigureToolbarLabel(_enemyPresetNeutralButton, 24f);
+        ConfigureToolbarLabel(_enemyPresetTopButton, 24f);
         _enemyPresetRowRoot.SetActive(false);
 
         RectTransform debugRow = CreateHorizontalRow(_headerRoot, "DebugRow", 92f, spacing: 10f);
@@ -862,6 +1014,40 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         ClosePicker();
         ApplyDefaultParty(_enemyRows, useEnemyPersonalities: false, useEnemyWeapons: false);
+        Refresh();
+    }
+
+    private void OpenEnemyTopPresetPicker()
+    {
+        EnsurePicker();
+        SetPickerLayout(twoColumns: true);
+        ClearPickerOptions();
+        SetPickerTitle("マップ別トップ編成");
+        SetPickerDescription("評価結果から選んだ編成です。位置逆転は現在の設定を維持します。");
+
+        for (int i = 0; i < EnemyTopPresets.Length; i++)
+        {
+            EnemyPresetDefinition preset = EnemyTopPresets[i];
+            AddPickerOption(preset.Label, () => ApplyEnemyTopPreset(preset));
+        }
+
+        ShowPicker();
+    }
+
+    private void ApplyEnemyTopPreset(EnemyPresetDefinition preset)
+    {
+        ClosePicker();
+        for (int i = 0; i < _enemyRows.Count; i++)
+        {
+            SelectionRow row = _enemyRows[i];
+            bool selected = i < preset.Weapons.Length;
+            row.Selected = selected;
+            if (!selected) continue;
+
+            row.WeaponIndex = FindWeaponIndex(preset.Weapons[i]);
+            row.PersonalityIndex = FindOrAddPersonalityIndex(preset.Personalities[i]);
+        }
+
         Refresh();
     }
 
@@ -2119,6 +2305,23 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         public int WeaponIndex;
         public int PersonalityIndex;
         public bool Selected;
+    }
+
+    private sealed class EnemyPresetDefinition
+    {
+        public EnemyPresetDefinition(
+            string label,
+            WeaponKind[] weapons,
+            CombatAiPersonalityKind[] personalities)
+        {
+            Label = label;
+            Weapons = weapons;
+            Personalities = personalities;
+        }
+
+        public string Label { get; }
+        public WeaponKind[] Weapons { get; }
+        public CombatAiPersonalityKind[] Personalities { get; }
     }
 
     private sealed class EventTriggerProxy : MonoBehaviour, IPointerEnterHandler
