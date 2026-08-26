@@ -18,6 +18,8 @@ Auto Battle（連戦・CLI）とは別。Git LFS は使わない。
 
 出力: `.unity/CombatPlaytestWebGL/`
 
+ビルドには開いている戦闘 Scene と、Build Settings で有効な Scene（ランタイム用マップ Scene を含む）が収録される。
+
 成功するとダイアログと Console に **最大ファイルサイズ（Pages 向け展開後）** が出る。
 
 メニューは **Release + Gzip + Decompression Fallback** でビルドする。  

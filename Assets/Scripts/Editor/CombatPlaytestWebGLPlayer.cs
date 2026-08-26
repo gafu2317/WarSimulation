@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -55,7 +56,7 @@ public static class CombatPlaytestWebGLPlayer
             // 100MB/ファイル制限（git・LFSなし）向けに Release + Gzip で出す。
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { scene.path },
+                scenes = GetBuildScenePaths(scene.path),
                 locationPathName = buildDirectory,
                 target = BuildTarget.WebGL,
                 options = BuildOptions.None,
@@ -105,6 +106,23 @@ public static class CombatPlaytestWebGLPlayer
             "Combat Playtest WebGL",
             $"出力: {BuildDirectory}\n\n最大ファイル(Pages判定):\n{relativeLargest}\n{sizeLabel}\n\n{guidance}\n\n手順: docs/Webプレイテスト.md",
             "閉じる");
+    }
+
+    private static string[] GetBuildScenePaths(string activeScenePath)
+    {
+        var paths = new List<string> { activeScenePath };
+        EditorBuildSettingsScene[] buildSettingsScenes = EditorBuildSettings.scenes;
+        for (int i = 0; i < buildSettingsScenes.Length; i++)
+        {
+            EditorBuildSettingsScene buildSettingsScene = buildSettingsScenes[i];
+            if (!buildSettingsScene.enabled || string.IsNullOrEmpty(buildSettingsScene.path) ||
+                paths.Contains(buildSettingsScene.path))
+                continue;
+
+            paths.Add(buildSettingsScene.path);
+        }
+
+        return paths.ToArray();
     }
 
     private static bool TryFindLargestPagesFile(

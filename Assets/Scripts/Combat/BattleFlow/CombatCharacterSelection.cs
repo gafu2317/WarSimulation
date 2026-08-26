@@ -258,13 +258,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         AddBuiltInPersonalityOptions();
         RebuildLayout(allyCandidates, enemyCandidates);
         ConfigureSelectionCountText();
-        ResetSelection();
-    }
-
-    public void ResetSelection()
-    {
-        ClosePicker();
-        SetDetailSettingsOpen(false);
         ApplyDefaultParty(_allyRows, useEnemyPersonalities: false, useEnemyWeapons: false);
         ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true, useEnemyWeapons: true);
         Refresh();
