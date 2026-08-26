@@ -142,22 +142,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         };
         teamUi.HeaderRow = CreateRow(card, "HeaderRow", isHeader: true, rowColor: new Color(0f, 0f, 0f, 0.18f));
 
-        GameObject rowsObject = new GameObject(
-            "Rows",
-            typeof(RectTransform),
-            typeof(VerticalLayoutGroup),
-            typeof(LayoutElement));
-        teamUi.Rows = rowsObject.GetComponent<RectTransform>();
-        teamUi.Rows.SetParent(card, false);
-        LayoutElement rowsElement = rowsObject.GetComponent<LayoutElement>();
-        rowsElement.flexibleHeight = 1f;
-        VerticalLayoutGroup rowsLayout = rowsObject.GetComponent<VerticalLayoutGroup>();
-        rowsLayout.spacing = 3f;
-        rowsLayout.childAlignment = TextAnchor.UpperCenter;
-        rowsLayout.childControlWidth = true;
-        rowsLayout.childControlHeight = true;
-        rowsLayout.childForceExpandWidth = true;
-        rowsLayout.childForceExpandHeight = false;
+        teamUi.Rows = CreateScrollableRows(card, "Rows", spacing: 3f);
 
         teamUi.TotalRow = CreateRow(card, "TotalRow", isHeader: false, rowColor: new Color(0f, 0f, 0f, 0.26f));
         CreateLabel(
@@ -190,23 +175,67 @@ public sealed class CombatBattleResultView : MonoBehaviour
         RowUi supportHeader = CreateSupportRow(card, "SupportHeaderRow", true, new Color(0f, 0f, 0f, 0.18f));
         SetSupportRowValues(supportHeader, new[] { "名前", "付与内容", "使用量", "累積効果時間" });
 
-        GameObject supportRowsObject = new GameObject(
-            "SupportRows",
+        teamUi.SupportRows = CreateScrollableRows(card, "SupportRows", spacing: 2f);
+        return teamUi;
+    }
+
+    private static RectTransform CreateScrollableRows(
+        Transform parent,
+        string objectName,
+        float spacing)
+    {
+        GameObject scrollObject = new GameObject(
+            objectName,
+            typeof(RectTransform),
+            typeof(ScrollRect),
+            typeof(LayoutElement));
+        RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+        scrollRectTransform.SetParent(parent, false);
+        scrollObject.GetComponent<LayoutElement>().flexibleHeight = 1f;
+
+        GameObject viewportObject = new GameObject(
+            "Viewport",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(RectMask2D));
+        RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+        viewport.SetParent(scrollRectTransform, false);
+        Stretch(viewport);
+        Image viewportImage = viewportObject.GetComponent<Image>();
+        viewportImage.color = Color.clear;
+
+        GameObject contentObject = new GameObject(
+            "Content",
             typeof(RectTransform),
             typeof(VerticalLayoutGroup),
-            typeof(LayoutElement));
-        teamUi.SupportRows = supportRowsObject.GetComponent<RectTransform>();
-        teamUi.SupportRows.SetParent(card, false);
-        LayoutElement supportRowsElement = supportRowsObject.GetComponent<LayoutElement>();
-        supportRowsElement.flexibleHeight = 1f;
-        VerticalLayoutGroup supportRowsLayout = supportRowsObject.GetComponent<VerticalLayoutGroup>();
-        supportRowsLayout.spacing = 2f;
-        supportRowsLayout.childAlignment = TextAnchor.UpperCenter;
-        supportRowsLayout.childControlWidth = true;
-        supportRowsLayout.childControlHeight = true;
-        supportRowsLayout.childForceExpandWidth = true;
-        supportRowsLayout.childForceExpandHeight = false;
-        return teamUi;
+            typeof(ContentSizeFitter));
+        RectTransform content = contentObject.GetComponent<RectTransform>();
+        content.SetParent(viewport, false);
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.offsetMin = Vector2.zero;
+        content.offsetMax = Vector2.zero;
+
+        VerticalLayoutGroup contentLayout = contentObject.GetComponent<VerticalLayoutGroup>();
+        contentLayout.spacing = spacing;
+        contentLayout.childAlignment = TextAnchor.UpperCenter;
+        contentLayout.childControlWidth = true;
+        contentLayout.childControlHeight = true;
+        contentLayout.childForceExpandWidth = true;
+        contentLayout.childForceExpandHeight = false;
+
+        ContentSizeFitter contentFitter = contentObject.GetComponent<ContentSizeFitter>();
+        contentFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        ScrollRect scroll = scrollObject.GetComponent<ScrollRect>();
+        scroll.viewport = viewport;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        return content;
     }
 
     private RowUi CreateRow(Transform parent, string objectName, bool isHeader, Color rowColor)
