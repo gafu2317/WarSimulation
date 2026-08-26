@@ -89,36 +89,21 @@ public static partial class CombatAiPlanner
             if (captureDebug)
             {
                 snapshot.Assessment = assessment;
-                CombatAiObjectiveScorer.BuildEntries(
-                    snapshot,
-                    personalityProfile,
-                    focusEnemy,
-                    focusCommitmentRemainingSeconds,
-                    previousObjective,
-                    objectiveCommitmentRemainingSeconds);
-                objective = snapshot.SelectedObjective != null
-                    ? snapshot.SelectedObjective.Objective
-                    : CombatObjective.Search;
-                if (selectedObjectiveReasons != null)
-                {
-                    selectedObjectiveReasons.Clear();
-                    if (snapshot.SelectedObjective?.Breakdown != null)
-                    {
-                        selectedObjectiveReasons.AddRange(snapshot.SelectedObjective.Breakdown.ReasonCodes);
-                    }
-                }
             }
-            else
+
+            objective = CombatAiObjectiveScorer.SelectBestObjective(
+                context,
+                assessment,
+                personalityProfile,
+                focusEnemy,
+                focusCommitmentRemainingSeconds,
+                previousObjective,
+                selectedObjectiveReasons,
+                objectiveCommitmentRemainingSeconds,
+                captureDebug ? snapshot.ObjectiveEntries : null);
+            if (captureDebug)
             {
-                objective = CombatAiObjectiveScorer.SelectBestObjective(
-                    context,
-                    assessment,
-                    personalityProfile,
-                    focusEnemy,
-                    focusCommitmentRemainingSeconds,
-                    previousObjective,
-                    selectedObjectiveReasons,
-                    objectiveCommitmentRemainingSeconds);
+                snapshot.SelectedObjective = FindObjectiveEntry(snapshot.ObjectiveEntries, objective);
             }
         }
 
@@ -158,6 +143,18 @@ public static partial class CombatAiPlanner
 
         var plan = new CombatAiPlan(objective, moveTarget, bestSkill, bestSkillContext);
         return plan;
+    }
+
+    private static CombatAiObjectiveScoreEntry FindObjectiveEntry(
+        List<CombatAiObjectiveScoreEntry> entries,
+        CombatObjective objective)
+    {
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Objective == objective) return entries[i];
+        }
+
+        return null;
     }
 
     private static CombatMoveTarget PreserveCunningMoveTarget(
@@ -574,11 +571,11 @@ public static partial class CombatAiPlanner
 
         if (CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsProtect(skill))
         {
-            CombatCharacterIntel ally = FindAllyIntel(context, skillContext.PrimaryTarget);
+            CombatCharacterIntel ally = context.FindAllyIntel(skillContext.PrimaryTarget);
             if (!ally.IsAlive || ally.MaxHP <= 0) return -80f;
 
-            int reservedHealing = GetAllyPendingHealing(context, ally.Character);
-            int incomingDamage = GetEnemyPendingDamage(context, ally.Character);
+            int reservedHealing = context.GetAllyPendingHealing(ally.Character);
+            int incomingDamage = context.GetEnemyPendingDamage(ally.Character);
             int projectedHP = Mathf.Clamp(ally.HP + reservedHealing - incomingDamage, 0, ally.MaxHP);
             float hpRatio = projectedHP / (float)ally.MaxHP;
             float missingHpRatio = 1f - hpRatio;
@@ -615,7 +612,7 @@ public static partial class CombatAiPlanner
                 return GetDamageSkillTargetScore(context, skill, skillContext);
             }
 
-            CombatCharacterIntel enemy = FindEnemyIntel(context, skillContext.PrimaryTarget);
+            CombatCharacterIntel enemy = context.FindEnemyIntel(skillContext.PrimaryTarget);
             if (enemy.Character == null) return 0f;
             float hpRatio = enemy.MaxHP > 0 ? (float)enemy.HP / enemy.MaxHP : 1f;
             float score = (1f - hpRatio) * 18f + (enemy.HasDirectSight ? 8f : enemy.HasMemory ? 3f : 0f);
@@ -641,8 +638,8 @@ public static partial class CombatAiPlanner
             if (ally.Character == null || !ally.IsAlive || ally.MaxHP <= 0) continue;
             if (HorizontalDistance(skillContext.TargetPoint, ally.CurrentPosition) > skill.AreaRadius) continue;
             int projectedHP = Mathf.Clamp(
-                ally.HP + GetAllyPendingHealing(context, ally.Character) -
-                GetEnemyPendingDamage(context, ally.Character),
+                ally.HP + context.GetAllyPendingHealing(ally.Character) -
+                context.GetEnemyPendingDamage(ally.Character),
                 0,
                 ally.MaxHP);
             int missingHp = Mathf.Max(0, ally.MaxHP - projectedHP);
@@ -659,7 +656,7 @@ public static partial class CombatAiPlanner
             HorizontalDistance(skillContext.TargetPoint, owner.transform.position) <= skill.AreaRadius)
         {
             int projectedHp = Mathf.Clamp(
-                owner.Health.HP + GetAllyPendingHealing(context, owner) - GetEnemyPendingDamage(context, owner),
+                owner.Health.HP + context.GetAllyPendingHealing(owner) - context.GetEnemyPendingDamage(owner),
                 0,
                 owner.MaxHP);
             int missingHp = Mathf.Max(0, owner.MaxHP - projectedHp);
@@ -685,7 +682,7 @@ public static partial class CombatAiPlanner
         }
 
         if (incomingDamage <= 0) return 0f;
-        int reservedHealing = GetAllyPendingHealing(context, ally.Character);
+        int reservedHealing = context.GetAllyPendingHealing(ally.Character);
         int projectedHp = Mathf.Min(ally.MaxHP, ally.HP + reservedHealing + healing) - incomingDamage;
         if (projectedHp <= 0) return -24f;
         return projectedHp <= ally.MaxHP * 0.3f ? 8f : 20f;
@@ -703,14 +700,14 @@ public static partial class CombatAiPlanner
         bool foundCharacterTarget = false;
         for (int i = 0; i < capturedContext.ResolvedTargets.Count; i++)
         {
-            CombatCharacterIntel enemy = FindEnemyIntel(context, capturedContext.ResolvedTargets[i]);
+            CombatCharacterIntel enemy = context.FindEnemyIntel(capturedContext.ResolvedTargets[i]);
             if (enemy.Character == null || enemy.HP <= 0) continue;
 
             int predictedDamage = skill.EstimateDamage(context.Owner, capturedContext, enemy.Character);
             if (predictedDamage <= 0) continue;
 
             foundCharacterTarget = true;
-            int pendingDamage = GetAllyPendingDamage(context, enemy.Character);
+            int pendingDamage = context.GetAllyPendingDamage(enemy.Character);
             score += GetDamageAgainstEnemyScore(skill, enemy, predictedDamage, pendingDamage);
         }
 
@@ -787,51 +784,6 @@ public static partial class CombatAiPlanner
             WeaponKind.Rosary => 3f,
             _ => 2f,
         };
-    }
-
-    private static int GetAllyPendingDamage(CombatAiContext context, Character target)
-    {
-        int damage = 0;
-        for (int i = 0; i < context.AllyPendingDamage.Count; i++)
-        {
-            CombatAiPendingDamage pending = context.AllyPendingDamage[i];
-            if (pending.Target == target)
-            {
-                damage += pending.Damage;
-            }
-        }
-
-        return damage;
-    }
-
-    private static int GetAllyPendingHealing(CombatAiContext context, Character target)
-    {
-        int healing = 0;
-        for (int i = 0; i < context.AllyPendingHealing.Count; i++)
-        {
-            CombatAiPendingHealing pending = context.AllyPendingHealing[i];
-            if (pending.Target == target)
-            {
-                healing += pending.Healing;
-            }
-        }
-
-        return healing;
-    }
-
-    private static int GetEnemyPendingDamage(CombatAiContext context, Character target)
-    {
-        int damage = 0;
-        for (int i = 0; i < context.EnemyPendingDamage.Count; i++)
-        {
-            CombatAiPendingDamage pending = context.EnemyPendingDamage[i];
-            if (pending.Target == target)
-            {
-                damage += pending.Damage;
-            }
-        }
-
-        return damage;
     }
 
     private static float GetSelfHpCostPenalty(CombatAiContext context, int hpCost)
@@ -928,56 +880,6 @@ public static partial class CombatAiPlanner
         {
             breakdown.ReasonCodes.Add(reason);
         }
-    }
-
-    private static CombatCharacterIntel FindAllyIntel(CombatAiContext context, Character character)
-    {
-        for (int i = 0; i < context.AllyIntel.Count; i++)
-        {
-            if (context.AllyIntel[i].Character == character)
-            {
-                return context.AllyIntel[i];
-            }
-        }
-
-        if (context.Owner == character && character != null && character.Health != null)
-        {
-            return new CombatCharacterIntel(
-                character,
-                character.Team,
-                character.transform.position,
-                hasDirectSight: true,
-                hasMemory: false,
-                hasKnownPosition: true,
-                knownPosition: character.transform.position,
-                memoryAgeSeconds: 0f,
-                recognizesOwner: false,
-                hp: character.Health.HP,
-                maxHp: character.Health.MaxHP,
-                canAct: character.Health.CanAct,
-                weaponKind: character.EquippedWeapon != null ? character.EquippedWeapon.Kind : WeaponKind.Unarmed,
-                weaponRange: character.EquippedWeapon != null ? character.EquippedWeapon.Range : WeaponBase.Unarmed.Range,
-                statusEffects: character.StatusEffects != null
-                    ? character.StatusEffects.GetActiveEffectSnapshots()
-                    : System.Array.Empty<CombatStatusEffectSnapshot>(),
-                hasObjective: false,
-                objective: default);
-        }
-
-        return default;
-    }
-
-    private static CombatCharacterIntel FindEnemyIntel(CombatAiContext context, Character character)
-    {
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            if (context.EnemyIntel[i].Character == character)
-            {
-                return context.EnemyIntel[i];
-            }
-        }
-
-        return default;
     }
 
     private static bool HasEnemyNearby(IReadOnlyList<CombatCharacterIntel> enemies, Vector3 position, float radius)

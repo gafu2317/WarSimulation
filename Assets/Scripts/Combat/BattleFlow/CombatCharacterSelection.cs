@@ -10,6 +10,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private const int MaxPartyDisplayCount = 10;
     private const int PartyGridRowCount = 5;
     private const float CharacterListWidth = 1600f;
+    private static readonly float[] MovementSpeedMultipliers = { 1f, 2f, 4f, 6f };
 
     private static readonly WeaponKind[] DefaultPartyWeapons =
     {
@@ -38,6 +39,25 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         CombatAiPersonalityKind.Devoted,
     };
 
+    private static readonly EnemyPresetDefinition EnemyStandardPreset = new(
+        "テテSnレ",
+        new[]
+        {
+            WeaponKind.Wand,
+            WeaponKind.Wand,
+            WeaponKind.Bible,
+            WeaponKind.Rosary,
+            WeaponKind.Grimoire,
+        },
+        new[]
+        {
+            CombatAiPersonalityKind.Neutral,
+            CombatAiPersonalityKind.Neutral,
+            CombatAiPersonalityKind.Devoted,
+            CombatAiPersonalityKind.Devoted,
+            CombatAiPersonalityKind.BattleJunkie,
+        });
+
     private static readonly EnemyPresetDefinition[] EnemyTopPresets =
     {
         new(
@@ -59,28 +79,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 CombatAiPersonalityKind.BattleJunkie,
                 CombatAiPersonalityKind.BattleJunkie,
                 CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.Lonely,
-                CombatAiPersonalityKind.Lonely,
-            }),
-        new(
-            "2通常",
-            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Bible },
-            new[]
-            {
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Devoted,
-            }),
-        new(
-            "2逆",
-            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary, WeaponKind.Rosary },
-            new[]
-            {
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.Devoted,
                 CombatAiPersonalityKind.Lonely,
                 CombatAiPersonalityKind.Lonely,
             }),
@@ -185,6 +183,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<SelectionRow> _enemyRows = new();
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
+    private Button _movementSpeedButton;
     private Button _bulkWeaponButton;
     private Button _bulkPersonalityButton;
     private Button _enemyFormationButton;
@@ -226,16 +225,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private GridLayoutGroup _pickerGridLayout;
     private LayoutElement _pickerOptionsLayout;
     private LayoutElement _pickerDetailsLayout;
-    private readonly List<Button> _pickerWeaponButtons = new();
-    private bool _pickerShowsWeaponDetails;
-    private int _pendingWeaponIndex = -1;
-    private Action<int> _pendingWeaponSelectionCommit;
     private bool _detailSettingsOpen;
     private bool _stonePositionReversed;
     private bool _externalStartAllowed = true;
+    private int _movementSpeedMultiplierIndex;
 
     public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
     public bool IsStonePositionReversed => _stonePositionReversed;
+    public float MovementSpeedMultiplier => MovementSpeedMultipliers[_movementSpeedMultiplierIndex];
     public event Action<bool> StonePositionReversedChanged;
 
     public void SetExternalStartAllowed(bool allowed)
@@ -251,10 +248,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> confirmed)
     {
         _confirmed = confirmed;
-        _stonePositionReversed = false;
         RemoveNullAndDuplicateOptions(_weaponOptions);
-        RemoveNullAndDuplicateOptions(_personalityOptions);
-        DeduplicatePersonalityOptionsByKind();
+        NormalizePersonalityOptions();
         AddBuiltInPersonalityOptions();
         RebuildLayout(allyCandidates, enemyCandidates);
         ConfigureSelectionCountText();
@@ -304,21 +299,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return -1;
     }
 
-    private int FindStandardPersonalityIndex()
-    {
-        return FindOrAddPersonalityIndex(CombatAiPersonalityKind.Neutral);
-    }
-
     private int FindOrAddPersonalityIndex(CombatAiPersonalityKind kind)
     {
-        for (int i = 0; i < _personalityOptions.Count; i++)
-        {
-            CombatAiPersonalityProfile personality = _personalityOptions[i];
-            if (personality != null && personality.Kind == kind)
-            {
-                return i;
-            }
-        }
+        int index = FindPersonalityIndex(kind);
+        if (index >= 0) return index;
 
         CombatAiPersonalityProfile created = CombatAiPersonalityProfile.CreateBuiltInProfile(kind);
         _builtInPersonalityOptions.Add(created);
@@ -334,57 +318,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void OnDestroy()
     {
         _startBattleButton?.onClick.RemoveListener(ConfirmSelection);
-        if (_bulkWeaponButton != null)
-        {
-            _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
-        }
-
-        if (_bulkPersonalityButton != null)
-        {
-            _bulkPersonalityButton.onClick.RemoveListener(OpenBulkPersonalityPicker);
-        }
-
-        if (_enemyFormationButton != null)
-        {
-            _enemyFormationButton.onClick.RemoveListener(ToggleEnemyFormation);
-        }
-
-        if (_stonePositionButton != null)
-        {
-            _stonePositionButton.onClick.RemoveListener(ToggleStonePositionReversed);
-        }
-
-        if (_enemyPresetDefaultButton != null)
-        {
-            _enemyPresetDefaultButton.onClick.RemoveListener(ApplyEnemyPresetDefault);
-        }
-
-        if (_enemyPresetNeutralButton != null)
-        {
-            _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
-        }
-
-        if (_enemyPresetTopButton != null)
-        {
-            _enemyPresetTopButton.onClick.RemoveListener(OpenEnemyTopPresetPicker);
-        }
-
-        if (_formationCodeApplyButton != null)
-        {
-            _formationCodeApplyButton.onClick.RemoveListener(ApplyFormationCode);
-        }
-
-        if (_formationCodeCopyButton != null)
-        {
-            _formationCodeCopyButton.onClick.RemoveListener(CopyFormationCode);
-        }
-
-        if (_formationCodePasteButton != null)
-        {
-            _formationCodePasteButton.onClick.RemoveListener(PasteFormationCode);
-        }
-
-        ClosePicker(commitPendingWeaponSelection: false);
+        ClearToolbarButtons();
+        ClosePicker();
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
         {
             DestroyGeneratedObject(_builtInPersonalityOptions[i]);
@@ -399,7 +334,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         for (int i = 0; i < builtIns.Count; i++)
         {
             CombatAiPersonalityProfile profile = builtIns[i];
-            if (FindPersonalityByKind(profile.Kind) != null)
+            if (FindPersonalityIndex(profile.Kind) >= 0)
             {
                 DestroyGeneratedObject(profile);
                 continue;
@@ -410,7 +345,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
     }
 
-    private void DeduplicatePersonalityOptionsByKind()
+    private void NormalizePersonalityOptions()
     {
         var seen = new HashSet<CombatAiPersonalityKind>();
         for (int i = 0; i < _personalityOptions.Count;)
@@ -477,6 +412,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ClearToolbarButtons()
     {
+        if (_movementSpeedButton != null)
+        {
+            _movementSpeedButton.onClick.RemoveListener(CycleMovementSpeed);
+            _movementSpeedButton = null;
+        }
+
         if (_bulkWeaponButton != null)
         {
             _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
@@ -509,7 +450,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         if (_enemyPresetNeutralButton != null)
         {
-            _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetNeutralPersonalities);
+            _enemyPresetNeutralButton.onClick.RemoveListener(ApplyEnemyPresetStandard);
             _enemyPresetNeutralButton = null;
         }
 
@@ -585,12 +526,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         headerObject.GetComponent<LayoutElement>().preferredHeight = 148f;
 
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
+        _movementSpeedButton = CreateButton(actionRow, "MovementSpeedButton", 220f, 48f, CycleMovementSpeed);
         _bulkWeaponButton = CreateButton(actionRow, "BulkWeaponButton", 220f, 48f, OpenBulkWeaponPicker);
         _bulkPersonalityButton = CreateButton(actionRow, "BulkPersonalityButton", 220f, 48f, OpenBulkPersonalityPicker);
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
+        RefreshMovementSpeedButton();
         SetButtonLabel(_bulkWeaponButton, "武器一括変更");
         SetButtonLabel(_bulkPersonalityButton, "性格一括変更");
+        ConfigureToolbarLabel(_movementSpeedButton, 24f);
         ConfigureToolbarLabel(_bulkWeaponButton, 24f);
         ConfigureToolbarLabel(_bulkPersonalityButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
@@ -626,11 +570,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _enemyPresetDefaultButton = CreateButton(
             presetRow, "EnemyPresetDefaultButton", 0f, 48f, ApplyEnemyPresetDefault, flexibleWidth: 1f);
         _enemyPresetNeutralButton = CreateButton(
-            presetRow, "EnemyPresetNeutralButton", 0f, 48f, ApplyEnemyPresetNeutralPersonalities, flexibleWidth: 1f);
+            presetRow, "EnemyPresetNeutralButton", 0f, 48f, ApplyEnemyPresetStandard, flexibleWidth: 1f);
         _enemyPresetTopButton = CreateButton(
             presetRow, "EnemyPresetTopButton", 0f, 48f, OpenEnemyTopPresetPicker, flexibleWidth: 1f);
         SetButtonLabel(_enemyPresetDefaultButton, "最強編成");
-        SetButtonLabel(_enemyPresetNeutralButton, "標準性格");
+        SetButtonLabel(_enemyPresetNeutralButton, EnemyStandardPreset.Label);
         SetButtonLabel(_enemyPresetTopButton, "マップ別トップ");
         ConfigureToolbarLabel(_enemyPresetDefaultButton, 24f);
         ConfigureToolbarLabel(_enemyPresetNeutralButton, 24f);
@@ -763,10 +707,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         SetButtonLabel(
             _debugVisionButton,
             FormatDebugToggle("視界表示", CombatPlaytestDebugSettings.ShowVision));
-        ConfigureToolbarLabel(_debugCharacterRoutesButton, 20f);
-        ConfigureToolbarLabel(_debugAssaultRoutesButton, 20f);
-        ConfigureToolbarLabel(_debugAiLabelsButton, 20f);
-        ConfigureToolbarLabel(_debugVisionButton, 20f);
     }
 
     private void OpenDebugSettings(DebugSettingsKind kind)
@@ -941,12 +881,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void RefreshFormationCodeContext()
     {
         string teamLabel = _detailSettingsOpen ? "敵" : "味方";
-        SetButtonLabel(_formationCodeApplyButton, "適用");
-        SetButtonLabel(_formationCodeCopyButton, "コードコピー");
-        SetButtonLabel(_formationCodePasteButton, "ペースト");
-        ConfigureToolbarLabel(_formationCodeApplyButton, 20f);
-        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
-        ConfigureToolbarLabel(_formationCodePasteButton, 20f);
         if (_formationCodeStatus != null)
         {
             _formationCodeStatus.text = $"{teamLabel}編成コード（{GetVisibleRows().Count}文字）";
@@ -973,7 +907,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void RefreshEnemyFormationButton()
     {
         SetButtonLabel(_enemyFormationButton, _detailSettingsOpen ? "閉じる" : "敵編成");
-        ConfigureToolbarLabel(_enemyFormationButton, 24f);
     }
 
     private void ToggleStonePositionReversed()
@@ -993,7 +926,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void RefreshStonePositionButton()
     {
         SetButtonLabel(_stonePositionButton, $"位置逆転: {(_stonePositionReversed ? "ON" : "OFF")}");
-        ConfigureToolbarLabel(_stonePositionButton, 24f);
     }
 
     private void ApplyEnemyPresetDefault()
@@ -1003,11 +935,9 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Refresh();
     }
 
-    private void ApplyEnemyPresetNeutralPersonalities()
+    private void ApplyEnemyPresetStandard()
     {
-        ClosePicker();
-        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: false, useEnemyWeapons: false);
-        Refresh();
+        ApplyEnemyPreset(EnemyStandardPreset);
     }
 
     private void OpenEnemyTopPresetPicker()
@@ -1028,6 +958,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     }
 
     private void ApplyEnemyTopPreset(EnemyPresetDefinition preset)
+    {
+        ApplyEnemyPreset(preset);
+    }
+
+    private void ApplyEnemyPreset(EnemyPresetDefinition preset)
     {
         ClosePicker();
         for (int i = 0; i < _enemyRows.Count; i++)
@@ -1162,15 +1097,22 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private int FindPersonalityIndex(CombatAiPersonalityProfile profile)
     {
-        if (profile == null) return FindStandardPersonalityIndex();
+        CombatAiPersonalityKind kind = profile != null
+            ? profile.Kind
+            : CombatAiPersonalityKind.Neutral;
+        int index = FindPersonalityIndex(kind);
+        return index >= 0 ? index : FindOrAddPersonalityIndex(CombatAiPersonalityKind.Neutral);
+    }
 
+    private int FindPersonalityIndex(CombatAiPersonalityKind kind)
+    {
         for (int i = 0; i < _personalityOptions.Count; i++)
         {
             CombatAiPersonalityProfile option = _personalityOptions[i];
-            if (option != null && option.Kind == profile.Kind) return i;
+            if (option != null && option.Kind == kind) return i;
         }
 
-        return FindStandardPersonalityIndex();
+        return -1;
     }
 
     private Button CreateButton(
@@ -1243,10 +1185,9 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return input;
     }
 
-    private void OnFormationCodeInputChanged(string value)
+    private void OnFormationCodeInputChanged(string _)
     {
         SetButtonLabel(_formationCodeCopyButton, "コードコピー");
-        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
         SetFormationCodeStatus(string.Empty);
     }
 
@@ -1294,8 +1235,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 return false;
             }
 
-            if (FindPersonalityByKind(entries[i].Personality) == null &&
-                !IsBuiltInPersonalityKind(entries[i].Personality))
+            if (FindPersonalityIndex(entries[i].Personality) < 0)
             {
                 error = $"性格「{entries[i].Personality}」がこの画面で選択できません。";
                 return false;
@@ -1316,16 +1256,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return true;
     }
 
-    private static bool IsBuiltInPersonalityKind(CombatAiPersonalityKind kind)
-    {
-        for (int i = 0; i < CombatAiPersonalityProfile.BuiltInKinds.Length; i++)
-        {
-            if (CombatAiPersonalityProfile.BuiltInKinds[i] == kind) return true;
-        }
-
-        return false;
-    }
-
     private void CopyFormationCode()
     {
         List<SelectionRow> rows = GetVisibleRows();
@@ -1338,7 +1268,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         GUIUtility.systemCopyBuffer = code;
         SetButtonLabel(_formationCodeCopyButton, "コピーしました");
-        ConfigureToolbarLabel(_formationCodeCopyButton, 20f);
         SetFormationCodeStatus("編成コードをコピーしました。");
     }
 
@@ -1391,6 +1320,18 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Refresh();
     }
 
+    private void CycleMovementSpeed()
+    {
+        _movementSpeedMultiplierIndex =
+            (_movementSpeedMultiplierIndex + 1) % MovementSpeedMultipliers.Length;
+        RefreshMovementSpeedButton();
+    }
+
+    private void RefreshMovementSpeedButton()
+    {
+        SetButtonLabel(_movementSpeedButton, $"移動速度: {MovementSpeedMultiplier:0}x");
+    }
+
     private void OpenWeaponPicker(SelectionRow row)
     {
         OpenWeaponPicker(
@@ -1431,22 +1372,23 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ClearPickerOptions();
         ClearPickerDetails();
         SetPickerTitle(title);
-        SetPickerDescription("武器を選ぶと右側にスキル詳細が表示されます。");
-        _pendingWeaponIndex = Mathf.Clamp(selectedIndex, 0, _weaponOptions.Count - 1);
-        _pendingWeaponSelectionCommit = onSelected;
+        int currentIndex = Mathf.Clamp(selectedIndex, 0, _weaponOptions.Count - 1);
 
         for (int i = 0; i < _weaponOptions.Count; i++)
         {
             int index = i;
-            Button button = AddPickerOption(GetWeaponPickerLabel(index), () =>
-            {
-                _pendingWeaponIndex = index;
-                RefreshWeaponPickerSelection();
-            });
-            _pickerWeaponButtons.Add(button);
+            AddPickerOption(
+                index == currentIndex
+                    ? "■ " + GetWeaponName(_weaponOptions[index])
+                    : GetWeaponName(_weaponOptions[index]),
+                () =>
+                {
+                    onSelected?.Invoke(index);
+                    ClosePicker();
+                });
         }
 
-        RefreshWeaponPickerSelection();
+        RefreshAllWeaponDetails();
         ShowPicker();
     }
 
@@ -1492,8 +1434,9 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_personalityOptions.Count == 0) return;
 
         EnsurePicker();
-        SetPickerLayout(twoColumns: true);
+        SetDetailsPickerLayout();
         ClearPickerOptions();
+        ClearPickerDetails();
         SetPickerTitle(title);
 
         for (int i = 0; i < _personalityOptions.Count; i++)
@@ -1504,33 +1447,17 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
             string name = personality.DisplayNameJapanese;
             bool selected = index == selectedIndex;
-            string description = personality.BehaviorDescriptionJapanese;
             AddPickerOption(
                 selected ? "■ " + name : name,
                 () =>
                 {
                     onSelected?.Invoke(index);
                     ClosePicker();
-                },
-                () => SetPickerDescription(description));
+                });
         }
 
-        CombatAiPersonalityProfile initial = GetOption(_personalityOptions, selectedIndex);
-        SetPickerDescription(initial != null
-            ? initial.BehaviorDescriptionJapanese
-            : "性格を選ぶと、ここで挙動の説明が表示されます。");
+        RefreshAllPersonalityDetails();
         ShowPicker();
-    }
-
-    private CombatAiPersonalityProfile FindPersonalityByKind(CombatAiPersonalityKind kind)
-    {
-        for (int i = 0; i < _personalityOptions.Count; i++)
-        {
-            CombatAiPersonalityProfile option = _personalityOptions[i];
-            if (option != null && option.Kind == kind) return option;
-        }
-
-        return null;
     }
 
     private void EnsurePicker()
@@ -1732,7 +1659,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         if (_pickerGridLayout == null) return;
 
-        _pickerShowsWeaponDetails = false;
+        if (_pickerDescription != null)
+        {
+            _pickerDescription.gameObject.SetActive(true);
+        }
         if (_pickerPanel != null)
         {
             _pickerPanel.sizeDelta = new Vector2(960f, 720f);
@@ -1752,11 +1682,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _pickerGridLayout.cellSize = new Vector2(twoColumns ? 450f : 900f, 64f);
     }
 
-    private void SetWeaponPickerLayout()
+    private void SetDetailsPickerLayout()
     {
         if (_pickerGridLayout == null) return;
 
-        _pickerShowsWeaponDetails = true;
+        if (_pickerDescription != null)
+        {
+            _pickerDescription.gameObject.SetActive(false);
+        }
         if (_pickerPanel != null)
         {
             _pickerPanel.sizeDelta = new Vector2(1440f, 720f);
@@ -1781,9 +1714,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _pickerGridLayout.cellSize = new Vector2(260f, 64f);
     }
 
+    private void SetWeaponPickerLayout()
+    {
+        SetDetailsPickerLayout();
+    }
+
     private void ClearPickerOptions()
     {
-        _pickerWeaponButtons.Clear();
         if (_pickerContent == null) return;
         for (int i = _pickerContent.childCount - 1; i >= 0; i--)
         {
@@ -1806,28 +1743,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return button;
     }
 
-    private string GetWeaponPickerLabel(int index)
-    {
-        string prefix = index == _pendingWeaponIndex ? "■ " : string.Empty;
-        return prefix + GetWeaponName(_weaponOptions[index]);
-    }
-
-    private void RefreshWeaponPickerSelection()
-    {
-        if (!_pickerShowsWeaponDetails) return;
-
-        for (int i = 0; i < _pickerWeaponButtons.Count; i++)
-        {
-            Button button = _pickerWeaponButtons[i];
-            if (button != null && i < _weaponOptions.Count)
-            {
-                SetButtonLabel(button, GetWeaponPickerLabel(i));
-            }
-        }
-
-        RefreshWeaponDetails(GetOption(_weaponOptions, _pendingWeaponIndex));
-    }
-
     private void ClearPickerDetails()
     {
         if (_pickerDetailsContent == null) return;
@@ -1838,16 +1753,43 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
     }
 
-    private void RefreshWeaponDetails(WeaponConfig weapon)
+    private void RefreshAllWeaponDetails()
     {
         ClearPickerDetails();
         if (_pickerDetailsContent == null) return;
 
-        if (weapon == null)
+        CombatSkillCatalog catalog = CombatSceneContext.Instance != null
+            ? CombatSceneContext.Instance.SkillCatalog
+            : null;
+        bool ownsCatalog = catalog == null;
+        catalog ??= CombatSkillCatalog.CreateDefaultRuntimeCatalog();
+
+        for (int i = 0; i < _weaponOptions.Count; i++)
+        {
+            AddWeaponDetails(_weaponOptions[i], catalog);
+        }
+
+        if (ownsCatalog)
+        {
+            for (int i = 0; i < catalog.Definitions.Count; i++)
+            {
+                DestroyGeneratedObject(catalog.Definitions[i]);
+            }
+
+            DestroyGeneratedObject(catalog);
+        }
+
+        if (_pickerDetailsContent.childCount == 0)
         {
             AddPickerDetailText("武器がありません。", 24f, TextAlignmentOptions.Center, 48f);
-            return;
         }
+
+        ResetPickerDetailsScroll();
+    }
+
+    private void AddWeaponDetails(WeaponConfig weapon, CombatSkillCatalog catalog)
+    {
+        if (weapon == null) return;
 
         WeaponBase weaponRuntime = weapon.CreateWeapon();
         AddPickerDetailText(GetWeaponName(weapon), 28f, TextAlignmentOptions.Center, 42f);
@@ -1858,14 +1800,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             TextAlignmentOptions.Center,
             42f);
 
-        CombatSkillCatalog catalog = CombatSceneContext.Instance != null
-            ? CombatSceneContext.Instance.SkillCatalog
-            : null;
-        bool ownsCatalog = catalog == null;
-        catalog ??= CombatSkillCatalog.CreateDefaultRuntimeCatalog();
-
         IReadOnlyList<SkillDefinition> definitions = catalog.GetDefinitionsForKind(weapon.Kind);
-        var skills = new List<SkillBase>();
+        bool hasSkill = false;
         for (int i = 0; i < definitions.Count; i++)
         {
             SkillDefinition definition = definitions[i];
@@ -1874,31 +1810,78 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             SkillBase skill = CombatSkillFactory.Create(definition.SkillId);
             if (skill == null) continue;
 
-            skills.Add(skill);
+            hasSkill = true;
+            AddSkillDetailCard(skill);
         }
 
-        if (skills.Count == 0)
+        if (!hasSkill)
         {
             AddPickerDetailText("スキルなし", 22f, TextAlignmentOptions.Center, 48f);
         }
-        else
+    }
+
+    private void RefreshAllPersonalityDetails()
+    {
+        ClearPickerDetails();
+        if (_pickerDetailsContent == null) return;
+
+        for (int i = 0; i < _personalityOptions.Count; i++)
         {
-            for (int i = 0; i < skills.Count; i++)
-            {
-                AddSkillDetailCard(skills[i]);
-            }
+            CombatAiPersonalityProfile personality = _personalityOptions[i];
+            if (personality == null) continue;
+
+            AddPersonalityDetailRow(personality);
         }
 
-        if (ownsCatalog)
+        if (_pickerDetailsContent.childCount == 0)
         {
-            for (int i = 0; i < definitions.Count; i++)
-            {
-                DestroyGeneratedObject(definitions[i]);
-            }
-
-            DestroyGeneratedObject(catalog);
+            AddPickerDetailText("性格がありません。", 24f, TextAlignmentOptions.Center, 48f);
         }
 
+        ResetPickerDetailsScroll();
+    }
+
+    private void AddPersonalityDetailRow(CombatAiPersonalityProfile personality)
+    {
+        GameObject row = new GameObject(
+            $"PersonalityDetail_{personality.DisplayNameJapanese}",
+            typeof(RectTransform),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement));
+        row.transform.SetParent(_pickerDetailsContent, false);
+
+        HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(10, 10, 2, 2);
+        layout.spacing = 12f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = true;
+        row.GetComponent<LayoutElement>().preferredHeight = 40f;
+
+        TMP_Text name = AddPickerDetailText(
+            personality.DisplayNameJapanese,
+            24f,
+            TextAlignmentOptions.Left,
+            36f,
+            row.transform);
+        LayoutElement nameLayout = name.gameObject.GetComponent<LayoutElement>();
+        nameLayout.preferredWidth = 220f;
+        nameLayout.flexibleWidth = 0f;
+
+        TMP_Text description = AddPickerDetailText(
+            personality.BehaviorDescriptionJapanese,
+            20f,
+            TextAlignmentOptions.Left,
+            36f,
+            row.transform);
+        LayoutElement descriptionLayout = description.gameObject.GetComponent<LayoutElement>();
+        descriptionLayout.minWidth = 0f;
+        descriptionLayout.flexibleWidth = 1f;
+    }
+
+    private void ResetPickerDetailsScroll()
+    {
         ScrollRect detailsScroll = _pickerDetailsRoot != null
             ? _pickerDetailsRoot.GetComponent<ScrollRect>()
             : null;
@@ -2052,23 +2035,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ClosePicker()
     {
-        ClosePicker(commitPendingWeaponSelection: true);
-    }
-
-    private void ClosePicker(bool commitPendingWeaponSelection)
-    {
-        bool shouldCommit = commitPendingWeaponSelection && _pickerShowsWeaponDetails;
-        Action<int> commit = _pendingWeaponSelectionCommit;
-        int selectedIndex = _pendingWeaponIndex;
-        _pickerShowsWeaponDetails = false;
-        _pendingWeaponSelectionCommit = null;
-        _pendingWeaponIndex = -1;
-
-        if (shouldCommit)
-        {
-            commit?.Invoke(selectedIndex);
-        }
-
         if (_pickerRoot != null)
         {
             _pickerRoot.gameObject.SetActive(false);
@@ -2100,7 +2066,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             setups.Add(new CombatParticipantSetup(
                 row.Character,
                 GetOption(_weaponOptions, row.WeaponIndex),
-                GetOption(_personalityOptions, row.PersonalityIndex)));
+                GetOption(_personalityOptions, row.PersonalityIndex),
+                MovementSpeedMultiplier));
         }
 
         return setups;

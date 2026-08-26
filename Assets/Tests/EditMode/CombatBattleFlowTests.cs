@@ -294,6 +294,30 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void CombatCameraSide_FollowsCurrentAllyStonePosition()
+    {
+        MethodInfo method = typeof(CombatFlow).GetMethod(
+            "IsAllyOnLowSide",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.That(method, Is.Not.Null);
+
+        Assert.That(
+            method.Invoke(null, new object[]
+            {
+                new Vector3(10f, 0f, 5f),
+                new Vector3(50f, 0f, 55f),
+            }),
+            Is.True);
+        Assert.That(
+            method.Invoke(null, new object[]
+            {
+                new Vector3(50f, 0f, 55f),
+                new Vector3(10f, 0f, 5f),
+            }),
+            Is.False);
+    }
+
+    [Test]
     public void CharacterSelection_ShowsTenCandidatesInTwoColumnsAndKeepsToggleMode()
     {
         GameObject selectionObject = null;
@@ -435,28 +459,25 @@ public sealed class CombatBattleFlowTests
             Assert.That(detailText, Does.Contain("詠唱"));
             Assert.That(detailText, Does.Not.Contain("魔石"));
 
-            int initialAllyWeaponIndex = GetPrivateField<int>(
-                GetPrivateField<IList>(selection, "_allyRows")[0],
-                "WeaponIndex");
             pickerContent.GetChild(pickerContent.childCount - 1).GetComponent<Button>().onClick.Invoke();
             IList allyRows = GetPrivateField<IList>(selection, "_allyRows");
-            Assert.That(
-                GetPrivateField<int>(allyRows[0], "WeaponIndex"),
-                Is.EqualTo(initialAllyWeaponIndex));
-            panel.Find("ClosePickerButton").GetComponent<Button>().onClick.Invoke();
             for (int i = 0; i < allyRows.Count; i++)
             {
                 Assert.That(
                     GetPrivateField<int>(allyRows[i], "WeaponIndex"),
                     Is.EqualTo(selection.WeaponOptions.Count - 1));
             }
+            panel.Find("ClosePickerButton").GetComponent<Button>().onClick.Invoke();
+            Assert.That(
+                GetPrivateField<int>(allyRows[0], "WeaponIndex"),
+                Is.EqualTo(selection.WeaponOptions.Count - 1));
 
             Assert.That(selection.WeaponOptions.Count, Is.GreaterThan(1));
             GetPrivateField<Button>(allyRows[0], "WeaponButton").onClick.Invoke();
             pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
             pickerContent.GetChild(0).GetComponent<Button>().onClick.Invoke();
-            Assert.That(GetPrivateField<bool>(selection, "_pickerShowsWeaponDetails"), Is.True);
-            Assert.That(GetPrivateField<int>(allyRows[0], "WeaponIndex"), Is.EqualTo(selection.WeaponOptions.Count - 1));
+            Assert.That(GetPrivateField<RectTransform>(selection, "_pickerRoot").gameObject.activeSelf, Is.False);
+            Assert.That(GetPrivateField<int>(allyRows[0], "WeaponIndex"), Is.EqualTo(0));
             GetPrivateField<RectTransform>(selection, "_pickerRoot")
                 .Find("Panel/ClosePickerButton")
                 .GetComponent<Button>()
@@ -494,6 +515,38 @@ public sealed class CombatBattleFlowTests
             Assert.That(
                 GetPrivateField<int>(enemyRows[1], "PersonalityIndex"),
                 Is.EqualTo(personalityOptions.Count - 1));
+
+            GetPrivateField<Button>(selection, "_enemyPresetNeutralButton").onClick.Invoke();
+            WeaponKind[] expectedWeapons =
+            {
+                WeaponKind.Wand,
+                WeaponKind.Wand,
+                WeaponKind.Bible,
+                WeaponKind.Rosary,
+                WeaponKind.Grimoire,
+            };
+            CombatAiPersonalityKind[] expectedPersonalities =
+            {
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.BattleJunkie,
+            };
+            for (int i = 0; i < enemyRows.Count; i++)
+            {
+                bool selected = i < expectedWeapons.Length;
+                Assert.That(GetPrivateField<bool>(enemyRows[i], "Selected"), Is.EqualTo(selected));
+                if (!selected) continue;
+
+                int weaponIndex = GetPrivateField<int>(enemyRows[i], "WeaponIndex");
+                Assert.That(selection.WeaponOptions[weaponIndex].Kind, Is.EqualTo(expectedWeapons[i]));
+
+                int personalityIndex = GetPrivateField<int>(enemyRows[i], "PersonalityIndex");
+                Assert.That(
+                    ((CombatAiPersonalityProfile)personalityOptions[personalityIndex]).Kind,
+                    Is.EqualTo(expectedPersonalities[i]));
+            }
         }
         finally
         {

@@ -7,6 +7,17 @@ using static CombatEditModeTestUtil;
 public sealed class CombatAiSkillTests
 {
     [Test]
+    public void SkillClassifier_UsesSkillIdInsteadOfDisplayName()
+    {
+        SkillBase misleadingName = new IdentifiedSkill(
+            new AiPlannerHealSkill(),
+            SkillId.Wand_GodsHand);
+
+        Assert.That(CombatAiSkillClassifier.IsDamage(misleadingName), Is.True);
+        Assert.That(CombatAiSkillClassifier.IsHeal(misleadingName), Is.False);
+    }
+
+    [Test]
     public void Planner_SelectsAnotherEnemyWhenAllyCastingWillDefeatTarget()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -147,7 +158,9 @@ public sealed class CombatAiSkillTests
             secondAlly.Health.Initialize(30, 5);
             firstAllyGo.transform.position = new Vector3(2f, 0f, 0f);
             secondAllyGo.transform.position = new Vector3(7f, 0f, 0f);
-            SkillBase healingArea = new RosaryHealingAreaSkill(radius: 3f);
+            SkillBase healingArea = new IdentifiedSkill(
+                new RosaryHealingAreaSkill(radius: 3f),
+                SkillId.Rosary_HealingArea);
             CombatEditModeTestUtil.SetAvailableCombatSkills(owner, healingArea);
             CombatAiContext context = CreatePlannerContext(
                 owner,
@@ -183,7 +196,9 @@ public sealed class CombatAiSkillTests
             Character ally = allyGo.AddComponent<Character>();
             ally.Health.Initialize(30);
             allyGo.transform.position = new Vector3(2f, 0f, 0f);
-            SkillBase healingArea = new RosaryHealingAreaSkill(radius: 3f);
+            SkillBase healingArea = new IdentifiedSkill(
+                new RosaryHealingAreaSkill(radius: 3f),
+                SkillId.Rosary_HealingArea);
             CombatEditModeTestUtil.SetAvailableCombatSkills(owner, healingArea);
             CombatAiContext context = CreatePlannerContext(
                 owner,

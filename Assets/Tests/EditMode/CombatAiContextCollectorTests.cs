@@ -7,6 +7,28 @@ using static CombatEditModeTestUtil;
 public sealed class CombatAiContextCollectorTests
 {
     [Test]
+    public void Context_CopiesInputCollections()
+    {
+        var bridges = new List<Vector3> { Vector3.one };
+        var context = new CombatAiContext(
+            null,
+            null,
+            null,
+            default,
+            false,
+            default,
+            false,
+            default,
+            bridges,
+            null,
+            null);
+
+        bridges.Clear();
+
+        Assert.That(context.BridgePositions, Is.EqualTo(new[] { Vector3.one }));
+    }
+
+    [Test]
     public void Collect_GathersCharactersMapFeaturesTerrainAndStatus()
     {
         AiContextFixture fixture = CreateFixture();

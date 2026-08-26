@@ -50,8 +50,8 @@ public sealed class CombatAiContext
         IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null)
     {
         Owner = owner;
-        EnemyIntel = enemyIntel ?? Array.Empty<CombatCharacterIntel>();
-        AllyIntel = allyIntel ?? Array.Empty<CombatCharacterIntel>();
+        EnemyIntel = Snapshot(enemyIntel);
+        AllyIntel = Snapshot(allyIntel);
         Weather = weather;
         HasOwnStonePosition = hasOwnStonePosition;
         OwnStonePosition = ownStonePosition;
@@ -60,14 +60,14 @@ public sealed class CombatAiContext
         HasEnemyStoneHealth = hasEnemyStoneHealth;
         EnemyStoneHP = enemyStoneHP;
         EnemyStoneMaxHP = enemyStoneMaxHP;
-        BridgePositions = bridgePositions ?? Array.Empty<Vector3>();
-        AssaultRoutes = assaultRoutes ?? Array.Empty<CombatAiAssaultRoute>();
-        HighGroundCandidates = highGroundCandidates ?? Array.Empty<Vector3>();
-        ForestCandidates = forestCandidates ?? Array.Empty<Vector3>();
-        AllyPendingDamage = allyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();
-        EnemyPendingDamage = enemyPendingDamage ?? Array.Empty<CombatAiPendingDamage>();
-        AllyPendingHealing = allyPendingHealing ?? Array.Empty<CombatAiPendingHealing>();
-        EnemyPendingHealing = enemyPendingHealing ?? Array.Empty<CombatAiPendingHealing>();
+        BridgePositions = Snapshot(bridgePositions);
+        AssaultRoutes = Snapshot(assaultRoutes);
+        HighGroundCandidates = Snapshot(highGroundCandidates);
+        ForestCandidates = Snapshot(forestCandidates);
+        AllyPendingDamage = Snapshot(allyPendingDamage);
+        EnemyPendingDamage = Snapshot(enemyPendingDamage);
+        AllyPendingHealing = Snapshot(allyPendingHealing);
+        EnemyPendingHealing = Snapshot(enemyPendingHealing);
         HasBlockedMoveDestination = hasBlockedMoveDestination;
         BlockedMoveDestination = blockedMoveDestination;
     }
@@ -80,6 +80,91 @@ public sealed class CombatAiContext
         Vector3 blocked = BlockedMoveDestination;
         blocked.y = 0f;
         return Vector3.Distance(destination, blocked) <= 2f;
+    }
+
+    public CombatCharacterIntel FindEnemyIntel(Character character)
+    {
+        return FindIntel(EnemyIntel, character);
+    }
+
+    public CombatCharacterIntel FindAllyIntel(Character character)
+    {
+        CombatCharacterIntel intel = FindIntel(AllyIntel, character);
+        if (intel.Character != null || Owner != character || character == null || character.Health == null) return intel;
+
+        return new CombatCharacterIntel(
+            character,
+            character.Team,
+            character.transform.position,
+            hasDirectSight: true,
+            hasMemory: false,
+            hasKnownPosition: true,
+            knownPosition: character.transform.position,
+            memoryAgeSeconds: 0f,
+            recognizesOwner: false,
+            hp: character.Health.HP,
+            maxHp: character.Health.MaxHP,
+            canAct: character.Health.CanAct,
+            weaponKind: character.EquippedWeapon != null ? character.EquippedWeapon.Kind : WeaponKind.Unarmed,
+            weaponRange: character.EquippedWeapon != null ? character.EquippedWeapon.Range : WeaponBase.Unarmed.Range,
+            statusEffects: character.StatusEffects != null
+                ? character.StatusEffects.GetActiveEffectSnapshots()
+                : Array.Empty<CombatStatusEffectSnapshot>(),
+            hasObjective: false,
+            objective: default);
+    }
+
+    public int GetAllyPendingDamage(Character target)
+    {
+        return SumDamage(AllyPendingDamage, target);
+    }
+
+    public int GetEnemyPendingDamage(Character target)
+    {
+        return SumDamage(EnemyPendingDamage, target);
+    }
+
+    public int GetAllyPendingHealing(Character target)
+    {
+        int healing = 0;
+        for (int i = 0; i < AllyPendingHealing.Count; i++)
+        {
+            if (AllyPendingHealing[i].Target == target) healing += AllyPendingHealing[i].Healing;
+        }
+
+        return healing;
+    }
+
+    private static CombatCharacterIntel FindIntel(
+        IReadOnlyList<CombatCharacterIntel> characters,
+        Character target)
+    {
+        for (int i = 0; i < characters.Count; i++)
+        {
+            if (characters[i].Character == target) return characters[i];
+        }
+
+        return default;
+    }
+
+    private static int SumDamage(IReadOnlyList<CombatAiPendingDamage> pendingDamage, Character target)
+    {
+        int damage = 0;
+        for (int i = 0; i < pendingDamage.Count; i++)
+        {
+            if (pendingDamage[i].Target == target) damage += pendingDamage[i].Damage;
+        }
+
+        return damage;
+    }
+
+    private static IReadOnlyList<T> Snapshot<T>(IReadOnlyList<T> source)
+    {
+        if (source == null || source.Count == 0) return Array.Empty<T>();
+
+        var snapshot = new T[source.Count];
+        for (int i = 0; i < source.Count; i++) snapshot[i] = source[i];
+        return snapshot;
     }
 }
 

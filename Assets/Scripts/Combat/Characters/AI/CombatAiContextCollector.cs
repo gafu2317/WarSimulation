@@ -21,11 +21,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     private readonly List<CombatAiPendingHealing> _allyPendingHealing = new();
     private readonly List<CombatAiPendingHealing> _enemyPendingHealing = new();
 
-    public CombatAiContext Collect()
-    {
-        return Collect(GetComponent<Character>());
-    }
-
     public CombatAiContext Collect(Character owner)
     {
         return Collect(owner, null, false, false, default);
@@ -345,10 +340,9 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         _assaultRoutes.Clear();
         if (owner == null || mapSystem == null) return;
 
-        CombatAssaultRouteCache.EnsureBuilt(mapSystem);
         IReadOnlyList<CombatAiAssaultRoute> cached = CombatAssaultRouteCache.GetRoutes(
             owner.Team,
-            mapSystem.IsStonePositionReversed);
+            mapSystem);
         for (int i = 0; i < cached.Count; i++)
         {
             _assaultRoutes.Add(cached[i]);

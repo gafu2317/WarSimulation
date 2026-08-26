@@ -91,7 +91,7 @@ public static class CombatAiFocusTargeting
     {
         if (context == null || focusEnemy == null) return false;
 
-        CombatCharacterIntel intel = FindEnemyIntel(context, focusEnemy);
+        CombatCharacterIntel intel = context.FindEnemyIntel(focusEnemy);
         return intel.Character != null &&
             intel.HasKnownPosition &&
             intel.HP > 0;
@@ -113,16 +113,4 @@ public static class CombatAiFocusTargeting
             IsValid(context, focusEnemy);
     }
 
-    private static CombatCharacterIntel FindEnemyIntel(CombatAiContext context, Character character)
-    {
-        for (int i = 0; i < context.EnemyIntel.Count; i++)
-        {
-            if (context.EnemyIntel[i].Character == character)
-            {
-                return context.EnemyIntel[i];
-            }
-        }
-
-        return default;
-    }
 }

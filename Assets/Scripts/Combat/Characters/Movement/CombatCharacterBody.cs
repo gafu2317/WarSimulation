@@ -20,6 +20,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
     private NavMeshAgent _agent;
     private float _baseSpeed;
+    private float _movementSpeedMultiplier = 1f;
     private bool _hasVisiblePath;
 
     public bool IsMoving =>
@@ -36,7 +37,17 @@ public sealed class CombatCharacterBody : MonoBehaviour
         set
         {
             _baseSpeed = Mathf.Max(0f, value);
-            if (_agent != null) _agent.speed = _baseSpeed;
+            if (_agent != null) _agent.speed = GetConfiguredBaseSpeed();
+        }
+    }
+
+    public float MovementSpeedMultiplier
+    {
+        get => _movementSpeedMultiplier;
+        set
+        {
+            _movementSpeedMultiplier = Mathf.Max(0f, value);
+            if (_agent != null) _agent.speed = GetConfiguredBaseSpeed();
         }
     }
 
@@ -129,7 +140,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
         _agent.isStopped = true;
         _agent.ResetPath();
-        _agent.speed = _baseSpeed;
+        _agent.speed = GetConfiguredBaseSpeed();
         ClearRoute();
     }
 
@@ -157,13 +168,18 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
         if (!_agent.isOnNavMesh || !_agent.hasPath)
         {
-            _agent.speed = _baseSpeed;
+            _agent.speed = GetConfiguredBaseSpeed();
             return;
         }
 
         float terrainMultiplier = GetTerrainSpeedMultiplier();
         float windMultiplier = GetWindSpeedMultiplier();
-        _agent.speed = _baseSpeed * terrainMultiplier * windMultiplier;
+        _agent.speed = GetConfiguredBaseSpeed() * terrainMultiplier * windMultiplier;
+    }
+
+    private float GetConfiguredBaseSpeed()
+    {
+        return _baseSpeed * _movementSpeedMultiplier;
     }
 
     private void SetRoute(Vector3[] corners)

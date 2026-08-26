@@ -91,7 +91,6 @@ public sealed class CombatMapSelectionView : MonoBehaviour
         _stonePositionsReversed = reversed;
         _failureMessage = null;
         Refresh();
-        SelectionChanged?.Invoke();
     }
 
     public void SetInteractionEnabled(bool enabled)
@@ -99,7 +98,6 @@ public sealed class CombatMapSelectionView : MonoBehaviour
         if (_interactionEnabled == enabled) return;
         _interactionEnabled = enabled;
         RefreshInteraction();
-        SelectionChanged?.Invoke();
     }
 
     public void ShowFailure(string message)

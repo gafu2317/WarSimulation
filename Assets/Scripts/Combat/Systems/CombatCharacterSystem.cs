@@ -205,17 +205,6 @@ public class CombatCharacterSystem : MonoBehaviour
         return preparedCount;
     }
 
-    public void SnapAllCharactersToNavMesh(float searchRadius = 10f)
-    {
-        if (TryRelocateCharactersNearMainStones())
-        {
-            return;
-        }
-
-        SnapListToNavMesh(AllyCharacters, searchRadius);
-        SnapListToNavMesh(EnemyCharacters, searchRadius);
-    }
-
     public bool TryRelocateCharactersNearMainStones()
     {
         using var _ = InitialPlacementMarker.Auto();
@@ -223,68 +212,152 @@ public class CombatCharacterSystem : MonoBehaviour
         MapData map = mapSystem != null ? mapSystem.CurrentMap : null;
         if (map == null) return false;
 
-        bool movedAllies = TryRelocateTeamNearMainStone(AllyCharacters, CombatTeam.Ally, mapSystem);
-        bool movedEnemies = TryRelocateTeamNearMainStone(EnemyCharacters, CombatTeam.Enemy, mapSystem);
-        return movedAllies && movedEnemies;
-    }
-
-    public bool TryRelocateCharactersToTeamQuarterFlats()
-    {
-        return TryRelocateCharactersNearMainStones();
-    }
-
-    private static void SnapListToNavMesh(List<Character> characters, float radius)
-    {
-        foreach (Character character in characters)
+        var allyDestinations = new List<Vector3>(AllyCharacters.Count);
+        var enemyDestinations = new List<Vector3>(EnemyCharacters.Count);
+        if (!TryBuildTeamSpawnPositions(
+                AllyCharacters,
+                CombatTeam.Ally,
+                map,
+                mapSystem,
+                allyDestinations) ||
+            !TryBuildTeamSpawnPositions(
+                EnemyCharacters,
+                CombatTeam.Enemy,
+                map,
+                mapSystem,
+                enemyDestinations))
         {
-            if (character == null) continue;
-            if (NavMesh.SamplePosition(character.transform.position, out NavMeshHit hit, radius, NavMesh.AllAreas))
-                PlaceCharacter(character, hit.position);
+            return false;
         }
+
+        PlaceTeam(AllyCharacters, allyDestinations);
+        PlaceTeam(EnemyCharacters, enemyDestinations);
+        return true;
     }
 
-    private bool TryRelocateTeamNearMainStone(
+    private bool TryBuildTeamSpawnPositions(
         List<Character> characters,
         CombatTeam team,
-        CombatMapSystem mapSystem)
+        MapData map,
+        CombatMapSystem mapSystem,
+        List<Vector3> destinations)
     {
         if (characters == null || characters.Count == 0) return true;
-        if (!mapSystem.TryGetInitialSpawnPositions(team, out IReadOnlyList<Vector3> candidates)) return false;
 
-        var placed = new List<Vector3>(characters.Count);
+        int requiredCount = 0;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            if (characters[i] != null) requiredCount++;
+        }
+
+        if (requiredCount == 0) return true;
+        if (!mapSystem.TryGetMainStonePosition(team, out Vector3 stoneWorldPosition)) return false;
+        Transform origin = mapSystem.MapOrigin;
+        Vector3 stoneLocalPosition = origin != null
+            ? origin.InverseTransformPoint(stoneWorldPosition)
+            : stoneWorldPosition;
+        IReadOnlyList<Vector3> candidates = InitialSpawnPositionBaker.Build(
+            map,
+            stoneLocalPosition,
+            requireFlatTerrain: false);
+        if (candidates.Count < requiredCount) return false;
+
+        int candidateIndex = 0;
+        float spacingSqr = InitialSpawnPositionBaker.CharacterSpacingDistance *
+            InitialSpawnPositionBaker.CharacterSpacingDistance;
         for (int i = 0; i < characters.Count; i++)
         {
             Character character = characters[i];
             if (character == null) continue;
 
-            if (placed.Count >= candidates.Count) return false;
-            Vector3 destination = candidates[placed.Count];
-            if (Application.isPlaying)
+            bool placed = false;
+            while (candidateIndex < candidates.Count)
             {
-                float validationRadius = mapSystem.CurrentMap.GroundStates.CellSize;
-                if (!NavMesh.SamplePosition(
-                        destination,
-                        out NavMeshHit hit,
-                        validationRadius,
-                        NavMesh.AllAreas))
-                    return false;
-                destination = hit.position;
+                Vector3 localDestination = candidates[candidateIndex++];
+                Vector3 destination = mapSystem.MapLocalToSurfaceWorldPosition(localDestination);
+                if (Application.isPlaying)
+                {
+                    NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
+                    int areaMask = agent != null ? agent.areaMask : NavMesh.AllAreas;
+                    if (!NavMesh.SamplePosition(
+                            destination,
+                            out NavMeshHit hit,
+                            InitialSpawnPositionBaker.CharacterSpacingDistance,
+                            areaMask))
+                        continue;
+                    destination = hit.position;
+                }
+
+                bool hasSpace = true;
+                for (int p = 0; p < destinations.Count; p++)
+                {
+                    if (HorizontalDistanceSqr(destination, destinations[p]) < spacingSqr)
+                    {
+                        hasSpace = false;
+                        break;
+                    }
+                }
+
+                if (!hasSpace) continue;
+                destinations.Add(destination);
+                placed = true;
+                break;
             }
-            PlaceCharacter(character, destination);
-            placed.Add(destination);
+
+            if (!placed) return false;
         }
 
-        return placed.Count > 0;
+        return destinations.Count == requiredCount;
+    }
+
+    private static void PlaceTeam(List<Character> characters, List<Vector3> destinations)
+    {
+        if (characters == null) return;
+
+        int destinationIndex = 0;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character == null) continue;
+            PlaceCharacterAtSurface(character, destinations[destinationIndex++]);
+        }
+    }
+
+    private static float HorizontalDistanceSqr(Vector3 a, Vector3 b)
+    {
+        float dx = a.x - b.x;
+        float dz = a.z - b.z;
+        return dx * dx + dz * dz;
     }
 
     private static void PlaceCharacter(Character character, Vector3 worldPosition)
     {
         character.GetComponent<CombatCharacterBody>()?.Stop();
         NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
-        if (agent != null && agent.isOnNavMesh)
-            agent.Warp(worldPosition);
-        else
+        if (agent == null)
+        {
             character.transform.position = worldPosition;
+            return;
+        }
+
+        bool wasEnabled = agent.enabled;
+        agent.enabled = false;
+        character.transform.position = worldPosition;
+        if (!wasEnabled) return;
+
+        agent.enabled = true;
+        if (agent.isOnNavMesh)
+        {
+            agent.Warp(worldPosition);
+            agent.nextPosition = worldPosition;
+        }
+    }
+
+    private static void PlaceCharacterAtSurface(Character character, Vector3 surfacePosition)
+    {
+        NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
+        float baseOffset = agent != null ? agent.baseOffset : 0f;
+        PlaceCharacter(character, surfacePosition + Vector3.up * baseOffset);
     }
 
     private void CaptureCurrentPositions(List<Character> characters)
@@ -406,7 +479,6 @@ public class CombatCharacterSystem : MonoBehaviour
         root.SetActive(false);
         GenerateTeamCandidates(root.transform, CombatTeam.Ally, AllyCharacters);
         GenerateTeamCandidates(root.transform, CombatTeam.Enemy, EnemyCharacters);
-        TryRelocateCharactersNearMainStones();
         root.SetActive(true);
     }
 
@@ -575,27 +647,8 @@ public class CombatCharacterSystem : MonoBehaviour
     private bool TryGetMainStonePositionForTeam(CombatTeam team, out Vector3 position)
     {
         position = default;
-
         CombatMapSystem mapSystem = ResolveMapSystem();
-        MapData map = mapSystem != null ? mapSystem.CurrentMap : null;
-        if (map == null) return false;
-
-        FeatureType targetType = team == CombatTeam.Ally
-            ? FeatureType.OwnMainStone
-            : FeatureType.EnemyMainStone;
-
-        List<PlacedFeature> features = map.Features;
-        for (int i = 0; i < features.Count; i++)
-        {
-            PlacedFeature feature = features[i];
-            if (feature.Type != targetType) continue;
-
-            Transform origin = mapSystem.MapOrigin;
-            position = origin != null ? origin.TransformPoint(feature.WorldPosition) : feature.WorldPosition;
-            return true;
-        }
-
-        return false;
+        return mapSystem != null && mapSystem.TryGetMainStonePosition(team, out position);
     }
 
     private CombatMapSystem ResolveMapSystem()
@@ -623,7 +676,10 @@ public class CombatCharacterSystem : MonoBehaviour
             CombatParticipantSetup setup = setups[i];
             if (setup?.Character == null || characters.Contains(setup.Character)) continue;
 
-            setup.Character.ConfigureForBattle(setup.Weapon, setup.Personality);
+            setup.Character.ConfigureForBattle(
+                setup.Weapon,
+                setup.Personality,
+                setup.MovementSpeedMultiplier);
             characters.Add(setup.Character);
         }
 

@@ -360,6 +360,16 @@ public class CombatMapSystem : MonoBehaviour
         return transformed.Length > 0;
     }
 
+    public bool TryGetMainStonePosition(CombatTeam team, out Vector3 worldPosition)
+    {
+        worldPosition = default;
+        if (!TryGetMainStoneLocalPosition(team, out Vector3 localPosition)) return false;
+
+        Transform origin = MapOrigin;
+        worldPosition = origin != null ? origin.TransformPoint(localPosition) : localPosition;
+        return true;
+    }
+
     private bool TryPrepareMap(AuthoredMapDefinition definition, out MapData map)
     {
         using var _ = PrepareMapMarker.Auto();
@@ -539,13 +549,28 @@ public class CombatMapSystem : MonoBehaviour
             }
         }
 
-        if (ownMainIndices.Count != enemyMainIndices.Count)
-        {
-            return false;
-        }
-
+        if (ownMainIndices.Count != enemyMainIndices.Count) return false;
         SwapFeaturePositions(map.Features, ownMainIndices, enemyMainIndices);
         return true;
+    }
+
+    private bool TryGetMainStoneLocalPosition(CombatTeam team, out Vector3 position)
+    {
+        position = default;
+        if (CurrentMap == null) return false;
+
+        FeatureType type = team == CombatTeam.Ally
+            ? FeatureType.OwnMainStone
+            : FeatureType.EnemyMainStone;
+        for (int i = 0; i < CurrentMap.Features.Count; i++)
+        {
+            PlacedFeature feature = CurrentMap.Features[i];
+            if (feature.Type != type) continue;
+            position = feature.WorldPosition;
+            return true;
+        }
+
+        return false;
     }
 
     private static void SwapFeaturePositions(

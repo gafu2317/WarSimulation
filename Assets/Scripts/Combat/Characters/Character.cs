@@ -275,10 +275,13 @@ public class Character : MonoBehaviour
 
     public void ConfigureForBattle(
         WeaponConfig weaponConfig,
-        CombatAiPersonalityProfile personalityProfile)
+        CombatAiPersonalityProfile personalityProfile,
+        float movementSpeedMultiplier = 1f)
     {
         _runtimeWeaponConfig = weaponConfig;
         _runtimePersonalityProfile = personalityProfile;
+        _body ??= GetComponent<CombatCharacterBody>();
+        if (_body != null) _body.MovementSpeedMultiplier = movementSpeedMultiplier;
         ApplyInitialWeaponFromConfig();
     }
 

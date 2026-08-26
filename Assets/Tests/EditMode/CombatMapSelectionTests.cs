@@ -104,7 +104,7 @@ public sealed class CombatMapSelectionTests
 
         CombatMapSelectionView view = featureRoot.GetComponent<CombatMapSelectionView>();
         List<AuthoredMapDefinition> maps = GetPrivateField<List<AuthoredMapDefinition>>(view, "_mapOptions");
-        Assert.That(maps, Has.Count.EqualTo(10));
+        Assert.That(maps, Has.Count.EqualTo(9));
         for (int i = 0; i < maps.Count; i++)
         {
             Assert.That(maps[i], Is.Not.Null);
@@ -184,6 +184,33 @@ public sealed class CombatMapSelectionTests
             Assert.That(markers[0].rectTransform.anchorMin, Is.EqualTo(ownCenters[0] / worldSize));
             view.SetStonePositionsReversed(true);
             Assert.That(markers[0].rectTransform.anchorMin, Is.EqualTo(enemyCenters[0] / worldSize));
+        }
+        finally
+        {
+            Object.DestroyImmediate(instance);
+        }
+    }
+
+    [Test]
+    public void MapSelectionView_PublishesSelectionChangedOnlyWhenTheMapChanges()
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        GameObject instance = Object.Instantiate(prefab);
+        try
+        {
+            CombatMapSelectionView view = instance.GetComponentInChildren<CombatMapSelectionView>(true);
+            List<AuthoredMapDefinition> maps = GetPrivateField<List<AuthoredMapDefinition>>(view, "_mapOptions");
+            view.Initialize(maps[0], false);
+            int notificationCount = 0;
+            view.SelectionChanged += () => notificationCount++;
+
+            view.SetStonePositionsReversed(true);
+            view.SetInteractionEnabled(false);
+            view.SetInteractionEnabled(true);
+
+            Assert.That(notificationCount, Is.Zero);
+            InvokePrivate(view, "SelectNext");
+            Assert.That(notificationCount, Is.EqualTo(1));
         }
         finally
         {

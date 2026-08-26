@@ -414,6 +414,7 @@ public sealed class CombatAiPersonalityBehaviorTests
 
     private sealed class DamageBlastSkill : SkillBase
     {
+        public override SkillId Id => SkillId.Wand_AreaBlast;
         public override string Name => "攻撃";
         public override float MaxRange => 6f;
         public override int EstimateDamage(Character self, SkillExecutionContext context, Character target) => 10;

@@ -16,6 +16,16 @@ namespace WarSimulation.Combat.Map
             if (map == null) throw new ArgumentNullException(nameof(map));
             if (!TryFindAnchor(map.Features, anchorType, out Vector3 anchor)) return Array.Empty<Vector3>();
 
+            return Build(map, anchor);
+        }
+
+        public static Vector3[] Build(
+            MapData map,
+            Vector3 anchor,
+            bool requireFlatTerrain = true)
+        {
+            if (map == null) throw new ArgumentNullException(nameof(map));
+
             GroundStateGrid ground = map.GroundStates;
             HeightMap height = map.Height;
             var candidates = new List<Vector3>();
@@ -24,10 +34,11 @@ namespace WarSimulation.Combat.Map
                 for (int x = 0; x < ground.Width; x++)
                 {
                     if (ground.GetCell(x, z) == GroundState.Water) continue;
-                    if (height.IsCliffFaceCell(x, z)) continue;
+                    if (requireFlatTerrain && height.IsCliffFaceCell(x, z)) continue;
 
                     Vector3 position = GetCellCenter(ground, height, x, z);
-                    if (height.SampleSlopeDeg(position) > FlatCellMaxSlopeDeg) continue;
+                    if (requireFlatTerrain && height.SampleSlopeDeg(position) > FlatCellMaxSlopeDeg)
+                        continue;
                     if (!IsClearOfFeatures(map.Features, position)) continue;
                     candidates.Add(position);
                 }
@@ -35,7 +46,9 @@ namespace WarSimulation.Combat.Map
 
             candidates.Sort((a, b) =>
                 HorizontalDistanceSqr(anchor, a).CompareTo(HorizontalDistanceSqr(anchor, b)));
-            return SelectSpacedPositions(candidates);
+            return requireFlatTerrain
+                ? SelectSpacedPositions(candidates)
+                : candidates.ToArray();
         }
 
         private static Vector3[] SelectSpacedPositions(List<Vector3> candidates)

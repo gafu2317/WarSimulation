@@ -85,10 +85,9 @@ public sealed class CombatStoneAssaultRouteDebugView : CombatDebugBehaviour
             return;
         }
 
-        CombatAssaultRouteCache.EnsureBuilt(mapSystem);
         IReadOnlyList<CombatAiAssaultRoute> routes = CombatAssaultRouteCache.GetRoutes(
             CombatTeam.Ally,
-            stonePositionReversed: false);
+            mapSystem);
         EnsureLines(routes.Count);
         for (int i = 0; i < _lines.Count; i++)
         {

@@ -204,9 +204,18 @@ public sealed class CombatMapSystemTests
             Assert.That(system.TrySetStonePositionsReversed(true), Is.True);
             Assert.That(notificationCount, Is.EqualTo(1));
 
+            map.Features[0] = new PlacedFeature(
+                FeatureType.OwnMainStone,
+                new Vector3(5f, 0f, 5f),
+                ownMainRotation,
+                ownMainScale);
+            Assert.That(system.TrySetStonePositionsReversed(true), Is.True);
+            Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
+            Assert.That(notificationCount, Is.EqualTo(2));
+
             Assert.That(system.TrySetStonePositionsReversed(false), Is.True);
             Assert.That(system.IsStonePositionReversed, Is.False);
-            Assert.That(notificationCount, Is.EqualTo(2));
+            Assert.That(notificationCount, Is.EqualTo(3));
             Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(1f, 0f, 1f)));
             Assert.That(map.Features[1].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
         }
@@ -264,6 +273,53 @@ public sealed class CombatMapSystemTests
     }
 
     [Test]
+    public void InitialSpawnPositions_FollowCurrentTeamStonePosition()
+    {
+        GameObject systemObject = new GameObject("CombatMapSystem");
+        GameObject hostObject = null;
+        AuthoredMapDefinition definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
+        BakedMapData bakedMap = ScriptableObject.CreateInstance<BakedMapData>();
+        try
+        {
+            MapData map = CreateMapWithPairedStones();
+            definition.SharedConfig = config;
+            int fingerprint = definition.ComputeBakeFingerprint();
+            bakedMap.Capture(map, fingerprint);
+            definition.SetBakedMapData(bakedMap);
+
+            CombatMapSystem system = systemObject.AddComponent<CombatMapSystem>();
+            hostObject = CreateRenderedStoneHost(map);
+            SetPrivateField(system, "_mapSceneHost", hostObject.GetComponent<MapSceneHost>());
+            SetPrivateField(system, "_authoredMap", definition);
+            system.SetCurrentMap(map);
+
+            Assert.That(
+                system.TryGetInitialSpawnPositions(CombatTeam.Ally, out IReadOnlyList<Vector3> normal),
+                Is.True);
+            Assert.That(
+                HorizontalDistanceSqr(normal[0], new Vector3(1f, 0f, 1f)),
+                Is.LessThan(HorizontalDistanceSqr(normal[0], new Vector3(9f, 0f, 9f))));
+
+            Assert.That(system.TrySetStonePositionsReversed(true), Is.True);
+            Assert.That(
+                system.TryGetInitialSpawnPositions(CombatTeam.Ally, out IReadOnlyList<Vector3> reversed),
+                Is.True);
+            Assert.That(
+                HorizontalDistanceSqr(reversed[0], new Vector3(9f, 0f, 9f)),
+                Is.LessThan(HorizontalDistanceSqr(reversed[0], new Vector3(1f, 0f, 1f))));
+        }
+        finally
+        {
+            Object.DestroyImmediate(hostObject);
+            Object.DestroyImmediate(systemObject);
+            Object.DestroyImmediate(bakedMap);
+            Object.DestroyImmediate(config);
+            Object.DestroyImmediate(definition);
+        }
+    }
+
+    [Test]
     public void SetCurrentMap_NotifiesAfterAssigningChangedMapOnly()
     {
         GameObject go = new GameObject("CombatMapSystem");
@@ -295,35 +351,43 @@ public sealed class CombatMapSystemTests
     }
 
     [Test]
-    public void AssaultRoutes_ReverseTeamAssignmentWithoutChangingBakedRoutes()
+    public void AssaultRoutes_FollowCurrentTeamStonePositions()
     {
+        GameObject systemObject = new GameObject("CombatMapSystem");
         MapData map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), 1);
         try
         {
+            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, Vector3.zero));
+            map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, Vector3.one));
             map.AddAssaultRoute(new AssaultRoute(
                 "route-main",
                 "Main",
                 new[] { Vector3.zero, Vector3.right, Vector3.one }));
+            CombatMapSystem system = systemObject.AddComponent<CombatMapSystem>();
+            system.SetCurrentMap(map);
             CombatAssaultRouteCache.Invalidate();
 
-            Assert.That(CombatAssaultRouteCache.TryHydrate(map, null), Is.True);
-            IReadOnlyList<CombatAiAssaultRoute> normalAlly =
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: false);
-            IReadOnlyList<CombatAiAssaultRoute> reversedAlly =
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: true);
-
-            Assert.That(normalAlly[0].Corners[0], Is.EqualTo(Vector3.zero));
-            Assert.That(reversedAlly[0].Corners[0], Is.EqualTo(Vector3.one));
             Assert.That(
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, stonePositionReversed: false)[0].Corners[0],
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, system)[0].Corners[0],
+                Is.EqualTo(Vector3.zero));
+            Assert.That(
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, system)[0].Corners[0],
+                Is.EqualTo(Vector3.one));
+
+            map.Features[0] = new PlacedFeature(FeatureType.OwnMainStone, Vector3.one);
+            map.Features[1] = new PlacedFeature(FeatureType.EnemyMainStone, Vector3.zero);
+
+            Assert.That(
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, system)[0].Corners[0],
                 Is.EqualTo(Vector3.one));
             Assert.That(
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, stonePositionReversed: true)[0].Corners[0],
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Enemy, system)[0].Corners[0],
                 Is.EqualTo(Vector3.zero));
         }
         finally
         {
             CombatAssaultRouteCache.Invalidate();
+            Object.DestroyImmediate(systemObject);
         }
     }
 
@@ -378,7 +442,7 @@ public sealed class CombatMapSystemTests
             Assert.That(loaded.AssaultRoutes.Count, Is.EqualTo(1));
             Assert.That(loaded.AssaultRoutes[0].Corners, Is.EqualTo(bakedRoute.Corners));
             Assert.That(
-                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, stonePositionReversed: false).Count,
+                CombatAssaultRouteCache.GetRoutes(CombatTeam.Ally, system).Count,
                 Is.EqualTo(1));
 
             Transform generatedTerrain = host.transform.Find("GeneratedTerrain");
@@ -469,6 +533,13 @@ public sealed class CombatMapSystemTests
         map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(1f, 0f, 1f)));
         map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(9f, 0f, 9f)));
         return map;
+    }
+
+    private static float HorizontalDistanceSqr(Vector3 first, Vector3 second)
+    {
+        float x = first.x - second.x;
+        float z = first.z - second.z;
+        return x * x + z * z;
     }
 
     private static GameObject CreateRenderedStoneHost(MapData map)

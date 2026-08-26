@@ -2,68 +2,78 @@ public static class CombatAiSkillClassifier
 {
     public static bool IsBasicAttack(SkillBase skill)
     {
-        return skill != null && skill.Name == "通常攻撃";
+        return skill != null && skill.Id is
+            SkillId.Grimoire_Bolt or
+            SkillId.Bible_Smite or
+            SkillId.Rosary_Strike;
     }
 
     public static bool IsDamage(SkillBase skill)
     {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return IsBasicAttack(skill)
-            || code.Contains("Bolt")
-            || code.Contains("Blast")
-            || code.Contains("Slash")
-            || code.Contains("Smite")
-            || code.Contains("Strike")
-            || code.Contains("Thunder");
+        return skill != null && skill.Id is
+            SkillId.Sword_Slash or
+            SkillId.Shield_Slash or
+            SkillId.Wand_Bolt or
+            SkillId.Wand_ArcaneBlast or
+            SkillId.Wand_AreaBlast or
+            SkillId.Wand_GodsHand or
+            SkillId.Grimoire_Bolt or
+            SkillId.Bible_Smite or
+            SkillId.Rosary_Strike or
+            SkillId.Rosary_SacrificeThunder;
     }
 
     public static bool IsBuff(SkillBase skill)
     {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Buff") || code.Contains("Invulnerable") || code.Contains("Gotsume");
+        return skill != null && skill.Id is
+            SkillId.Bible_StrBuff or
+            SkillId.Bible_FaiBuff or
+            SkillId.Bible_IntBuff or
+            SkillId.Bible_AgiBuff or
+            SkillId.Bible_Invulnerable or
+            SkillId.Bible_Gotsume;
     }
 
     public static bool IsDebuff(SkillBase skill)
     {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Debuff") || code.Contains("Poison") || code.Contains("Bind");
+        return skill != null && skill.Id is
+            SkillId.Grimoire_StrDebuff or
+            SkillId.StatDebuff_INT or
+            SkillId.StatDebuff_FAI or
+            SkillId.StatDebuff_AGI or
+            SkillId.Grimoire_Bind or
+            SkillId.Grimoire_Poison;
     }
 
     public static bool IsHeal(SkillBase skill)
     {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Heal") || code.Contains("Regeneration") || code.Contains("HealingArea");
+        return skill != null && skill.Id is
+            SkillId.Rosary_DistantHeal or
+            SkillId.Rosary_CloseHeal or
+            SkillId.Rosary_Regeneration or
+            SkillId.Rosary_HealingArea;
     }
 
     public static bool IsProtect(SkillBase skill)
     {
-        if (skill == null) return false;
-        string code = GetCode(skill);
-        return code.Contains("Invulnerable") || code.Contains("Gotsume") || code.Contains("ShoulderGuard");
+        return skill != null && skill.Id is
+            SkillId.Bible_Invulnerable or
+            SkillId.Bible_Gotsume or
+            SkillId.Shield_ShoulderGuard;
     }
 
     public static bool IsMobility(SkillBase skill)
     {
-        return GetCode(skill).Contains("CarryRush");
+        return skill != null && skill.Id == SkillId.Bible_CarryRush;
     }
 
     public static bool IsStealth(SkillBase skill)
     {
-        return GetCode(skill).Contains("Stealth");
+        return skill != null && skill.Id == SkillId.Grimoire_Stealth;
     }
 
     public static bool IsSupport(SkillBase skill)
     {
         return IsBuff(skill) || IsHeal(skill) || IsProtect(skill);
-    }
-
-    private static string GetCode(SkillBase skill)
-    {
-        if (skill == null) return string.Empty;
-        return skill is IdentifiedSkill identified ? identified.SkillId.ToString() : skill.GetType().Name;
     }
 }

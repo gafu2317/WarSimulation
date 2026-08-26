@@ -28,20 +28,16 @@ public static class CombatAiAssessmentBuilder
 
     private static float EvaluateWinProximity(CombatAiContext context)
     {
-        float value;
-        value = context.HasEnemyStoneHealth && context.EnemyStoneMaxHP > 0
+        return context.HasEnemyStoneHealth && context.EnemyStoneMaxHP > 0
             ? ClampMetric((1f - context.EnemyStoneHP / (float)context.EnemyStoneMaxHP) * MaxMetricValue)
             : 0f;
-        return value;
     }
 
     private static float EvaluateOwnStoneThreat(CombatAiContext context)
     {
-        float value;
         if (!context.HasOwnStonePosition)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float score = 0f;
@@ -60,18 +56,15 @@ public static class CombatAiAssessmentBuilder
             }
 
         }
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateSelfThreat(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null || owner.Health == null || owner.Health.MaxHP <= 0)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float hpRatio = (float)owner.Health.HP / owner.Health.MaxHP;
@@ -94,7 +87,7 @@ public static class CombatAiAssessmentBuilder
 
         }
 
-        int incomingDamage = GetPendingDamage(context.EnemyPendingDamage, owner);
+        int incomingDamage = context.GetEnemyPendingDamage(owner);
         if (incomingDamage > 0)
         {
             score += Mathf.Clamp(incomingDamage / (float)owner.Health.MaxHP * 60f, 0f, 60f);
@@ -107,13 +100,11 @@ public static class CombatAiAssessmentBuilder
             score += Mathf.Min(36f, (nearbyEnemies - nearbyAllies) * 12f);
         }
 
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateAllyFragility(CombatAiContext context)
     {
-        float value;
         float score = 0f;
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
@@ -122,7 +113,7 @@ public static class CombatAiAssessmentBuilder
 
             int projectedHP = Mathf.Min(
                 ally.MaxHP,
-                ally.HP + GetPendingHealing(context.AllyPendingHealing, ally.Character));
+                ally.HP + context.GetAllyPendingHealing(ally.Character));
             float hpRatio = projectedHP / (float)ally.MaxHP;
             if (hpRatio <= LowHpThreshold)
             {
@@ -135,23 +126,20 @@ public static class CombatAiAssessmentBuilder
                 score += Mathf.Min(30f, nearbyEnemyCount * 10f);
             }
 
-            int incomingDamage = GetPendingDamage(context.EnemyPendingDamage, ally.Character);
+            int incomingDamage = context.GetEnemyPendingDamage(ally.Character);
 
             score += Mathf.Clamp(incomingDamage / (float)ally.MaxHP * 40f, 0f, 40f);
         }
 
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateReachableEnemyValue(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float best = 0f;
@@ -183,33 +171,27 @@ public static class CombatAiAssessmentBuilder
             best = Mathf.Max(best, score);
         }
 
-        value = ClampMetric(best);
-        return value;
+        return ClampMetric(best);
     }
 
     private static float EvaluateEnemyStoneReachability(CombatAiContext context)
     {
-        float value;
         if (!context.HasEnemyStonePosition || context.Owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float distance = HorizontalDistance(context.Owner.transform.position, context.EnemyStonePosition);
         float score = Mathf.Lerp(70f, 0f, Mathf.Clamp01(distance / 60f));
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateTerrainAdvantage(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float score = 0f;
@@ -232,28 +214,23 @@ public static class CombatAiAssessmentBuilder
             score -= 6f;
         }
 
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateEnemyLocationConfidence(CombatAiContext context)
     {
-        float value;
         int visibleEnemies = CountLivingIntel(context.EnemyIntel, requireDirectSight: true);
         int rememberedEnemies = CountLivingIntel(context.EnemyIntel, requireMemory: true);
         float score = visibleEnemies * 30f + rememberedEnemies * 10f;
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateRetreatRouteSafety(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float score = 0f;
@@ -269,18 +246,15 @@ public static class CombatAiAssessmentBuilder
 
         int nearbyEnemies = CountEnemiesNear(context.EnemyIntel, owner.transform.position, 12f);
         score -= nearbyEnemies * 8f;
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateSelfExposure(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float score = 0f;
@@ -297,18 +271,15 @@ public static class CombatAiAssessmentBuilder
             }
         }
 
-        value = ClampMetric(score);
-        return value;
+        return ClampMetric(score);
     }
 
     private static float EvaluateEnemyThreatLevel(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float highestThreat = 0f;
@@ -337,18 +308,15 @@ public static class CombatAiAssessmentBuilder
         }
 
         float combinedThreat = Mathf.Clamp01(highestThreat + otherThreatTotal * 0.3f);
-        value = combinedThreat * MaxMetricValue;
-        return value;
+        return combinedThreat * MaxMetricValue;
     }
 
     private static float EvaluateKillableTargetValue(CombatAiContext context)
     {
-        float value;
         Character owner = context.Owner;
         if (owner == null)
         {
-            value = 0f;
-            return value;
+            return 0f;
         }
 
         float best = 0f;
@@ -357,7 +325,7 @@ public static class CombatAiAssessmentBuilder
             CombatCharacterIntel enemy = context.EnemyIntel[i];
             if (!enemy.HasKnownPosition || enemy.HP <= 0) continue;
 
-            int predictedHp = enemy.HP - GetAllyPendingDamage(context, enemy.Character);
+            int predictedHp = enemy.HP - context.GetAllyPendingDamage(enemy.Character);
             if (predictedHp <= 0) continue;
 
             float targetValue = Mathf.Lerp(0.45f, 1f, GetRoleThreat(enemy.WeaponKind));
@@ -374,8 +342,7 @@ public static class CombatAiAssessmentBuilder
 
         }
 
-        value = best * MaxMetricValue;
-        return value;
+        return best * MaxMetricValue;
     }
 
     private static float ClampMetric(float value)
@@ -418,11 +385,6 @@ public static class CombatAiAssessmentBuilder
         return 1f;
     }
 
-    private static float GetFinishEase(CombatCharacterIntel enemy)
-    {
-        return GetFinishEase(enemy, enemy.HP);
-    }
-
     private static float GetFinishEase(CombatCharacterIntel enemy, int hp)
     {
         float hpRatio = enemy.MaxHP > 0 ? hp / (float)enemy.MaxHP : 1f;
@@ -430,48 +392,6 @@ public static class CombatAiAssessmentBuilder
         if (hpRatio <= 0.5f) return 0.7f;
         if (hpRatio <= 0.7f) return 0.35f;
         return 0.1f;
-    }
-
-    private static int GetAllyPendingDamage(CombatAiContext context, Character target)
-    {
-        int damage = 0;
-        for (int i = 0; i < context.AllyPendingDamage.Count; i++)
-        {
-            if (context.AllyPendingDamage[i].Target == target)
-            {
-                damage += context.AllyPendingDamage[i].Damage;
-            }
-        }
-
-        return damage;
-    }
-
-    private static int GetPendingDamage(IReadOnlyList<CombatAiPendingDamage> pendingDamage, Character target)
-    {
-        int damage = 0;
-        for (int i = 0; i < pendingDamage.Count; i++)
-        {
-            if (pendingDamage[i].Target == target)
-            {
-                damage += pendingDamage[i].Damage;
-            }
-        }
-
-        return damage;
-    }
-
-    private static int GetPendingHealing(IReadOnlyList<CombatAiPendingHealing> pendingHealing, Character target)
-    {
-        int healing = 0;
-        for (int i = 0; i < pendingHealing.Count; i++)
-        {
-            if (pendingHealing[i].Target == target)
-            {
-                healing += pendingHealing[i].Healing;
-            }
-        }
-
-        return healing;
     }
 
     private static int CountActiveCharactersNear(
@@ -503,20 +423,6 @@ public static class CombatAiAssessmentBuilder
         if (distance <= ownerRange + 6f) return 0.6f;
         if (distance <= 16f) return 0.2f;
         return 0f;
-    }
-
-    private static bool HasEnemyNearby(IReadOnlyList<CombatCharacterIntel> enemies, Vector3 position, float radius)
-    {
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            if (!enemies[i].IsAlive || !enemies[i].HasKnownPosition) continue;
-            if (HorizontalDistance(position, enemies[i].KnownPosition) <= radius)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static int CountKnownEnemiesNear(

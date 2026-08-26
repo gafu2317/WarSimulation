@@ -27,10 +27,19 @@ public static class CombatAssaultRouteCache
 
     public static IReadOnlyList<CombatAiAssaultRoute> GetRoutes(
         CombatTeam team,
-        bool stonePositionReversed)
+        CombatMapSystem mapSystem)
     {
+        EnsureBuilt(mapSystem);
         bool reverse = team == CombatTeam.Enemy;
-        if (stonePositionReversed) reverse = !reverse;
+        CombatTeam enemyTeam = team == CombatTeam.Ally ? CombatTeam.Enemy : CombatTeam.Ally;
+        if (mapSystem != null &&
+            mapSystem.TryGetMainStonePosition(team, out Vector3 ownStone) &&
+            mapSystem.TryGetMainStonePosition(enemyTeam, out Vector3 enemyStone) &&
+            TryResolveDirection(ownStone, enemyStone, out bool resolvedReverse))
+        {
+            reverse = resolvedReverse;
+        }
+
         return reverse ? ReverseRoutes : ForwardRoutes;
     }
 
@@ -93,6 +102,37 @@ public static class CombatAssaultRouteCache
         }
 
         _buildCompleted = true;
+    }
+
+    private static bool TryResolveDirection(
+        Vector3 ownStone,
+        Vector3 enemyStone,
+        out bool reverse)
+    {
+        reverse = false;
+        for (int i = 0; i < ForwardRoutes.Count; i++)
+        {
+            IReadOnlyList<Vector3> corners = ForwardRoutes[i].Corners;
+            if (corners.Count == 0) continue;
+
+            Vector3 start = corners[0];
+            Vector3 end = corners[corners.Count - 1];
+            float forwardDistance = HorizontalDistanceSqr(start, ownStone) +
+                HorizontalDistanceSqr(end, enemyStone);
+            float reverseDistance = HorizontalDistanceSqr(end, ownStone) +
+                HorizontalDistanceSqr(start, enemyStone);
+            reverse = reverseDistance < forwardDistance;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static float HorizontalDistanceSqr(Vector3 first, Vector3 second)
+    {
+        float x = first.x - second.x;
+        float z = first.z - second.z;
+        return x * x + z * z;
     }
 
     private static Vector3 ToWorld(Transform origin, Vector3 local) =>

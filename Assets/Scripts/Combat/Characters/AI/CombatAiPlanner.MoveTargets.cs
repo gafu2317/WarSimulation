@@ -400,7 +400,7 @@ public static partial class CombatAiPlanner
             return CombatMoveTarget.None;
         }
 
-        CombatCharacterIntel allyIntel = FindAllyIntel(context, ally);
+        CombatCharacterIntel allyIntel = context.FindAllyIntel(ally);
         if (allyIntel.Character == null || allyIntel.MaxHP <= 0)
         {
             return CombatMoveTarget.ForCharacter(ally);
@@ -747,10 +747,10 @@ public static partial class CombatAiPlanner
 
     private static float ScoreEnemyTarget(CombatAiContext context, Character enemyCharacter)
     {
-        CombatCharacterIntel enemy = FindEnemyIntel(context, enemyCharacter);
+        CombatCharacterIntel enemy = context.FindEnemyIntel(enemyCharacter);
         if (enemy.Character == null || !enemy.IsAlive || !enemy.HasKnownPosition) return float.NegativeInfinity;
 
-        int predictedHp = enemy.HP - GetAllyPendingDamage(context, enemyCharacter);
+        int predictedHp = enemy.HP - context.GetAllyPendingDamage(enemyCharacter);
         if (predictedHp <= 0) return float.NegativeInfinity;
         float hpRatio = enemy.MaxHP > 0 ? predictedHp / (float)enemy.MaxHP : 1f;
         return (1f - hpRatio) * 60f + (enemy.HasDirectSight ? 25f : enemy.HasMemory ? 10f : 0f);
@@ -766,7 +766,7 @@ public static partial class CombatAiPlanner
             if (ally.Character == null || !ally.IsAlive) continue;
             int projectedHP = Mathf.Min(
                 ally.MaxHP,
-                ally.HP + GetAllyPendingHealing(context, ally.Character));
+                ally.HP + context.GetAllyPendingHealing(ally.Character));
             float hpRatio = ally.MaxHP > 0 ? projectedHP / (float)ally.MaxHP : 1f;
             float score = (1f - hpRatio) * 60f
                 + (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f) ? 20f : 0f)

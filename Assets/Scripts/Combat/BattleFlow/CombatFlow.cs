@@ -146,7 +146,7 @@ public sealed class CombatFlow : MonoBehaviour
             ShowStartFailure("魔石位置の反転を適用できませんでした");
             return;
         }
-        ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
+        ApplyCombatCamera();
 
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
         _battleResultRecorder?.Begin(
@@ -229,7 +229,7 @@ public sealed class CombatFlow : MonoBehaviour
         bool reversed = _characterSelection != null && _characterSelection.IsStonePositionReversed;
         if (TryApplySelectionStonePositionReversed(reversed))
         {
-            ApplyCombatCamera(reversed);
+            ApplyCombatCamera();
         }
         RefreshStartAvailability();
         SetVisible(_characterSelectionPanel, true);
@@ -243,13 +243,15 @@ public sealed class CombatFlow : MonoBehaviour
         _mapSelectionView.SetStonePositionsReversed(reversed);
         if (TryApplySelectionStonePositionReversed(reversed))
         {
-            ApplyCombatCamera(reversed);
+            ApplyCombatCamera();
         }
         RefreshStartAvailability();
     }
 
     private void OnMapSelectionChanged()
     {
+        _characterSelection.SetStonePositionReversedState(false);
+        _mapSelectionView.SetStonePositionsReversed(false);
         BeginMapPreparation();
     }
 
@@ -293,9 +295,8 @@ public sealed class CombatFlow : MonoBehaviour
         _mapSelectionView.ClearPreparation();
         if (!_mapSystem.IsMapReady(selected))
             _mapSelectionView.ShowFailure(MapFailureMessage(_mapSystem.PreparationFailure));
-        else if (_characterSelection != null &&
-                 _mapSystem.TrySetStonePositionsReversed(_characterSelection.IsStonePositionReversed))
-            ApplyCombatCamera(_characterSelection.IsStonePositionReversed);
+        else if (_mapSystem.TrySetStonePositionsReversed(false))
+            ApplyCombatCamera();
         RefreshStartAvailability();
     }
 
@@ -321,15 +322,29 @@ public sealed class CombatFlow : MonoBehaviour
         _ => "戦闘マップを適用できませんでした",
     };
 
-    private void ApplyCombatCamera(bool reversed)
+    private void ApplyCombatCamera()
     {
         Camera camera = Camera.main;
-        if (camera == null) return;
+        if (camera == null || _mapSystem == null ||
+            !_mapSystem.TryGetMainStonePosition(CombatTeam.Ally, out Vector3 allyStone) ||
+            !_mapSystem.TryGetMainStonePosition(CombatTeam.Enemy, out Vector3 enemyStone))
+            return;
 
-        camera.transform.position = reversed ? LowSideCameraPosition : HighSideCameraPosition;
-        camera.transform.rotation = Quaternion.Euler(40f, reversed ? 0f : 180f, 0f);
+        Transform origin = _mapSystem.MapOrigin;
+        if (origin != null)
+        {
+            allyStone = origin.InverseTransformPoint(allyStone);
+            enemyStone = origin.InverseTransformPoint(enemyStone);
+        }
+
+        bool allyOnLowSide = IsAllyOnLowSide(allyStone, enemyStone);
+        camera.transform.position = allyOnLowSide ? LowSideCameraPosition : HighSideCameraPosition;
+        camera.transform.rotation = Quaternion.Euler(40f, allyOnLowSide ? 0f : 180f, 0f);
         camera.GetComponent<EditorStyleCameraController>()?.SyncStateFromTransform();
     }
+
+    private static bool IsAllyOnLowSide(Vector3 allyStone, Vector3 enemyStone) =>
+        allyStone.z < enemyStone.z;
 
     private bool TryApplySelectionStonePositionReversed(bool reversed)
     {

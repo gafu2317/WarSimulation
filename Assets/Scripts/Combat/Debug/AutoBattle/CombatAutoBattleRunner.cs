@@ -483,7 +483,6 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         List<CombatParticipantSetup> allySetups = BuildSetups(allies, _allyPool);
         List<CombatParticipantSetup> enemySetups = BuildSetups(enemies, _enemyPool);
         _characterSystem.SetParticipants(allySetups, enemySetups);
-        _characterSystem.TryRelocateCharactersNearMainStones();
 
         bool ended = false;
         CombatBattleState endState = CombatBattleState.WaitingToStart;

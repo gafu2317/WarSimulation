@@ -263,6 +263,7 @@ internal static partial class CombatEditModeTestUtil
 
     internal sealed class AiPlannerBasicAttackSkill : SkillBase
     {
+        public override SkillId Id => SkillId.Grimoire_Bolt;
         public override string Name => "通常攻撃";
         public override float MaxRange => 3f;
         public override void Execute(Character self, SkillExecutionContext context) { }
@@ -270,6 +271,7 @@ internal static partial class CombatEditModeTestUtil
 
     internal sealed class AiPlannerBoltCooldownSkill : SkillBase
     {
+        public override SkillId Id => SkillId.Wand_Bolt;
         public override string Name => "BoltCooldown";
         public override float CooldownSeconds => 10f;
         public override float MaxRange => 3f;
@@ -278,6 +280,7 @@ internal static partial class CombatEditModeTestUtil
 
     internal sealed class AiPlannerHealSkill : SkillBase
     {
+        public override SkillId Id => SkillId.Rosary_DistantHeal;
         public override string Name => "PlannerHeal";
         public override SkillTargetKind TargetKind => SkillTargetKind.Ally;
         public override float MaxRange => 10f;
@@ -286,6 +289,7 @@ internal static partial class CombatEditModeTestUtil
 
     internal sealed class AiPlannerAreaBlastSkill : SkillBase
     {
+        public override SkillId Id => SkillId.Wand_AreaBlast;
         public override string Name => "PlannerAreaBlast";
         public override SkillTargetKind TargetKind => SkillTargetKind.Area;
         public override float MaxRange => 10f;
@@ -296,6 +300,7 @@ internal static partial class CombatEditModeTestUtil
 
     internal sealed class AiPlannerLongCastBoltSkill : SkillBase
     {
+        public override SkillId Id => SkillId.Wand_Bolt;
         public override string Name => "長詠唱攻撃";
         public override float CastTimeSeconds => 2.5f;
         public override float MaxRange => 30f;

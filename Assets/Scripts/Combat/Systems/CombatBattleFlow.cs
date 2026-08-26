@@ -124,9 +124,12 @@ public sealed class CombatBattleFlow : MonoBehaviour
 
         CancelTransientBattleArtifacts();
         CombatBattleRandom.Initialize(battleSeed ?? map.Seed);
-        _characterSystem?.SnapAllCharactersToNavMesh();
-        _characterSystem?.CaptureCurrentPositionsAsInitialPositions();
         _characterSystem?.ResetCharactersForBattle();
+        if (_characterSystem != null && !_characterSystem.TryRelocateCharactersNearMainStones())
+        {
+            return;
+        }
+        _characterSystem?.CaptureCurrentPositionsAsInitialPositions();
         CombatSkillActionEvents.ResetBattle();
         _magicStoneSystem?.Initialize(map);
         _state = CombatBattleState.Running;

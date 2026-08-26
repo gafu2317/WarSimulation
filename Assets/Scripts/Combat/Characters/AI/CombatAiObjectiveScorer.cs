@@ -11,27 +11,6 @@ public static class CombatAiObjectiveScorer
     private const float CrisisInterruptMargin = 12f;
     private static readonly CombatObjective[] AllObjectives = (CombatObjective[])System.Enum.GetValues(typeof(CombatObjective));
 
-    public static void BuildEntries(
-        CombatAiDebugSnapshot snapshot,
-        CombatAiPersonalityProfile personalityProfile,
-        Character focusEnemy,
-        float focusCommitmentRemainingSeconds,
-        CombatObjective previousObjective,
-        float objectiveCommitmentRemainingSeconds = 0f)
-    {
-        snapshot.ObjectiveEntries.Clear();
-        CombatObjective selected = EvaluateObjectives(
-            snapshot.Context,
-            snapshot.Assessment,
-            personalityProfile,
-            focusEnemy,
-            focusCommitmentRemainingSeconds,
-            previousObjective,
-            objectiveCommitmentRemainingSeconds,
-            snapshot.ObjectiveEntries);
-        snapshot.SelectedObjective = FindEntry(snapshot.ObjectiveEntries, selected);
-    }
-
     public static CombatObjective SelectBestObjective(
         CombatAiContext context,
         CombatAiAssessment assessment,
@@ -39,9 +18,11 @@ public static class CombatAiObjectiveScorer
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective,
-        System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null,
-        float objectiveCommitmentRemainingSeconds = 0f)
+        List<CombatAiReasonCode> selectedReasons = null,
+        float objectiveCommitmentRemainingSeconds = 0f,
+        List<CombatAiObjectiveScoreEntry> entries = null)
     {
+        entries?.Clear();
         return EvaluateObjectives(
             context,
             assessment,
@@ -50,7 +31,7 @@ public static class CombatAiObjectiveScorer
             focusCommitmentRemainingSeconds,
             previousObjective,
             objectiveCommitmentRemainingSeconds,
-            entries: null,
+            entries,
             selectedReasons);
     }
 
@@ -62,8 +43,8 @@ public static class CombatAiObjectiveScorer
         float focusCommitmentRemainingSeconds,
         CombatObjective previousObjective,
         float objectiveCommitmentRemainingSeconds,
-        System.Collections.Generic.List<CombatAiObjectiveScoreEntry> entries,
-        System.Collections.Generic.List<CombatAiReasonCode> selectedReasons = null)
+        List<CombatAiObjectiveScoreEntry> entries,
+        List<CombatAiReasonCode> selectedReasons = null)
     {
         WeaponBase weapon = context.Owner != null ? context.Owner.EquippedWeapon : null;
         CombatObjective best = CombatObjective.Search;
@@ -229,18 +210,6 @@ public static class CombatAiObjectiveScorer
         if (weaponScore != 0f) AddReason(breakdown, CombatAiReasonCode.WeaponPreference);
         if (personalityScore != 0f) AddReason(breakdown, CombatAiReasonCode.PersonalityPreference);
         return breakdown;
-    }
-
-    private static CombatAiObjectiveScoreEntry FindEntry(
-        System.Collections.Generic.List<CombatAiObjectiveScoreEntry> entries,
-        CombatObjective objective)
-    {
-        for (int i = 0; i < entries.Count; i++)
-        {
-            if (entries[i].Objective == objective) return entries[i];
-        }
-
-        return null;
     }
 
     private static bool IsObjectiveSelectable(CombatAiContext context, CombatObjective objective)
