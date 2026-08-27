@@ -15,6 +15,9 @@ public class Character : MonoBehaviour
 {
     private static readonly ProfilerMarker RebuildSkillsMarker =
         new("CombatLoading.RebuildCharacterSkills");
+    private static readonly Color AllyCharacterColor = new(0.3f, 0.7f, 1f, 1f);
+    private static readonly Color EnemyCharacterColor = new(1f, 0.3f, 0.25f, 1f);
+
     [SerializeField] private CombatTeam _team = CombatTeam.Ally;
     [SerializeField] private WeaponConfig _initialWeaponConfig;
     [SerializeField] private CombatAiPersonalityProfile _personalityProfile;
@@ -232,6 +235,20 @@ public class Character : MonoBehaviour
     public void SetTeam(CombatTeam team)
     {
         _team = team;
+        ApplyTeamColor();
+    }
+
+    private void ApplyTeamColor()
+    {
+        Color teamColor = _team == CombatTeam.Enemy
+            ? EnemyCharacterColor
+            : AllyCharacterColor;
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].color = teamColor;
+        }
     }
 
     public void SetBattleParticipantId(int participantId)
