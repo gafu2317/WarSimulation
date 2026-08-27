@@ -162,6 +162,7 @@ public sealed class CombatFlow : MonoBehaviour
 
         SetVisible(_characterSelectionPanel, false);
         SetBattleUiVisible(true);
+        _battleHudView?.SetDebugUiVisible(CombatPlaytestDebugSettings.UseDebugBattleUi);
         SetVisible(_resultPanel, false);
         SetBattleControlsVisible(true);
         SetPauseMenuVisible(false);
@@ -395,8 +396,7 @@ public sealed class CombatFlow : MonoBehaviour
     private static CombatBattleHudView FindKuenBattleHud()
     {
         CombatBattleHudView[] huds = FindObjectsByType<CombatBattleHudView>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
+            FindObjectsInactive.Include);
         for (int i = 0; i < huds.Length; i++)
         {
             CombatBattleHudView hud = huds[i];

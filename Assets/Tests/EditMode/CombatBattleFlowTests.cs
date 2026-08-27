@@ -355,7 +355,7 @@ public sealed class CombatBattleFlowTests
 
             TMP_Text selectionCountText = GetPrivateField<TMP_Text>(selection, "_selectionCountText");
             Assert.That(selectionCountText.text, Is.EqualTo("味方 5/10人 / 敵 5/10人"));
-            Assert.That(selectionCountText.enableWordWrapping, Is.False);
+            Assert.That(selectionCountText.textWrappingMode, Is.EqualTo(TextWrappingModes.NoWrap));
             Assert.That(selectionCountText.overflowMode, Is.EqualTo(TextOverflowModes.Overflow));
             Assert.That(selectionCountText.rectTransform.sizeDelta.x, Is.EqualTo(420f));
 

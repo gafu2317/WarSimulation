@@ -200,7 +200,10 @@ public sealed class CombatBattleResultView : MonoBehaviour
             typeof(RectMask2D));
         RectTransform viewport = viewportObject.GetComponent<RectTransform>();
         viewport.SetParent(scrollRectTransform, false);
-        Stretch(viewport);
+        viewport.anchorMin = Vector2.zero;
+        viewport.anchorMax = Vector2.one;
+        viewport.offsetMin = Vector2.zero;
+        viewport.offsetMax = Vector2.zero;
         Image viewportImage = viewportObject.GetComponent<Image>();
         viewportImage.color = Color.clear;
 
@@ -346,7 +349,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         text.fontSize = isHeader ? 13f : 13.5f;
         text.alignment = alignment;
         text.color = Color.white;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         text.overflowMode = TextOverflowModes.Ellipsis;
         text.raycastTarget = false;
         text.richText = true;
@@ -399,7 +402,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         text.fontSize = isHeader ? 16f : 17f;
         text.alignment = alignment;
         text.color = Color.white;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         text.overflowMode = isName || isPersonality
             ? TextOverflowModes.Ellipsis
             : TextOverflowModes.Overflow;
@@ -434,7 +437,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.color = color;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         text.overflowMode = TextOverflowModes.Ellipsis;
         text.raycastTarget = false;
         return text;

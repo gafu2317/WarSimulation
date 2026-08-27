@@ -44,7 +44,7 @@ public sealed class CombatMapLoadingPlayModeTests
         var stopwatch = Stopwatch.StartNew();
         yield return SceneManager.LoadSceneAsync("GafuTest", LoadSceneMode.Single);
 
-        CombatMapSystem mapSystem = Object.FindFirstObjectByType<CombatMapSystem>();
+        CombatMapSystem mapSystem = Object.FindAnyObjectByType<CombatMapSystem>();
         CombatMapSelectionView selection = FindSelectionView();
         Assert.That(mapSystem, Is.Not.Null);
         Assert.That(selection, Is.Not.Null);

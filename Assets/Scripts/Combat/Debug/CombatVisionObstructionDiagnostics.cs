@@ -41,9 +41,9 @@ public static class CombatVisionObstructionDiagnostics
         }
 
         Collider collider = hit.collider;
-        string key = owner.GetInstanceID() + ":" +
-            (target != null ? target.GetInstanceID() : 0) + ":" +
-            collider.GetInstanceID();
+        string key = owner.GetEntityId() + ":" +
+            (target != null ? target.GetEntityId() : 0) + ":" +
+            collider.GetEntityId();
         if (!Entries.TryGetValue(key, out Entry entry))
         {
             entry = new Entry

@@ -43,6 +43,7 @@ public class CombatCharacterSystem : MonoBehaviour
     private readonly CombatAiTeamReservations _allyAiReservations = new CombatAiTeamReservations();
     private readonly CombatAiTeamReservations _enemyAiReservations = new CombatAiTeamReservations();
     private CombatAiDecisionSchedule _aiDecisionSchedule;
+    private GameObject _generatedCharactersRoot;
 
     public int LastSkippedAiDecisionCount { get; private set; }
     public int TotalSkippedAiDecisionCount { get; private set; }
@@ -232,6 +233,10 @@ public class CombatCharacterSystem : MonoBehaviour
 
         PlaceTeam(AllyCharacters, allyDestinations);
         PlaceTeam(EnemyCharacters, enemyDestinations);
+        if (_generatedCharactersRoot != null)
+        {
+            _generatedCharactersRoot.SetActive(true);
+        }
         return true;
     }
 
@@ -330,6 +335,19 @@ public class CombatCharacterSystem : MonoBehaviour
         return dx * dx + dz * dz;
     }
 
+    private static bool IsNearCurrentNavMesh(Character character, Vector3 position)
+    {
+        if (!Application.isPlaying) return true;
+
+        NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
+        int areaMask = agent != null ? agent.areaMask : NavMesh.AllAreas;
+        return NavMesh.SamplePosition(
+            position,
+            out _,
+            InitialSpawnPositionBaker.CharacterSpacingDistance,
+            areaMask);
+    }
+
     private static void PlaceCharacter(Character character, Vector3 worldPosition)
     {
         character.GetComponent<CombatCharacterBody>()?.Stop();
@@ -391,7 +409,8 @@ public class CombatCharacterSystem : MonoBehaviour
             character.StatusEffects?.ClearAll();
             character.SkillCooldowns?.ClearAll();
 
-            if (_initialPositions.TryGetValue(character, out Vector3 initialPosition))
+            if (_initialPositions.TryGetValue(character, out Vector3 initialPosition) &&
+                IsNearCurrentNavMesh(character, initialPosition))
             {
                 PlaceCharacter(character, initialPosition);
             }
@@ -474,12 +493,17 @@ public class CombatCharacterSystem : MonoBehaviour
         AllyCharacters.Clear();
         EnemyCharacters.Clear();
 
+        if (_generatedCharactersRoot != null)
+        {
+            Destroy(_generatedCharactersRoot);
+        }
+
         var root = new GameObject(GeneratedCharactersRootName);
         root.transform.SetParent(transform, false);
         root.SetActive(false);
+        _generatedCharactersRoot = root;
         GenerateTeamCandidates(root.transform, CombatTeam.Ally, AllyCharacters);
         GenerateTeamCandidates(root.transform, CombatTeam.Enemy, EnemyCharacters);
-        root.SetActive(true);
     }
 
     private void GenerateTeamCandidates(

@@ -6,6 +6,7 @@ using UnityEngine;
 /// </summary>
 public static class CombatPlaytestDebugSettings
 {
+    public static bool UseDebugBattleUi { get; private set; } = true;
     public static bool ShowCharacterRoutes { get; private set; }
     public static bool ShowAssaultRoutes { get; private set; }
     public static bool ShowAiLabels { get; private set; }
@@ -28,6 +29,7 @@ public static class CombatPlaytestDebugSettings
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetForPlay()
     {
+        UseDebugBattleUi = true;
         ShowCharacterRoutes = false;
         ShowAssaultRoutes = false;
         ShowAiLabels = false;
@@ -45,6 +47,7 @@ public static class CombatPlaytestDebugSettings
         CombatVisionObstructionDiagnostics.Clear();
     }
 
+    public static void SetUseDebugBattleUi(bool value) => Set(UseDebugBattleUi, v => UseDebugBattleUi = v, value);
     public static void SetShowCharacterRoutes(bool value) => Set(ShowCharacterRoutes, v => ShowCharacterRoutes = v, value);
     public static void SetShowAssaultRoutes(bool value) => Set(ShowAssaultRoutes, v => ShowAssaultRoutes = v, value);
     public static void SetShowAiLabels(bool value) => Set(ShowAiLabels, v => ShowAiLabels = v, value);

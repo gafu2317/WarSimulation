@@ -84,8 +84,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
 
             CombatMapSystem[] systems = UnityEngine.Object.FindObjectsByType<CombatMapSystem>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             for (int i = 0; i < systems.Length; i++)
             {
                 if (systems[i] != null && systems[i].gameObject.scene == scene)

@@ -138,7 +138,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
         skill.offsetMin = new Vector2(16f, 4f);
         skill.offsetMax = new Vector2(-16f, -12f);
         _skillText.verticalAlignment = VerticalAlignmentOptions.Top;
-        _skillText.enableWordWrapping = true;
+        _skillText.textWrappingMode = TextWrappingModes.Normal;
         _skillText.overflowMode = TextOverflowModes.Ellipsis;
 
         status.anchorMin = Vector2.zero;
@@ -147,7 +147,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
         status.offsetMin = new Vector2(16f, 8f);
         status.offsetMax = new Vector2(-16f, -4f);
         _statusText.verticalAlignment = VerticalAlignmentOptions.Top;
-        _statusText.enableWordWrapping = true;
+        _statusText.textWrappingMode = TextWrappingModes.Normal;
         _statusText.overflowMode = TextOverflowModes.Ellipsis;
     }
 

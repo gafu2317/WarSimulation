@@ -188,6 +188,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private Button _bulkPersonalityButton;
     private Button _enemyFormationButton;
     private Button _stonePositionButton;
+    private Button _battleUiModeButton;
     private Button _enemyPresetDefaultButton;
     private Button _enemyPresetNeutralButton;
     private Button _enemyPresetTopButton;
@@ -442,6 +443,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _stonePositionButton = null;
         }
 
+        if (_battleUiModeButton != null)
+        {
+            _battleUiModeButton.onClick.RemoveListener(ToggleBattleUiMode);
+            _battleUiModeButton = null;
+        }
+
         if (_enemyPresetDefaultButton != null)
         {
             _enemyPresetDefaultButton.onClick.RemoveListener(ApplyEnemyPresetDefault);
@@ -530,6 +537,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _bulkWeaponButton = CreateButton(actionRow, "BulkWeaponButton", 220f, 48f, OpenBulkWeaponPicker);
         _bulkPersonalityButton = CreateButton(actionRow, "BulkPersonalityButton", 220f, 48f, OpenBulkPersonalityPicker);
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
+        _battleUiModeButton = CreateButton(actionRow, "BattleUiModeButton", 220f, 48f, ToggleBattleUiMode);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
         RefreshMovementSpeedButton();
         SetButtonLabel(_bulkWeaponButton, "武器一括変更");
@@ -539,8 +547,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ConfigureToolbarLabel(_bulkPersonalityButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
         ConfigureToolbarLabel(_stonePositionButton, 24f);
+        ConfigureToolbarLabel(_battleUiModeButton, 24f);
         RefreshEnemyFormationButton();
         RefreshStonePositionButton();
+        RefreshBattleUiModeButton();
 
         RectTransform codeRow = CreateHorizontalRow(_headerRoot, "FormationCodeRow", 48f, spacing: 10f);
         _formationCodeInput = CreateFormationCodeInput(codeRow);
@@ -928,6 +938,19 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         SetButtonLabel(_stonePositionButton, $"位置逆転: {(_stonePositionReversed ? "ON" : "OFF")}");
     }
 
+    private void ToggleBattleUiMode()
+    {
+        CombatPlaytestDebugSettings.SetUseDebugBattleUi(!CombatPlaytestDebugSettings.UseDebugBattleUi);
+        RefreshBattleUiModeButton();
+    }
+
+    private void RefreshBattleUiModeButton()
+    {
+        SetButtonLabel(
+            _battleUiModeButton,
+            $"UI:{(CombatPlaytestDebugSettings.UseDebugBattleUi ? "デバッグ" : "本番")}");
+    }
+
     private void ApplyEnemyPresetDefault()
     {
         ClosePicker();
@@ -1088,7 +1111,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         if (_selectionCountText == null) return;
 
-        _selectionCountText.enableWordWrapping = false;
+        _selectionCountText.textWrappingMode = TextWrappingModes.NoWrap;
         _selectionCountText.overflowMode = TextOverflowModes.Overflow;
         _selectionCountText.rectTransform.SetSizeWithCurrentAnchors(
             RectTransform.Axis.Horizontal,
@@ -1516,7 +1539,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _pickerDescription.name = "PickerDescription";
         _pickerDescription.alignment = TextAlignmentOptions.Left;
         _pickerDescription.fontSize = 24f;
-        _pickerDescription.enableWordWrapping = true;
         _pickerDescription.overflowMode = TextOverflowModes.Overflow;
         _pickerDescription.textWrappingMode = TextWrappingModes.Normal;
         _pickerDescription.text = string.Empty;
@@ -1966,7 +1988,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.enableAutoSizing = false;
-        text.enableWordWrapping = true;
         text.overflowMode = TextOverflowModes.Overflow;
         text.textWrappingMode = TextWrappingModes.Normal;
         LayoutElement layout = text.gameObject.GetComponent<LayoutElement>() ??

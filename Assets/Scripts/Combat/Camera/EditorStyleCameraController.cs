@@ -244,7 +244,7 @@ public class EditorStyleCameraController : MonoBehaviour
 
     private bool IsWorldTouch(Touch touch)
     {
-        if (touch.phase == TouchPhase.Began)
+        if (touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
         {
             if (IsTouchOverUi(touch))
             {
@@ -256,7 +256,8 @@ public class EditorStyleCameraController : MonoBehaviour
         }
 
         if (_touchesStartedOnUi.Contains(touch.touchId)) return false;
-        return touch.phase != TouchPhase.Ended && touch.phase != TouchPhase.Canceled;
+        return touch.phase != UnityEngine.InputSystem.TouchPhase.Ended
+            && touch.phase != UnityEngine.InputSystem.TouchPhase.Canceled;
     }
 
     private bool IsTouchOverUi(Touch touch)

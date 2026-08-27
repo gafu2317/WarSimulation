@@ -66,24 +66,16 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
 
         [Header("Magic Stone Appearance")]
-        [Tooltip("メイン魔石 1 個の底面サイズ（メートル、立方体の一辺）。結晶として縦長に伸ばすのは下の Height で。")]
-        [SerializeField, Min(0.1f)] private float _mainStoneBaseSize = 1.2f;
-
         [Tooltip("メイン魔石の高さ（メートル）。拠点扱いなのでかなり目立たせる。")]
         [SerializeField, Min(0.2f)] private float _mainStoneHeight = 3.2f;
 
-        [Tooltip("自陣営魔石の全面に貼るテクスチャ。未設定なら明るいシアン。")]
-        [SerializeField] private Texture2D _ownStoneTexture;
-
-        [SerializeField, Min(0.01f)] private float _ownStoneTextureTiling = 1f;
-
-        [Tooltip("敵陣営魔石の全面に貼るテクスチャ。未設定なら赤。")]
-        [SerializeField] private Texture2D _enemyStoneTexture;
-
-        [SerializeField, Min(0.01f)] private float _enemyStoneTextureTiling = 1f;
+        [Tooltip("魔石Prefab。未設定時はResourcesからRefinedMagicStoneを読み込む。")]
+        [SerializeField] private GameObject _magicStonePrefab;
 
         /// <summary>魔石を地面から少し浮かせて「光っている結晶感」を出す量（メートル）。</summary>
         private const float MagicStoneFloatOffset = 0.05f;
+        private const float RefinedMagicStoneModelHeight = 2.43f;
+        private const string MagicStonePrefabResourcePath = "Combat/Map/RefinedMagicStone";
         private Transform _generatedRoot;
 
         public void Render(MapData map)
@@ -111,13 +103,6 @@ namespace WarSimulation.Combat.Map
             Material rockMat = _rockTexture != null
                 ? CreateLitTexturedMaterial("AutoRock", _rockTexture, _rockTextureTiling, Color.white)
                 : CreateLitMaterial("AutoRock", new Color(0.45f, 0.45f, 0.47f));
-            Material ownStoneMat = CreateLitTexturedMaterial(
-                "AutoOwnStone", _ownStoneTexture, _ownStoneTextureTiling,
-                new Color(0.30f, 0.85f, 1.00f), new Color(0.10f, 0.35f, 0.55f));
-            Material enemyStoneMat = CreateLitTexturedMaterial(
-                "AutoEnemyStone", _enemyStoneTexture, _enemyStoneTextureTiling,
-                new Color(1.00f, 0.35f, 0.35f), new Color(0.55f, 0.12f, 0.12f));
-
             Mesh cylinderMesh = GetSharedPrimitiveMesh(PrimitiveType.Cylinder, ref _cachedCylinder);
             Mesh sphereMesh = GetSharedPrimitiveMesh(PrimitiveType.Sphere, ref _cachedSphere);
             Mesh cubeMesh = GetSharedPrimitiveMesh(PrimitiveType.Cube, ref _cachedCube);
@@ -137,10 +122,10 @@ namespace WarSimulation.Combat.Map
                         SpawnRock(root.transform, f, rockMat, cubeMesh, rockIdx++);
                         break;
                     case FeatureType.OwnMainStone:
-                        SpawnMagicStone(root.transform, f, ownStoneMat, cubeMesh, "OwnMain", stoneIdx++, featureIndex: i);
+                        SpawnMagicStone(root.transform, f, "OwnMain", stoneIdx++, featureIndex: i);
                         break;
                     case FeatureType.EnemyMainStone:
-                        SpawnMagicStone(root.transform, f, enemyStoneMat, cubeMesh, "EnemyMain", stoneIdx++, featureIndex: i);
+                        SpawnMagicStone(root.transform, f, "EnemyMain", stoneIdx++, featureIndex: i);
                         break;
                 }
             }
