@@ -80,6 +80,57 @@ public sealed class FeatureRendererPlayModeTests
         }
     }
 
+    [UnityTest]
+    public IEnumerator RenderMagicStones_UsesRefinedModelAndTeamCoreColors()
+    {
+        GameObject host = new GameObject("FeatureRendererModelPlayModeHost");
+        try
+        {
+            FeatureRenderer renderer = host.AddComponent<FeatureRenderer>();
+            renderer.Render(CreateMapWithPairedStones());
+
+            MagicStone[] stones = renderer.GetComponentsInChildren<MagicStone>();
+            Assert.That(stones, Has.Length.EqualTo(2));
+            MagicStone own = FindStone(stones, 0);
+            MagicStone enemy = FindStone(stones, 1);
+            Assert.That(own.GetComponent<MeshFilter>(), Is.Null);
+            Assert.That(enemy.GetComponent<MeshFilter>(), Is.Null);
+            Assert.That(own.GetComponent<BoxCollider>(), Is.Not.Null);
+            Assert.That(enemy.GetComponent<BoxCollider>(), Is.Not.Null);
+            Assert.That(own.GetComponent<BoxCollider>().isTrigger, Is.False);
+            Assert.That(enemy.GetComponent<BoxCollider>().isTrigger, Is.False);
+
+            Transform ownCore = FindChildByName(own.transform, "Core");
+            Transform enemyCore = FindChildByName(enemy.transform, "Core");
+            Assert.That(ownCore, Is.Not.Null);
+            Assert.That(enemyCore, Is.Not.Null);
+            Assert.That(FindChildContainingName(own.transform, "Pedestal"), Is.Not.Null);
+            Assert.That(FindChildContainingName(enemy.transform, "Pedestal"), Is.Not.Null);
+
+            Renderer ownCoreRenderer = ownCore.GetComponentInChildren<Renderer>();
+            Renderer enemyCoreRenderer = enemyCore.GetComponentInChildren<Renderer>();
+            Assert.That(ownCoreRenderer.material, Is.Not.SameAs(enemyCoreRenderer.material));
+            Assert.That(ReadMaterialColor(ownCoreRenderer.material).b,
+                Is.GreaterThan(ReadMaterialColor(ownCoreRenderer.material).r));
+            Assert.That(ReadMaterialColor(enemyCoreRenderer.material).r,
+                Is.GreaterThan(ReadMaterialColor(enemyCoreRenderer.material).b));
+
+            Renderer ownPedestalRenderer = FindChildContainingName(own.transform, "Pedestal")
+                .GetComponent<Renderer>();
+            Renderer enemyPedestalRenderer = FindChildContainingName(enemy.transform, "Pedestal")
+                .GetComponent<Renderer>();
+            Assert.That(ownPedestalRenderer, Is.Not.Null);
+            Assert.That(enemyPedestalRenderer, Is.Not.Null);
+            Assert.That(ownPedestalRenderer.sharedMaterial, Is.SameAs(enemyPedestalRenderer.sharedMaterial));
+
+            yield return null;
+        }
+        finally
+        {
+            Object.Destroy(host);
+        }
+    }
+
     private static MagicStone FindStone(MagicStone[] stones, int featureIndex)
     {
         for (int i = 0; i < stones.Length; i++)
@@ -88,6 +139,37 @@ public sealed class FeatureRendererPlayModeTests
         }
 
         return null;
+    }
+
+    private static Transform FindChildByName(Transform root, string name)
+    {
+        if (root.name == name || root.name.StartsWith(name + ".")) return root;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform match = FindChildByName(root.GetChild(i), name);
+            if (match != null) return match;
+        }
+
+        return null;
+    }
+
+    private static Transform FindChildContainingName(Transform root, string text)
+    {
+        if (root.name.Contains(text)) return root;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform match = FindChildContainingName(root.GetChild(i), text);
+            if (match != null) return match;
+        }
+
+        return null;
+    }
+
+    private static Color ReadMaterialColor(Material material)
+    {
+        if (material.HasProperty("_BaseColor")) return material.GetColor("_BaseColor");
+        if (material.HasProperty("_Color")) return material.GetColor("_Color");
+        return material.color;
     }
 
     private static T GetPrivateField<T>(object target, string fieldName)

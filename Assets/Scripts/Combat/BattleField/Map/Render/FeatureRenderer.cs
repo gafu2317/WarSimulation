@@ -6,14 +6,14 @@ using UnityEngine.AI;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// MapData.Features から「木・岩・魔石」を拾い、シンプルなプリミティブメッシュで 3D 可視化するコンポーネント。
+    /// MapData.Features から「木・岩・魔石」を拾い、3D 可視化するコンポーネント。
     /// 橋は別レンダラー（<see cref="BridgeRenderer"/>）側が担当するのでここでは扱わない。
     ///
     /// 生成物は全て「GeneratedFeatures」子配下にまとめ、再生成のたびにクリアする。
-    /// 見た目は暫定のプログラマーアート：
+    /// 見た目は次の構成で生成する：
     ///   - 木  ：円柱（幹）＋ 球（葉冠）の 2 パーツ
     ///   - 岩  ：立方体 1 個を横長・斜め回転で置く
-    ///   - 魔石：立方体を Y 軸 45° 回転して縦長にし、結晶っぽく見せる。陣営色で塗り分け。
+    ///   - 魔石：Resources の認定済みモデルPrefabを使い、Coreだけ陣営色で塗り分ける。
     /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
     /// </summary>
     [DisallowMultipleComponent]
@@ -321,35 +321,69 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// 魔石 1 個分を生成する。立方体を Y 軸 45° 回転させて上から見たときにひし形になるようにし、
-        /// 縦長にスケールして結晶っぽく見せる。
+        /// 魔石Prefabを生成し、既存の位置・高さ契約と陣営色を適用する。
         /// </summary>
         private void SpawnMagicStone(
-            Transform parent, PlacedFeature f, Material mat, Mesh cube,
-            string label, int idx, int featureIndex)
+            Transform parent, PlacedFeature f, string label, int idx, int featureIndex)
         {
-            float baseSize = _mainStoneBaseSize;
             float height = _mainStoneHeight;
+            GameObject prefab = _magicStonePrefab != null
+                ? _magicStonePrefab
+                : Resources.Load<GameObject>(MagicStonePrefabResourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError($"Magic stone prefab was not found at Resources/{MagicStonePrefabResourcePath}.", this);
+                return;
+            }
 
-            var stone = new GameObject($"{label}Stone_{idx}", typeof(MeshFilter), typeof(MeshRenderer), typeof(BoxCollider));
-            stone.transform.SetParent(parent, worldPositionStays: false);
-
-            // 地面 (f.WorldPosition.y) の少し上から、高さの半分だけ Y を持ち上げる
+            GameObject stone = Instantiate(prefab, parent, worldPositionStays: false);
+            stone.name = $"{label}Stone_{idx}";
             Vector3 pos = f.WorldPosition + new Vector3(0f, MagicStoneFloatOffset + height * 0.5f, 0f);
-
-            // Y 軸 45° 回転で上から見たひし形に。f.Rotation は魔石では Quaternion.identity 前提だが、
-            // 外部で明示的に向きを付けたケースを尊重するため、f.Rotation に 45° を後段合成する。
             stone.transform.localPosition = pos;
             stone.transform.localRotation = f.Rotation * Quaternion.Euler(0f, 45f, 0f);
+            stone.transform.localScale = Vector3.one * (height / RefinedMagicStoneModelHeight);
 
-            // Cube はローカル ±0.5 なので、localScale = 目的のワールドサイズ。
-            stone.transform.localScale = new Vector3(baseSize, height, baseSize);
-
-            stone.GetComponent<MeshFilter>().sharedMesh = cube;
-            stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
-            stone.GetComponent<BoxCollider>().isTrigger = false;
+            BoxCollider collider = stone.GetComponent<BoxCollider>();
+            if (collider == null) collider = stone.AddComponent<BoxCollider>();
+            collider.isTrigger = false;
             MagicStone instance = stone.AddComponent<MagicStone>();
             instance.Setup(featureIndex, f.Type, height);
+            ApplyMagicStoneTeamColor(stone, f.Type);
+        }
+
+        private static void ApplyMagicStoneTeamColor(GameObject stone, FeatureType type)
+        {
+            Transform core = FindChildByName(stone.transform, "Core");
+            if (core == null) return;
+
+            Color color = type == FeatureType.OwnMainStone
+                ? new Color(0.08f, 0.42f, 1f)
+                : new Color(1f, 0.08f, 0.08f);
+            Renderer[] renderers = core.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material material = renderers[i].material;
+                if (material == null) continue;
+                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+                if (material.HasProperty("_Color")) material.SetColor("_Color", color);
+                if (material.HasProperty("_EmissionColor"))
+                {
+                    material.SetColor("_EmissionColor", color * 0.35f);
+                    material.EnableKeyword("_EMISSION");
+                }
+            }
+        }
+
+        private static Transform FindChildByName(Transform root, string name)
+        {
+            if (root.name == name || root.name.StartsWith(name + ".")) return root;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform match = FindChildByName(root.GetChild(i), name);
+                if (match != null) return match;
+            }
+
+            return null;
         }
 
         private static void IgnoreFromNavMeshBuild(GameObject go)
