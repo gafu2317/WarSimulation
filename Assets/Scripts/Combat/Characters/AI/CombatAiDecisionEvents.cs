@@ -6,12 +6,14 @@ public static class CombatAiDecisionEvents
 {
     public static event Action<Character, CombatObjective, CombatObjective, IReadOnlyList<CombatAiReasonCode>> ObjectiveChanged;
     public static event Action<Character, CombatAiPlan, CombatAiPlan> PlanSelected;
+    public static event Action<Character, CombatAiPlan, bool, bool, string> PlanExecuted;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetForPlay()
     {
         ObjectiveChanged = null;
         PlanSelected = null;
+        PlanExecuted = null;
     }
 
     public static void RaiseObjectiveChanged(
@@ -28,5 +30,16 @@ public static class CombatAiDecisionEvents
     {
         if (owner == null) return;
         PlanSelected?.Invoke(owner, previous, next);
+    }
+
+    public static void RaisePlanExecuted(
+        Character owner,
+        CombatAiPlan plan,
+        bool movementStarted,
+        bool skillStarted,
+        string failureReason)
+    {
+        if (owner == null) return;
+        PlanExecuted?.Invoke(owner, plan, movementStarted, skillStarted, failureReason ?? string.Empty);
     }
 }

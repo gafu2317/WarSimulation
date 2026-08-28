@@ -125,7 +125,6 @@ internal static partial class CombatEditModeTestUtil
         IReadOnlyList<CombatAiPendingDamage> enemyPendingDamage = null,
         IReadOnlyList<CombatAiPendingHealing> allyPendingHealing = null,
         IReadOnlyList<CombatAiPendingHealing> enemyPendingHealing = null,
-        IReadOnlyList<Vector3> bridgePositions = null,
         IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null,
         IReadOnlyList<Vector3> forestCandidates = null,
         bool hasBlockedMoveDestination = false,
@@ -140,7 +139,6 @@ internal static partial class CombatEditModeTestUtil
             ownStonePosition,
             hasEnemyStonePosition,
             enemyStonePosition,
-            bridgePositions ?? System.Array.Empty<Vector3>(),
             highGroundCandidates ?? System.Array.Empty<Vector3>(),
             forestCandidates ?? System.Array.Empty<Vector3>(),
             hasEnemyStoneHealth,
@@ -155,20 +153,6 @@ internal static partial class CombatEditModeTestUtil
             assaultRoutes);
     }
 
-    internal static float FindObjectiveScore(CombatAiDebugSnapshot snapshot, CombatObjective objective)
-    {
-        for (int i = 0; i < snapshot.ObjectiveEntries.Count; i++)
-        {
-            if (snapshot.ObjectiveEntries[i].Objective == objective)
-            {
-                return snapshot.ObjectiveEntries[i].Breakdown.Total;
-            }
-        }
-
-        Assert.Fail("目的候補が見つかりません: " + objective);
-        return 0f;
-    }
-
     internal static void AssertPlanMatchesDebugSnapshot(
         CombatAiContext context,
         CombatAiPersonalityProfile personalityProfile)
@@ -177,48 +161,15 @@ internal static partial class CombatEditModeTestUtil
         CombatAiDebugSnapshot snapshot = CombatAiPlanner.BuildDebugSnapshot(context, personalityProfile);
 
         Assert.That(snapshot, Is.Not.Null);
-        Assert.That(plan.Objective, Is.EqualTo(snapshot.SelectedObjective.Objective));
-        Assert.That(plan.MoveTarget.Kind, Is.EqualTo(snapshot.SelectedMove.Target.Kind));
-        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(snapshot.SelectedMove.Target.Destination));
-        Assert.That(plan.MoveTarget.TargetCharacter, Is.EqualTo(snapshot.SelectedMove.Target.TargetCharacter));
-        Assert.That(plan.Skill, Is.EqualTo(snapshot.SelectedSkill.Skill));
-        Assert.That(plan.SkillContext.PrimaryTarget, Is.EqualTo(snapshot.SelectedSkill.SkillContext.PrimaryTarget));
-        Assert.That(plan.SkillContext.PrimaryStone, Is.EqualTo(snapshot.SelectedSkill.SkillContext.PrimaryStone));
-        Assert.That(plan.SkillContext.TargetPoint, Is.EqualTo(snapshot.SelectedSkill.SkillContext.TargetPoint));
-    }
-
-    internal static float FindSkillScore(CombatAiDebugSnapshot snapshot, SkillBase skill, Character target)
-    {
-        for (int i = 0; i < snapshot.SkillEntries.Count; i++)
-        {
-            if (snapshot.SkillEntries[i].Skill == skill &&
-                snapshot.SkillEntries[i].SkillContext.PrimaryTarget == target)
-            {
-                return snapshot.SkillEntries[i].Breakdown.Total;
-            }
-        }
-
-        Assert.Fail("スキル候補が見つかりません: " + skill.Name);
-        return 0f;
-    }
-
-    internal static float FindMoveScore(CombatAiDebugSnapshot snapshot, string code)
-    {
-        return FindMove(snapshot, code).Breakdown.Total;
-    }
-
-    internal static CombatAiMoveCandidateEntry FindMove(CombatAiDebugSnapshot snapshot, string code)
-    {
-        for (int i = 0; i < snapshot.MoveEntries.Count; i++)
-        {
-            if (snapshot.MoveEntries[i].Code == code)
-            {
-                return snapshot.MoveEntries[i];
-            }
-        }
-
-        Assert.Fail("移動候補が見つかりません: " + code);
-        return null;
+        Assert.That(plan.Objective, Is.EqualTo(snapshot.Plan.Objective));
+        Assert.That(plan.ActionCode, Is.EqualTo(snapshot.Plan.ActionCode));
+        Assert.That(plan.MoveTarget.Kind, Is.EqualTo(snapshot.Plan.MoveTarget.Kind));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(snapshot.Plan.MoveTarget.Destination));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.EqualTo(snapshot.Plan.MoveTarget.TargetCharacter));
+        Assert.That(plan.Skill, Is.EqualTo(snapshot.Plan.Skill));
+        Assert.That(plan.SkillContext.PrimaryTarget, Is.EqualTo(snapshot.Plan.SkillContext.PrimaryTarget));
+        Assert.That(plan.SkillContext.PrimaryStone, Is.EqualTo(snapshot.Plan.SkillContext.PrimaryStone));
+        Assert.That(plan.SkillContext.TargetPoint, Is.EqualTo(snapshot.Plan.SkillContext.TargetPoint));
     }
 
     internal static CombatCharacterIntel CreateIntel(

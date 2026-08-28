@@ -57,7 +57,7 @@ public static class CombatAiSkillContextBuilder
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character == null || !enemy.IsAlive || !enemy.HasKnownPosition) continue;
+            if (enemy.Character == null || !enemy.IsAlive || !enemy.HasDirectSight || !enemy.HasKnownPosition) continue;
 
             AddUniqueTarget(contexts, enemy.Character);
         }

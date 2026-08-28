@@ -15,7 +15,6 @@ public sealed class CombatAiContext
     public bool HasEnemyStoneHealth { get; }
     public int EnemyStoneHP { get; }
     public int EnemyStoneMaxHP { get; }
-    public IReadOnlyList<Vector3> BridgePositions { get; }
     public IReadOnlyList<CombatAiAssaultRoute> AssaultRoutes { get; }
     public IReadOnlyList<Vector3> HighGroundCandidates { get; }
     public IReadOnlyList<Vector3> ForestCandidates { get; }
@@ -35,7 +34,6 @@ public sealed class CombatAiContext
         Vector3 ownStonePosition,
         bool hasEnemyStonePosition,
         Vector3 enemyStonePosition,
-        IReadOnlyList<Vector3> bridgePositions,
         IReadOnlyList<Vector3> highGroundCandidates,
         IReadOnlyList<Vector3> forestCandidates,
         bool hasEnemyStoneHealth = false,
@@ -60,7 +58,6 @@ public sealed class CombatAiContext
         HasEnemyStoneHealth = hasEnemyStoneHealth;
         EnemyStoneHP = enemyStoneHP;
         EnemyStoneMaxHP = enemyStoneMaxHP;
-        BridgePositions = Snapshot(bridgePositions);
         AssaultRoutes = Snapshot(assaultRoutes);
         HighGroundCandidates = Snapshot(highGroundCandidates);
         ForestCandidates = Snapshot(forestCandidates);

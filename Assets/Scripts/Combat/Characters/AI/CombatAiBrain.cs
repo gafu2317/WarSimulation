@@ -9,7 +9,6 @@ public sealed class CombatAiBrain : MonoBehaviour
 {
     private const float SwordFocusCommitmentSeconds = 2.5f;
     private const float BattleJunkieFocusCommitmentSeconds = 12f;
-    private const float ObjectiveCommitmentSeconds = 5f;
     private static readonly ProfilerMarker CollectContextMarker = new("CombatAI.CollectContext");
     private static readonly ProfilerMarker BuildPlanMarker = new("CombatAI.BuildPlan");
 
@@ -21,7 +20,6 @@ public sealed class CombatAiBrain : MonoBehaviour
     private CombatAiContextCollector _contextCollector;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
-    private float _objectiveCommittedUntilTime;
     private readonly List<CombatAiReasonCode> _objectiveReasonCodes = new List<CombatAiReasonCode>();
     private CombatAiPlan _preparedPreviousPlan;
     private CombatAiPlan _preparedPlan;
@@ -96,7 +94,6 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         _focusedEnemy = null;
         _focusedEnemyLockedUntilTime = 0f;
-        _objectiveCommittedUntilTime = 0f;
         LastPlan = CombatAiPlan.None;
         LastContext = null;
         HasLastSkillEvaluation = false;
@@ -145,7 +142,6 @@ public sealed class CombatAiBrain : MonoBehaviour
                 GetFocusCommitmentRemainingSeconds(),
                 previousPlan.Objective,
                 _objectiveReasonCodes,
-                GetObjectiveCommitmentRemainingSeconds(),
                 previousPlan.MoveTarget);
         }
         SetPreparedDecision(previousPlan, nextPlan, nextContext);
@@ -165,11 +161,6 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private void NotifyPlanSelected(CombatAiPlan previous, CombatAiPlan next)
     {
-        if (previous.Objective != next.Objective)
-        {
-            _objectiveCommittedUntilTime = Time.time + ObjectiveCommitmentSeconds;
-        }
-
         CombatAiDecisionEvents.RaisePlanSelected(_owner, previous, next);
         CombatAiDecisionEvents.RaiseObjectiveChanged(
             _owner,
@@ -182,18 +173,29 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         _hasPreparedDecision = false;
         ResolveDependencies();
-        if (!CanRun()) return false;
-        if (_owner.SkillCaster.IsCasting) return false;
+        if (!CanRun())
+        {
+            CombatAiDecisionEvents.RaisePlanExecuted(_owner, plan, false, false, "AI cannot execute");
+            return false;
+        }
+        if (_owner.SkillCaster.IsCasting)
+        {
+            CombatAiDecisionEvents.RaisePlanExecuted(_owner, plan, false, false, "already casting");
+            return false;
+        }
 
         LastPlan = plan;
         bool moved = TryExecuteMovement(plan);
-        bool usedSkill = TryExecuteSkill(plan);
+        bool usedSkill = TryExecuteSkill(plan, out string skillFailureReason);
         UpdateFocusedEnemy(plan);
+        string failureReason = ResolveExecutionFailure(plan, moved, usedSkill, skillFailureReason);
+        CombatAiDecisionEvents.RaisePlanExecuted(_owner, plan, moved, usedSkill, failureReason);
         return usedSkill || moved;
     }
 
-    private bool TryExecuteSkill(CombatAiPlan plan)
+    private bool TryExecuteSkill(CombatAiPlan plan, out string failureReason)
     {
+        failureReason = string.Empty;
         HasLastSkillEvaluation = false;
         if (!_executeSkills || plan.Skill == null) return false;
 
@@ -206,10 +208,32 @@ public sealed class CombatAiBrain : MonoBehaviour
         LastSkillEvaluation = evaluation;
         HasLastSkillEvaluation = true;
 
-        if (!evaluation.CanUse) return false;
-        if (!HasFacingLineOfSightForStones(evaluation.Context)) return false;
+        if (!evaluation.CanUse)
+        {
+            failureReason = evaluation.FailureReason;
+            return false;
+        }
+        if (!HasFacingLineOfSightForStones(evaluation.Context))
+        {
+            failureReason = "stone line of sight lost";
+            return false;
+        }
 
-        return _owner.SkillCaster.TryStartCast(plan.Skill, evaluation.Context);
+        bool started = _owner.SkillCaster.TryStartCast(plan.Skill, evaluation.Context);
+        if (!started) failureReason = "cast start rejected";
+        return started;
+    }
+
+    private static string ResolveExecutionFailure(
+        CombatAiPlan plan,
+        bool movementStarted,
+        bool skillStarted,
+        string skillFailureReason)
+    {
+        if (!string.IsNullOrEmpty(skillFailureReason)) return skillFailureReason;
+        if (plan.MoveTarget.HasDestination && !movementStarted) return "movement not started";
+        if (plan.Skill != null && !skillStarted) return "skill not started";
+        return string.Empty;
     }
 
     private void TryFaceSkillContext(SkillExecutionContext context)
@@ -347,11 +371,6 @@ public sealed class CombatAiBrain : MonoBehaviour
     private float GetFocusCommitmentRemainingSeconds()
     {
         return Mathf.Max(0f, _focusedEnemyLockedUntilTime - Time.time);
-    }
-
-    private float GetObjectiveCommitmentRemainingSeconds()
-    {
-        return Mathf.Max(0f, _objectiveCommittedUntilTime - Time.time);
     }
 
     private void UpdateFocusedEnemy(CombatAiPlan plan)

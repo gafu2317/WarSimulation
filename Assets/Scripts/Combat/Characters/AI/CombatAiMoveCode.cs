@@ -1,7 +1,7 @@
 public static class CombatAiMoveCode
 {
     public const string AdvanceEnemyStone = "AdvanceEnemyStone";
-    public const string AdvanceViaBridge = "AdvanceViaBridge";
+    public const string AdvanceAssaultRoute = "AdvanceAssaultRoute";
     public const string ReturnOwnStone = "ReturnOwnStone";
     public const string PursueEnemy = "PursueEnemy";
     public const string SupportAlly = "SupportAlly";

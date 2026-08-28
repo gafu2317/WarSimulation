@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 
 public sealed class CombatBattleLogFormatterTests
 {
@@ -31,7 +32,7 @@ public sealed class CombatBattleLogFormatterTests
     public void FormatObjectiveChange_IncludesObjectiveLabelsAndReasons()
     {
         var formatter = new CombatBattleLogFormatter();
-        var reasons = new List<string> { "到達可能敵価値が高い", "敵魔石到達" };
+        var reasons = new List<string> { "敵が射程内", "敵魔石位置既知" };
 
         string line = formatter.FormatObjectiveChange(
             12.4f,
@@ -43,7 +44,7 @@ public sealed class CombatBattleLogFormatterTests
 
         Assert.That(line, Does.Contain("OBJECTIVE Char_Wand01(Wand)"));
         Assert.That(line, Does.Contain("敵を攻撃 -> 敵魔石を破壊"));
-        Assert.That(line, Does.Contain("reason=到達可能敵価値が高い,敵魔石到達"));
+        Assert.That(line, Does.Contain("reason=敵が射程内,敵魔石位置既知"));
     }
 
     [Test]
@@ -67,6 +68,40 @@ public sealed class CombatBattleLogFormatterTests
         Assert.That(line, Does.Contain("skillTally:"));
         Assert.That(line, Does.Contain("斬撃 x2"));
         Assert.That(line, Does.Contain("魔弾 x1"));
+    }
+
+    [Test]
+    public void FormatAiPlan_IncludesStateReasonActionAndDestination()
+    {
+        var formatter = new CombatBattleLogFormatter();
+        var plan = new CombatAiPlan(
+            CombatObjective.DestroyEnemyStone,
+            CombatMoveTarget.ForPosition(new Vector3(12f, 0f, 7f)),
+            null,
+            SkillExecutionContext.None,
+            CombatAiMoveCode.AdvanceAssaultRoute,
+            CombatAiReasonCode.EnemyStoneKnown);
+
+        string line = formatter.FormatAiPlan(3.2f, "Char_Sword01", CombatObjective.Search, plan);
+
+        Assert.That(line, Does.Contain("AI_PLAN Char_Sword01"));
+        Assert.That(line, Does.Contain("state=索敵->敵魔石を破壊"));
+        Assert.That(line, Does.Contain("reason=EnemyStoneKnown"));
+        Assert.That(line, Does.Contain("action=" + CombatAiMoveCode.AdvanceAssaultRoute));
+        Assert.That(line, Does.Contain("destination=(12.0,7.0)"));
+    }
+
+    [Test]
+    public void FormatAiExecution_IncludesStartedActionsAndFailure()
+    {
+        var formatter = new CombatBattleLogFormatter();
+
+        string line = formatter.FormatAiExecution(3.7f, "Char_Sword01", true, false, "skill-not-ready");
+
+        Assert.That(line, Does.Contain("AI_EXECUTE Char_Sword01"));
+        Assert.That(line, Does.Contain("movementStarted=true"));
+        Assert.That(line, Does.Contain("skillStarted=false"));
+        Assert.That(line, Does.Contain("failure=skill-not-ready"));
     }
 
     [Test]

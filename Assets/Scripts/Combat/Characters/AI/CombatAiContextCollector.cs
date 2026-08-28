@@ -12,7 +12,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
     private readonly List<CombatCharacterIntel> _enemyIntel = new();
     private readonly List<CombatCharacterIntel> _allyIntel = new();
-    private readonly List<Vector3> _bridgePositions = new();
     private readonly List<CombatAiAssaultRoute> _assaultRoutes = new();
     private readonly List<Vector3> _highGroundCandidates = new();
     private readonly List<Vector3> _forestCandidates = new();
@@ -104,7 +103,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             ownStonePosition,
             hasEnemyStonePosition,
             enemyStonePosition,
-            _bridgePositions,
             _highGroundCandidates,
             _forestCandidates,
             hasEnemyStoneHealth,
@@ -143,7 +141,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     {
         _enemyIntel.Clear();
         _allyIntel.Clear();
-        _bridgePositions.Clear();
         _assaultRoutes.Clear();
         _highGroundCandidates.Clear();
         _forestCandidates.Clear();
@@ -327,9 +324,6 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                         hasEnemyStonePosition = true;
                         enemyStonePosition = position;
                     }
-                    break;
-                case FeatureType.Bridge:
-                    _bridgePositions.Add(position);
                     break;
             }
         }

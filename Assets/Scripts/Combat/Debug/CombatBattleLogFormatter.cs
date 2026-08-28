@@ -75,6 +75,71 @@ public sealed class CombatBattleLogFormatter
         return sb.ToString();
     }
 
+    public string FormatAiPlan(
+        float battleTimeSeconds,
+        string characterName,
+        CombatObjective previous,
+        CombatAiPlan plan)
+    {
+        var sb = new StringBuilder(256);
+        sb.Append(FormatTimePrefix(battleTimeSeconds));
+        sb.Append(" AI_PLAN ");
+        sb.Append(characterName);
+        sb.Append(" state=");
+        sb.Append(CombatAiDebugLabels.ObjectiveShort(previous));
+        sb.Append("->");
+        sb.Append(CombatAiDebugLabels.ObjectiveShort(plan.Objective));
+        sb.Append(" reason=");
+        sb.Append(CombatAiDebugLabels.Reason(plan.TransitionReason));
+        sb.Append(" action=");
+        sb.Append(plan.ActionCode);
+        if (plan.MoveTarget.Kind == CombatMoveTargetKind.Character && plan.MoveTarget.TargetCharacter != null)
+        {
+            sb.Append(" target=");
+            sb.Append(plan.MoveTarget.TargetCharacter.name);
+        }
+        else if (plan.MoveTarget.HasDestination)
+        {
+            sb.Append(" destination=(");
+            sb.Append(plan.MoveTarget.Destination.x.ToString("0.0", CultureInfo.InvariantCulture));
+            sb.Append(',');
+            sb.Append(plan.MoveTarget.Destination.z.ToString("0.0", CultureInfo.InvariantCulture));
+            sb.Append(')');
+        }
+
+        if (plan.Skill != null)
+        {
+            sb.Append(" skill=");
+            sb.Append(plan.Skill.Name);
+        }
+
+        return sb.ToString();
+    }
+
+    public string FormatAiExecution(
+        float battleTimeSeconds,
+        string characterName,
+        bool movementStarted,
+        bool skillStarted,
+        string failureReason)
+    {
+        var sb = new StringBuilder(160);
+        sb.Append(FormatTimePrefix(battleTimeSeconds));
+        sb.Append(" AI_EXECUTE ");
+        sb.Append(characterName);
+        sb.Append(" movementStarted=");
+        sb.Append(movementStarted ? "true" : "false");
+        sb.Append(" skillStarted=");
+        sb.Append(skillStarted ? "true" : "false");
+        if (!string.IsNullOrEmpty(failureReason))
+        {
+            sb.Append(" failure=");
+            sb.Append(failureReason);
+        }
+
+        return sb.ToString();
+    }
+
     public string FormatSkillUsed(float battleTimeSeconds, string characterName, string skillName, string targetName)
     {
         if (IsBasicAttackSkillName(skillName))

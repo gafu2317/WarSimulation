@@ -17,21 +17,9 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
 
     [SerializeField] private string _displayNameJapanese = "性格";
     [SerializeField] private CombatAiPersonalityKind _kind;
-    [SerializeField] private float _aggression;
-    [SerializeField] private float _caution;
-    [SerializeField] private float _supportBias;
-    [SerializeField] private float _objectiveFocus;
-    [SerializeField] private float _explorationBias;
-    [SerializeField] private float _riskTolerance;
 
     public string DisplayNameJapanese => _displayNameJapanese;
     public CombatAiPersonalityKind Kind => _kind;
-    public float Aggression => _aggression;
-    public float Caution => _caution;
-    public float SupportBias => _supportBias;
-    public float ObjectiveFocus => _objectiveFocus;
-    public float ExplorationBias => _explorationBias;
-    public float RiskTolerance => _riskTolerance;
 
     public static List<CombatAiPersonalityProfile> CreateBuiltInProfiles()
     {
@@ -50,36 +38,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         profile.hideFlags = HideFlags.DontSave;
         profile._kind = kind;
         profile._displayNameJapanese = GetDisplayNameJapanese(kind);
-
-        switch (kind)
-        {
-            case CombatAiPersonalityKind.AttentionSeeker:
-                profile._explorationBias = 0.4f;
-                profile._riskTolerance = 0.6f;
-                break;
-            case CombatAiPersonalityKind.BattleJunkie:
-                profile._aggression = 1f;
-                profile._riskTolerance = 0.7f;
-                break;
-            case CombatAiPersonalityKind.Cunning:
-                profile._caution = 0.8f;
-                profile._objectiveFocus = 0.9f;
-                profile._riskTolerance = -0.4f;
-                break;
-            case CombatAiPersonalityKind.Devoted:
-                profile._supportBias = 1f;
-                profile._riskTolerance = 0.5f;
-                break;
-            case CombatAiPersonalityKind.Lonely:
-                profile._supportBias = 0.8f;
-                profile._explorationBias = 0.5f;
-                break;
-            case CombatAiPersonalityKind.Reckless:
-                profile._objectiveFocus = 1f;
-                profile._riskTolerance = 1f;
-                break;
-        }
-
         return profile;
     }
 

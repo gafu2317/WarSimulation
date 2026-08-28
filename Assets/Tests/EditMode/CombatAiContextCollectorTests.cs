@@ -9,7 +9,7 @@ public sealed class CombatAiContextCollectorTests
     [Test]
     public void Context_CopiesInputCollections()
     {
-        var bridges = new List<Vector3> { Vector3.one };
+        var highGroundCandidates = new List<Vector3> { Vector3.one };
         var context = new CombatAiContext(
             null,
             null,
@@ -19,13 +19,12 @@ public sealed class CombatAiContextCollectorTests
             default,
             false,
             default,
-            bridges,
-            null,
+            highGroundCandidates,
             null);
 
-        bridges.Clear();
+        highGroundCandidates.Clear();
 
-        Assert.That(context.BridgePositions, Is.EqualTo(new[] { Vector3.one }));
+        Assert.That(context.HighGroundCandidates, Is.EqualTo(new[] { Vector3.one }));
     }
 
     [Test]
@@ -55,7 +54,6 @@ public sealed class CombatAiContextCollectorTests
             Assert.That(context.HasEnemyStonePosition, Is.True);
             Assert.That(context.EnemyStonePosition, Is.EqualTo(new Vector3(8f, 0f, 8f)));
             Assert.That(context.Weather, Is.EqualTo(CombatMapSystem.Weather.Rainy));
-            Assert.That(context.BridgePositions, Does.Contain(new Vector3(3f, 0f, 3f)));
             Assert.That(context.AssaultRoutes, Is.Empty);
             Assert.That(context.HighGroundCandidates, Does.Contain(new Vector3(6f, 4f, 5f)));
             Assert.That(context.HighGroundCandidates, Does.Contain(new Vector3(9f, 2f, 9f)));
@@ -84,10 +82,6 @@ public sealed class CombatAiContextCollectorTests
             CombatCharacterIntel allyIntel = FindIntel(context.AllyIntel, fixture.Owner);
             Assert.That(allyIntel.HasObjective, Is.False);
 
-            Assert.That(
-                CombatAiAssessmentBuilder.Build(context)
-                    .GetValue(CombatAiMetricIndex.EnemyLocationConfidence),
-                Is.EqualTo(50f));
         }
         finally
         {

@@ -174,6 +174,10 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     {
         CombatAiDecisionEvents.ObjectiveChanged -= OnObjectiveChanged;
         CombatAiDecisionEvents.ObjectiveChanged += OnObjectiveChanged;
+        CombatAiDecisionEvents.PlanSelected -= OnPlanSelected;
+        CombatAiDecisionEvents.PlanSelected += OnPlanSelected;
+        CombatAiDecisionEvents.PlanExecuted -= OnPlanExecuted;
+        CombatAiDecisionEvents.PlanExecuted += OnPlanExecuted;
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
         CombatSkillActionEvents.Completed += OnSkillCompleted;
         ResolveDependencies();
@@ -187,6 +191,8 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     private void UnsubscribeEvents()
     {
         CombatAiDecisionEvents.ObjectiveChanged -= OnObjectiveChanged;
+        CombatAiDecisionEvents.PlanSelected -= OnPlanSelected;
+        CombatAiDecisionEvents.PlanExecuted -= OnPlanExecuted;
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
         if (_magicStoneSystem != null)
         {
@@ -248,6 +254,30 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
             previous,
             next,
             reasonLabels));
+    }
+
+    private void OnPlanSelected(Character owner, CombatAiPlan previous, CombatAiPlan next)
+    {
+        if (_writer == null || owner == null) return;
+        float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
+        WriteLine(_formatter.FormatAiPlan(battleTime, owner.name, previous.Objective, next));
+    }
+
+    private void OnPlanExecuted(
+        Character owner,
+        CombatAiPlan plan,
+        bool movementStarted,
+        bool skillStarted,
+        string failureReason)
+    {
+        if (_writer == null || owner == null) return;
+        float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
+        WriteLine(_formatter.FormatAiExecution(
+            battleTime,
+            owner.name,
+            movementStarted,
+            skillStarted,
+            failureReason));
     }
 
     private void OnSkillCompleted(CombatSkillActionResult result)
