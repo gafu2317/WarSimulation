@@ -23,6 +23,18 @@ public static class CombatAiSkillClassifier
             SkillId.Rosary_SacrificeThunder;
     }
 
+    public static bool IsHighImpactSkill(SkillBase skill)
+    {
+        return skill != null && skill.Id is
+            SkillId.Wand_ArcaneBlast or
+            SkillId.Wand_AreaBlast or
+            SkillId.Wand_GodsHand or
+            SkillId.Rosary_CloseHeal or
+            SkillId.Rosary_Regeneration or
+            SkillId.Rosary_HealingArea or
+            SkillId.Rosary_SacrificeThunder;
+    }
+
     public static bool IsBuff(SkillBase skill)
     {
         return skill != null && skill.Id is

@@ -128,7 +128,8 @@ internal static partial class CombatEditModeTestUtil
         IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null,
         IReadOnlyList<Vector3> forestCandidates = null,
         bool hasBlockedMoveDestination = false,
-        Vector3 blockedMoveDestination = default)
+        Vector3 blockedMoveDestination = default,
+        Character recentAttacker = null)
     {
         return new CombatAiContext(
             owner,
@@ -150,7 +151,8 @@ internal static partial class CombatEditModeTestUtil
             enemyPendingHealing,
             hasBlockedMoveDestination,
             blockedMoveDestination,
-            assaultRoutes);
+            assaultRoutes,
+            recentAttacker);
     }
 
     internal static void AssertPlanMatchesDebugSnapshot(

@@ -30,7 +30,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         CombatAiTeamReservations reservations,
         bool perceptionPrepared,
         bool hasBlockedMoveDestination,
-        Vector3 blockedMoveDestination)
+        Vector3 blockedMoveDestination,
+        Character recentAttacker = null)
     {
         ClearBuffers();
 
@@ -114,7 +115,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             _enemyPendingHealing,
             hasBlockedMoveDestination,
             blockedMoveDestination,
-            _assaultRoutes);
+            _assaultRoutes,
+            recentAttacker);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)

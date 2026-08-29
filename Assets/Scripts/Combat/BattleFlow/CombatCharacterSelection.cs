@@ -1879,13 +1879,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = true;
-        row.GetComponent<LayoutElement>().preferredHeight = 40f;
+        row.GetComponent<LayoutElement>().preferredHeight = 56f;
 
         TMP_Text name = AddPickerDetailText(
             personality.DisplayNameJapanese,
             24f,
             TextAlignmentOptions.Left,
-            36f,
+            52f,
             row.transform);
         LayoutElement nameLayout = name.gameObject.GetComponent<LayoutElement>();
         nameLayout.preferredWidth = 220f;
@@ -1895,7 +1895,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             personality.BehaviorDescriptionJapanese,
             20f,
             TextAlignmentOptions.Left,
-            36f,
+            52f,
             row.transform);
         LayoutElement descriptionLayout = description.gameObject.GetComponent<LayoutElement>();
         descriptionLayout.minWidth = 0f;

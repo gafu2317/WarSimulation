@@ -54,7 +54,7 @@ public sealed class CombatStatSkillTests
     }
 
     [Test]
-    public void StatDebuffSkill_AppliesDebuffToEnemyInRange()
+    public void StatDebuffSkill_AppliesDebuffToTarget()
     {
         GameObject ownerGo = new GameObject("Owner");
         GameObject targetGo = new GameObject("Target");
@@ -62,7 +62,7 @@ public sealed class CombatStatSkillTests
         {
             Character owner = ownerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
-            targetGo.transform.position = ownerGo.transform.position + Vector3.forward;
+            target.Health.Initialize(30);
 
             var skill = new StatDebuffSkill(CombatStatusEffects.StatKind.AGI, 0.7f, 5f, cooldownSeconds: 5f);
             skill.Execute(owner, SkillExecutionContext.ForTarget(target));

@@ -47,4 +47,40 @@ public static class CombatAiPersonalityBehavior
 
         return best;
     }
+
+    public static bool TryFindNearestAllyWithObjective(
+        CombatAiContext context,
+        out CombatCharacterIntel leader)
+    {
+        leader = default;
+        if (context == null || context.Owner == null) return false;
+
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null || !ally.IsAlive || !ally.CanAct || !ally.HasObjective ||
+                (!ally.HasIntendedDestination && ally.IntendedTarget == null) ||
+                ally.IntendedTarget != null &&
+                (ally.IntendedTarget.Health == null || !ally.IntendedTarget.Health.IsAlive)) continue;
+
+            float distance = Vector3.Distance(context.Owner.transform.position, ally.CurrentPosition);
+            if (distance >= bestDistance) continue;
+            bestDistance = distance;
+            leader = ally;
+        }
+
+        return leader.Character != null;
+    }
+
+    public static bool TryFindKnownRecentAttacker(
+        CombatAiContext context,
+        out CombatCharacterIntel attacker)
+    {
+        attacker = default;
+        if (context == null || context.RecentAttacker == null) return false;
+
+        attacker = context.FindEnemyIntel(context.RecentAttacker);
+        return attacker.Character != null && attacker.IsAlive && attacker.HasKnownPosition;
+    }
 }

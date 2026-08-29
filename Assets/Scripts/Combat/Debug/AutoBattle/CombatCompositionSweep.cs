@@ -158,7 +158,7 @@ public static class CombatCompositionSweepGenerator
         CombatAiPersonalityKind.Lonely,
     };
 
-    // Affinity-valid combo seeds from docs/AI/コンボ.md
+    // Keep seeds in code so sweep generation does not depend on a design document.
     private static readonly CombatAutoBattleRole[][] ComboSeeds =
     {
         new[]

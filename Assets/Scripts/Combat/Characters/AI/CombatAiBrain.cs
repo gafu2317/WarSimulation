@@ -20,6 +20,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     private CombatAiContextCollector _contextCollector;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
+    private Character _revengeTarget;
     private readonly List<CombatAiReasonCode> _objectiveReasonCodes = new List<CombatAiReasonCode>();
     private CombatAiPlan _preparedPreviousPlan;
     private CombatAiPlan _preparedPlan;
@@ -49,6 +50,12 @@ public sealed class CombatAiBrain : MonoBehaviour
     private void OnEnable()
     {
         ResolveDependencies();
+        SubscribeRevengeTracking();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeRevengeTracking();
     }
 
     public bool TickNow()
@@ -94,6 +101,7 @@ public sealed class CombatAiBrain : MonoBehaviour
     {
         _focusedEnemy = null;
         _focusedEnemyLockedUntilTime = 0f;
+        _revengeTarget = null;
         LastPlan = CombatAiPlan.None;
         LastContext = null;
         HasLastSkillEvaluation = false;
@@ -125,10 +133,12 @@ public sealed class CombatAiBrain : MonoBehaviour
                 reservations,
                 perceptionPrepared,
                 IsMoveDestinationBlocked(),
-                _blockedMoveDestination);
+                _blockedMoveDestination,
+                _revengeTarget);
         }
         if (!_owner.Health.CanAct) return false;
         PruneFocusedEnemy(nextContext);
+        PruneRevengeTarget(nextContext);
         CombatAiPlan previousPlan = LastPlan;
         _objectiveReasonCodes.Clear();
 
@@ -434,6 +444,47 @@ public sealed class CombatAiBrain : MonoBehaviour
 
         _focusedEnemy = null;
         _focusedEnemyLockedUntilTime = 0f;
+    }
+
+    private void PruneRevengeTarget(CombatAiContext context)
+    {
+        if (_revengeTarget == null || context == null)
+        {
+            return;
+        }
+
+        CombatCharacterIntel intel = context.FindEnemyIntel(_revengeTarget);
+        if (intel.Character == _revengeTarget && intel.IsAlive && intel.HasKnownPosition)
+        {
+            return;
+        }
+
+        _revengeTarget = null;
+    }
+
+    private void OnOwnerDamaged(int amount, CombatEffectSource attackSource)
+    {
+        if (amount <= 0 || _owner == null ||
+            _owner.PersonalityProfile == null ||
+            _owner.PersonalityProfile.Kind != CombatAiPersonalityKind.Avenger) return;
+
+        Character attacker = attackSource.Character;
+        if (attacker == null || attacker == _owner || attacker.Team == _owner.Team) return;
+        if (attacker.Health == null || !attacker.Health.IsAlive) return;
+        _revengeTarget = attacker;
+    }
+
+    private void SubscribeRevengeTracking()
+    {
+        if (_owner == null || _owner.Health == null) return;
+        _owner.Health.DamagedWithSource -= OnOwnerDamaged;
+        _owner.Health.DamagedWithSource += OnOwnerDamaged;
+    }
+
+    private void UnsubscribeRevengeTracking()
+    {
+        if (_owner == null || _owner.Health == null) return;
+        _owner.Health.DamagedWithSource -= OnOwnerDamaged;
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

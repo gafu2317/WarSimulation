@@ -417,13 +417,6 @@ public sealed class CombatBattleFlowTests
                 CreateCharacters("Enemy", CombatTeam.Enemy, 10, characters),
                 null);
 
-            IList personalityOptions = GetPrivateField<IList>(selection, "_personalityOptions");
-            for (int i = 0; i < personalityOptions.Count; i++)
-            {
-                CombatAiPersonalityProfile profile = (CombatAiPersonalityProfile)personalityOptions[i];
-                Assert.That((int)profile.Kind, Is.Not.EqualTo(6));
-            }
-
             Button bulkWeaponButton = GetPrivateField<Button>(selection, "_bulkWeaponButton");
             bulkWeaponButton.onClick.Invoke();
             Transform pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
@@ -491,13 +484,13 @@ public sealed class CombatBattleFlowTests
             Button bulkPersonalityButton = GetPrivateField<Button>(selection, "_bulkPersonalityButton");
             bulkPersonalityButton.onClick.Invoke();
             pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
-            personalityOptions = GetPrivateField<IList>(selection, "_personalityOptions");
+            IList personalityOptions = GetPrivateField<IList>(selection, "_personalityOptions");
             Assert.That(pickerContent.childCount, Is.EqualTo(personalityOptions.Count));
             Assert.That(personalityOptions.Count, Is.GreaterThan(1));
             GridLayoutGroup personalityGrid = pickerContent.GetComponent<GridLayoutGroup>();
             Assert.That(personalityGrid.enabled, Is.True);
             Assert.That(personalityGrid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
-            Assert.That(personalityGrid.constraintCount, Is.EqualTo(2));
+            Assert.That(personalityGrid.constraintCount, Is.EqualTo(1));
 
             pickerContent.GetChild(pickerContent.childCount - 1).GetComponent<Button>().onClick.Invoke();
             IList enemyRows = GetPrivateField<IList>(selection, "_enemyRows");

@@ -8,29 +8,43 @@ using WarSimulation.Combat.Map;
 public sealed class FeatureRendererPlayModeTests
 {
     [UnityTest]
-    public IEnumerator CombatCamera_SynchronizesEditorStyleStateWhenSwitchingPositions()
+    public IEnumerator CombatCamera_SynchronizesEditorStyleStateFromCurrentMapStonePositions()
     {
         GameObject cameraObject = new GameObject("MainCamera");
         GameObject flowObject = new GameObject("CombatFlow");
+        GameObject mapSystemObject = new GameObject("CombatMapSystem");
         try
         {
             cameraObject.tag = "MainCamera";
             Camera camera = cameraObject.AddComponent<Camera>();
             EditorStyleCameraController controller = cameraObject.AddComponent<EditorStyleCameraController>();
             CombatFlow flow = flowObject.AddComponent<CombatFlow>();
+            CombatMapSystem mapSystem = mapSystemObject.AddComponent<CombatMapSystem>();
             flow.enabled = false;
+            FieldInfo mapSystemField = typeof(CombatFlow).GetField(
+                "_mapSystem",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(mapSystemField, Is.Not.Null);
+            mapSystemField.SetValue(flow, mapSystem);
             MethodInfo applyCamera = typeof(CombatFlow).GetMethod(
                 "ApplyCombatCamera",
                 BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(applyCamera, Is.Not.Null);
 
+            mapSystem.SetCurrentMap(CreateMapWithPairedStones(
+                new Vector3(1f, 0f, 1f),
+                new Vector3(9f, 0f, 9f)));
             yield return null;
 
-            applyCamera.Invoke(flow, new object[] { true });
+            applyCamera.Invoke(flow, null);
             Assert.That(camera.transform.position, Is.EqualTo(new Vector3(30f, 20f, -10f)));
             Assert.That(camera.transform.eulerAngles.y, Is.EqualTo(0f).Within(0.001f));
             Assert.That(GetPrivateField<float>(controller, "yaw"), Is.EqualTo(0f).Within(0.001f));
 
-            applyCamera.Invoke(flow, new object[] { false });
+            mapSystem.SetCurrentMap(CreateMapWithPairedStones(
+                new Vector3(9f, 0f, 9f),
+                new Vector3(1f, 0f, 1f)));
+            applyCamera.Invoke(flow, null);
             Assert.That(camera.transform.position, Is.EqualTo(new Vector3(30f, 20f, 70f)));
             Assert.That(camera.transform.eulerAngles.y, Is.EqualTo(180f).Within(0.001f));
             Assert.That(GetPrivateField<float>(controller, "yaw"), Is.EqualTo(180f).Within(0.001f));
@@ -39,6 +53,7 @@ public sealed class FeatureRendererPlayModeTests
         {
             Object.Destroy(flowObject);
             Object.Destroy(cameraObject);
+            Object.Destroy(mapSystemObject);
         }
     }
 
@@ -183,12 +198,19 @@ public sealed class FeatureRendererPlayModeTests
 
     private static MapData CreateMapWithPairedStones()
     {
+        return CreateMapWithPairedStones(
+            new Vector3(1f, 0f, 1f),
+            new Vector3(9f, 0f, 9f));
+    }
+
+    private static MapData CreateMapWithPairedStones(Vector3 ownPosition, Vector3 enemyPosition)
+    {
         MapData map = new MapData(
             new HeightMap(12, 12, 1f),
             new GroundStateGrid(12, 12, 1f),
             seed: 1);
-        map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(1f, 0f, 1f)));
-        map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(9f, 0f, 9f)));
+        map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, ownPosition));
+        map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, enemyPosition));
         return map;
     }
 }

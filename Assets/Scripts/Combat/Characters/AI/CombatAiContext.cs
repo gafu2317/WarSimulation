@@ -24,6 +24,7 @@ public sealed class CombatAiContext
     public IReadOnlyList<CombatAiPendingHealing> EnemyPendingHealing { get; }
     public bool HasBlockedMoveDestination { get; }
     public Vector3 BlockedMoveDestination { get; }
+    public Character RecentAttacker { get; }
 
     public CombatAiContext(
         Character owner,
@@ -45,7 +46,8 @@ public sealed class CombatAiContext
         IReadOnlyList<CombatAiPendingHealing> enemyPendingHealing = null,
         bool hasBlockedMoveDestination = false,
         Vector3 blockedMoveDestination = default,
-        IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null)
+        IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null,
+        Character recentAttacker = null)
     {
         Owner = owner;
         EnemyIntel = Snapshot(enemyIntel);
@@ -67,6 +69,7 @@ public sealed class CombatAiContext
         EnemyPendingHealing = Snapshot(enemyPendingHealing);
         HasBlockedMoveDestination = hasBlockedMoveDestination;
         BlockedMoveDestination = blockedMoveDestination;
+        RecentAttacker = recentAttacker;
     }
 
     public bool IsMoveDestinationBlocked(Vector3 destination)

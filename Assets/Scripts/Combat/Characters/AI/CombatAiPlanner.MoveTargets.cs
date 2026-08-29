@@ -110,6 +110,187 @@ public static partial class CombatAiPlanner
             : CombatMoveTarget.ForPosition(bestDestination);
     }
 
+    private static CombatMoveTarget CreateStandoffStoneTarget(
+        CombatAiContext context,
+        CombatObjective previousState)
+    {
+        if (context == null || context.Owner == null || !context.HasEnemyStonePosition)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        float desiredDistance = EstimatePreferredAttackDistance(context.Owner);
+        if (desiredDistance <= 0f) return CombatMoveTarget.None;
+
+        Vector3 ownerPosition = context.Owner.transform.position;
+        float currentStoneDistance = HorizontalDistance(ownerPosition, context.EnemyStonePosition);
+        CombatCharacterIntel nearestThreat = FindNearestKnownEnemyIntel(context, ownerPosition);
+        bool threatTooClose = nearestThreat.Character != null &&
+            HorizontalDistance(ownerPosition, nearestThreat.KnownPosition) < StandoffEnemyClearanceDistance;
+        if (!threatTooClose && currentStoneDistance <= desiredDistance + StandoffRangeSlack)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        float currentProgress = GetStandoffStoneProgress(context, ownerPosition);
+        CombatMoveTarget bestAdvance = CombatMoveTarget.None;
+        float bestAdvanceProgress = float.NegativeInfinity;
+        float bestAdvanceThreatDistance = float.NegativeInfinity;
+        float bestAdvanceOwnerDistance = float.PositiveInfinity;
+        CombatMoveTarget bestRetreat = CombatMoveTarget.None;
+        float bestRetreatProgress = float.NegativeInfinity;
+        float bestRetreatThreatDistance = float.NegativeInfinity;
+        float bestRetreatOwnerDistance = float.PositiveInfinity;
+
+        void Consider(CombatMoveTarget candidate, bool allowCloseToStone = false)
+        {
+            if (!candidate.HasDestination || !IsUsableMove(context, candidate)) return;
+            if (!allowCloseToStone && HorizontalDistance(candidate.Destination, context.EnemyStonePosition) <
+                desiredDistance - StandoffRangeSlack) return;
+            if (!IsStandoffDestinationSafe(context, candidate.Destination)) return;
+
+            float candidateProgress = GetStandoffStoneProgress(context, candidate.Destination);
+            float candidateStoneDistance = HorizontalDistance(candidate.Destination, context.EnemyStonePosition);
+            float candidateThreatDistance = GetNearestThreatDistance(context, candidate.Destination);
+            float candidateOwnerDistance = HorizontalDistance(ownerPosition, candidate.Destination);
+            bool advancesOrMovesLaterally = candidateProgress > currentProgress + 0.01f ||
+                candidateStoneDistance <= currentStoneDistance + 0.01f &&
+                candidateProgress >= currentProgress - 0.01f;
+            if (advancesOrMovesLaterally)
+            {
+                if (IsBetterStandoffCandidate(
+                    candidateProgress,
+                    candidateThreatDistance,
+                    candidateOwnerDistance,
+                    bestAdvanceProgress,
+                    bestAdvanceThreatDistance,
+                    bestAdvanceOwnerDistance))
+                {
+                    bestAdvance = candidate;
+                    bestAdvanceProgress = candidateProgress;
+                    bestAdvanceThreatDistance = candidateThreatDistance;
+                    bestAdvanceOwnerDistance = candidateOwnerDistance;
+                }
+
+                return;
+            }
+
+            if (IsBetterStandoffCandidate(
+                candidateProgress,
+                candidateThreatDistance,
+                candidateOwnerDistance,
+                bestRetreatProgress,
+                bestRetreatThreatDistance,
+                bestRetreatOwnerDistance))
+            {
+                bestRetreat = candidate;
+                bestRetreatProgress = candidateProgress;
+                bestRetreatThreatDistance = candidateThreatDistance;
+                bestRetreatOwnerDistance = candidateOwnerDistance;
+            }
+        }
+
+        Vector3 awayFromStone = Flatten(ownerPosition - context.EnemyStonePosition);
+        if (awayFromStone.sqrMagnitude <= 0.01f && context.HasOwnStonePosition)
+        {
+            awayFromStone = Flatten(ownerPosition - context.OwnStonePosition);
+        }
+
+        if (awayFromStone.sqrMagnitude <= 0.01f) awayFromStone = Vector3.back;
+        awayFromStone.Normalize();
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 direction = Quaternion.Euler(0f, i * 45f, 0f) * awayFromStone;
+            if (Vector3.Dot(direction, awayFromStone) < 0f) continue;
+            Vector3 candidate = context.EnemyStonePosition + direction * desiredDistance;
+            candidate.y = ownerPosition.y;
+            Consider(CombatMoveTarget.ForPosition(candidate));
+        }
+
+        if (previousState != CombatObjective.DestroyEnemyStone)
+        {
+            for (int i = 0; i < context.AssaultRoutes.Count; i++)
+            {
+                CreateAssaultRouteAdvanceCandidate(
+                    context,
+                    context.AssaultRoutes[i],
+                    out _,
+                    out _,
+                    out CombatMoveTarget routeTarget);
+                Consider(routeTarget);
+            }
+        }
+
+        if (nearestThreat.Character != null)
+        {
+            Vector3 awayFromThreat = Flatten(ownerPosition - nearestThreat.KnownPosition);
+            if (awayFromThreat.sqrMagnitude <= 0.01f)
+            {
+                awayFromThreat = Flatten(ownerPosition - context.EnemyStonePosition);
+            }
+
+            if (awayFromThreat.sqrMagnitude <= 0.01f) awayFromThreat = Vector3.back;
+            awayFromThreat.Normalize();
+            Consider(
+                CombatMoveTarget.ForPosition(ownerPosition + awayFromThreat * StandoffEnemyClearanceDistance),
+                allowCloseToStone: true);
+        }
+
+        if (bestAdvance.HasDestination) return bestAdvance;
+        return threatTooClose ? bestRetreat : CombatMoveTarget.None;
+    }
+
+    private static bool IsStandoffDestinationSafe(CombatAiContext context, Vector3 destination)
+    {
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
+            if (HorizontalDistance(destination, enemy.KnownPosition) < StandoffEnemyClearanceDistance) return false;
+        }
+
+        return true;
+    }
+
+    private static float GetNearestThreatDistance(CombatAiContext context, Vector3 position)
+    {
+        float nearestDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (!enemy.IsAlive || !enemy.HasKnownPosition) continue;
+            nearestDistance = Mathf.Min(nearestDistance, HorizontalDistance(position, enemy.KnownPosition));
+        }
+
+        return nearestDistance;
+    }
+
+    private static float GetStandoffStoneProgress(CombatAiContext context, Vector3 position)
+    {
+        if (context.HasOwnStonePosition &&
+            HorizontalDistance(context.OwnStonePosition, context.EnemyStonePosition) > 0.01f)
+        {
+            return CombatAiPositioning.GetAdvanceProgress(context, position);
+        }
+
+        return -HorizontalDistance(position, context.EnemyStonePosition);
+    }
+
+    private static bool IsBetterStandoffCandidate(
+        float progress,
+        float threatDistance,
+        float ownerDistance,
+        float bestProgress,
+        float bestThreatDistance,
+        float bestOwnerDistance)
+    {
+        if (progress > bestProgress + 0.01f) return true;
+        if (Mathf.Abs(progress - bestProgress) > 0.01f) return false;
+        if (threatDistance > bestThreatDistance + 0.01f) return true;
+        if (Mathf.Abs(threatDistance - bestThreatDistance) > 0.01f) return false;
+        return ownerDistance < bestOwnerDistance - 0.01f;
+    }
+
     private static void CreateAssaultRouteAdvanceCandidate(
         CombatAiContext context,
         CombatAiAssaultRoute route,
@@ -257,6 +438,59 @@ public static partial class CombatAiPlanner
         float distance = HorizontalDistance(context.Owner.transform.position, ally.transform.position);
         if (distance <= 2.5f) return CombatMoveTarget.None;
         return CombatMoveTarget.ForCharacter(ally);
+    }
+
+    private static bool TryCreateTagalongTarget(
+        CombatAiContext context,
+        CombatCharacterIntel leader,
+        out CombatMoveTarget target)
+    {
+        target = CombatMoveTarget.None;
+        if (context == null || context.Owner == null || leader.Character == null ||
+            !leader.IsAlive || !leader.CanAct || !leader.HasObjective) return false;
+
+        if (leader.IntendedTarget != null)
+        {
+            if (leader.IntendedTarget == context.Owner ||
+                leader.IntendedTarget.Health == null || !leader.IntendedTarget.Health.IsAlive)
+            {
+                return false;
+            }
+
+            target = CombatMoveTarget.ForCharacter(leader.IntendedTarget);
+        }
+        else if (leader.HasIntendedDestination)
+        {
+            target = CombatMoveTarget.ForPosition(leader.IntendedDestination);
+        }
+
+        if (!target.HasDestination || HorizontalDistance(context.Owner.transform.position, target.Destination) <= 1.25f)
+        {
+            return false;
+        }
+
+        return IsUsableMove(context, target);
+    }
+
+    private static CombatMoveTarget CreateRevengeTarget(
+        CombatAiContext context,
+        CombatCharacterIntel attacker)
+    {
+        if (context == null || context.Owner == null || attacker.Character == null ||
+            !attacker.IsAlive || !attacker.HasKnownPosition)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        CombatMoveTarget target = attacker.HasDirectSight
+            ? CombatMoveTarget.ForCharacter(attacker.Character)
+            : CombatMoveTarget.ForPosition(attacker.KnownPosition);
+        if (!target.HasDestination || HorizontalDistance(context.Owner.transform.position, target.Destination) <= 1.25f)
+        {
+            return CombatMoveTarget.None;
+        }
+
+        return IsUsableMove(context, target) ? target : CombatMoveTarget.None;
     }
 
     private static Character FindNearestAllyCharacter(CombatAiContext context)
@@ -432,18 +666,18 @@ public static partial class CombatAiPlanner
             return CombatMoveTarget.None;
         }
 
-        float desiredDistance = EstimatePreferredWandAttackDistance(owner);
+        float desiredDistance = EstimatePreferredAttackDistance(owner);
         if (desiredDistance <= 0f)
         {
             return CombatMoveTarget.ForCharacter(enemy);
         }
 
         float currentDistance = HorizontalDistance(owner.transform.position, enemy.transform.position);
-        float minimumHoldDistance = Mathf.Max(0f, desiredDistance - WandRangeSlack);
-        float maximumHoldDistance = desiredDistance + WandRangeSlack;
+        float minimumHoldDistance = Mathf.Max(0f, desiredDistance - StandoffRangeSlack);
+        float maximumHoldDistance = desiredDistance + StandoffRangeSlack;
         CombatCharacterIntel nearestThreat = FindNearestKnownEnemyIntel(context, owner.transform.position);
         bool threatTooClose = nearestThreat.Character != null &&
-            HorizontalDistance(owner.transform.position, nearestThreat.KnownPosition) < WandEnemyClearanceDistance;
+            HorizontalDistance(owner.transform.position, nearestThreat.KnownPosition) < StandoffEnemyClearanceDistance;
         if (currentDistance >= minimumHoldDistance && currentDistance <= maximumHoldDistance && !threatTooClose)
         {
             return CombatMoveTarget.None;
@@ -831,7 +1065,7 @@ public static partial class CombatAiPlanner
         return bestHeal;
     }
 
-    private static float EstimatePreferredWandAttackDistance(Character owner)
+    private static float EstimatePreferredAttackDistance(Character owner)
     {
         if (owner == null)
         {

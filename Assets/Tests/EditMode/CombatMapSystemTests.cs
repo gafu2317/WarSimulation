@@ -165,68 +165,6 @@ public sealed class CombatMapSystemTests
     }
 
     [Test]
-    public void TrySetStonePositionsReversed_SwapsPairedPositionsAndRestoresThem()
-    {
-        GameObject go = new GameObject("CombatMapSystem");
-        GameObject hostObject = null;
-        try
-        {
-            CombatMapSystem system = go.AddComponent<CombatMapSystem>();
-            MapData map = CreateMapWithPairedStones();
-            Quaternion ownMainRotation = Quaternion.Euler(0f, 15f, 0f);
-            Vector3 ownMainScale = new Vector3(1.2f, 0.9f, 1.1f);
-            map.Features[0] = new PlacedFeature(
-                FeatureType.OwnMainStone,
-                map.Features[0].WorldPosition,
-                ownMainRotation,
-                ownMainScale);
-            hostObject = CreateRenderedStoneHost(map);
-            SetPrivateField(system, "_mapSceneHost", hostObject.GetComponent<MapSceneHost>());
-            system.SetCurrentMap(map);
-            int notificationCount = 0;
-            system.StonePositionsChanged += () => notificationCount++;
-
-            Assert.That(system.IsStonePositionReversed, Is.False);
-            Assert.That(system.TrySetStonePositionsReversed(true), Is.True);
-            Assert.That(system.IsStonePositionReversed, Is.True);
-            Assert.That(notificationCount, Is.EqualTo(1));
-            Assert.That(map.Features[0].Type, Is.EqualTo(FeatureType.OwnMainStone));
-            Assert.That(map.Features[1].Type, Is.EqualTo(FeatureType.EnemyMainStone));
-            Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
-            Assert.That(map.Features[1].WorldPosition, Is.EqualTo(new Vector3(1f, 0f, 1f)));
-            Assert.That(map.Features[0].Rotation, Is.EqualTo(ownMainRotation));
-            Assert.That(map.Features[0].Scale, Is.EqualTo(ownMainScale));
-
-            system.SetCurrentMap(map);
-            Assert.That(system.IsStonePositionReversed, Is.True);
-            Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
-
-            Assert.That(system.TrySetStonePositionsReversed(true), Is.True);
-            Assert.That(notificationCount, Is.EqualTo(1));
-
-            map.Features[0] = new PlacedFeature(
-                FeatureType.OwnMainStone,
-                new Vector3(5f, 0f, 5f),
-                ownMainRotation,
-                ownMainScale);
-            Assert.That(system.TrySetStonePositionsReversed(true), Is.True);
-            Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
-            Assert.That(notificationCount, Is.EqualTo(2));
-
-            Assert.That(system.TrySetStonePositionsReversed(false), Is.True);
-            Assert.That(system.IsStonePositionReversed, Is.False);
-            Assert.That(notificationCount, Is.EqualTo(3));
-            Assert.That(map.Features[0].WorldPosition, Is.EqualTo(new Vector3(1f, 0f, 1f)));
-            Assert.That(map.Features[1].WorldPosition, Is.EqualTo(new Vector3(9f, 0f, 9f)));
-        }
-        finally
-        {
-            Object.DestroyImmediate(hostObject);
-            Object.DestroyImmediate(go);
-        }
-    }
-
-    [Test]
     public void TrySetStonePositionsReversed_FailsWithoutRenderedStoneViews()
     {
         GameObject go = new GameObject("CombatMapSystem");

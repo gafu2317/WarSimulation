@@ -58,6 +58,12 @@ public static class CombatFormationCode
         CombatAiPersonalityKind.Devoted,
         CombatAiPersonalityKind.Lonely,
         CombatAiPersonalityKind.Reckless,
+        CombatAiPersonalityKind.Gatekeeper,
+        CombatAiPersonalityKind.Tagalong,
+        CombatAiPersonalityKind.Avenger,
+        CombatAiPersonalityKind.BigMagic,
+        CombatAiPersonalityKind.HighGround,
+        CombatAiPersonalityKind.StandoffSiege,
     };
     // 21性格を超える場合はAlphabetへ文字を追加し、PersonalitySlotCountも増やす。
     // その場合は形式が変わるため、旧コード互換が必要なら旧デコーダを残す。

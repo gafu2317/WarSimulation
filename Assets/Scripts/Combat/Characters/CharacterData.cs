@@ -29,7 +29,7 @@ public class CharacterData : ScriptableObject
     // 各性格の発生の基礎確率
     [Header("Personality Probabilities")]
 
-    [Tooltip("目立ちたがり屋：キャラの多いところに行きやすい。")]
+    [Tooltip("陽キャ：キャラの多いところに行きやすい。")]
     [field: SerializeField] public float AttentionSeeker { private set; get; }
 
     [Tooltip("戦闘狂：何があっても敵への攻撃をやめない。")]

@@ -29,7 +29,6 @@ public sealed class CombatCompositionSweepGeneratorTests
             {
                 weapons.Add(roles[r].Weapon);
                 Assert.That(roles[r].Personality, Is.Not.EqualTo(CombatAiPersonalityKind.Neutral));
-                Assert.That((int)roles[r].Personality, Is.Not.EqualTo(6));
             }
 
             Assert.That(
