@@ -112,7 +112,7 @@ namespace WarSimulation.Tests.EditMode
             using var fixture = new BakeFixture();
             fixture.BakeAssets();
             Type bakeType = Type.GetType(
-                "WarSimulation.Combat.Map.EditorOnly.AuthoredMapNavBake, WarSimulation.Editor",
+                "WarSimulation.Combat.Map.EditorOnly.AuthoredMapNavBake, Assembly-CSharp-Editor",
                 throwOnError: true);
             MethodInfo method = bakeType.GetMethod(
                 "TryGetCurrentMapAndNavMesh",
@@ -135,7 +135,7 @@ namespace WarSimulation.Tests.EditMode
             int routeFingerprint = fixture.BakedMap.AssaultRouteFingerprint;
             fixture.Definition.BuildSeed++;
             Type bakeType = Type.GetType(
-                "WarSimulation.Combat.Map.EditorOnly.AuthoredMapNavBake, WarSimulation.Editor",
+                "WarSimulation.Combat.Map.EditorOnly.AuthoredMapNavBake, Assembly-CSharp-Editor",
                 throwOnError: true);
             MethodInfo method = bakeType.GetMethod(
                 "TryGetCurrentMapAndNavMesh",
