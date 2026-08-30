@@ -50,17 +50,21 @@ public sealed class CombatMapLoadingPlayModeTests
         Assert.That(selection, Is.Not.Null);
 
         while (mapSystem.PreparationState == MapPreparationState.Loading) yield return null;
-        AuthoredMapDefinition first = mapSystem.AuthoredMap;
-        AuthoredMapDefinition second = FindDifferentMap(selection, first);
+        // 任意の初期マップではGafuTest限定の岩補正ONの保存・読込を検証できない。
+        List<AuthoredMapDefinition> options = GetMapOptions(selection);
+        AuthoredMapDefinition first = options.Find(map => map != null && map.name == "AuthoredMap 1");
+        AuthoredMapDefinition second = options.Find(map => map != null && map != first);
         Assert.That(first, Is.Not.Null);
         Assert.That(second, Is.Not.Null);
 
+        yield return mapSystem.PrepareMapAsync(second);
         yield return mapSystem.PrepareMapAsync(first);
         Assert.That(mapSystem.IsMapReady(first), Is.True);
         Assert.That(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath).isLoaded, Is.True);
         AssertRendererSettingsMatch(
             FindMapHost(SceneManager.GetSceneByName("GafuTest")),
             FindMapHost(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath)));
+        Assert.That(IsRockGroundingEnabled(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath)), Is.True);
 
         yield return mapSystem.PrepareMapAsync(second);
 
@@ -68,6 +72,7 @@ public sealed class CombatMapLoadingPlayModeTests
         Assert.That(mapSystem.AuthoredMap, Is.SameAs(second));
         Assert.That(SceneManager.GetSceneByPath(second.BakedRuntimeScenePath).isLoaded, Is.True);
         Assert.That(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath).isLoaded, Is.False);
+        Assert.That(IsRockGroundingEnabled(SceneManager.GetSceneByPath(second.BakedRuntimeScenePath)), Is.False);
         stopwatch.Stop();
         long allocatedBytes = System.GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
         TestContext.WriteLine(
@@ -145,19 +150,17 @@ public sealed class CombatMapLoadingPlayModeTests
         return count;
     }
 
-    private static AuthoredMapDefinition FindDifferentMap(
-        CombatMapSelectionView selection,
-        AuthoredMapDefinition current)
+    private static bool IsRockGroundingEnabled(Scene scene) =>
+        (bool)typeof(FeatureRenderer).GetField("_enableRockGrounding", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(FindMapHost(scene).GetComponent<FeatureRenderer>());
+
+    private static List<AuthoredMapDefinition> GetMapOptions(CombatMapSelectionView selection)
     {
         FieldInfo field = typeof(CombatMapSelectionView).GetField(
             "_mapOptions",
             BindingFlags.Instance | BindingFlags.NonPublic);
         var options = field?.GetValue(selection) as List<AuthoredMapDefinition>;
-        if (options == null) return null;
-        for (int i = 0; i < options.Count; i++)
-        {
-            if (options[i] != null && options[i] != current) return options[i];
-        }
-        return null;
+        Assert.That(options, Is.Not.Null);
+        return options;
     }
 }

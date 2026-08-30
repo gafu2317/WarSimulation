@@ -28,6 +28,9 @@ public sealed class TerrainRendererPlayModeTests
             Assert.That(replacement, Is.Not.Null);
             Assert.That(replacement, Is.Not.SameAs(first));
             Assert.That(replacement.gameObject.activeInHierarchy, Is.True);
+            Assert.That(
+                replacement.materialTemplate,
+                Is.SameAs(Resources.Load<Material>("Combat/Map/GeneratedTerrainMaterial")));
 
             yield return null;
 

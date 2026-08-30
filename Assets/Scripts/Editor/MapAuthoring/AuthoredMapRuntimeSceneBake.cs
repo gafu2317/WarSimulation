@@ -195,6 +195,14 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
                 targetSerialized.CopyFromSerializedProperty(property);
             }
+
+            if (typeof(T) == typeof(TerrainRenderer))
+            {
+                SerializedProperty terrainLayers = sourceSerialized.FindProperty("_terrainLayers");
+                if (terrainLayers != null)
+                    targetSerialized.CopyFromSerializedProperty(terrainLayers);
+            }
+
             targetSerialized.ApplyModifiedPropertiesWithoutUndo();
             return true;
         }

@@ -124,11 +124,11 @@ public sealed class FeatureRendererPlayModeTests
 
             Renderer ownCoreRenderer = ownCore.GetComponentInChildren<Renderer>();
             Renderer enemyCoreRenderer = enemyCore.GetComponentInChildren<Renderer>();
-            Assert.That(ownCoreRenderer.material, Is.Not.SameAs(enemyCoreRenderer.material));
-            Assert.That(ReadMaterialColor(ownCoreRenderer.material).b,
-                Is.GreaterThan(ReadMaterialColor(ownCoreRenderer.material).r));
-            Assert.That(ReadMaterialColor(enemyCoreRenderer.material).r,
-                Is.GreaterThan(ReadMaterialColor(enemyCoreRenderer.material).b));
+            Assert.That(ownCoreRenderer.sharedMaterial, Is.Not.SameAs(enemyCoreRenderer.sharedMaterial));
+            Assert.That(ReadMaterialColor(ownCoreRenderer.sharedMaterial).b,
+                Is.GreaterThan(ReadMaterialColor(ownCoreRenderer.sharedMaterial).r));
+            Assert.That(ReadMaterialColor(enemyCoreRenderer.sharedMaterial).r,
+                Is.GreaterThan(ReadMaterialColor(enemyCoreRenderer.sharedMaterial).b));
 
             Renderer ownPedestalRenderer = FindChildContainingName(own.transform, "Pedestal")
                 .GetComponent<Renderer>();

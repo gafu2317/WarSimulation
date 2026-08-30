@@ -11,7 +11,7 @@ namespace WarSimulation.Combat.Map
     ///
     /// 生成物は全て「GeneratedFeatures」子配下にまとめ、再生成のたびにクリアする。
     /// 見た目は次の構成で生成する：
-    ///   - 木  ：円柱（幹）＋ 球（葉冠）の 2 パーツ
+    ///   - 木  ：設定済みPrefab。未設定時は円柱（幹）＋球（葉冠）の旧方式にフォールバック
     ///   - 岩  ：立方体 1 個を横長・斜め回転で置く
     ///   - 魔石：Resources の認定済みモデルPrefabを使い、Coreだけ陣営色で塗り分ける。
     /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
@@ -22,6 +22,8 @@ namespace WarSimulation.Combat.Map
         private const string RootName = "GeneratedFeatures";
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string NotWalkableAreaName = "Not Walkable";
+        private const float TreeSizeMultiplier = 1.5f;
+        private const float RockSizeMultiplier = 2f;
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
@@ -49,6 +51,10 @@ namespace WarSimulation.Combat.Map
 
         [SerializeField, Min(0.01f)] private float _foliageTextureTiling = 1f;
 
+        [Header("Tree Prefabs")]
+        [Tooltip("木Prefabを10種類、安定した順番で割り当てる。未設定時は旧プロシージャル生成へフォールバックする。")]
+        [SerializeField] private GameObject[] _treePrefabs;
+
         [Header("Rock Appearance")]
         [Tooltip("岩 1 個のベースサイズ（メートル、立方体の一辺）。ランダム揺らぎで ±20% 変動する。")]
         [SerializeField, Min(0.1f)] private float _rockSize = 2.6f;
@@ -65,6 +71,13 @@ namespace WarSimulation.Combat.Map
         [Tooltip("岩テクスチャのタイリング回数。1 なら各面に画像を1回表示する。")]
         [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
 
+        [Header("Rock Prefabs")]
+        [Tooltip("岩Prefabを10種類、安定した順番で割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
+        [SerializeField] private GameObject[] _rockPrefabs;
+
+        [Tooltip("岩の底面をTerrainに埋める試作補正。XZ位置・回転・大きさは変更しない。")]
+        [SerializeField] private bool _enableRockGrounding;
+
         [Header("Magic Stone Appearance")]
         [Tooltip("メイン魔石の高さ（メートル）。拠点扱いなのでかなり目立たせる。")]
         [SerializeField, Min(0.2f)] private float _mainStoneHeight = 3.2f;
@@ -76,6 +89,8 @@ namespace WarSimulation.Combat.Map
         private const float MagicStoneFloatOffset = 0.05f;
         private const float RefinedMagicStoneModelHeight = 2.43f;
         private const string MagicStonePrefabResourcePath = "Combat/Map/RefinedMagicStone";
+        private const string OwnMagicStoneMaterialResourcePath = "Combat/Map/MagicStoneCoreBlue";
+        private const string EnemyMagicStoneMaterialResourcePath = "Combat/Map/MagicStoneCoreRed";
         private Transform _generatedRoot;
 
         public void Render(MapData map)
@@ -116,10 +131,19 @@ namespace WarSimulation.Combat.Map
                 switch (f.Type)
                 {
                     case FeatureType.Tree:
-                        SpawnTree(root.transform, f, trunkMat, foliageMat, cylinderMesh, sphereMesh, treeIdx++);
+                        SpawnTree(
+                            root.transform,
+                            map,
+                            f,
+                            trunkMat,
+                            foliageMat,
+                            cylinderMesh,
+                            sphereMesh,
+                            treeIdx++,
+                            i);
                         break;
                     case FeatureType.Rock:
-                        SpawnRock(root.transform, f, rockMat, cubeMesh, rockIdx++);
+                        SpawnRock(root.transform, map, f, rockMat, cubeMesh, rockIdx++, i);
                         break;
                     case FeatureType.OwnMainStone:
                         SpawnMagicStone(root.transform, f, "OwnMain", stoneIdx++, featureIndex: i);
@@ -129,6 +153,29 @@ namespace WarSimulation.Combat.Map
                         break;
                 }
             }
+
+            if (_enableRockGrounding && rockIdx > 0)
+                GroundRocks(root.transform, map.Height.CellSize, rockIdx);
+        }
+
+        private void GroundRocks(Transform root, float cellSize, int count)
+        {
+            Terrain terrain = GetComponent<TerrainRenderer>()?.Terrain;
+            TerrainCollider ground = terrain != null ? terrain.GetComponent<TerrainCollider>() : null;
+            if (ground == null || !ground.enabled || !ground.gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning("[RockGrounding] TerrainColliderが取得できないため、岩の位置を保持します。", this);
+                return;
+            }
+
+            Physics.SyncTransforms();
+            for (int i = 0; i < count; i++)
+            {
+                Transform rock = root.Find($"Rock_{i}");
+                if (!RockGrounding.TryGround(rock, transform, ground, cellSize, out string error))
+                    Debug.LogWarning($"[RockGrounding] {rock.name}: {error}。位置を保持します。", rock);
+            }
+            Physics.SyncTransforms();
         }
 
         public void RefreshMagicStonePositions(MapData map)
@@ -230,27 +277,72 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// 木 1 本分の親 GameObject を生成し、幹（円柱）と葉冠（球）を子として持たせる。
+        /// 木Prefabを1本生成し、未設定時は旧プロシージャル木へフォールバックする。
         /// Y は <see cref="PlacedFeature.WorldPosition"/> を地面として扱い、根本をそこに合わせる。
         /// </summary>
         private void SpawnTree(
-            Transform parent, PlacedFeature f,
+            Transform parent,
+            MapData map,
+            PlacedFeature f,
             Material trunkMat, Material foliageMat,
-            Mesh cylinder, Mesh sphere, int idx)
+            Mesh cylinder, Mesh sphere, int idx, int featureIndex)
+        {
+            Quaternion rotation = GetTreeRotation(map.Seed, featureIndex, f);
+            if (TrySpawnTreePrefab(parent, map, f, rotation, idx, featureIndex)) return;
+            SpawnProceduralTree(parent, f, rotation, trunkMat, foliageMat, cylinder, sphere, idx);
+        }
+
+        private bool TrySpawnTreePrefab(
+            Transform parent,
+            MapData map,
+            PlacedFeature f,
+            Quaternion rotation,
+            int idx,
+            int featureIndex)
+        {
+            if (!HasValidTreePrefabSet())
+            {
+                if (!_treePrefabWarningLogged)
+                {
+                    string message =
+                        $"[{nameof(FeatureRenderer)}] Exactly {TreePrefabCount} tree prefabs are required; " +
+                        "falling back to procedural trees.";
+                    if (Application.isBatchMode) Debug.LogWarning(message, this);
+                    else Debug.LogError(message, this);
+                    _treePrefabWarningLogged = true;
+                }
+
+                return false;
+            }
+
+            int variant = SelectTreeVariant(map.Seed, featureIndex, f.WorldPosition, _treePrefabs.Length);
+            GameObject tree = Instantiate(_treePrefabs[variant], parent, worldPositionStays: false);
+            tree.name = $"Tree_{idx}";
+            tree.transform.localPosition = f.WorldPosition;
+            tree.transform.localRotation = rotation;
+            tree.transform.localScale = Vector3.one * (TreeSizeMultiplier * GetTreeHeightScale(f.WorldPosition));
+            return true;
+        }
+
+        private void SpawnProceduralTree(
+            Transform parent,
+            PlacedFeature f,
+            Quaternion rotation,
+            Material trunkMat,
+            Material foliageMat,
+            Mesh cylinder,
+            Mesh sphere,
+            int idx)
         {
             var tree = new GameObject($"Tree_{idx}");
             tree.transform.SetParent(parent, worldPositionStays: false);
             SetVisionObstacleLayer(tree);
             // PlacedFeature の座標はマップローカル（親 MapSceneHost 基準）。ワールド直指定だと親が動いているときだけ地形とズレる。
             tree.transform.localPosition = f.WorldPosition;
-            tree.transform.localRotation = f.Rotation;
+            tree.transform.localRotation = rotation;
 
             // 位置ベースで決定的に高さを揺らす（再生成しても同じ木が同じ見た目になる）
-            uint seed = unchecked((uint)Mathf.FloorToInt(f.WorldPosition.x * 41.3f + f.WorldPosition.z * 97.1f + 11.7f));
-            if (seed == 0u) seed = 1u;
-            float hMin = Mathf.Min(_treeHeightScaleMin, _treeHeightScaleMax);
-            float hMax = Mathf.Max(_treeHeightScaleMin, _treeHeightScaleMax);
-            float scale = Mathf.Lerp(hMin, hMax, NextFloat01(ref seed));
+            float scale = TreeSizeMultiplier * GetTreeHeightScale(f.WorldPosition);
             float treeHeight = _treeHeight * scale;
             float trunkRadius = _trunkRadius * scale;
             float foliageRadius = _foliageRadius * scale;
@@ -284,6 +376,57 @@ namespace WarSimulation.Combat.Map
             IgnoreFromNavMeshBuild(foliage);
         }
 
+        private const int TreePrefabCount = 10;
+        private bool _treePrefabWarningLogged;
+
+        private bool HasValidTreePrefabSet()
+        {
+            if (_treePrefabs == null || _treePrefabs.Length != TreePrefabCount) return false;
+            for (int i = 0; i < _treePrefabs.Length; i++)
+            {
+                if (_treePrefabs[i] == null) return false;
+            }
+
+            return true;
+        }
+
+        private float GetTreeHeightScale(Vector3 position)
+        {
+            uint seed = unchecked((uint)Mathf.FloorToInt(position.x * 41.3f + position.z * 97.1f + 11.7f));
+            if (seed == 0u) seed = 1u;
+            float hMin = Mathf.Min(_treeHeightScaleMin, _treeHeightScaleMax);
+            float hMax = Mathf.Max(_treeHeightScaleMin, _treeHeightScaleMax);
+            return Mathf.Lerp(hMin, hMax, NextFloat01(ref seed));
+        }
+
+        private static int SelectTreeVariant(int mapSeed, int featureIndex, Vector3 position, int count)
+        {
+            unchecked
+            {
+                uint hash = (uint)mapSeed;
+                hash = hash * 16777619u ^ (uint)featureIndex;
+                hash = hash * 16777619u ^ (uint)Mathf.RoundToInt(position.x * 100f);
+                hash = hash * 16777619u ^ (uint)Mathf.RoundToInt(position.y * 100f);
+                hash = hash * 16777619u ^ (uint)Mathf.RoundToInt(position.z * 100f);
+                return (int)(hash % (uint)count);
+            }
+        }
+
+        private static Quaternion GetTreeRotation(int mapSeed, int featureIndex, PlacedFeature feature)
+        {
+            unchecked
+            {
+                uint state = (uint)mapSeed ^ 0x9E3779B9u;
+                state = state * 16777619u ^ (uint)featureIndex;
+                state = state * 16777619u ^ (uint)Mathf.RoundToInt(feature.WorldPosition.x * 100f);
+                state = state * 16777619u ^ (uint)Mathf.RoundToInt(feature.WorldPosition.y * 100f);
+                state = state * 16777619u ^ (uint)Mathf.RoundToInt(feature.WorldPosition.z * 100f);
+                if (state == 0u) state = 1u;
+                float yaw = NextFloat01(ref state) * 360f;
+                return feature.Rotation * Quaternion.Euler(0f, yaw, 0f);
+            }
+        }
+
         private static void SetVisionObstacleLayer(GameObject target)
         {
             int layer = LayerMask.NameToLayer(VisionObstacleLayerName);
@@ -291,10 +434,57 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// 岩 1 個分の立方体を生成する。見た目が揃いすぎないよう、位置から決定的に
-        /// スケールと回転をわずかに揺らす。
+        /// 岩Prefabを1個生成し、未設定時は旧キューブ生成へフォールバックする。
         /// </summary>
-        private void SpawnRock(Transform parent, PlacedFeature f, Material mat, Mesh cube, int idx)
+        private void SpawnRock(
+            Transform parent,
+            MapData map,
+            PlacedFeature f,
+            Material mat,
+            Mesh cube,
+            int idx,
+            int featureIndex)
+        {
+            if (TrySpawnRockPrefab(parent, map, f, idx, featureIndex)) return;
+            SpawnProceduralRock(parent, f, mat, cube, idx);
+        }
+
+        private bool TrySpawnRockPrefab(
+            Transform parent,
+            MapData map,
+            PlacedFeature f,
+            int idx,
+            int featureIndex)
+        {
+            if (!HasValidRockPrefabSet())
+            {
+                if (!_rockPrefabWarningLogged)
+                {
+                    string message =
+                        $"[{nameof(FeatureRenderer)}] Exactly {RockPrefabCount} rock prefabs are required; " +
+                        "falling back to procedural rocks.";
+                    if (Application.isBatchMode) Debug.LogWarning(message, this);
+                    else Debug.LogError(message, this);
+                    _rockPrefabWarningLogged = true;
+                }
+
+                return false;
+            }
+
+            uint state = GetRockRandomState(map.Seed, featureIndex, f.WorldPosition);
+            int variant = (int)(state % (uint)_rockPrefabs.Length);
+            float scale = _rockSize * RockSizeMultiplier * Mathf.Lerp(0.85f, 1.15f, NextFloat01(ref state));
+            float yaw = NextFloat01(ref state) * 360f;
+
+            GameObject rock = Instantiate(_rockPrefabs[variant], parent, worldPositionStays: false);
+            rock.name = $"Rock_{idx}";
+            rock.transform.localPosition = f.WorldPosition;
+            rock.transform.localRotation = f.Rotation * Quaternion.Euler(0f, yaw, 0f);
+            rock.transform.localScale = Vector3.one * scale;
+            return true;
+        }
+
+        private void SpawnProceduralRock(Transform parent, PlacedFeature f, Material mat, Mesh cube, int idx)
         {
             var rock = new GameObject($"Rock_{idx}", typeof(MeshFilter), typeof(MeshRenderer), typeof(BoxCollider));
             rock.transform.SetParent(parent, worldPositionStays: false);
@@ -310,14 +500,42 @@ namespace WarSimulation.Combat.Map
             float yaw = NextFloat01(ref seed) * 360f;
 
             // Cube はローカル ±0.5 の立方体。根本を地面に合わせたいので Y 半分だけ上げる。
-            Vector3 pos = f.WorldPosition + new Vector3(0f, _rockSize * sy * 0.5f, 0f);
+            float rockSize = _rockSize * RockSizeMultiplier;
+            Vector3 pos = f.WorldPosition + new Vector3(0f, rockSize * sy * 0.5f, 0f);
             rock.transform.localPosition = pos;
             rock.transform.localRotation = f.Rotation * Quaternion.Euler(0f, yaw, 0f);
-            rock.transform.localScale = new Vector3(_rockSize * sx, _rockSize * sy, _rockSize * sz);
+            rock.transform.localScale = new Vector3(rockSize * sx, rockSize * sy, rockSize * sz);
             rock.GetComponent<MeshFilter>().sharedMesh = cube;
             rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
             rock.GetComponent<BoxCollider>().isTrigger = false;
             MarkNotWalkable(rock);
+        }
+
+        private const int RockPrefabCount = 10;
+        private bool _rockPrefabWarningLogged;
+
+        private bool HasValidRockPrefabSet()
+        {
+            if (_rockPrefabs == null || _rockPrefabs.Length != RockPrefabCount) return false;
+            for (int i = 0; i < _rockPrefabs.Length; i++)
+            {
+                if (_rockPrefabs[i] == null) return false;
+            }
+
+            return true;
+        }
+
+        private static uint GetRockRandomState(int mapSeed, int featureIndex, Vector3 position)
+        {
+            unchecked
+            {
+                uint state = (uint)mapSeed ^ 0x85EBCA6Bu;
+                state = state * 16777619u ^ (uint)featureIndex;
+                state = state * 16777619u ^ (uint)Mathf.RoundToInt(position.x * 100f);
+                state = state * 16777619u ^ (uint)Mathf.RoundToInt(position.y * 100f);
+                state = state * 16777619u ^ (uint)Mathf.RoundToInt(position.z * 100f);
+                return state == 0u ? 1u : state;
+            }
         }
 
         /// <summary>
@@ -356,22 +574,19 @@ namespace WarSimulation.Combat.Map
             Transform core = FindChildByName(stone.transform, "Core");
             if (core == null) return;
 
-            Color color = type == FeatureType.OwnMainStone
-                ? new Color(0.08f, 0.42f, 1f)
-                : new Color(1f, 0.08f, 0.08f);
+            string resourcePath = type == FeatureType.OwnMainStone
+                ? OwnMagicStoneMaterialResourcePath
+                : EnemyMagicStoneMaterialResourcePath;
+            Material material = Resources.Load<Material>(resourcePath);
+            if (material == null)
+            {
+                Debug.LogError($"Magic stone core material was not found at Resources/{resourcePath}.");
+                return;
+            }
+
             Renderer[] renderers = core.GetComponentsInChildren<Renderer>(includeInactive: true);
             for (int i = 0; i < renderers.Length; i++)
-            {
-                Material material = renderers[i].material;
-                if (material == null) continue;
-                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
-                if (material.HasProperty("_Color")) material.SetColor("_Color", color);
-                if (material.HasProperty("_EmissionColor"))
-                {
-                    material.SetColor("_EmissionColor", color * 0.35f);
-                    material.EnableKeyword("_EMISSION");
-                }
-            }
+                renderers[i].sharedMaterial = material;
         }
 
         private static Transform FindChildByName(Transform root, string name)
@@ -465,7 +680,7 @@ namespace WarSimulation.Combat.Map
             return mat;
         }
 
-        /// <summary>xorshift32 ベースの軽量 PRNG。岩の揺らぎを「位置に紐づけて決定的に」作るために使う。</summary>
+        /// <summary>xorshift32 ベースの軽量 PRNG。木と岩の揺らぎを決定的に作るために使う。</summary>
         private static float NextFloat01(ref uint state)
         {
             state ^= state << 13;

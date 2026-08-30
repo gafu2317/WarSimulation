@@ -17,6 +17,7 @@ namespace WarSimulation.Combat.Map
     public sealed class TerrainRenderer : MonoBehaviour
     {
         private const string GeneratedTerrainName = "GeneratedTerrain";
+        private const string TerrainMaterialResourcePath = "Combat/Map/GeneratedTerrainMaterial";
 
         [Tooltip("MapData の高度が全てこの値を下回ると、安全のため最小範囲をこの値に拡張する。" +
                  "平坦マップで Terrain.size.y が 0 になるのを防ぐ。")]
@@ -60,6 +61,8 @@ namespace WarSimulation.Combat.Map
 
         [Tooltip("崖面テクスチャ1枚を貼るワールド寸法（メートル）。")]
         [SerializeField, Min(0.01f)] private float _cliffTileSize = 4f;
+
+        [SerializeField, HideInInspector] private TerrainLayer[] _terrainLayers;
 
         [SerializeField, HideInInspector] private Terrain _terrain;
 
@@ -125,13 +128,21 @@ namespace WarSimulation.Combat.Map
 
         private void EnsureTerrain()
         {
-            if (_terrain != null) return;
+            if (_terrain != null)
+            {
+                AssignTerrainMaterial(_terrain);
+                return;
+            }
 
             var existing = transform.Find(GeneratedTerrainName);
             if (existing != null)
             {
                 _terrain = existing.GetComponent<Terrain>();
-                if (_terrain != null) return;
+                if (_terrain != null)
+                {
+                    AssignTerrainMaterial(_terrain);
+                    return;
+                }
             }
 
             var go = new GameObject(GeneratedTerrainName, typeof(Terrain), typeof(TerrainCollider));
@@ -152,6 +163,13 @@ namespace WarSimulation.Combat.Map
 
         private static void AssignTerrainMaterial(Terrain terrain)
         {
+            Material sharedMaterial = Resources.Load<Material>(TerrainMaterialResourcePath);
+            if (sharedMaterial != null)
+            {
+                terrain.materialTemplate = sharedMaterial;
+                return;
+            }
+
             Shader shader = Shader.Find("Universal Render Pipeline/Terrain/Lit");
             if (shader == null) shader = Shader.Find("Nature/Terrain/Standard");
             if (shader == null) return;
@@ -288,28 +306,17 @@ namespace WarSimulation.Combat.Map
         /// </summary>
         private TerrainLayer[] BuildOrReuseLayers(TerrainData td)
         {
-            TerrainLayer[] existing = td.terrainLayers;
-            if (existing != null && existing.Length == TotalLayerCount)
+            if (HasValidLayers(_terrainLayers))
             {
-                bool allValid = true;
-                for (int i = 0; i < existing.Length; i++)
-                {
-                    if (existing[i] == null || existing[i].diffuseTexture == null)
-                    {
-                        allValid = false;
-                        break;
-                    }
-                }
-                if (allValid)
-                {
-                    ConfigureGrassLayer(existing[GrassLayerIndex]);
-                    ConfigureWaterGroundLayer(existing[IndexOfLayer(GroundState.Water)]);
-                    ConfigureSnowLayer(existing[IndexOfLayer(GroundState.Snow)]);
-                    ConfigureSwampLayer(existing[IndexOfLayer(GroundState.Swamp)]);
-                    ConfigureForestFloorLayer(existing[ForestFloorLayerIndex]);
-                    ConfigureCliffLayer(existing[CliffLayerIndex]);
-                    return existing;
-                }
+                ConfigureLayers(_terrainLayers);
+                return _terrainLayers;
+            }
+
+            TerrainLayer[] existing = td.terrainLayers;
+            if (HasValidLayers(existing))
+            {
+                ConfigureLayers(existing);
+                return existing;
             }
 
             var layers = new TerrainLayer[TotalLayerCount];
@@ -326,6 +333,26 @@ namespace WarSimulation.Combat.Map
             ConfigureCliffLayer(layers[CliffLayerIndex]);
             layers[GrassLayerIndex] = CreateGrassLayer();
             return layers;
+        }
+
+        private static bool HasValidLayers(TerrainLayer[] layers)
+        {
+            if (layers == null || layers.Length != TotalLayerCount) return false;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                if (layers[i] == null || layers[i].diffuseTexture == null) return false;
+            }
+            return true;
+        }
+
+        private void ConfigureLayers(TerrainLayer[] layers)
+        {
+            ConfigureGrassLayer(layers[GrassLayerIndex]);
+            ConfigureWaterGroundLayer(layers[IndexOfLayer(GroundState.Water)]);
+            ConfigureSnowLayer(layers[IndexOfLayer(GroundState.Snow)]);
+            ConfigureSwampLayer(layers[IndexOfLayer(GroundState.Swamp)]);
+            ConfigureForestFloorLayer(layers[ForestFloorLayerIndex]);
+            ConfigureCliffLayer(layers[CliffLayerIndex]);
         }
 
         private TerrainLayer CreateGrassLayer()
