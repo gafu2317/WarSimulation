@@ -170,7 +170,7 @@ namespace WarSimulation.Combat.Map
         {
             unchecked
             {
-                int hash = _buildSeed;
+                int hash = Mix(_buildSeed, StableStringHash("RockCandidatesOutsideReservedZones"));
                 hash = MixConfig(hash, _sharedConfig);
                 hash = MixMountains(hash, _mountains);
                 hash = MixRivers(hash, _rivers);
@@ -276,6 +276,11 @@ namespace WarSimulation.Combat.Map
             hash = Mix(hash, config.RockMinDistance);
             hash = Mix(hash, config.RockPlacementMargin);
             hash = Mix(hash, config.RockTopHeightExclusionRatio);
+            hash = Mix(hash, config.PlacementRadii.Rock);
+            hash = Mix(hash, config.PlacementRadii.Tree);
+            hash = Mix(hash, config.PlacementRadii.TreeCanopy);
+            hash = Mix(hash, config.PlacementRadii.MagicStone);
+            hash = Mix(hash, config.PlacementRadii.Clearance);
             return hash;
         }
 
@@ -463,7 +468,6 @@ namespace WarSimulation.Combat.Map
             hash = Mix(hash, shape.TreeCount);
             hash = Mix(hash, shape.TreeMinDistance);
             hash = Mix(hash, shape.MaxHeight);
-            hash = Mix(hash, shape.MaxAttemptsPerTree);
             hash = Mix(hash, shape.NoiseAmplitude);
             hash = Mix(hash, shape.NoiseFrequency);
             return hash;

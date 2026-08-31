@@ -508,13 +508,13 @@ def make_leaf_canopy(name, collection, center, radii, leaf_count, mats, seed):
 
 def make_cut_diamond(name, collection, location, radius, height, mat, sides=8):
     x, y, z = location
-    lower = z + height * 0.22
-    upper = z + height * 0.7
+    lower = z + height * 0.36
+    upper = z + height - (lower - z)
     vertices = [(x, y, z), (x, y, z + height)]
     for ring_z in (lower, upper):
         for side in range(sides):
             angle = math.tau * side / sides + math.radians(22.5)
-            vertices.append((x + math.cos(angle) * radius, y + math.sin(angle) * radius * 0.72, ring_z))
+            vertices.append((x + math.cos(angle) * radius, y + math.sin(angle) * radius, ring_z))
     faces = []
     for side in range(sides):
         nxt = (side + 1) % sides

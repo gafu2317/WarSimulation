@@ -1,0 +1,43 @@
+{
+  "environment": "Blender 5.0.0",
+  "blend_reopen": "PASS",
+  "models": [
+    {
+      "name": "Tavern",
+      "facility_type": "酒場",
+      "status": "PASS",
+      "mesh_parts": 175,
+      "triangles": 18780,
+      "dimensions_m": [
+        9.287999629974365,
+        8.295000076293945,
+        9.879999160766602
+      ]
+    },
+    {
+      "name": "Clinic",
+      "facility_type": "診療所",
+      "status": "PASS",
+      "mesh_parts": 195,
+      "triangles": 14348,
+      "dimensions_m": [
+        9.805000066757202,
+        6.884999990463257,
+        6.269999980926514
+      ]
+    },
+    {
+      "name": "Guardhouse",
+      "facility_type": "衛兵所",
+      "status": "PASS",
+      "mesh_parts": 141,
+      "triangles": 16784,
+      "dimensions_m": [
+        10.15999984741211,
+        6.1000001430511475,
+        9.960000038146973
+      ]
+    }
+  ],
+  "external_textures_required": false
+}

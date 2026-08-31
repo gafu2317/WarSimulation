@@ -1,0 +1,171 @@
+{
+  "blender": "5.0.0",
+  "palette_srgb": {
+    "Stone": "BEB6A1",
+    "StoneTrim": "DDD3BA",
+    "StoneShade": "A29986",
+    "Plaster": "EADBBE",
+    "Roof": "527A85",
+    "RoofEdge": "3B5964",
+    "Timber": "6C4B37",
+    "Door": "946642",
+    "Window": "344952",
+    "Brass": "C0A05D",
+    "Banner": "AD6050"
+  },
+  "models": [
+    {
+      "name": "Kingdom_Castle",
+      "vertices": 8738,
+      "triangles": 16920,
+      "minimum": [
+        -3.082164764404297,
+        -2.369999885559082,
+        0.0
+      ],
+      "maximum": [
+        3.082164764404297,
+        2.1121649742126465,
+        7.869999885559082
+      ],
+      "materials": [
+        "Kingdom_StoneShade",
+        "Kingdom_Stone",
+        "Kingdom_StoneTrim",
+        "Kingdom_Roof",
+        "Kingdom_RoofEdge",
+        "Kingdom_Window",
+        "Kingdom_Brass",
+        "Kingdom_Door",
+        "Kingdom_Timber",
+        "Kingdom_Banner"
+      ]
+    },
+    {
+      "name": "Kingdom_House",
+      "vertices": 3450,
+      "triangles": 6656,
+      "minimum": [
+        -1.7999999523162842,
+        -1.8949999809265137,
+        0.0
+      ],
+      "maximum": [
+        1.7999999523162842,
+        1.7600001096725464,
+        4.742000102996826
+      ],
+      "materials": [
+        "Kingdom_StoneShade",
+        "Kingdom_Plaster",
+        "Kingdom_Timber",
+        "Kingdom_Roof",
+        "Kingdom_RoofEdge",
+        "Kingdom_Door",
+        "Kingdom_StoneTrim",
+        "Kingdom_Brass",
+        "Kingdom_Window",
+        "Kingdom_Stone"
+      ]
+    },
+    {
+      "name": "Kingdom_Wall_Straight",
+      "vertices": 1040,
+      "triangles": 1992,
+      "minimum": [
+        -3.0,
+        -0.5899999737739563,
+        0.0
+      ],
+      "maximum": [
+        3.0,
+        0.5899999737739563,
+        3.3299999237060547
+      ],
+      "materials": [
+        "Kingdom_Stone",
+        "Kingdom_StoneShade",
+        "Kingdom_StoneTrim"
+      ]
+    },
+    {
+      "name": "Kingdom_Wall_Corner",
+      "vertices": 1800,
+      "triangles": 3444,
+      "minimum": [
+        -0.7149999141693115,
+        -0.7149999737739563,
+        0.0
+      ],
+      "maximum": [
+        3.0,
+        3.0,
+        3.380000114440918
+      ],
+      "materials": [
+        "Kingdom_Stone",
+        "Kingdom_StoneShade",
+        "Kingdom_StoneTrim"
+      ]
+    },
+    {
+      "name": "Kingdom_Wall_Gate",
+      "vertices": 2130,
+      "triangles": 4084,
+      "minimum": [
+        -3.0,
+        -0.6200000047683716,
+        0.0
+      ],
+      "maximum": [
+        3.0,
+        0.6200000047683716,
+        3.3299999237060547
+      ],
+      "materials": [
+        "Kingdom_Stone",
+        "Kingdom_StoneShade",
+        "Kingdom_StoneTrim",
+        "Kingdom_Banner"
+      ]
+    }
+  ],
+  "wall_sockets_blender": {
+    "straight": [
+      [
+        -3,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "gate": [
+      [
+        -3,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "corner": [
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        0,
+        3,
+        0
+      ]
+    ]
+  }
+}

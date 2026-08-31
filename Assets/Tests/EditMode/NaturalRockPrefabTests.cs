@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Unity.AI.Navigation;
@@ -11,15 +12,16 @@ using WarSimulation.Combat.Map;
 public sealed class NaturalRockPrefabTests
 {
     private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalRocks";
+    private static readonly int[] VariantIds = { 1, 2, 4, 8, 7 };
 
     [Test]
     public void NaturalRockPrefabs_ExposeGroundedCollisionAndNavMeshContract()
     {
         int visionObstacleLayer = LayerMask.NameToLayer("VisionObstacle");
         int notWalkableArea = UnityEngine.AI.NavMesh.GetAreaFromName("Not Walkable");
-        for (int i = 0; i < 10; i++)
+        foreach (int variant in VariantIds)
         {
-            string path = $"{PrefabDirectory}/NaturalRock_{i + 1:00}.prefab";
+            string path = $"{PrefabDirectory}/NaturalRock_{variant:00}.prefab";
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             Assert.That(prefab, Is.Not.Null, path);
             Assert.That(prefab.GetComponent<MeshFilter>(), Is.Null, path);
@@ -55,9 +57,9 @@ public sealed class NaturalRockPrefabTests
     public void NaturalRockPrefabs_BlockVisionObstacleRays()
     {
         int visionObstacleLayer = LayerMask.NameToLayer("VisionObstacle");
-        for (int i = 0; i < 10; i++)
+        foreach (int variant in VariantIds)
         {
-            string path = $"{PrefabDirectory}/NaturalRock_{i + 1:00}.prefab";
+            string path = $"{PrefabDirectory}/NaturalRock_{variant:00}.prefab";
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             try
@@ -86,10 +88,10 @@ public sealed class NaturalRockPrefabTests
     [Test]
     public void FeatureRenderer_UsesDeterministicRockPrefabVariantsAndTransforms()
     {
-        var prefabs = new GameObject[10];
+        var prefabs = new GameObject[VariantIds.Length];
         for (int i = 0; i < prefabs.Length; i++)
             prefabs[i] = AssetDatabase.LoadAssetAtPath<GameObject>(
-                $"{PrefabDirectory}/NaturalRock_{i + 1:00}.prefab");
+                $"{PrefabDirectory}/NaturalRock_{VariantIds[i]:00}.prefab");
 
         GameObject host = new GameObject("NaturalRockPrefabTestHost");
         try
@@ -112,7 +114,11 @@ public sealed class NaturalRockPrefabTests
                 Assert.That(rock.GetComponent<MeshFilter>(), Is.Null);
                 Assert.That(rock.Find("Geometry"), Is.Not.Null);
                 Assert.That(rock.localScale.x, Is.InRange(4.42f, 5.98f));
+                Assert.That(prefabs.Select(p => p.GetComponentInChildren<MeshFilter>().sharedMesh),
+                    Does.Contain(rock.GetComponentInChildren<MeshFilter>().sharedMesh));
+                Assert.That(Vector3.Angle(rock.up, Vector3.up), Is.LessThan(0.001f));
             }
+            Assert.That(firstRotations.Distinct().Count(), Is.GreaterThan(1));
 
             renderer.Render(map);
             generated = host.transform.Find("GeneratedFeatures");
@@ -143,9 +149,17 @@ public sealed class NaturalRockPrefabTests
                 Assert.That(renderer, Is.Not.Null, paths[i]);
                 var serialized = new SerializedObject(renderer);
                 SerializedProperty rockPrefabs = serialized.FindProperty("_rockPrefabs");
-                Assert.That(rockPrefabs.arraySize, Is.EqualTo(10), paths[i]);
+                Assert.That(rockPrefabs.arraySize, Is.EqualTo(VariantIds.Length), paths[i]);
                 for (int p = 0; p < rockPrefabs.arraySize; p++)
-                    Assert.That(rockPrefabs.GetArrayElementAtIndex(p).objectReferenceValue, Is.Not.Null, paths[i]);
+                    Assert.That(AssetDatabase.GetAssetPath(rockPrefabs.GetArrayElementAtIndex(p).objectReferenceValue),
+                        Is.EqualTo($"{PrefabDirectory}/NaturalRock_{VariantIds[p]:00}.prefab"), paths[i]);
+                Mesh[] allowedMeshes = VariantIds.Select(id => AssetDatabase.LoadAssetAtPath<GameObject>(
+                    $"{PrefabDirectory}/NaturalRock_{id:00}.prefab").GetComponentInChildren<MeshFilter>().sharedMesh).ToArray();
+                foreach (Transform feature in renderer.transform.Find("GeneratedFeatures"))
+                {
+                    if (!feature.name.StartsWith("Rock_")) continue;
+                    Assert.That(allowedMeshes, Does.Contain(feature.GetComponentInChildren<MeshFilter>().sharedMesh), paths[i]);
+                }
             }
             finally
             {

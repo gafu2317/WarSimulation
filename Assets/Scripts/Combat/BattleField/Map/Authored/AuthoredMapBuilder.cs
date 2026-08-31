@@ -5,7 +5,7 @@ namespace WarSimulation.Combat.Map
 {
     /// <summary>
     /// 手作りマップ資産を決定的に <see cref="MapData"/> へ展開する。
-    /// 山→川→湖→地面→森→橋→散布→魔石の順で依存関係を守る。
+    /// 地形→橋・魔石→岩→森・散布木の順に構築する。
     /// </summary>
     public static class AuthoredMapBuilder
     {
@@ -25,14 +25,16 @@ namespace WarSimulation.Combat.Map
             ApplyRivers(map, definition.Rivers, config, definition.BuildSeed);
             ApplyLakes(map, definition.Lakes);
             ApplyGroundPatches(map, definition.GroundPatches);
-            ApplyForests(map, definition.Forests);
             ApplyBridges(map, definition.Bridges, config);
-
+            // 固定物を後置きすると、先に散布した木・岩が予約位置を塞いでしまう。
+            ApplyMagicStones(map, definition.MagicStones);
+            RegisterForests(map, definition.Forests);
             // 散布木・岩は SharedConfig のルール。魔石は手作り配置。
             IRandom rng = new SystemRandom(definition.BuildSeed);
-            new TreeScatterPhase().Execute(map, rng, config);
+            // 木を先に埋めると、大きな岩の候補がマップ周縁にしか残らない。
             new RockPhase().Execute(map, rng, config);
-            ApplyMagicStones(map, definition.MagicStones);
+            ApplyForests(map, definition.Forests);
+            new TreeScatterPhase().Execute(map, rng, config);
             return map;
         }
 
@@ -136,7 +138,18 @@ namespace WarSimulation.Combat.Map
             {
                 AuthoredForestPlacement entry = forests[i];
                 if (entry?.Shape == null) continue;
-                entry.Shape.Apply(map, entry.ToStampPlacement());
+                entry.Shape.PlaceTrees(map, entry.ToStampPlacement());
+            }
+        }
+
+        private static void RegisterForests(MapData map, List<AuthoredForestPlacement> forests)
+        {
+            if (forests == null) return;
+            foreach (var entry in forests)
+            {
+                if (entry?.Shape == null) continue;
+                // 木がまだ生成されていなくても、森林の予定領域に岩は置かない。
+                map.AddForestRegion(entry.Shape.CreateRegion(entry.ToStampPlacement()));
             }
         }
 

@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Unity.AI.Navigation;
 using UnityEditor;
@@ -15,42 +14,36 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalRocks";
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string NotWalkableAreaName = "Not Walkable";
-        private const int ExpectedRockCount = 10;
+        private static readonly string[] SelectedModels =
+        {
+            "NaturalRock_01_TallMonolith",
+            "NaturalRock_02_BroadAngular",
+            "NaturalRock_04_FracturedBoulder",
+            "NaturalRock_08_TwinBoulder",
+            "NaturalRock_07_LeaningShard",
+        };
 
         [MenuItem("WarSim/Map/Create Natural Rock Prefabs")]
         public static void BuildAll()
         {
-            string[] guids = AssetDatabase.FindAssets("t:Model", new[] { SourceDirectory });
-            var sourcePaths = new List<string>(guids.Length);
-            for (int i = 0; i < guids.Length; i++)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                if (path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)) sourcePaths.Add(path);
-            }
-
-            sourcePaths.Sort(StringComparer.Ordinal);
-            if (sourcePaths.Count != ExpectedRockCount)
-                throw new InvalidOperationException(
-                    $"Expected {ExpectedRockCount} FBX files in {SourceDirectory}, found {sourcePaths.Count}.");
-
             int visionObstacleLayer = LayerMask.NameToLayer(VisionObstacleLayerName);
             int notWalkableArea = NavMesh.GetAreaFromName(NotWalkableAreaName);
             if (visionObstacleLayer < 0 || notWalkableArea < 0)
                 throw new InvalidOperationException("Required rock Layer or NavMesh Area is missing.");
 
             Directory.CreateDirectory(PrefabDirectory);
-            var prefabs = new GameObject[sourcePaths.Count];
-            for (int i = 0; i < sourcePaths.Count; i++)
+            var prefabs = new GameObject[SelectedModels.Length];
+            for (int i = 0; i < SelectedModels.Length; i++)
             {
-                string prefabPath = $"{PrefabDirectory}/NaturalRock_{i + 1:00}.prefab";
-                BuildPrefab(sourcePaths[i], prefabPath, visionObstacleLayer, notWalkableArea);
+                string prefabPath = $"{PrefabDirectory}/NaturalRock_{SelectedModels[i].Split('_')[1]}.prefab";
+                BuildPrefab($"{SourceDirectory}/{SelectedModels[i]}.fbx", prefabPath, visionObstacleLayer, notWalkableArea);
                 prefabs[i] = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             }
 
             AssignToLoadedFeatureRenderers(prefabs);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log($"[{nameof(NaturalRockPrefabBuilder)}] Created {sourcePaths.Count} natural rock prefabs.");
+            Debug.Log($"[{nameof(NaturalRockPrefabBuilder)}] Created {prefabs.Length} selected natural rock prefabs.");
         }
 
         private static void BuildPrefab(

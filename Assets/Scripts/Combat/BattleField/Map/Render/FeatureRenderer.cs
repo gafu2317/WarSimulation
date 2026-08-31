@@ -72,7 +72,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
 
         [Header("Rock Prefabs")]
-        [Tooltip("岩Prefabを10種類、安定した順番で割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
+        [Tooltip("使用する岩Prefab 5種類（01・02・04・08・07）を割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
         [SerializeField] private GameObject[] _rockPrefabs;
 
         [Tooltip("岩の底面をTerrainに埋める試作補正。XZ位置・回転・大きさは変更しない。")]
@@ -511,7 +511,7 @@ namespace WarSimulation.Combat.Map
             MarkNotWalkable(rock);
         }
 
-        private const int RockPrefabCount = 10;
+        private const int RockPrefabCount = 5;
         private bool _rockPrefabWarningLogged;
 
         private bool HasValidRockPrefabSet()

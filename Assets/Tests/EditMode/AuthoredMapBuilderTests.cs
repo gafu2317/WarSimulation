@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -21,9 +22,78 @@ public sealed class AuthoredMapBuilderTests
             Assert.That(a.Features.Count, Is.EqualTo(b.Features.Count));
             Assert.That(a.Height.GetHeight(5, 5), Is.EqualTo(b.Height.GetHeight(5, 5)).Within(0.0001f));
             Assert.That(CountWater(a), Is.EqualTo(CountWater(b)));
+            Vector3[] rocks = a.Features.Where(f => f.Type == FeatureType.Rock).Select(f => f.WorldPosition).ToArray();
+            Assert.That(rocks, Is.Not.Empty);
+            Assert.That(b.Features.Where(f => f.Type == FeatureType.Rock).Select(f => f.WorldPosition), Is.EqualTo(rocks));
+            definition.BuildSeed++;
+            MapData c = AuthoredMapBuilder.Build(definition);
+            Assert.That(c.Features.Where(f => f.Type == FeatureType.Rock).Select(f => f.WorldPosition), Is.Not.EqualTo(rocks));
         }
         finally
         {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void Build_ReservesFixedObjectsAndSeparatesTreeAndRockFootprints()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        var forest = ScriptableObject.CreateInstance<ForestClusterStampShape>();
+        var radii = new FeaturePlacementRadii { Rock = 2f, Tree = 0.4f, TreeCanopy = 1f, MagicStone = 1f, Clearance = 0.25f };
+        SetPrivateField(definition.SharedConfig, "_placementRadii", radii);
+        SetPrivateField(definition.SharedConfig, "_scatterTreeCount", 4);
+        SetPrivateField(forest, "_radius", 3f);
+        SetPrivateField(forest, "_treeMinDistance", 0f);
+        definition.Forests.Add(new AuthoredForestPlacement { Shape = forest, Center = new Vector2(5f, 4f), Scale = Vector2.one });
+        try
+        {
+            MapData map = AuthoredMapBuilder.Build(definition);
+            Assert.That(map.Features.Any(f => f.Type == FeatureType.Tree), Is.True);
+            Assert.That(map.Features.Any(f => f.Type == FeatureType.Rock), Is.True);
+            Assert.That(map.ForestRegions.Count, Is.EqualTo(definition.Forests.Count));
+            Assert.That(map.Features.FindLastIndex(f => f.Type == FeatureType.Rock),
+                Is.LessThan(map.Features.FindIndex(f => f.Type == FeatureType.Tree)));
+            foreach (PlacedFeature feature in map.Features)
+            {
+                if (feature.Type != FeatureType.Tree && feature.Type != FeatureType.Rock) continue;
+                var position = new Vector2(feature.WorldPosition.x, feature.WorldPosition.z);
+                if (feature.Type == FeatureType.Rock)
+                {
+                    Assert.That(position.x, Is.InRange(radii.Rock, definition.SharedConfig.WorldSize - radii.Rock));
+                    Assert.That(position.y, Is.InRange(radii.Rock, definition.SharedConfig.WorldSize - radii.Rock));
+                    foreach (var region in map.ForestRegions)
+                        Assert.That(Vector2.Distance(position, region.Center),
+                            Is.GreaterThanOrEqualTo(region.OuterRadius + radii.Rock + radii.Clearance));
+                }
+                float fullRadius = feature.Type == FeatureType.Tree ? radii.TreeCanopy : radii.Rock;
+                Assert.That(BridgePlacementUtility.IsNearAnyBridge(map, position,
+                    map.BridgeFeatureExclusionMargin + fullRadius + radii.Clearance), Is.False);
+                foreach (PlacedFeature other in map.Features)
+                {
+                    if (other.WorldPosition == feature.WorldPosition && other.Type == feature.Type) continue;
+                    if (other.Type == FeatureType.Bridge) continue;
+                    bool treePair = feature.Type == FeatureType.Tree && other.Type == FeatureType.Tree;
+                    float a = treePair ? radii.Tree : fullRadius;
+                    float b = other.Type == FeatureType.Tree ? (treePair ? radii.Tree : radii.TreeCanopy)
+                        : other.Type == FeatureType.Rock ? radii.Rock : radii.MagicStone;
+                    var center = new Vector2(other.WorldPosition.x, other.WorldPosition.z);
+                    Assert.That(Vector2.Distance(position, center), Is.GreaterThanOrEqualTo(a + b + radii.Clearance));
+                }
+            }
+            foreach (AuthoredMagicStonePlacement stone in definition.MagicStones)
+                Assert.That(map.Features.Any(f => f.Type == stone.Type &&
+                    new Vector2(f.WorldPosition.x, f.WorldPosition.z) == stone.Center), Is.True);
+            MapData repeated = AuthoredMapBuilder.Build(definition);
+            Assert.That(repeated.Features.Select(f => f.WorldPosition), Is.EqualTo(map.Features.Select(f => f.WorldPosition)));
+            int fingerprint = definition.ComputeGeometryFingerprint();
+            radii.Rock += 1f;
+            SetPrivateField(definition.SharedConfig, "_placementRadii", radii);
+            Assert.That(definition.ComputeGeometryFingerprint(), Is.Not.EqualTo(fingerprint));
+        }
+        finally
+        {
+            Object.DestroyImmediate(forest);
             DestroyDefinition(definition);
         }
     }
@@ -73,6 +143,64 @@ public sealed class AuthoredMapBuilderTests
     }
 
     [Test]
+    public void RockPhase_UsesEqualWidthCandidates()
+    {
+        var config = ScriptableObject.CreateInstance<MapConfig>();
+        try
+        {
+            SetPrivateField(config, "_worldSize", 10f);
+            SetPrivateField(config, "_cellsPerSide", 10);
+            SetPrivateField(config, "_rockCount", 1);
+            SetPrivateField(config, "_rockPlacementMargin", 0f);
+            SetPrivateField(config, "_rockMinDistance", 3.5f);
+            MapData map = MapDataFactory.CreateFlatMap(config, 0);
+
+            new RockPhase().Execute(map, new SequenceRandom(0.5f), config);
+
+            Assert.That(map.Features.Count, Is.EqualTo(1));
+            Assert.That(map.Features[0].WorldPosition.x, Is.EqualTo(10f / 3f * 0.5f).Within(0.0001f));
+            Assert.That(map.Features[0].WorldPosition.z, Is.EqualTo(10f / 3f * 0.5f).Within(0.0001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
+    [TestCase("forest")]
+    [TestCase("lake")]
+    [TestCase("river")]
+    public void RockPhase_ExcludesCandidatesWhoseFootprintReachesReservedArea(string area)
+    {
+        var config = ScriptableObject.CreateInstance<MapConfig>();
+        try
+        {
+            SetPrivateField(config, "_worldSize", 10f);
+            SetPrivateField(config, "_cellsPerSide", 10);
+            SetPrivateField(config, "_rockCount", 1);
+            SetPrivateField(config, "_rockPlacementMargin", 0f);
+            SetPrivateField(config, "_rockMinDistance", 3.5f);
+            SetPrivateField(config, "_placementRadii", new FeaturePlacementRadii { Rock = 2f });
+            MapData map = MapDataFactory.CreateFlatMap(config, 0);
+            if (area == "forest")
+                map.AddForestRegion(new ForestRegion(new Vector2(5f, 5f), 1f, 0f, 1f));
+            else if (area == "lake")
+                map.AddLake(new LakeRegion(new Vector2(5f, 5f), 1f, 0f));
+            else
+                map.AddRiver(new RiverPath(new List<Vector2Int> { new(0, 5), new(9, 5) },
+                    widthMeters: 1f, depthMeters: 1f, waterTagRatio: 0f));
+
+            new RockPhase().Execute(map, new SequenceRandom(0.5f), config);
+
+            Assert.That(map.Features, Is.Empty);
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+        }
+    }
+
+    [Test]
     public void RockPhase_AllowsBaseHeightWhenDepressedTerrainSetsNegativeMinimum()
     {
         MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
@@ -89,7 +217,7 @@ public sealed class AuthoredMapBuilderTests
                 new HeightMap(10, 10, 1f),
                 new GroundStateGrid(10, 10, 1f),
                 seed: 1);
-            map.Height.SetHeight(0, 0, -1f);
+            map.Height.SetHeight(9, 9, -1f);
 
             new RockPhase().Execute(map, new SequenceRandom(0.25f, 0.25f), config);
 

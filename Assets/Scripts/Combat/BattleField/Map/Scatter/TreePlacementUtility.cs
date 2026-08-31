@@ -58,7 +58,6 @@ namespace WarSimulation.Combat.Map
             if (map.Height.SampleCliffFace(world3)) return false;
             if (RiverCorridorUtility.Contains(map, pos)) return false;
             if (hasHeightLimit && map.Height.SampleAt(world3) > maxHeight) return false;
-            if (BridgePlacementUtility.IsNearAnyBridge(map, pos, map.BridgeFeatureExclusionMargin)) return false;
 
             return true;
         }

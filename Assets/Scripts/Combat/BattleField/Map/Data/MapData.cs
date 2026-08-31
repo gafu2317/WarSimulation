@@ -32,6 +32,7 @@ namespace WarSimulation.Combat.Map
         public List<ForestRegion> ForestRegions { get; }
         public List<AssaultRoute> AssaultRoutes { get; }
         public int Seed { get; }
+        public FeaturePlacementRadii PlacementRadii { get; set; }
 
         /// <summary>
         /// 木・岩・魔石を橋から除外する余白（メートル）。構築時に Config からコピーされる。

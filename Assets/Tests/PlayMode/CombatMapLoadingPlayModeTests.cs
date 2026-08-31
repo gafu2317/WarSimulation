@@ -50,10 +50,10 @@ public sealed class CombatMapLoadingPlayModeTests
         Assert.That(selection, Is.Not.Null);
 
         while (mapSystem.PreparationState == MapPreparationState.Loading) yield return null;
-        // 任意の初期マップではGafuTest限定の岩補正ONの保存・読込を検証できない。
+        // 任意の別マップは補正ONの場合もあるため、ON/OFFの検証対象を固定する。
         List<AuthoredMapDefinition> options = GetMapOptions(selection);
         AuthoredMapDefinition first = options.Find(map => map != null && map.name == "AuthoredMap 1");
-        AuthoredMapDefinition second = options.Find(map => map != null && map != first);
+        AuthoredMapDefinition second = options.Find(map => map != null && map.name == "AuthoredMap 5");
         Assert.That(first, Is.Not.Null);
         Assert.That(second, Is.Not.Null);
 

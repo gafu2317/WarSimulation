@@ -23,7 +23,7 @@ namespace WarSimulation.Combat.Map
             return false;
         }
 
-        private static bool IsInsideExpandedFootprint(PlacedFeature feature, Vector2 worldXZ, float marginMeters)
+        internal static bool IsInsideExpandedFootprint(PlacedFeature feature, Vector2 worldXZ, float marginMeters)
         {
             float halfWidth = Mathf.Max(0f, feature.Scale.x) * 0.5f + marginMeters;
             float halfLength = Mathf.Max(0f, feature.Scale.z) * 0.5f + marginMeters;

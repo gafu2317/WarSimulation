@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace WarSimulation.Combat.Map
@@ -31,9 +30,6 @@ namespace WarSimulation.Combat.Map
         [Tooltip("木を置く最大高度（メートル）。HeightMap 値がこれを超えるセルは置かない。0 以下で無効。")]
         [SerializeField] private float _maxHeight = 0f;
 
-        [Tooltip("グリッド配置のあと足りない本をランダムで埋めるとき、1 本あたりの試行上限。")]
-        [SerializeField, Min(1)] private int _maxAttemptsPerTree = 20;
-
         [Tooltip("輪郭を Perlin ノイズで歪ませる強さ。0 = 真円、0.35 で半径が ±35% 揺れて自然な不整形に。")]
         [SerializeField, Range(0f, 0.6f)] private float _noiseAmplitude = 0.35f;
 
@@ -44,127 +40,47 @@ namespace WarSimulation.Combat.Map
         public int TreeCount => _treeCount;
         public float TreeMinDistance => _treeMinDistance;
         public float MaxHeight => _maxHeight;
-        public int MaxAttemptsPerTree => _maxAttemptsPerTree;
         public float NoiseAmplitude => _noiseAmplitude;
         public float NoiseFrequency => _noiseFrequency;
 
         public override void Apply(MapData map, StampPlacement placement)
         {
             if (map == null) return;
+            map.AddForestRegion(CreateRegion(placement));
+            PlaceTrees(map, placement);
+        }
+
+        internal ForestRegion CreateRegion(StampPlacement placement) =>
+            new(placement.Center, _radius, _noiseAmplitude, _noiseFrequency);
+
+        internal void PlaceTrees(MapData map, StampPlacement placement)
+        {
+            if (map == null) return;
             if (_treeCount <= 0) return;
+            var region = CreateRegion(placement);
 
-            // まずクラスター領域をノイズ歪み込みで登録（Rock フェーズや描画がここを避けるため）
-            var region = new ForestRegion(placement.Center, _radius, _noiseAmplitude, _noiseFrequency);
-            map.AddForestRegion(region);
+            uint seed = (uint)Mathf.FloorToInt(placement.Center.x * 73.9f + placement.Center.y * 41.1f + 1013.3f);
+            var rng = new SystemRandom(unchecked((int)seed));
+            float radius = region.OuterRadius;
+            Vector2 min = Vector2.Max(Vector2.zero, placement.Center - Vector2.one * radius);
+            Vector2 max = Vector2.Min(map.Height.WorldSize, placement.Center + Vector2.one * radius);
+            if (max.x < min.x || max.y < min.y) return;
+            var candidates = new PlacementCandidates(map, FeatureType.Tree,
+                Rect.MinMaxRect(min.x, min.y, max.x, max.y), _treeMinDistance, rng);
+            candidates.KeepWhere(pos =>
+                TreePlacementUtility.IsValidTreeSite(map, region, pos, _maxHeight > 0f, _maxHeight));
 
-            float minDistSq = _treeMinDistance * _treeMinDistance;
-            bool hasHeightLimit = _maxHeight > 0f;
-
-            // 配置中心ワールド座標から決定的な PRNG 状態を作り、スタンプ毎に安定した散らし方にする
-            uint rngState = (uint)Mathf.FloorToInt(placement.Center.x * 73.9f + placement.Center.y * 41.1f + 1013.3f);
-            if (rngState == 0u) rngState = 1u;
-
-            // 棄却サンプリング用の外接円（ノイズで膨らむ最大半径）
-            float samplingRadius = region.OuterRadius;
-
-            int recordedStart = map.Features.Count;
-
-            // グリッド候補で領域を覆い、シャッフル後に最小間隔を守りながら貪欲に選ぶ。
-            float step = _treeMinDistance > 0.01f ? _treeMinDistance : Mathf.Max(0.35f, samplingRadius * 0.12f);
-            float rSq = samplingRadius * samplingRadius;
-            int half = Mathf.CeilToInt(samplingRadius / step);
-            var candidates = new List<Vector2>((2 * half + 1) * (2 * half + 1));
-            for (int gi = -half; gi <= half; gi++)
+            int placedCount = 0;
+            while (placedCount < _treeCount && candidates.TryTake(rng, out Vector2 pos))
             {
-                for (int gj = -half; gj <= half; gj++)
-                {
-                    Vector2 pos = placement.Center + new Vector2(gi * step, gj * step);
-                    if ((pos - placement.Center).sqrMagnitude > rSq) continue;
-                    if (!TreePlacementUtility.IsValidTreeSite(map, region, pos, hasHeightLimit, _maxHeight)) continue;
-                    candidates.Add(pos);
-                }
+                float y = map.Height.SampleAt(new Vector3(pos.x, 0f, pos.y));
+                map.AddFeature(new PlacedFeature(FeatureType.Tree,
+                    new Vector3(pos.x, y, pos.y), Quaternion.identity));
+                placedCount++;
             }
-
-            ShuffleXY(candidates, ref rngState);
-            for (int c = 0; c < candidates.Count && map.Features.Count - recordedStart < _treeCount; c++)
-            {
-                Vector2 pos = candidates[c];
-                if (TooCloseToNewTrees(map, recordedStart, pos, minDistSq)) continue;
-
-                Vector3 world3 = new(pos.x, 0f, pos.y);
-                float y = map.Height.SampleAt(world3);
-                map.AddFeature(new PlacedFeature(
-                    FeatureType.Tree,
-                    new Vector3(pos.x, y, pos.y),
-                    Quaternion.identity));
-            }
-
-            // 目標本数に届かないときだけ従来のランダムで埋める
-            int deficit = _treeCount - (map.Features.Count - recordedStart);
-            for (int i = 0; i < deficit; i++)
-            {
-                bool placed = false;
-                for (int attempt = 0; attempt < _maxAttemptsPerTree && !placed; attempt++)
-                {
-                    Vector2 offset = RandomInsideDisc(ref rngState, samplingRadius);
-                    Vector2 pos = placement.Center + offset;
-
-                    if (!TreePlacementUtility.IsValidTreeSite(map, region, pos, hasHeightLimit, _maxHeight)) continue;
-
-                    if (TooCloseToNewTrees(map, recordedStart, pos, minDistSq)) continue;
-
-                    Vector3 world3 = new(pos.x, 0f, pos.y);
-                    float y = map.Height.SampleAt(world3);
-                    map.AddFeature(new PlacedFeature(
-                        FeatureType.Tree,
-                        new Vector3(pos.x, y, pos.y),
-                        Quaternion.identity));
-                    placed = true;
-                }
-            }
+            if (placedCount < _treeCount)
+                Debug.LogWarning($"[ForestCluster] 配置可能な候補を使い切りました: {placedCount}/{_treeCount} 本");
         }
 
-        private static bool TooCloseToNewTrees(MapData map, int recordedStart, Vector2 pos, float minDistSq)
-        {
-            for (int j = recordedStart; j < map.Features.Count; j++)
-            {
-                if (map.Features[j].Type != FeatureType.Tree) continue;
-                Vector3 wp = map.Features[j].WorldPosition;
-                float ddx = wp.x - pos.x;
-                float ddz = wp.z - pos.y;
-                if (ddx * ddx + ddz * ddz < minDistSq) return true;
-            }
-            return false;
-        }
-
-        private static void ShuffleXY(List<Vector2> list, ref uint state)
-        {
-            for (int i = list.Count - 1; i > 0; i--)
-            {
-                int j = (int)(NextFloat01(ref state) * (i + 1));
-                if (j < 0) j = 0;
-                else if (j > i) j = i;
-                (list[i], list[j]) = (list[j], list[i]);
-            }
-        }
-
-        /// <summary>
-        /// xorshift32 ベースの軽量 PRNG で半径 r の円内一様分布サンプルを得る。
-        /// 外部の IRandom に依存しないため、スタンプ内部だけで決定的に木を散らせる。
-        /// </summary>
-        private static Vector2 RandomInsideDisc(ref uint state, float r)
-        {
-            float angle = NextFloat01(ref state) * Mathf.PI * 2f;
-            float rr = Mathf.Sqrt(NextFloat01(ref state)) * r;
-            return new Vector2(Mathf.Cos(angle) * rr, Mathf.Sin(angle) * rr);
-        }
-
-        private static float NextFloat01(ref uint state)
-        {
-            state ^= state << 13;
-            state ^= state >> 17;
-            state ^= state << 5;
-            return (state & 0x00FFFFFFu) / (float)0x01000000;
-        }
     }
 }

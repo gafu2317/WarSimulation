@@ -1,0 +1,45 @@
+{
+  "environment": "Blender 5.0.0",
+  "blend_reopen": "PASS",
+  "models": [
+    {
+      "name": "Casino",
+      "facility_type": "カジノ",
+      "status": "PASS",
+      "mesh_parts": 287,
+      "triangles": 30812,
+      "dimensions_m": [
+        12.210000038146973,
+        10.420000076293945,
+        9.930000305175781
+      ]
+    },
+    {
+      "name": "Museum",
+      "facility_type": "美術館",
+      "status": "PASS",
+      "mesh_parts": 270,
+      "triangles": 44088,
+      "dimensions_m": [
+        13.930000305175781,
+        12.194999694824219,
+        8.700000762939453
+      ]
+    },
+    {
+      "name": "Arena",
+      "facility_type": "闘技場",
+      "status": "PASS",
+      "mesh_parts": 480,
+      "triangles": 49848,
+      "dimensions_m": [
+        29.600000381469727,
+        24.56999969482422,
+        6.269999980926514
+      ]
+    }
+  ],
+  "external_textures_required": false,
+  "arena_open_floor": "PASS",
+  "arena_entrance_passage": "PASS"
+}

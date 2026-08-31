@@ -9,7 +9,7 @@ namespace WarSimulation.Combat.Map
     /// </summary>
     public static class RiverCorridorUtility
     {
-        public static bool Contains(MapData map, Vector2 worldXZ)
+        public static bool Contains(MapData map, Vector2 worldXZ, float margin = 0f)
         {
             if (map == null) return false;
 
@@ -19,18 +19,18 @@ namespace WarSimulation.Combat.Map
             float cellSize = map.Height.CellSize;
             for (int r = 0; r < rivers.Count; r++)
             {
-                if (Contains(rivers[r], cellSize, worldXZ)) return true;
+                if (Contains(rivers[r], cellSize, worldXZ, margin)) return true;
             }
 
             return false;
         }
 
-        public static bool Contains(RiverPath river, float cellSize, Vector2 worldXZ)
+        public static bool Contains(RiverPath river, float cellSize, Vector2 worldXZ, float margin = 0f)
         {
             IReadOnlyList<Vector2Int> cells = river.Cells;
             if (cells == null || cells.Count < 2) return false;
 
-            float halfW = river.WidthMeters * 0.5f;
+            float halfW = river.WidthMeters * 0.5f + margin;
             float rSq = halfW * halfW;
 
             for (int i = 0; i < cells.Count - 1; i++)

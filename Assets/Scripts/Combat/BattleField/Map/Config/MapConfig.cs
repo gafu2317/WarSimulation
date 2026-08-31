@@ -69,6 +69,12 @@ namespace WarSimulation.Combat.Map
         [Tooltip("マップ高度レンジ（HeightMap min〜max）の上位を岩配置から除外する比率。0.3 = 上位 30% は置かない。")]
         [SerializeField, Range(0f, 1f)] private float _rockTopHeightExclusionRatio = 0.3f;
 
+        [Header("オブジェクトの占有範囲")]
+        [Tooltip("Prefabと最大配置スケールを包む半径。モデルやサイズを変える場合は半径も更新する。")]
+        [SerializeField] private FeaturePlacementRadii _placementRadii;
+
+        public FeaturePlacementRadii PlacementRadii => _placementRadii;
+
         [Header("検証")]
         [Tooltip("1 陣営あたりのメイン魔石の個数（Validator の警告閾値）。")]
         [SerializeField, Min(0)] private int _mainStonesPerSide = 1;

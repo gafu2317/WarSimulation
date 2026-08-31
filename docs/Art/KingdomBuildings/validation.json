@@ -1,0 +1,84 @@
+{
+  "environment": "Blender 5.0.0",
+  "models": [
+    {
+      "model": "Kingdom_Castle",
+      "fbx_reimport": "PASS",
+      "mesh_count": 1,
+      "triangles": 16920,
+      "materials": 10,
+      "bounds_error_m": 4.76837158203125e-07,
+      "open_edges": 0,
+      "ground_minimum_m": -1.497967758723462e-07,
+      "dimensions_m": [
+        6.164329528808594,
+        4.482165336608887,
+        7.870000035355858
+      ]
+    },
+    {
+      "model": "Kingdom_House",
+      "fbx_reimport": "PASS",
+      "mesh_count": 1,
+      "triangles": 6656,
+      "materials": 10,
+      "bounds_error_m": 2.384185791015625e-07,
+      "open_edges": 0,
+      "ground_minimum_m": -1.0796200200502426e-07,
+      "dimensions_m": [
+        3.5999999046325684,
+        3.655000329017639,
+        4.742000210958828
+      ]
+    },
+    {
+      "model": "Kingdom_Wall_Straight",
+      "fbx_reimport": "PASS",
+      "mesh_count": 1,
+      "triangles": 1992,
+      "materials": 3,
+      "bounds_error_m": 4.4543760679971456e-08,
+      "open_edges": 0,
+      "ground_minimum_m": -4.4543760679971456e-08,
+      "dimensions_m": [
+        6.0,
+        1.1799999475479126,
+        3.3299999682498154
+      ]
+    },
+    {
+      "model": "Kingdom_Wall_Corner",
+      "fbx_reimport": "PASS",
+      "mesh_count": 1,
+      "triangles": 3444,
+      "materials": 3,
+      "bounds_error_m": 2.384185791015625e-07,
+      "open_edges": 0,
+      "ground_minimum_m": -2.2649371089755732e-07,
+      "dimensions_m": [
+        3.7149999141693115,
+        3.715000033378601,
+        3.380000340934629
+      ]
+    },
+    {
+      "model": "Kingdom_Wall_Gate",
+      "fbx_reimport": "PASS",
+      "mesh_count": 1,
+      "triangles": 4084,
+      "materials": 4,
+      "bounds_error_m": 1.7881393432617188e-07,
+      "open_edges": 0,
+      "ground_minimum_m": -4.567622724493958e-08,
+      "dimensions_m": [
+        6.0,
+        1.2400001883506775,
+        3.329999969382282
+      ]
+    }
+  ],
+  "wall_endpoint_sections": "PASS",
+  "gate_opening": "PASS",
+  "blend_reopen": "PASS",
+  "unity_editor_render": "NOT_RUN: MCP is connected to another project"
+}

@@ -1,0 +1,605 @@
+{
+  "status": "PASS",
+  "environment": "Blender 5.0.0",
+  "blend_reopen": "PASS",
+  "asset_count": 34,
+  "models": [
+    {
+      "name": "Road_Straight",
+      "mesh_parts": 13,
+      "triangles": 156,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ]
+    },
+    {
+      "name": "Road_Corner",
+      "mesh_parts": 13,
+      "triangles": 156,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ]
+    },
+    {
+      "name": "Road_T",
+      "mesh_parts": 13,
+      "triangles": 156,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ]
+    },
+    {
+      "name": "Road_Cross",
+      "mesh_parts": 13,
+      "triangles": 156,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ]
+    },
+    {
+      "name": "Road_End",
+      "mesh_parts": 13,
+      "triangles": 156,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ]
+    },
+    {
+      "name": "Paved_Plot",
+      "mesh_parts": 1,
+      "triangles": 12,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.12000000476837158
+      ]
+    },
+    {
+      "name": "Fence_Panel",
+      "mesh_parts": 10,
+      "triangles": 1080,
+      "minimum": [
+        0.0,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.14000000059604645,
+        1.6100000143051147
+      ]
+    },
+    {
+      "name": "Fence_Post",
+      "mesh_parts": 3,
+      "triangles": 324,
+      "minimum": [
+        0.0,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        0.2800000011920929,
+        0.14000000059604645,
+        1.6100000143051147
+      ]
+    },
+    {
+      "name": "Fence_Gate",
+      "mesh_parts": 19,
+      "triangles": 2052,
+      "minimum": [
+        0.0,
+        -0.19000011682510376,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.14000000059604645,
+        1.6100000143051147
+      ]
+    },
+    {
+      "name": "Stone_Wall",
+      "mesh_parts": 2,
+      "triangles": 24,
+      "minimum": [
+        0.0,
+        -0.26499998569488525,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.26499998569488525,
+        1.28000009059906
+      ]
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "mesh_parts": 2,
+      "triangles": 40,
+      "minimum": [
+        -0.26499998569488525,
+        -0.26499998569488525,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        1.2799999713897705
+      ]
+    },
+    {
+      "name": "Produce_Stall",
+      "mesh_parts": 120,
+      "triangles": 32592,
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9390923976898193
+      ]
+    },
+    {
+      "name": "Cloth_Stall",
+      "mesh_parts": 38,
+      "triangles": 4460,
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9390923976898193
+      ]
+    },
+    {
+      "name": "Handcart",
+      "mesh_parts": 42,
+      "triangles": 6016,
+      "minimum": [
+        -1.149999976158142,
+        -3.1234817504882812,
+        0.0
+      ],
+      "maximum": [
+        1.149999976158142,
+        1.2899999618530273,
+        1.6299999952316284
+      ]
+    },
+    {
+      "name": "Crate_Closed",
+      "mesh_parts": 28,
+      "triangles": 3024,
+      "minimum": [
+        -0.5600000023841858,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.1949999332427979
+      ]
+    },
+    {
+      "name": "Crate_Open",
+      "mesh_parts": 22,
+      "triangles": 2376,
+      "minimum": [
+        -0.5600000023841858,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.0299999713897705
+      ]
+    },
+    {
+      "name": "Grain_Sack",
+      "mesh_parts": 3,
+      "triangles": 1480,
+      "minimum": [
+        -0.4188990294933319,
+        -0.4188990294933319,
+        0.0
+      ],
+      "maximum": [
+        0.4188990294933319,
+        0.4188990294933319,
+        0.949999988079071
+      ]
+    },
+    {
+      "name": "Produce_Basket",
+      "mesh_parts": 30,
+      "triangles": 8948,
+      "minimum": [
+        -0.4620000123977661,
+        -0.4620000123977661,
+        0.0
+      ],
+      "maximum": [
+        0.4620000123977661,
+        0.4620000123977661,
+        0.5260000228881836
+      ]
+    },
+    {
+      "name": "Barrel",
+      "mesh_parts": 8,
+      "triangles": 1072,
+      "minimum": [
+        -0.4480000138282776,
+        -0.4480000138282776,
+        0.0
+      ],
+      "maximum": [
+        0.4480000138282776,
+        0.4480000138282776,
+        1.0679999589920044
+      ]
+    },
+    {
+      "name": "Well",
+      "mesh_parts": 40,
+      "triangles": 9576,
+      "minimum": [
+        -1.6449999809265137,
+        -1.3849999904632568,
+        0.0
+      ],
+      "maximum": [
+        1.7400000095367432,
+        1.3849999904632568,
+        4.489999771118164
+      ]
+    },
+    {
+      "name": "Water_Trough",
+      "mesh_parts": 6,
+      "triangles": 648,
+      "minimum": [
+        -1.399999976158142,
+        -0.5149999856948853,
+        0.0
+      ],
+      "maximum": [
+        1.399999976158142,
+        0.5149999856948853,
+        0.75
+      ]
+    },
+    {
+      "name": "Firewood_Rack",
+      "mesh_parts": 64,
+      "triangles": 5184,
+      "minimum": [
+        -1.5500000715255737,
+        -0.7049999833106995,
+        0.0
+      ],
+      "maximum": [
+        1.5500000715255737,
+        0.6455815434455872,
+        1.8676762580871582
+      ]
+    },
+    {
+      "name": "Hay_Bale",
+      "mesh_parts": 9,
+      "triangles": 972,
+      "minimum": [
+        -0.7400000095367432,
+        -0.4624999761581421,
+        0.0
+      ],
+      "maximum": [
+        0.7400000095367432,
+        0.4624999761581421,
+        0.8125
+      ]
+    },
+    {
+      "name": "Clothesline",
+      "mesh_parts": 14,
+      "triangles": 1552,
+      "minimum": [
+        -2.190000057220459,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        2.190000057220459,
+        0.14000000059604645,
+        2.4800000190734863
+      ]
+    },
+    {
+      "name": "Signpost",
+      "mesh_parts": 8,
+      "triangles": 472,
+      "minimum": [
+        -0.8964108228683472,
+        -0.23000000417232513,
+        0.0
+      ],
+      "maximum": [
+        0.8964108228683472,
+        0.23000000417232513,
+        2.940000057220459
+      ]
+    },
+    {
+      "name": "Noticeboard",
+      "mesh_parts": 29,
+      "triangles": 1500,
+      "minimum": [
+        -1.3850001096725464,
+        -0.4950000047683716,
+        0.0
+      ],
+      "maximum": [
+        1.3850001096725464,
+        0.43773213028907776,
+        2.936530351638794
+      ]
+    },
+    {
+      "name": "Anvil",
+      "mesh_parts": 8,
+      "triangles": 896,
+      "minimum": [
+        -0.5600000023841858,
+        -0.46000000834465027,
+        0.0
+      ],
+      "maximum": [
+        1.0,
+        0.46000000834465027,
+        1.4200000762939453
+      ]
+    },
+    {
+      "name": "Forge",
+      "mesh_parts": 19,
+      "triangles": 3284,
+      "minimum": [
+        -1.0299999713897705,
+        -0.7850000262260437,
+        0.0
+      ],
+      "maximum": [
+        1.0299999713897705,
+        0.9049999713897705,
+        4.130000114440918
+      ]
+    },
+    {
+      "name": "Bench",
+      "mesh_parts": 11,
+      "triangles": 1188,
+      "minimum": [
+        -1.399999976158142,
+        -0.3199999928474426,
+        0.0
+      ],
+      "maximum": [
+        1.399999976158142,
+        0.375,
+        1.4340691566467285
+      ]
+    },
+    {
+      "name": "Streetlamp",
+      "mesh_parts": 11,
+      "triangles": 1300,
+      "minimum": [
+        -0.30017271637916565,
+        -0.30017271637916565,
+        0.0
+      ],
+      "maximum": [
+        0.30017271637916565,
+        0.30017271637916565,
+        4.420000076293945
+      ]
+    },
+    {
+      "name": "Planter",
+      "mesh_parts": 4,
+      "triangles": 432,
+      "minimum": [
+        -1.024999976158142,
+        -1.024999976158142,
+        0.0
+      ],
+      "maximum": [
+        1.024999976158142,
+        1.024999976158142,
+        1.4800000190734863
+      ]
+    },
+    {
+      "name": "Drain_Grate",
+      "mesh_parts": 9,
+      "triangles": 972,
+      "minimum": [
+        -0.5850000381469727,
+        -0.3799999952316284,
+        0.0
+      ],
+      "maximum": [
+        0.5850000381469727,
+        0.3799999952316284,
+        0.06599999964237213
+      ]
+    },
+    {
+      "name": "Bollard",
+      "mesh_parts": 4,
+      "triangles": 988,
+      "minimum": [
+        -0.2582066059112549,
+        -0.2582066059112549,
+        0.0
+      ],
+      "maximum": [
+        0.2582066059112549,
+        0.2582066059112549,
+        1.1799999475479126
+      ]
+    },
+    {
+      "name": "Bucket",
+      "mesh_parts": 4,
+      "triangles": 2248,
+      "minimum": [
+        -0.31726861000061035,
+        -0.31599998474121094,
+        0.0
+      ],
+      "maximum": [
+        0.31726861000061035,
+        0.31599998474121094,
+        1.0719999074935913
+      ]
+    }
+  ],
+  "road_join_count": 33,
+  "town_instances": 98,
+  "all_assets_previewed": true,
+  "external_dependencies": false,
+  "unchanged_original_files": [
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/EnvironmentModels.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/FantasyEntertainmentDistrict.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/NaturalRockVariants.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/FantasyNightlifeBuildings.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/FantasyCultureFacilities.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/KingdomBuildings_RealisticFantasy.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/FantasyTownFacilities.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/KingdomBuildings.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/FantasyCivicFacilities.blend",
+    "/Users/fukutomi/Unity/WarSimulation/ArtSource/Blender/NaturalTreeVariants.blend",
+    "/Users/fukutomi/Unity/WarSimulation/Tools/Blender/generate_fantasy_nightlife_buildings.py",
+    "/Users/fukutomi/Unity/WarSimulation/Tools/Blender/generate_fantasy_town_facilities.py",
+    "/Users/fukutomi/Unity/WarSimulation/Tools/Blender/generate_fantasy_civic_facilities.py",
+    "/Users/fukutomi/Unity/WarSimulation/Tools/Blender/generate_fantasy_culture_facilities.py",
+    "/Users/fukutomi/Unity/WarSimulation/Tools/Blender/generate_fantasy_entertainment_district.py"
+  ],
+  "preview_frames": [
+    {
+      "scene": "00 Town Example",
+      "normalized_frame_bounds": [
+        0.053571488708257675,
+        0.946428656578064,
+        0.05794406309723854,
+        0.9420560002326965
+      ]
+    },
+    {
+      "scene": "01 Roads",
+      "normalized_frame_bounds": [
+        0.05357147008180618,
+        0.9464285969734192,
+        0.14406554400920868,
+        0.8559345006942749
+      ]
+    },
+    {
+      "scene": "02 Boundaries",
+      "normalized_frame_bounds": [
+        0.053571417927742004,
+        0.946428656578064,
+        0.21622684597969055,
+        0.7837731838226318
+      ]
+    },
+    {
+      "scene": "03 Market",
+      "normalized_frame_bounds": [
+        0.05748346820473671,
+        0.9425165057182312,
+        0.0535714291036129,
+        0.9464285969734192
+      ]
+    },
+    {
+      "scene": "04 Life",
+      "normalized_frame_bounds": [
+        0.0535714365541935,
+        0.9464285373687744,
+        0.11128252744674683,
+        0.888717532157898
+      ]
+    },
+    {
+      "scene": "05 Civic",
+      "normalized_frame_bounds": [
+        0.05357149615883827,
+        0.9464285969734192,
+        0.19045846164226532,
+        0.809541642665863
+      ]
+    },
+    {
+      "scene": "06 Details",
+      "normalized_frame_bounds": [
+        0.05357152968645096,
+        0.946428656578064,
+        0.26323938369750977,
+        0.736760675907135
+      ]
+    }
+  ],
+  "errors": []
+}

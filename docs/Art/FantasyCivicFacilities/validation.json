@@ -1,0 +1,43 @@
+{
+  "environment": "Blender 5.0.0",
+  "blend_reopen": "PASS",
+  "models": [
+    {
+      "name": "Library",
+      "facility_type": "図書館",
+      "status": "PASS",
+      "mesh_parts": 198,
+      "triangles": 26232,
+      "dimensions_m": [
+        14.5600004196167,
+        11.149999618530273,
+        9.785000801086426
+      ]
+    },
+    {
+      "name": "Plaza",
+      "facility_type": "広場",
+      "status": "PASS",
+      "mesh_parts": 149,
+      "triangles": 25944,
+      "dimensions_m": [
+        17.42000102996826,
+        17.420001983642578,
+        4.670000076293945
+      ]
+    },
+    {
+      "name": "Observatory",
+      "facility_type": "天文台",
+      "status": "PASS",
+      "mesh_parts": 186,
+      "triangles": 43364,
+      "dimensions_m": [
+        12.335000038146973,
+        10.920000076293945,
+        11.619970321655273
+      ]
+    }
+  ],
+  "external_textures_required": false
+}

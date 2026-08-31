@@ -1,0 +1,1506 @@
+{
+  "blender": "5.0.0",
+  "models": [
+    {
+      "name": "Road_Straight",
+      "label_ja": "直線道路",
+      "category": "Roads",
+      "origin": "new",
+      "parts": 13,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ],
+      "ports": "NS"
+    },
+    {
+      "name": "Road_Corner",
+      "label_ja": "曲がり道路",
+      "category": "Roads",
+      "origin": "new",
+      "parts": 13,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ],
+      "ports": "NE"
+    },
+    {
+      "name": "Road_T",
+      "label_ja": "T字路",
+      "category": "Roads",
+      "origin": "new",
+      "parts": 13,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ],
+      "ports": "NEW"
+    },
+    {
+      "name": "Road_Cross",
+      "label_ja": "十字路",
+      "category": "Roads",
+      "origin": "new",
+      "parts": 13,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ],
+      "ports": "NSEW"
+    },
+    {
+      "name": "Road_End",
+      "label_ja": "行き止まり",
+      "category": "Roads",
+      "origin": "new",
+      "parts": 13,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.13950000703334808
+      ],
+      "ports": "S"
+    },
+    {
+      "name": "Paved_Plot",
+      "label_ja": "敷地舗装",
+      "category": "Roads",
+      "origin": "new",
+      "parts": 1,
+      "minimum": [
+        -4.0,
+        -4.0,
+        -0.18000000715255737
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.12000000476837158
+      ]
+    },
+    {
+      "name": "Fence_Panel",
+      "label_ja": "木柵",
+      "category": "Boundaries",
+      "origin": "new",
+      "parts": 10,
+      "minimum": [
+        0.0,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.14000000059604645,
+        1.6100000143051147
+      ],
+      "pitch_m": 4
+    },
+    {
+      "name": "Fence_Post",
+      "label_ja": "終端柱",
+      "category": "Boundaries",
+      "origin": "new",
+      "parts": 3,
+      "minimum": [
+        0.0,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        0.2800000011920929,
+        0.14000000059604645,
+        1.6100000143051147
+      ]
+    },
+    {
+      "name": "Fence_Gate",
+      "label_ja": "木門",
+      "category": "Boundaries",
+      "origin": "new",
+      "parts": 19,
+      "minimum": [
+        0.0,
+        -0.19000011682510376,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.14000000059604645,
+        1.6100000143051147
+      ],
+      "pitch_m": 4
+    },
+    {
+      "name": "Stone_Wall",
+      "label_ja": "低い石塀",
+      "category": "Boundaries",
+      "origin": "new",
+      "parts": 2,
+      "minimum": [
+        0.0,
+        -0.26499998569488525,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.26499998569488525,
+        1.28000009059906
+      ],
+      "pitch_m": 4
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "label_ja": "石塀の角",
+      "category": "Boundaries",
+      "origin": "new",
+      "parts": 2,
+      "minimum": [
+        -0.26499998569488525,
+        -0.26499998569488525,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        1.2799999713897705
+      ],
+      "pitch_m": 4
+    },
+    {
+      "name": "Produce_Stall",
+      "label_ja": "青果露店",
+      "category": "Market",
+      "origin": "new",
+      "parts": 120,
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9390923976898193
+      ]
+    },
+    {
+      "name": "Cloth_Stall",
+      "label_ja": "布露店",
+      "category": "Market",
+      "origin": "new",
+      "parts": 38,
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9390923976898193
+      ]
+    },
+    {
+      "name": "Handcart",
+      "label_ja": "荷車",
+      "category": "Market",
+      "origin": "new",
+      "parts": 42,
+      "minimum": [
+        -1.149999976158142,
+        -3.1234817504882812,
+        0.0
+      ],
+      "maximum": [
+        1.149999976158142,
+        1.2899999618530273,
+        1.6299999952316284
+      ]
+    },
+    {
+      "name": "Crate_Closed",
+      "label_ja": "木箱・蓋付き",
+      "category": "Market",
+      "origin": "new",
+      "parts": 28,
+      "minimum": [
+        -0.5600000023841858,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.1949999332427979
+      ]
+    },
+    {
+      "name": "Crate_Open",
+      "label_ja": "木箱・開放",
+      "category": "Market",
+      "origin": "new",
+      "parts": 22,
+      "minimum": [
+        -0.5600000023841858,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.0299999713897705
+      ]
+    },
+    {
+      "name": "Grain_Sack",
+      "label_ja": "麻袋",
+      "category": "Market",
+      "origin": "new",
+      "parts": 3,
+      "minimum": [
+        -0.4188990294933319,
+        -0.4188990294933319,
+        0.0
+      ],
+      "maximum": [
+        0.4188990294933319,
+        0.4188990294933319,
+        0.949999988079071
+      ]
+    },
+    {
+      "name": "Produce_Basket",
+      "label_ja": "青果かご",
+      "category": "Market",
+      "origin": "new",
+      "parts": 30,
+      "minimum": [
+        -0.4620000123977661,
+        -0.4620000123977661,
+        0.0
+      ],
+      "maximum": [
+        0.4620000123977661,
+        0.4620000123977661,
+        0.5260000228881836
+      ]
+    },
+    {
+      "name": "Barrel",
+      "label_ja": "樽",
+      "category": "Market",
+      "origin": "existing tavern prop",
+      "parts": 8,
+      "minimum": [
+        -0.4480000138282776,
+        -0.4480000138282776,
+        0.0
+      ],
+      "maximum": [
+        0.4480000138282776,
+        0.4480000138282776,
+        1.0679999589920044
+      ]
+    },
+    {
+      "name": "Well",
+      "label_ja": "井戸",
+      "category": "Life",
+      "origin": "new",
+      "parts": 40,
+      "minimum": [
+        -1.6449999809265137,
+        -1.3849999904632568,
+        0.0
+      ],
+      "maximum": [
+        1.7400000095367432,
+        1.3849999904632568,
+        4.489999771118164
+      ]
+    },
+    {
+      "name": "Water_Trough",
+      "label_ja": "水槽",
+      "category": "Life",
+      "origin": "new",
+      "parts": 6,
+      "minimum": [
+        -1.399999976158142,
+        -0.5149999856948853,
+        0.0
+      ],
+      "maximum": [
+        1.399999976158142,
+        0.5149999856948853,
+        0.75
+      ]
+    },
+    {
+      "name": "Firewood_Rack",
+      "label_ja": "薪置き場",
+      "category": "Life",
+      "origin": "new",
+      "parts": 64,
+      "minimum": [
+        -1.5500000715255737,
+        -0.7049999833106995,
+        0.0
+      ],
+      "maximum": [
+        1.5500000715255737,
+        0.6455815434455872,
+        1.8676762580871582
+      ]
+    },
+    {
+      "name": "Hay_Bale",
+      "label_ja": "干し草",
+      "category": "Life",
+      "origin": "new",
+      "parts": 9,
+      "minimum": [
+        -0.7400000095367432,
+        -0.4624999761581421,
+        0.0
+      ],
+      "maximum": [
+        0.7400000095367432,
+        0.4624999761581421,
+        0.8125
+      ]
+    },
+    {
+      "name": "Clothesline",
+      "label_ja": "物干し",
+      "category": "Life",
+      "origin": "new",
+      "parts": 14,
+      "minimum": [
+        -2.190000057220459,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        2.190000057220459,
+        0.14000000059604645,
+        2.4800000190734863
+      ]
+    },
+    {
+      "name": "Signpost",
+      "label_ja": "道標",
+      "category": "Civic",
+      "origin": "new",
+      "parts": 8,
+      "minimum": [
+        -0.8964108228683472,
+        -0.23000000417232513,
+        0.0
+      ],
+      "maximum": [
+        0.8964108228683472,
+        0.23000000417232513,
+        2.940000057220459
+      ]
+    },
+    {
+      "name": "Noticeboard",
+      "label_ja": "掲示板",
+      "category": "Civic",
+      "origin": "new",
+      "parts": 29,
+      "minimum": [
+        -1.3850001096725464,
+        -0.4950000047683716,
+        0.0
+      ],
+      "maximum": [
+        1.3850001096725464,
+        0.43773213028907776,
+        2.936530351638794
+      ]
+    },
+    {
+      "name": "Anvil",
+      "label_ja": "金床",
+      "category": "Civic",
+      "origin": "new",
+      "parts": 8,
+      "minimum": [
+        -0.5600000023841858,
+        -0.46000000834465027,
+        0.0
+      ],
+      "maximum": [
+        1.0,
+        0.46000000834465027,
+        1.4200000762939453
+      ]
+    },
+    {
+      "name": "Forge",
+      "label_ja": "小型の炉",
+      "category": "Civic",
+      "origin": "new",
+      "parts": 19,
+      "minimum": [
+        -1.0299999713897705,
+        -0.7850000262260437,
+        0.0
+      ],
+      "maximum": [
+        1.0299999713897705,
+        0.9049999713897705,
+        4.130000114440918
+      ]
+    },
+    {
+      "name": "Bench",
+      "label_ja": "ベンチ",
+      "category": "Civic",
+      "origin": "existing plaza prop",
+      "parts": 11,
+      "minimum": [
+        -1.399999976158142,
+        -0.3199999928474426,
+        0.0
+      ],
+      "maximum": [
+        1.399999976158142,
+        0.375,
+        1.4340691566467285
+      ]
+    },
+    {
+      "name": "Streetlamp",
+      "label_ja": "街灯",
+      "category": "Civic",
+      "origin": "existing plaza prop",
+      "parts": 11,
+      "minimum": [
+        -0.30017271637916565,
+        -0.30017271637916565,
+        0.0
+      ],
+      "maximum": [
+        0.30017271637916565,
+        0.30017271637916565,
+        4.420000076293945
+      ]
+    },
+    {
+      "name": "Planter",
+      "label_ja": "植え込み",
+      "category": "Civic",
+      "origin": "existing plaza prop",
+      "parts": 4,
+      "minimum": [
+        -1.024999976158142,
+        -1.024999976158142,
+        0.0
+      ],
+      "maximum": [
+        1.024999976158142,
+        1.024999976158142,
+        1.4800000190734863
+      ]
+    },
+    {
+      "name": "Drain_Grate",
+      "label_ja": "排水格子",
+      "category": "Details",
+      "origin": "new",
+      "parts": 9,
+      "minimum": [
+        -0.5850000381469727,
+        -0.3799999952316284,
+        0.0
+      ],
+      "maximum": [
+        0.5850000381469727,
+        0.3799999952316284,
+        0.06599999964237213
+      ]
+    },
+    {
+      "name": "Bollard",
+      "label_ja": "車止め",
+      "category": "Details",
+      "origin": "new",
+      "parts": 4,
+      "minimum": [
+        -0.2582066059112549,
+        -0.2582066059112549,
+        0.0
+      ],
+      "maximum": [
+        0.2582066059112549,
+        0.2582066059112549,
+        1.1799999475479126
+      ]
+    },
+    {
+      "name": "Bucket",
+      "label_ja": "木桶",
+      "category": "Details",
+      "origin": "new",
+      "parts": 4,
+      "minimum": [
+        -0.31726861000061035,
+        -0.31599998474121094,
+        0.0
+      ],
+      "maximum": [
+        0.31726861000061035,
+        0.31599998474121094,
+        1.0719999074935913
+      ]
+    }
+  ],
+  "previews": [
+    {
+      "scene": "01 Roads",
+      "file": "Roads_Preview.png"
+    },
+    {
+      "scene": "02 Boundaries",
+      "file": "Boundaries_Preview.png"
+    },
+    {
+      "scene": "03 Market",
+      "file": "Market_Preview.png"
+    },
+    {
+      "scene": "04 Life",
+      "file": "Life_Preview.png"
+    },
+    {
+      "scene": "05 Civic",
+      "file": "Civic_Preview.png"
+    },
+    {
+      "scene": "06 Details",
+      "file": "Details_Preview.png"
+    },
+    {
+      "scene": "00 Town Example",
+      "file": "Town_Preview.png"
+    }
+  ],
+  "town_instances": [
+    {
+      "name": "Road_End",
+      "position": [
+        -32.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_End",
+      "position": [
+        -32.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -24.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_T",
+      "position": [
+        -24.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -24.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Corner",
+      "position": [
+        -24.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 270
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -16.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -16.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -16.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -8.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -8.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        -8.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_T",
+      "position": [
+        0.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        0.0,
+        -24.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        0.0,
+        -16.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        0.0,
+        -8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Cross",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        0.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Cross",
+      "position": [
+        0.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_End",
+      "position": [
+        0.0,
+        24.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        8.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        8.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        8.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        16.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        16.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        16.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        24.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Road_T",
+      "position": [
+        24.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Straight",
+      "position": [
+        24.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Road_Corner",
+      "position": [
+        24.0,
+        16.0,
+        0.0
+      ],
+      "angle_degrees": 180
+    },
+    {
+      "name": "Road_End",
+      "position": [
+        32.0,
+        -32.0,
+        0.0
+      ],
+      "angle_degrees": 270
+    },
+    {
+      "name": "Road_End",
+      "position": [
+        32.0,
+        0.0,
+        0.0
+      ],
+      "angle_degrees": 270
+    },
+    {
+      "name": "Paved_Plot",
+      "position": [
+        -16.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Paved_Plot",
+      "position": [
+        -8.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Paved_Plot",
+      "position": [
+        8.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Paved_Plot",
+      "position": [
+        16.0,
+        8.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Plaza",
+      "position": [
+        -33.0,
+        30.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Well",
+      "position": [
+        -13.0,
+        8.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bench",
+      "position": [
+        -18.0,
+        8.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Planter",
+      "position": [
+        -18.0,
+        12.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bench",
+      "position": [
+        -8.0,
+        8.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Planter",
+      "position": [
+        -8.0,
+        12.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Produce_Stall",
+      "position": [
+        7.0,
+        9.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Cloth_Stall",
+      "position": [
+        13.0,
+        9.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Produce_Stall",
+      "position": [
+        19.0,
+        9.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Well",
+      "position": [
+        11.0,
+        5.800000190734863,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Handcart",
+      "position": [
+        18.5,
+        5.699999809265137,
+        0.11999999731779099
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "Barrel",
+      "position": [
+        6.0,
+        6.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Grain_Sack",
+      "position": [
+        5.0,
+        6.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Crate_Closed",
+      "position": [
+        15.0,
+        10.5,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Crate_Open",
+      "position": [
+        16.299999237060547,
+        10.5,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Produce_Basket",
+      "position": [
+        15.0,
+        9.399999618530273,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Noticeboard",
+      "position": [
+        6.0,
+        13.5,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Signpost",
+      "position": [
+        3.0,
+        3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Royal_Castle",
+      "position": [
+        0.0,
+        40.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fantasy_House",
+      "position": [
+        -18.0,
+        26.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fantasy_House",
+      "position": [
+        18.0,
+        26.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Tavern",
+      "position": [
+        -17.0,
+        -9.0,
+        0.0
+      ],
+      "angle_degrees": 180
+    },
+    {
+      "name": "Clinic",
+      "position": [
+        17.0,
+        -9.0,
+        0.0
+      ],
+      "angle_degrees": 180
+    },
+    {
+      "name": "Guardhouse",
+      "position": [
+        -31.0,
+        9.0,
+        0.0
+      ],
+      "angle_degrees": -90
+    },
+    {
+      "name": "Library",
+      "position": [
+        33.0,
+        9.0,
+        0.0
+      ],
+      "angle_degrees": 90
+    },
+    {
+      "name": "CrimsonRowhouse",
+      "position": [
+        -17.0,
+        -25.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "VelvetTerrace",
+      "position": [
+        17.0,
+        -25.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fantasy_House",
+      "position": [
+        -32.0,
+        -25.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fantasy_House",
+      "position": [
+        -25.0,
+        -25.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fantasy_House",
+      "position": [
+        25.0,
+        -25.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fantasy_House",
+      "position": [
+        32.0,
+        -25.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        -20.0,
+        -3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        20.0,
+        -3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        -20.0,
+        19.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        20.0,
+        19.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        3.0,
+        -13.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        -3.0,
+        -21.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        27.0,
+        3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        -27.0,
+        3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Streetlamp",
+      "position": [
+        3.0,
+        21.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bench",
+      "position": [
+        -11.0,
+        -3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bench",
+      "position": [
+        11.0,
+        -3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Planter",
+      "position": [
+        -29.0,
+        -3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Planter",
+      "position": [
+        29.0,
+        -3.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bollard",
+      "position": [
+        -3.0,
+        -26.5,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bollard",
+      "position": [
+        3.0,
+        -26.5,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Drain_Grate",
+      "position": [
+        -2.450000047683716,
+        -8.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Drain_Grate",
+      "position": [
+        2.450000047683716,
+        -8.0,
+        0.11999999731779099
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fence_Panel",
+      "position": [
+        -23.0,
+        -17.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fence_Panel",
+      "position": [
+        -19.0,
+        -17.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fence_Gate",
+      "position": [
+        -15.0,
+        -17.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Fence_Post",
+      "position": [
+        -11.0,
+        -17.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Clothesline",
+      "position": [
+        -19.0,
+        -15.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Firewood_Rack",
+      "position": [
+        -13.0,
+        -15.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Hay_Bale",
+      "position": [
+        -22.0,
+        -14.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Water_Trough",
+      "position": [
+        -7.0,
+        -13.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Bucket",
+      "position": [
+        -8.800000190734863,
+        -13.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Stone_Wall",
+      "position": [
+        10.0,
+        -18.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Stone_Wall",
+      "position": [
+        14.0,
+        -18.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "position": [
+        18.0,
+        -18.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Forge",
+      "position": [
+        15.0,
+        -15.0,
+        0.0
+      ],
+      "angle_degrees": 0
+    },
+    {
+      "name": "Anvil",
+      "position": [
+        12.300000190734863,
+        -15.5,
+        0.0
+      ],
+      "angle_degrees": 0
+    }
+  ]
+}

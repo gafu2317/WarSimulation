@@ -19,7 +19,7 @@ namespace WarSimulation.Combat.Map
             float cellSize = config.HeightMapCellSize;
             var height = new HeightMap(resolution, resolution, cellSize);
             var grid = new GroundStateGrid(resolution, resolution, cellSize);
-            return new MapData(height, grid, seed);
+            return new MapData(height, grid, seed) { PlacementRadii = config.PlacementRadii };
         }
 
         /// <summary>
