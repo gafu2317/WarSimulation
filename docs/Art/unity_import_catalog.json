@@ -1,0 +1,1646 @@
+{
+  "scope": "Fantasy town import preparation; no Unity assets generated",
+  "unity_version": "6000.4.3f1",
+  "render_pipeline": "URP 17.4.0",
+  "sets": [
+    {
+      "name": "KingdomBuildings_RealisticFantasy",
+      "source": "ArtSource/Blender/KingdomBuildings_RealisticFantasy.blend",
+      "sha256": "bd65bcdad536e09149678475424253419c145ad4a1ac5ec202d3400735032a02",
+      "models": [
+        {
+          "name": "Royal_Castle",
+          "label_ja": "Royal_Castle",
+          "mesh_parts": 1173,
+          "meshes_without_uv": 269,
+          "materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Paving",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Paving",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Royal_Castle.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Royal_Castle.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Fantasy_House",
+          "label_ja": "Fantasy_House",
+          "mesh_parts": 111,
+          "meshes_without_uv": 40,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Plaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Plaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Fantasy_House.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Fantasy_House.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Granite_Straight",
+          "label_ja": "Granite_Straight",
+          "mesh_parts": 32,
+          "meshes_without_uv": 4,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Granite_Straight.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Granite_Straight.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Granite_Gate",
+          "label_ja": "Granite_Gate",
+          "mesh_parts": 53,
+          "meshes_without_uv": 21,
+          "materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Granite_Gate.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Granite_Gate.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Granite_Corner",
+          "label_ja": "Granite_Corner",
+          "mesh_parts": 123,
+          "meshes_without_uv": 25,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Granite_Corner.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Granite_Corner.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Sandstone_Straight",
+          "label_ja": "Sandstone_Straight",
+          "mesh_parts": 32,
+          "meshes_without_uv": 4,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Sandstone_Straight.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Sandstone_Straight.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Sandstone_Gate",
+          "label_ja": "Sandstone_Gate",
+          "mesh_parts": 53,
+          "meshes_without_uv": 21,
+          "materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Sandstone_Gate.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Sandstone_Gate.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Sandstone_Corner",
+          "label_ja": "Sandstone_Corner",
+          "mesh_parts": 123,
+          "meshes_without_uv": 25,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Sandstone_Corner.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Sandstone_Corner.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Basalt_Straight",
+          "label_ja": "Basalt_Straight",
+          "mesh_parts": 32,
+          "meshes_without_uv": 4,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Basalt_Straight.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Basalt_Straight.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Basalt_Gate",
+          "label_ja": "Basalt_Gate",
+          "mesh_parts": 53,
+          "meshes_without_uv": 21,
+          "materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Basalt_Gate.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Basalt_Gate.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        },
+        {
+          "name": "Basalt_Corner",
+          "label_ja": "Basalt_Corner",
+          "mesh_parts": 123,
+          "meshes_without_uv": 25,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Basalt_Corner.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/KingdomBuildings_RealisticFantasy/Basalt_Corner.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/KingdomBuildings_RealisticFantasy/model_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "FantasyTownFacilities",
+      "source": "ArtSource/Blender/FantasyTownFacilities.blend",
+      "sha256": "bffa7c30e52b58192303ec8036e4d3045dd93b83e0d23287063136f768ba5430",
+      "models": [
+        {
+          "name": "Tavern",
+          "label_ja": "酒場",
+          "mesh_parts": 175,
+          "meshes_without_uv": 38,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_OchrePlaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_WarmGlass"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_OchrePlaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_WarmGlass"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownFacilities/Tavern.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownFacilities/Tavern.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownFacilities/model_manifest.json"
+        },
+        {
+          "name": "Clinic",
+          "label_ja": "診療所",
+          "mesh_parts": 195,
+          "meshes_without_uv": 77,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_ClinicPlaster",
+            "Fantasy_Door",
+            "Fantasy_Glass",
+            "Fantasy_Herb",
+            "Fantasy_HerbDark",
+            "Fantasy_Iron",
+            "Fantasy_Ivory",
+            "Fantasy_Lantern",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Sage",
+            "Fantasy_Soil",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_ClinicPlaster",
+            "Fantasy_Door",
+            "Fantasy_Glass",
+            "Fantasy_Herb",
+            "Fantasy_HerbDark",
+            "Fantasy_Iron",
+            "Fantasy_Ivory",
+            "Fantasy_Lantern",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Sage",
+            "Fantasy_Soil",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownFacilities/Clinic.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownFacilities/Clinic.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownFacilities/model_manifest.json"
+        },
+        {
+          "name": "Guardhouse",
+          "label_ja": "衛兵所",
+          "mesh_parts": 141,
+          "meshes_without_uv": 49,
+          "materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownFacilities/Guardhouse.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownFacilities/Guardhouse.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownFacilities/model_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "FantasyCultureFacilities",
+      "source": "ArtSource/Blender/FantasyCultureFacilities.blend",
+      "sha256": "f38c65346a4e5f4066f8d164f5fda5e72a52db25d2bf61efaa08ead9849ab373",
+      "models": [
+        {
+          "name": "Casino",
+          "label_ja": "カジノ",
+          "mesh_parts": 287,
+          "meshes_without_uv": 149,
+          "materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_CasinoPlaster",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Ivory",
+            "Fantasy_Lantern",
+            "Fantasy_Marble",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Velvet",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_CasinoPlaster",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Ivory",
+            "Fantasy_Lantern",
+            "Fantasy_Marble",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Velvet",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyCultureFacilities/Casino.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyCultureFacilities/Casino.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyCultureFacilities/model_manifest.json"
+        },
+        {
+          "name": "Museum",
+          "label_ja": "美術館",
+          "mesh_parts": 270,
+          "meshes_without_uv": 56,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Marble",
+            "Fantasy_MuseumPlaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Marble",
+            "Fantasy_MuseumPlaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyCultureFacilities/Museum.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyCultureFacilities/Museum.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyCultureFacilities/model_manifest.json"
+        },
+        {
+          "name": "Arena",
+          "label_ja": "闘技場",
+          "mesh_parts": 480,
+          "meshes_without_uv": 300,
+          "materials": [
+            "Fantasy_ArenaSand",
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_SeatStone",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_ArenaSand",
+            "Fantasy_Banner",
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_SeatStone",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyCultureFacilities/Arena.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyCultureFacilities/Arena.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyCultureFacilities/model_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "FantasyCivicFacilities",
+      "source": "ArtSource/Blender/FantasyCivicFacilities.blend",
+      "sha256": "356bd93ba2a530b7e302b0b7017b4d9abba324f143bc541cc6a4e46f36c1c634",
+      "models": [
+        {
+          "name": "Library",
+          "label_ja": "図書館",
+          "mesh_parts": 198,
+          "meshes_without_uv": 60,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Ink",
+            "Fantasy_Iron",
+            "Fantasy_Ivory",
+            "Fantasy_Lantern",
+            "Fantasy_LibraryPlaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Ink",
+            "Fantasy_Iron",
+            "Fantasy_Ivory",
+            "Fantasy_Lantern",
+            "Fantasy_LibraryPlaster",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyCivicFacilities/Library.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyCivicFacilities/Library.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyCivicFacilities/model_manifest.json"
+        },
+        {
+          "name": "Plaza",
+          "label_ja": "広場",
+          "mesh_parts": 149,
+          "meshes_without_uv": 15,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Foliage",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_PavingGrid",
+            "Fantasy_Soil",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Water",
+            "Fantasy_WaterLight"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Foliage",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_PavingGrid",
+            "Fantasy_Soil",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Water",
+            "Fantasy_WaterLight"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyCivicFacilities/Plaza.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyCivicFacilities/Plaza.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyCivicFacilities/model_manifest.json"
+        },
+        {
+          "name": "Observatory",
+          "label_ja": "天文台",
+          "mesh_parts": 186,
+          "meshes_without_uv": 77,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_Lens",
+            "Fantasy_LibraryPlaster",
+            "Fantasy_Patina",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_Lens",
+            "Fantasy_LibraryPlaster",
+            "Fantasy_Patina",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Window"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyCivicFacilities/Observatory.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyCivicFacilities/Observatory.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyCivicFacilities/model_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "FantasyNightlifeBuildings",
+      "source": "ArtSource/Blender/FantasyNightlifeBuildings.blend",
+      "sha256": "0f7cb7bd10e7a8014cd56a8a98adcd7e392b478c59f337da35397e5a3a65b079",
+      "models": [
+        {
+          "name": "CrimsonRowhouse",
+          "label_ja": "赤灯りの町家",
+          "mesh_parts": 331,
+          "meshes_without_uv": 54,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Crimson",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_MutedRose",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass",
+            "Fantasy_WineRoof"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Crimson",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_MutedRose",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass",
+            "Fantasy_WineRoof"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyNightlifeBuildings/CrimsonRowhouse.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyNightlifeBuildings/CrimsonRowhouse.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyNightlifeBuildings/model_manifest.json"
+        },
+        {
+          "name": "VelvetTerrace",
+          "label_ja": "バルコニーの館",
+          "mesh_parts": 460,
+          "meshes_without_uv": 60,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_PaleMauve",
+            "Fantasy_Plum",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_Slate",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_PaleMauve",
+            "Fantasy_Plum",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_Slate",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyNightlifeBuildings/VelvetTerrace.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyNightlifeBuildings/VelvetTerrace.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyNightlifeBuildings/model_manifest.json"
+        },
+        {
+          "name": "LanternSpire",
+          "label_ja": "塔屋付きの建物",
+          "mesh_parts": 450,
+          "meshes_without_uv": 67,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Crimson",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_DuskPlaster",
+            "Fantasy_Iron",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_Slate",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Crimson",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_DuskPlaster",
+            "Fantasy_Iron",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_Slate",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyNightlifeBuildings/LanternSpire.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyNightlifeBuildings/LanternSpire.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyNightlifeBuildings/model_manifest.json"
+        },
+        {
+          "name": "VeiledCourtyard",
+          "label_ja": "中庭入口の館",
+          "mesh_parts": 655,
+          "meshes_without_uv": 93,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_CourtyardPaving",
+            "Fantasy_Crimson",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_Foliage",
+            "Fantasy_Iron",
+            "Fantasy_Plum",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_SandPlaster",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass",
+            "Fantasy_WineRoof"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_CourtyardPaving",
+            "Fantasy_Crimson",
+            "Fantasy_DarkWood",
+            "Fantasy_Door",
+            "Fantasy_Foliage",
+            "Fantasy_Iron",
+            "Fantasy_Plum",
+            "Fantasy_RoofEdge",
+            "Fantasy_RubyGlass",
+            "Fantasy_SandPlaster",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_WarmGlass",
+            "Fantasy_WineRoof"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyNightlifeBuildings/VeiledCourtyard.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyNightlifeBuildings/VeiledCourtyard.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyNightlifeBuildings/model_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "FantasyTownProps",
+      "source": "ArtSource/Blender/FantasyTownProps.blend",
+      "sha256": "9bee53a81b088b3ef687bff90870d2912624699521928e00c8187c021a6f0b82",
+      "models": [
+        {
+          "name": "Road_Straight",
+          "label_ja": "直線道路",
+          "mesh_parts": 13,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "procedural_materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Road_Straight.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Road_Straight.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Road_Corner",
+          "label_ja": "曲がり道路",
+          "mesh_parts": 13,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "procedural_materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Road_Corner.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Road_Corner.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Road_T",
+          "label_ja": "T字路",
+          "mesh_parts": 13,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "procedural_materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Road_T.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Road_T.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Road_Cross",
+          "label_ja": "十字路",
+          "mesh_parts": 13,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "procedural_materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Road_Cross.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Road_Cross.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Road_End",
+          "label_ja": "行き止まり",
+          "mesh_parts": 13,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "procedural_materials": [
+            "Fantasy_PavingGrid",
+            "Fantasy_StoneTrim",
+            "Fantasy_TownCobble"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Road_End.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Road_End.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Paved_Plot",
+          "label_ja": "敷地舗装",
+          "mesh_parts": 1,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_PavingGrid"
+          ],
+          "procedural_materials": [
+            "Fantasy_PavingGrid"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Paved_Plot.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Paved_Plot.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Fence_Panel",
+          "label_ja": "木柵",
+          "mesh_parts": 10,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Fence_Panel.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Fence_Panel.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Fence_Post",
+          "label_ja": "終端柱",
+          "mesh_parts": 3,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Fence_Post.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Fence_Post.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Fence_Gate",
+          "label_ja": "木門",
+          "mesh_parts": 19,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Fence_Gate.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Fence_Gate.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Stone_Wall",
+          "label_ja": "低い石塀",
+          "mesh_parts": 2,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Stone_Wall.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Stone_Wall.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Stone_Wall_Corner",
+          "label_ja": "石塀の角",
+          "mesh_parts": 2,
+          "meshes_without_uv": 2,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Stone_Wall_Corner.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Stone_Wall_Corner.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Produce_Stall",
+          "label_ja": "青果露店",
+          "mesh_parts": 120,
+          "meshes_without_uv": 13,
+          "materials": [
+            "Fantasy_Apple",
+            "Fantasy_Basket",
+            "Fantasy_Canvas",
+            "Fantasy_Crimson",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Leaf",
+            "Fantasy_Rope",
+            "Fantasy_Sacking",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Apple",
+            "Fantasy_Basket",
+            "Fantasy_Canvas",
+            "Fantasy_Crimson",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Leaf",
+            "Fantasy_Rope",
+            "Fantasy_Sacking",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Produce_Stall.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Produce_Stall.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Cloth_Stall",
+          "label_ja": "布露店",
+          "mesh_parts": 38,
+          "meshes_without_uv": 8,
+          "materials": [
+            "Fantasy_BlueCloth",
+            "Fantasy_Canvas",
+            "Fantasy_Crimson",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Leaf",
+            "Fantasy_Ochre",
+            "Fantasy_Rope",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_BlueCloth",
+            "Fantasy_Canvas",
+            "Fantasy_Crimson",
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Leaf",
+            "Fantasy_Ochre",
+            "Fantasy_Rope",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Cloth_Stall.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Cloth_Stall.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Handcart",
+          "label_ja": "荷車",
+          "mesh_parts": 42,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Handcart.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Handcart.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Crate_Closed",
+          "label_ja": "木箱・蓋付き",
+          "mesh_parts": 28,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Crate_Closed.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Crate_Closed.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Crate_Open",
+          "label_ja": "木箱・開放",
+          "mesh_parts": 22,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Crate_Open.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Crate_Open.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Grain_Sack",
+          "label_ja": "麻袋",
+          "mesh_parts": 3,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Rope",
+            "Fantasy_Sacking"
+          ],
+          "procedural_materials": [
+            "Fantasy_Rope",
+            "Fantasy_Sacking"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Grain_Sack.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Grain_Sack.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Produce_Basket",
+          "label_ja": "青果かご",
+          "mesh_parts": 30,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Apple",
+            "Fantasy_Basket",
+            "Fantasy_Leaf",
+            "Fantasy_Rope"
+          ],
+          "procedural_materials": [
+            "Fantasy_Apple",
+            "Fantasy_Basket",
+            "Fantasy_Leaf",
+            "Fantasy_Rope"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Produce_Basket.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Produce_Basket.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Barrel",
+          "label_ja": "樽",
+          "mesh_parts": 8,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Barrel.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Barrel.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Well",
+          "label_ja": "井戸",
+          "mesh_parts": 40,
+          "meshes_without_uv": 6,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Rope",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Water"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_Roof",
+            "Fantasy_RoofEdge",
+            "Fantasy_Rope",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim",
+            "Fantasy_Timber",
+            "Fantasy_Water"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Well.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Well.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Water_Trough",
+          "label_ja": "水槽",
+          "mesh_parts": 6,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_Water"
+          ],
+          "procedural_materials": [
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_Water"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Water_Trough.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Water_Trough.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Firewood_Rack",
+          "label_ja": "薪置き場",
+          "mesh_parts": 64,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Bark",
+            "Fantasy_CutWood",
+            "Fantasy_Roof",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Bark",
+            "Fantasy_CutWood",
+            "Fantasy_Roof",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Firewood_Rack.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Firewood_Rack.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Hay_Bale",
+          "label_ja": "干し草",
+          "mesh_parts": 9,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Hay",
+            "Fantasy_Rope"
+          ],
+          "procedural_materials": [
+            "Fantasy_Hay",
+            "Fantasy_Rope"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Hay_Bale.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Hay_Bale.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Clothesline",
+          "label_ja": "物干し",
+          "mesh_parts": 14,
+          "meshes_without_uv": 3,
+          "materials": [
+            "Fantasy_BlueCloth",
+            "Fantasy_Canvas",
+            "Fantasy_Door",
+            "Fantasy_Rope",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_BlueCloth",
+            "Fantasy_Canvas",
+            "Fantasy_Door",
+            "Fantasy_Rope",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Clothesline.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Clothesline.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Signpost",
+          "label_ja": "道標",
+          "mesh_parts": 8,
+          "meshes_without_uv": 2,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Ivory",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Ivory",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Signpost.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Signpost.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Noticeboard",
+          "label_ja": "掲示板",
+          "mesh_parts": 29,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Canvas",
+            "Fantasy_Crimson",
+            "Fantasy_Door",
+            "Fantasy_Ink",
+            "Fantasy_Roof",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "procedural_materials": [
+            "Fantasy_Canvas",
+            "Fantasy_Crimson",
+            "Fantasy_Door",
+            "Fantasy_Ink",
+            "Fantasy_Roof",
+            "Fantasy_StoneShade",
+            "Fantasy_Timber"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Noticeboard.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Noticeboard.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Anvil",
+          "label_ja": "金床",
+          "mesh_parts": 8,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Bark",
+            "Fantasy_CutWood",
+            "Fantasy_Door",
+            "Fantasy_Iron"
+          ],
+          "procedural_materials": [
+            "Fantasy_Bark",
+            "Fantasy_CutWood",
+            "Fantasy_Door",
+            "Fantasy_Iron"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Anvil.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Anvil.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Forge",
+          "label_ja": "小型の炉",
+          "mesh_parts": 19,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Coal",
+            "Fantasy_Ember",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Coal",
+            "Fantasy_Ember",
+            "Fantasy_Iron",
+            "Fantasy_Stone",
+            "Fantasy_StoneShade",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Forge.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Forge.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Bench",
+          "label_ja": "ベンチ",
+          "mesh_parts": 11,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Bench.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Bench.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Streetlamp",
+          "label_ja": "街灯",
+          "mesh_parts": 11,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_StoneShade"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_Lantern",
+            "Fantasy_StoneShade"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Streetlamp.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Streetlamp.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Planter",
+          "label_ja": "植え込み",
+          "mesh_parts": 4,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Foliage",
+            "Fantasy_Soil",
+            "Fantasy_Stone",
+            "Fantasy_StoneTrim"
+          ],
+          "procedural_materials": [
+            "Fantasy_Foliage",
+            "Fantasy_Soil",
+            "Fantasy_Stone",
+            "Fantasy_StoneTrim"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Planter.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Planter.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Drain_Grate",
+          "label_ja": "排水格子",
+          "mesh_parts": 9,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Iron"
+          ],
+          "procedural_materials": [
+            "Fantasy_Iron"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Drain_Grate.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Drain_Grate.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Bollard",
+          "label_ja": "車止め",
+          "mesh_parts": 4,
+          "meshes_without_uv": 0,
+          "materials": [
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_StoneShade"
+          ],
+          "procedural_materials": [
+            "Fantasy_Brass",
+            "Fantasy_Iron",
+            "Fantasy_StoneShade"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Bollard.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Bollard.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        },
+        {
+          "name": "Bucket",
+          "label_ja": "木桶",
+          "mesh_parts": 4,
+          "meshes_without_uv": 1,
+          "materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron"
+          ],
+          "procedural_materials": [
+            "Fantasy_Door",
+            "Fantasy_Iron"
+          ],
+          "proposed_fbx": "Assets/Models/Kingdom/Fantasy/FantasyTownProps/Bucket.fbx",
+          "proposed_prefab": "Assets/Prefabs/Kingdom/Fantasy/FantasyTownProps/Bucket.prefab",
+          "proposed_fbx_exists": false,
+          "import_status": "NOT_IMPORTED",
+          "dimension_reference": "docs/Art/FantasyTownProps/model_manifest.json"
+        }
+      ]
+    }
+  ],
+  "model_count": 58
+}

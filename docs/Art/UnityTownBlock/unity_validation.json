@@ -1,0 +1,183 @@
+{
+    "scene": "Assets/Prototypes/TownBlock/TownBlockReview.unity",
+    "unityVersion": "6000.4.3f1",
+    "renderPipeline": "UniversalRenderPipelineAsset",
+    "models": [
+        {
+            "name": "Fantasy_House",
+            "dimensions": {
+                "x": 6.240434646606445,
+                "y": 9.494999885559082,
+                "z": 5.764999866485596
+            },
+            "expectedDimensions": {
+                "x": 6.240434646606445,
+                "y": 9.494999885559082,
+                "z": 5.764999866485596
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.00001215077190863667,
+            "triangles": 13420
+        },
+        {
+            "name": "Road_Straight",
+            "dimensions": {
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
+            },
+            "expectedDimensions": {
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
+            },
+            "minimumY": -0.18000000715255738,
+            "tolerance": 0.000010793894944072235,
+            "triangles": 156
+        },
+        {
+            "name": "Road_Corner",
+            "dimensions": {
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
+            },
+            "expectedDimensions": {
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
+            },
+            "minimumY": -0.18000000715255738,
+            "tolerance": 0.000010793894944072235,
+            "triangles": 156
+        },
+        {
+            "name": "Paved_Plot",
+            "dimensions": {
+                "x": 8.0,
+                "y": 0.30000001192092898,
+                "z": 8.0
+            },
+            "expectedDimensions": {
+                "x": 8.0,
+                "y": 0.30000001192092898,
+                "z": 8.0
+            },
+            "minimumY": -0.18000000715255738,
+            "tolerance": 0.000010793385627039243,
+            "triangles": 12
+        },
+        {
+            "name": "Produce_Stall",
+            "dimensions": {
+                "x": 3.559999942779541,
+                "y": 2.9390923976898195,
+                "z": 2.630000114440918
+            },
+            "expectedDimensions": {
+                "x": 3.559999942779541,
+                "y": 2.9390923976898195,
+                "z": 2.630000114440918
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.000005066943231213372,
+            "triangles": 32592
+        },
+        {
+            "name": "Cloth_Stall",
+            "dimensions": {
+                "x": 3.559999942779541,
+                "y": 2.9390923976898195,
+                "z": 2.630000114440918
+            },
+            "expectedDimensions": {
+                "x": 3.559999942779541,
+                "y": 2.9390923976898195,
+                "z": 2.630000114440918
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.000005066943231213372,
+            "triangles": 4460
+        },
+        {
+            "name": "Streetlamp",
+            "dimensions": {
+                "x": 0.6003453731536865,
+                "y": 4.420000076293945,
+                "z": 0.6003453731536865
+            },
+            "expectedDimensions": {
+                "x": 0.6003453731536865,
+                "y": 4.420000076293945,
+                "z": 0.6003453731536865
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.000004292300673114369,
+            "triangles": 1300
+        },
+        {
+            "name": "Bench",
+            "dimensions": {
+                "x": 2.799999952316284,
+                "y": 1.434069275856018,
+                "z": 0.6949999928474426
+            },
+            "expectedDimensions": {
+                "x": 2.799999952316284,
+                "y": 1.434069275856018,
+                "z": 0.6949999928474426
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.0000030724863790965175,
+            "triangles": 1188
+        },
+        {
+            "name": "Crate_Closed",
+            "dimensions": {
+                "x": 1.1200000047683716,
+                "y": 1.1949999332427979,
+                "z": 0.971500039100647
+            },
+            "expectedDimensions": {
+                "x": 1.1200000047683716,
+                "y": 1.1949999332427979,
+                "z": 0.971500039100647
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.0000018160516219722923,
+            "triangles": 3024
+        },
+        {
+            "name": "Barrel",
+            "dimensions": {
+                "x": 0.8960000276565552,
+                "y": 1.0679999589920045,
+                "z": 0.8960000276565552
+            },
+            "expectedDimensions": {
+                "x": 0.8960000276565552,
+                "y": 1.0679999589920045,
+                "z": 0.8960000276565552
+            },
+            "minimumY": 0.0,
+            "tolerance": 0.0000015804130271135364,
+            "triangles": 1072
+        }
+    ],
+    "prefabCount": 10,
+    "placedPrefabCount": 29,
+    "roadConnections": 8,
+    "minimumHouseSeparation": 2.5595641136169435,
+    "minimumBuildingToCarriageway": 2.2699999809265138,
+    "allRootsUnitScale": true,
+    "groundContact": true,
+    "roadsConnected": true,
+    "noBuildingOverlap": true,
+    "allMaterialsUrp": true,
+    "supportedGroundVertices": 924,
+    "limitations": [
+        "Rendering and placement prototype only",
+        "Static mesh colliders; no NavMesh or gameplay integration",
+        "No target-device performance guarantee"
+    ]
+}
