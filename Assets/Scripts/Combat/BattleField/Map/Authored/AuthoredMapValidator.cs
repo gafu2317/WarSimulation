@@ -41,6 +41,7 @@ namespace WarSimulation.Combat.Map
             ValidateForests(definition.Forests, world, issues);
             ValidateBridges(definition.Bridges, world, issues);
             ValidateMagicStones(definition.MagicStones, config, world, issues);
+            ValidateFixedFeatures(definition, issues);
             ValidateAssaultRoutes(definition.AssaultRoutes, world, issues);
             return issues;
         }
@@ -86,6 +87,40 @@ namespace WarSimulation.Combat.Map
             }
 
             return false;
+        }
+
+        private static void ValidateFixedFeatures(
+            AuthoredMapDefinition definition,
+            List<AuthoredMapValidationIssue> issues)
+        {
+            if (!definition.HasFixedFeaturePlacements) return;
+            MapData map = AuthoredMapBuilder.Build(definition);
+            ValidatePoints(map, definition.Rocks, FeatureType.Rock, "Rock", issues);
+            ValidatePoints(map, definition.Trees, FeatureType.Tree, "Tree", issues);
+            for (int i = 0; i < definition.Forests.Count; i++)
+                ValidatePoints(map, definition.Forests[i].Trees, FeatureType.Tree, $"Forest[{i}] Tree", issues);
+        }
+
+        private static void ValidatePoints(
+            MapData map,
+            List<AuthoredPointFeaturePlacement> placements,
+            FeatureType type,
+            string label,
+            List<AuthoredMapValidationIssue> issues)
+        {
+            if (placements == null) return;
+            for (int i = 0; i < placements.Count; i++)
+            {
+                AuthoredPointFeaturePlacement placement = placements[i];
+                if (placement == null)
+                {
+                    issues.Add(Error($"{label}[{i}] is null."));
+                    continue;
+                }
+                if (!AuthoredFeaturePlacementValidator.TryValidate(
+                        map, type, placement.Center, placement.Center, null, out string reason))
+                    issues.Add(Error($"{label}[{i}]: {reason}"));
+            }
         }
 
         private static void ValidateMountains(

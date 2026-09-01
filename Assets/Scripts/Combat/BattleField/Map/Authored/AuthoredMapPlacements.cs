@@ -49,6 +49,8 @@ namespace WarSimulation.Combat.Map
         public Vector2 Center;
         public float RotationDeg;
         public Vector2 Scale = Vector2.one;
+        public List<AuthoredPointFeaturePlacement> Trees = new();
+        public int TreeLayoutFingerprint;
 
         public StampPlacement ToStampPlacement() =>
             new StampPlacement(Center, RotationDeg * Mathf.Deg2Rad, Scale == default ? Vector2.one : Scale);

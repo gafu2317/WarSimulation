@@ -36,6 +36,96 @@ public sealed class AuthoredMapBuilderTests
     }
 
     [Test]
+    public void CaptureFeaturePlacements_PreservesGeneratedFeaturePositions()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        var forest = ScriptableObject.CreateInstance<ForestClusterStampShape>();
+        SetPrivateField(definition.SharedConfig, "_scatterTreeCount", 4);
+        SetPrivateField(forest, "_radius", 3f);
+        SetPrivateField(forest, "_treeCount", 3);
+        definition.Forests.Add(new AuthoredForestPlacement
+        {
+            Shape = forest,
+            Center = new Vector2(8f, 5f),
+            Scale = Vector2.one,
+        });
+        try
+        {
+            MapData captured = AuthoredMapBuilder.CaptureFeaturePlacements(definition);
+            Vector3[] expected = captured.Features.Select(f => f.WorldPosition).ToArray();
+
+            MapData rebuilt = AuthoredMapBuilder.Build(definition);
+
+            Assert.That(definition.HasFixedFeaturePlacements, Is.True);
+            Assert.That(definition.Rocks, Has.Count.EqualTo(CountFeatures(captured, FeatureType.Rock)));
+            Assert.That(definition.Trees, Has.Count.EqualTo(4));
+            Assert.That(definition.Forests[0].Trees, Has.Count.EqualTo(3));
+            Assert.That(rebuilt.Features.Select(f => f.WorldPosition), Is.EqualTo(expected));
+        }
+        finally
+        {
+            Object.DestroyImmediate(forest);
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void Build_FixedFeaturePositionChangesGeometryFingerprint()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            AuthoredMapBuilder.CaptureFeaturePlacements(definition);
+            int before = definition.ComputeGeometryFingerprint();
+            definition.Rocks[0].Center += Vector2.one;
+
+            MapData rebuilt = AuthoredMapBuilder.Build(definition);
+
+            Assert.That(definition.ComputeGeometryFingerprint(), Is.Not.EqualTo(before));
+            Assert.That(rebuilt.Features.Any(f => f.Type == FeatureType.Rock &&
+                new Vector2(f.WorldPosition.x, f.WorldPosition.z) == definition.Rocks[0].Center), Is.True);
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void RegenerateForestTrees_ChangesOnlySelectedForestTrees()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        var forest = ScriptableObject.CreateInstance<ForestClusterStampShape>();
+        SetPrivateField(forest, "_radius", 3f);
+        SetPrivateField(forest, "_treeCount", 1);
+        definition.Forests.Add(new AuthoredForestPlacement
+        {
+            Shape = forest,
+            Center = new Vector2(8f, 5f),
+            Scale = Vector2.one,
+        });
+        try
+        {
+            AuthoredMapBuilder.CaptureFeaturePlacements(definition);
+            Vector2[] rocks = definition.Rocks.Select(p => p.Center).ToArray();
+            Vector2[] scatteredTrees = definition.Trees.Select(p => p.Center).ToArray();
+            SetPrivateField(forest, "_treeCount", 2);
+
+            MapData rebuilt = AuthoredMapBuilder.RegenerateForestTrees(definition, 0);
+
+            Assert.That(definition.Rocks.Select(p => p.Center), Is.EqualTo(rocks));
+            Assert.That(definition.Trees.Select(p => p.Center), Is.EqualTo(scatteredTrees));
+            Assert.That(definition.Forests[0].Trees, Has.Count.EqualTo(2));
+            Assert.That(CountFeatures(rebuilt, FeatureType.Tree), Is.EqualTo(2));
+        }
+        finally
+        {
+            Object.DestroyImmediate(forest);
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
     public void Build_ReservesFixedObjectsAndSeparatesTreeAndRockFootprints()
     {
         AuthoredMapDefinition definition = CreateDefinition();

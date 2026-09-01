@@ -95,6 +95,31 @@ public sealed class AuthoredMapValidatorTests
         }
     }
 
+    [Test]
+    public void ValidateRejectsFixedFeatureOutsidePlayableBounds()
+    {
+        MapConfig config = ScriptableObject.CreateInstance<MapConfig>();
+        var definition = ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+        try
+        {
+            SetPrivateField(config, "_worldSize", 20f);
+            SetPrivateField(config, "_cellsPerSide", 20);
+            SetPrivateField(config, "_placementRadii", new FeaturePlacementRadii { Rock = 1f });
+            definition.SharedConfig = config;
+            definition.HasFixedFeaturePlacements = true;
+            definition.Rocks.Add(new AuthoredPointFeaturePlacement { Center = Vector2.zero });
+
+            List<AuthoredMapValidationIssue> issues = AuthoredMapValidator.Validate(definition);
+
+            Assert.That(issues.Exists(i => i.IsError && i.Message.Contains("Rock[0]")), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(config);
+            Object.DestroyImmediate(definition);
+        }
+    }
+
     private static void SetPrivateField<T>(Object target, string fieldName, T value)
     {
         FieldInfo field = target.GetType().GetField(

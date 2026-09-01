@@ -30,6 +30,9 @@ namespace WarSimulation.Combat.Map.EditorOnly
         Bridge,
         MagicStone,
         AssaultRoute,
+        Rock,
+        ScatterTree,
+        ForestTree,
     }
 
     public enum MapAuthoringRightTab
@@ -66,6 +69,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private MapAuthoringTool _tool = MapAuthoringTool.Select;
         private MapAuthoringSelectionKind _selectionKind;
         private int _selectionIndex = -1;
+        private int _selectionForestIndex = -1;
+        private bool _pickFixedFeatures;
         private MapAuthoringRightTab _rightTab = MapAuthoringRightTab.Placement;
         private MapAuthoringStampKind _stampKind = MapAuthoringStampKind.Mountain;
 
@@ -150,6 +155,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private void OnEditorUpdate()
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+            if (AuthoredMapBuilder.RegenerateChangedForestTrees(_definition))
+            {
+                MarkDirty();
+                QueuePreviewRebuild(immediate: true);
+            }
             if (_assaultRouteValidationQueued)
             {
                 _assaultRouteValidationQueued = false;
@@ -222,6 +232,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 DrawToolToggle(MapAuthoringTool.Bridge, "橋");
                 DrawToolToggle(MapAuthoringTool.MagicStone, "魔石");
                 DrawToolToggle(MapAuthoringTool.AssaultRoute, "侵攻ルート");
+                if (_tool == MapAuthoringTool.Select && _definition?.HasFixedFeaturePlacements == true)
+                {
+                    bool features = GUILayout.Toggle(
+                        _pickFixedFeatures, "岩・木", EditorStyles.toolbarButton, GUILayout.Width(58f));
+                    if (features != _pickFixedFeatures)
+                    {
+                        _pickFixedFeatures = features;
+                        ClearSelection();
+                    }
+                }
                 GUILayout.FlexibleSpace();
                 if (!string.IsNullOrEmpty(_status))
                     GUILayout.Label(_status, EditorStyles.miniLabel);
@@ -423,6 +443,61 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 Mark(stone.Center, MagicStoneColor(stone.Type),
                     _selectionKind == MapAuthoringSelectionKind.MagicStone && _selectionIndex == i);
             }
+
+            if (_definition.HasFixedFeaturePlacements)
+            {
+                for (int i = 0; i < _definition.Rocks.Count; i++)
+                    DrawFeatureMarker(localDraw, world, _definition.Rocks[i].Center, new Color(0.45f, 0.45f, 0.45f),
+                        _selectionKind == MapAuthoringSelectionKind.Rock && _selectionIndex == i);
+                for (int i = 0; i < _definition.Trees.Count; i++)
+                    DrawFeatureMarker(localDraw, world, _definition.Trees[i].Center, new Color(0.08f, 0.62f, 0.18f),
+                        _selectionKind == MapAuthoringSelectionKind.ScatterTree && _selectionIndex == i);
+                for (int forest = 0; forest < _definition.Forests.Count; forest++)
+                {
+                    List<AuthoredPointFeaturePlacement> trees = _definition.Forests[forest].Trees;
+                    if (trees == null) continue;
+                    for (int i = 0; i < trees.Count; i++)
+                        DrawFeatureMarker(localDraw, world, trees[i].Center, new Color(0.04f, 0.42f, 0.12f),
+                            _selectionKind == MapAuthoringSelectionKind.ForestTree &&
+                            _selectionForestIndex == forest && _selectionIndex == i);
+                    }
+                }
+            else if (_lastPreviewMap != null)
+            {
+                for (int i = 0; i < _lastPreviewMap.Features.Count; i++)
+                {
+                    PlacedFeature feature = _lastPreviewMap.Features[i];
+                    if (feature.Type != FeatureType.Tree && feature.Type != FeatureType.Rock) continue;
+                    Color color = feature.Type == FeatureType.Rock
+                        ? new Color(0.45f, 0.45f, 0.45f)
+                        : new Color(0.08f, 0.62f, 0.18f);
+                    DrawFeatureMarker(
+                        localDraw,
+                        world,
+                        new Vector2(feature.WorldPosition.x, feature.WorldPosition.z),
+                        color,
+                        selected: false);
+                }
+            }
+        }
+
+        private static void DrawFeatureMarker(
+            Rect localDraw,
+            float world,
+            Vector2 center,
+            Color color,
+            bool selected)
+        {
+            Vector2 point = MapAuthoringPreview2D.MapToGui(localDraw, center, world);
+            Handles.BeginGUI();
+            Handles.color = color;
+            Handles.DrawSolidDisc(new Vector3(point.x, point.y), Vector3.forward, selected ? 6f : 4f);
+            if (selected)
+            {
+                Handles.color = Color.yellow;
+                Handles.DrawWireDisc(new Vector3(point.x, point.y), Vector3.forward, 7f, 2f);
+            }
+            Handles.EndGUI();
         }
 
         private void DrawAssaultRoutesLocal(Rect localDraw, float world)
@@ -774,6 +849,14 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
             if (e.type == EventType.KeyDown)
             {
+                if (e.keyCode == KeyCode.Escape && _dragging)
+                {
+                    _dragging = false;
+                    GUIUtility.hotControl = 0;
+                    Undo.PerformUndo();
+                    e.Use();
+                    return;
+                }
                 if (e.keyCode == KeyCode.Escape && _hasPendingRiverStart)
                 {
                     ClearPendingRiverStart();
@@ -992,6 +1075,19 @@ namespace WarSimulation.Combat.Map.EditorOnly
 
                 if (_definition.SharedConfig == null)
                     EditorGUILayout.HelpBox("共通設定が必要です。「共通」タブで割り当ててください。", MessageType.Warning);
+
+                if (_definition.SharedConfig != null)
+                {
+                    if (!_definition.HasFixedFeaturePlacements)
+                    {
+                        if (GUILayout.Button("岩・木の配置を確定")) CaptureFeaturePlacements();
+                    }
+                    else
+                    {
+                        EditorGUILayout.HelpBox("岩・木の配置は確定済みです。選択ツールの「岩・木」で移動できます。", MessageType.None);
+                        if (GUILayout.Button("自動配置に戻す（手動調整を破棄）")) ResetFeaturePlacements();
+                    }
+                }
 
                 EditorGUILayout.Space(6f);
                 DrawPalette();
@@ -1324,6 +1420,17 @@ namespace WarSimulation.Combat.Map.EditorOnly
             if (EditorGUI.EndChangeCheck())
             {
                 EditorUtility.SetDirty(target);
+                if (target is ForestClusterStampShape forestShape &&
+                    _definition?.HasFixedFeaturePlacements == true)
+                {
+                    RecordUndo("森の木を再生成");
+                    for (int i = 0; i < _definition.Forests.Count; i++)
+                    {
+                        if (_definition.Forests[i].Shape == forestShape)
+                            AuthoredMapBuilder.RegenerateForestTrees(_definition, i);
+                    }
+                    MarkDirty();
+                }
                 if (rebuildPreviewOnChange)
                     QueuePreviewRebuild();
             }
@@ -1651,7 +1758,10 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return;
             }
 
-            if (GUILayout.Button("削除"))
+            bool fixedFeature = _selectionKind == MapAuthoringSelectionKind.Rock ||
+                _selectionKind == MapAuthoringSelectionKind.ScatterTree ||
+                _selectionKind == MapAuthoringSelectionKind.ForestTree;
+            if (!fixedFeature && GUILayout.Button("削除"))
             {
                 DeleteSelection();
                 return;
@@ -1734,14 +1844,36 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     if (EditorGUI.EndChangeCheck())
                     {
                         RecordUndo("森を編集");
+                        bool regenerate = _definition.HasFixedFeaturePlacements && e.Shape != shape;
                         e.Shape = shape;
-                        e.Center = ClampToMap(center);
+                        TryMoveForest(e, ClampToMap(center));
                         e.RotationDeg = rotation;
                         e.Scale = scale;
+                        if (regenerate) AuthoredMapBuilder.RegenerateForestTrees(_definition, _selectionIndex);
                         MarkDirty();
                         QueuePreviewRebuild();
                     }
 
+                    return;
+                }
+                case MapAuthoringSelectionKind.Rock:
+                case MapAuthoringSelectionKind.ScatterTree:
+                case MapAuthoringSelectionKind.ForestTree:
+                {
+                    AuthoredPointFeaturePlacement placement = GetSelectedPointFeature();
+                    Vector2 center = EditorGUILayout.Vector2Field("位置", placement.Center);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        RecordUndo("岩・木を移動");
+                        FeatureType type = _selectionKind == MapAuthoringSelectionKind.Rock
+                            ? FeatureType.Rock
+                            : FeatureType.Tree;
+                        if (TryMoveFeature(placement, type, ClampToMap(center)))
+                        {
+                            MarkDirty();
+                            QueuePreviewRebuild();
+                        }
+                    }
                     return;
                 }
                 case MapAuthoringSelectionKind.River:
@@ -1929,6 +2061,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
                         Scale = Vector2.one,
                     });
                     SetSelection(MapAuthoringSelectionKind.Forest, _definition.Forests.Count - 1);
+                    if (_definition.HasFixedFeaturePlacements)
+                        AuthoredMapBuilder.RegenerateForestTrees(_definition, _definition.Forests.Count - 1);
                     break;
 
                 case MapAuthoringTool.River:
@@ -2018,8 +2152,9 @@ namespace WarSimulation.Combat.Map.EditorOnly
             MapAuthoringSelectionKind kind = MapAuthoringSelectionKind.None;
             int index = -1;
             int endpoint = -1;
+            int forestIndex = -1;
 
-            void Consider(Vector2 center, MapAuthoringSelectionKind k, int i, int ep = -1)
+            void Consider(Vector2 center, MapAuthoringSelectionKind k, int i, int ep = -1, int forest = -1)
             {
                 float sq = (center - mapXZ).sqrMagnitude;
                 if (sq >= best) return;
@@ -2027,29 +2162,46 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 kind = k;
                 index = i;
                 endpoint = ep;
+                forestIndex = forest;
             }
 
-            for (int i = 0; i < _definition.Mountains.Count; i++)
-                Consider(_definition.Mountains[i].Center, MapAuthoringSelectionKind.Mountain, i);
-            for (int i = 0; i < _definition.Lakes.Count; i++)
-                Consider(_definition.Lakes[i].Center, MapAuthoringSelectionKind.Lake, i);
-            for (int i = 0; i < _definition.GroundPatches.Count; i++)
-                Consider(_definition.GroundPatches[i].Center, MapAuthoringSelectionKind.GroundPatch, i);
-            for (int i = 0; i < _definition.Forests.Count; i++)
-                Consider(_definition.Forests[i].Center, MapAuthoringSelectionKind.Forest, i);
-            for (int i = 0; i < _definition.Rivers.Count; i++)
+            if (_pickFixedFeatures && _definition.HasFixedFeaturePlacements)
             {
-                AuthoredRiverPlacement river = _definition.Rivers[i];
-                if (!river.TryGetBezier(out Vector2 start, out Vector2 control, out Vector2 end)) continue;
-                Consider(start, MapAuthoringSelectionKind.River, i, 0);
-                Consider(end, MapAuthoringSelectionKind.River, i, 1);
-                Consider(control, MapAuthoringSelectionKind.River, i, 2);
+                for (int i = 0; i < _definition.Rocks.Count; i++)
+                    Consider(_definition.Rocks[i].Center, MapAuthoringSelectionKind.Rock, i);
+                for (int i = 0; i < _definition.Trees.Count; i++)
+                    Consider(_definition.Trees[i].Center, MapAuthoringSelectionKind.ScatterTree, i);
+                for (int forest = 0; forest < _definition.Forests.Count; forest++)
+                {
+                    List<AuthoredPointFeaturePlacement> trees = _definition.Forests[forest].Trees;
+                    if (trees == null) continue;
+                    for (int i = 0; i < trees.Count; i++)
+                        Consider(trees[i].Center, MapAuthoringSelectionKind.ForestTree, i, forest: forest);
+                }
             }
-
-            for (int i = 0; i < _definition.Bridges.Count; i++)
-                Consider(_definition.Bridges[i].Center, MapAuthoringSelectionKind.Bridge, i);
-            for (int i = 0; i < _definition.MagicStones.Count; i++)
-                Consider(_definition.MagicStones[i].Center, MapAuthoringSelectionKind.MagicStone, i);
+            else
+            {
+                for (int i = 0; i < _definition.Mountains.Count; i++)
+                    Consider(_definition.Mountains[i].Center, MapAuthoringSelectionKind.Mountain, i);
+                for (int i = 0; i < _definition.Lakes.Count; i++)
+                    Consider(_definition.Lakes[i].Center, MapAuthoringSelectionKind.Lake, i);
+                for (int i = 0; i < _definition.GroundPatches.Count; i++)
+                    Consider(_definition.GroundPatches[i].Center, MapAuthoringSelectionKind.GroundPatch, i);
+                for (int i = 0; i < _definition.Forests.Count; i++)
+                    Consider(_definition.Forests[i].Center, MapAuthoringSelectionKind.Forest, i);
+                for (int i = 0; i < _definition.Rivers.Count; i++)
+                {
+                    AuthoredRiverPlacement river = _definition.Rivers[i];
+                    if (!river.TryGetBezier(out Vector2 start, out Vector2 control, out Vector2 end)) continue;
+                    Consider(start, MapAuthoringSelectionKind.River, i, 0);
+                    Consider(end, MapAuthoringSelectionKind.River, i, 1);
+                    Consider(control, MapAuthoringSelectionKind.River, i, 2);
+                }
+                for (int i = 0; i < _definition.Bridges.Count; i++)
+                    Consider(_definition.Bridges[i].Center, MapAuthoringSelectionKind.Bridge, i);
+                for (int i = 0; i < _definition.MagicStones.Count; i++)
+                    Consider(_definition.MagicStones[i].Center, MapAuthoringSelectionKind.MagicStone, i);
+            }
 
             if (kind == MapAuthoringSelectionKind.None)
             {
@@ -2057,7 +2209,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return false;
             }
 
-            SetSelection(kind, index, endpoint);
+            SetSelection(kind, index, endpoint, forestIndex);
             return true;
         }
 
@@ -2077,7 +2229,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                     _definition.GroundPatches[_selectionIndex].Center = mapXZ;
                     break;
                 case MapAuthoringSelectionKind.Forest:
-                    _definition.Forests[_selectionIndex].Center = mapXZ;
+                    if (!TryMoveForest(_definition.Forests[_selectionIndex], mapXZ)) return;
                     break;
                 case MapAuthoringSelectionKind.River:
                 {
@@ -2107,6 +2259,18 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 case MapAuthoringSelectionKind.MagicStone:
                     _definition.MagicStones[_selectionIndex].Center = mapXZ;
                     break;
+                case MapAuthoringSelectionKind.Rock:
+                    if (!TryMoveFeature(_definition.Rocks[_selectionIndex], FeatureType.Rock, mapXZ)) return;
+                    break;
+                case MapAuthoringSelectionKind.ScatterTree:
+                    if (!TryMoveFeature(_definition.Trees[_selectionIndex], FeatureType.Tree, mapXZ)) return;
+                    break;
+                case MapAuthoringSelectionKind.ForestTree:
+                    if (!TryMoveFeature(
+                            _definition.Forests[_selectionForestIndex].Trees[_selectionIndex],
+                            FeatureType.Tree,
+                            mapXZ)) return;
+                    break;
                 default:
                     return;
             }
@@ -2115,9 +2279,61 @@ namespace WarSimulation.Combat.Map.EditorOnly
             QueuePreviewRebuild();
         }
 
+        private bool TryMoveFeature(
+            AuthoredPointFeaturePlacement placement,
+            FeatureType type,
+            Vector2 candidate)
+        {
+            MapData map = AuthoredMapBuilder.Build(_definition);
+            if (!AuthoredFeaturePlacementValidator.TryValidate(
+                    map, type, placement.Center, candidate, null, out string reason))
+            {
+                _status = reason;
+                return false;
+            }
+            placement.Center = candidate;
+            _status = null;
+            return true;
+        }
+
+        private bool TryMoveForest(AuthoredForestPlacement forest, Vector2 candidate)
+        {
+            Vector2 delta = candidate - forest.Center;
+            if (!_definition.HasFixedFeaturePlacements || forest.Trees == null || forest.Trees.Count == 0)
+            {
+                forest.Center = candidate;
+                return true;
+            }
+
+            MapData map = AuthoredMapBuilder.Build(_definition);
+            var excluded = new List<Vector2>(forest.Trees.Count);
+            for (int i = 0; i < forest.Trees.Count; i++) excluded.Add(forest.Trees[i].Center);
+            for (int i = 0; i < forest.Trees.Count; i++)
+            {
+                Vector2 next = forest.Trees[i].Center + delta;
+                if (!AuthoredFeaturePlacementValidator.TryValidate(
+                        map, FeatureType.Tree, forest.Trees[i].Center, next, excluded, out string reason))
+                {
+                    _status = reason;
+                    return false;
+                }
+            }
+            forest.Center = candidate;
+            for (int i = 0; i < forest.Trees.Count; i++) forest.Trees[i].Center += delta;
+            _status = null;
+            return true;
+        }
+
         private void DeleteSelection()
         {
             if (_definition == null || _selectionIndex < 0) return;
+            if (_selectionKind == MapAuthoringSelectionKind.Rock ||
+                _selectionKind == MapAuthoringSelectionKind.ScatterTree ||
+                _selectionKind == MapAuthoringSelectionKind.ForestTree)
+            {
+                _status = "確定した岩・木は移動できます。個別削除は未対応です";
+                return;
+            }
             RecordUndo("配置を削除");
             switch (_selectionKind)
             {
@@ -2149,6 +2365,18 @@ namespace WarSimulation.Combat.Map.EditorOnly
             ClearSelection();
             MarkDirty();
             QueuePreviewRebuild();
+        }
+
+        private AuthoredPointFeaturePlacement GetSelectedPointFeature()
+        {
+            return _selectionKind switch
+            {
+                MapAuthoringSelectionKind.Rock => _definition.Rocks[_selectionIndex],
+                MapAuthoringSelectionKind.ScatterTree => _definition.Trees[_selectionIndex],
+                MapAuthoringSelectionKind.ForestTree =>
+                    _definition.Forests[_selectionForestIndex].Trees[_selectionIndex],
+                _ => null,
+            };
         }
 
         private void ApplyToScene3D()
@@ -2248,6 +2476,43 @@ namespace WarSimulation.Combat.Map.EditorOnly
             _status = GetSaveStatusMessage();
         }
 
+        private void CaptureFeaturePlacements()
+        {
+            RecordUndo("岩・木の配置を確定");
+            _lastPreviewMap = AuthoredMapBuilder.CaptureFeaturePlacements(_definition);
+            MarkDirty();
+            ClearSelection();
+            _pickFixedFeatures = true;
+            _status = $"岩 {_definition.Rocks.Count} 個・木 {CountFixedTrees()} 本の配置を確定しました";
+            QueuePreviewRebuild(immediate: true);
+        }
+
+        private void ResetFeaturePlacements()
+        {
+            RecordUndo("岩・木を自動配置に戻す");
+            _definition.HasFixedFeaturePlacements = false;
+            _definition.Rocks.Clear();
+            _definition.Trees.Clear();
+            for (int i = 0; i < _definition.Forests.Count; i++)
+            {
+                _definition.Forests[i].Trees?.Clear();
+                _definition.Forests[i].TreeLayoutFingerprint = 0;
+            }
+            MarkDirty();
+            ClearSelection();
+            _pickFixedFeatures = false;
+            _status = "岩・木を自動配置に戻しました";
+            QueuePreviewRebuild(immediate: true);
+        }
+
+        private int CountFixedTrees()
+        {
+            int count = _definition.Trees.Count;
+            for (int i = 0; i < _definition.Forests.Count; i++)
+                count += _definition.Forests[i].Trees?.Count ?? 0;
+            return count;
+        }
+
         private string GetSaveStatusMessage()
         {
             if (_definition == null) return "保存するマップがありません";
@@ -2287,7 +2552,9 @@ namespace WarSimulation.Combat.Map.EditorOnly
             try
             {
                 _lastPreviewMap = AuthoredMapBuilder.Build(_definition);
-                _previewTex = MapAuthoringPreview2D.Build(_lastPreviewMap);
+                _previewTex = MapAuthoringPreview2D.BuildBackground(
+                    _lastPreviewMap,
+                    includeTreesAndRocks: false);
                 if (_definition.HasValidBakedAssaultRoutes)
                 {
                     MapData baked = _definition.BakedMapData.CreateRuntimeMap();
@@ -2338,11 +2605,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
             return new Vector2(Mathf.Clamp(mapXZ.x, 0f, world), Mathf.Clamp(mapXZ.y, 0f, world));
         }
 
-        private void SetSelection(MapAuthoringSelectionKind kind, int index, int endpoint = -1)
+        private void SetSelection(
+            MapAuthoringSelectionKind kind,
+            int index,
+            int endpoint = -1,
+            int forestIndex = -1)
         {
             _selectionKind = kind;
             _selectionIndex = index;
             _selectionEndpoint = endpoint;
+            _selectionForestIndex = forestIndex;
         }
 
         private void ClearSelection()
@@ -2350,6 +2622,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             _selectionKind = MapAuthoringSelectionKind.None;
             _selectionIndex = -1;
             _selectionEndpoint = -1;
+            _selectionForestIndex = -1;
         }
 
         private void ClearPendingRiverStart()

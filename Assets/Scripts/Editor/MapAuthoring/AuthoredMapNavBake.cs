@@ -29,6 +29,15 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 return false;
             }
 
+            AuthoredMapBuilder.RegenerateChangedForestTrees(definition);
+
+            List<AuthoredMapValidationIssue> issues = AuthoredMapValidator.Validate(definition);
+            if (AuthoredMapValidator.HasErrors(issues))
+            {
+                status = "配置エラーがあります。マップ編集画面で修正してください";
+                return false;
+            }
+
             host.Config = definition.SharedConfig;
 
             MapData map = AuthoredMapBuilder.Build(definition);

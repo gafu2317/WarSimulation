@@ -21,7 +21,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             return BuildBackground(map);
         }
 
-        public static Texture2D BuildBackground(MapData map)
+        public static Texture2D BuildBackground(MapData map, bool includeTreesAndRocks = true)
         {
             if (map == null) return null;
 
@@ -68,8 +68,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
             OverlayRivers(tex, map, cellSize);
             OverlayLakes(tex, map, cellSize);
             OverlayForests(tex, map, cellSize);
-            OverlayTrees(tex, map, cellSize);
-            OverlayFeatureDots(tex, map, cellSize);
+            if (includeTreesAndRocks) OverlayTrees(tex, map, cellSize);
+            OverlayFeatureDots(tex, map, cellSize, includeTreesAndRocks);
             OverlayAssaultRoutes(tex, map, cellSize);
             tex.Apply(false);
             return tex;
@@ -275,7 +275,11 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
         }
 
-        private static void OverlayFeatureDots(Texture2D tex, MapData map, float cellSize)
+        private static void OverlayFeatureDots(
+            Texture2D tex,
+            MapData map,
+            float cellSize,
+            bool includeRocks)
         {
             for (int i = 0; i < map.Features.Count; i++)
             {
@@ -283,7 +287,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 Color32? color = f.Type switch
                 {
                     FeatureType.Bridge => new Color32(140, 90, 40, 255),
-                    FeatureType.Rock => new Color32(110, 110, 110, 255),
+                    FeatureType.Rock when includeRocks => new Color32(110, 110, 110, 255),
                     _ => null,
                 };
                 if (!color.HasValue) continue;

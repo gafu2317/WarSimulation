@@ -94,7 +94,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private List<AuthoredGroundPatchPlacement> _groundPatches = new();
         [SerializeField] private List<AuthoredForestPlacement> _forests = new();
         [SerializeField] private List<AuthoredBridgePlacement> _bridges = new();
-        // 散布木・岩は AuthoredMapBuilder が SharedConfig の散布ルールで配置する（リストは未使用・互換用）。
+        [SerializeField] private bool _hasFixedFeaturePlacements;
         [SerializeField] private List<AuthoredPointFeaturePlacement> _trees = new();
         [SerializeField] private List<AuthoredPointFeaturePlacement> _rocks = new();
         [SerializeField] private List<AuthoredMagicStonePlacement> _magicStones = new();
@@ -129,6 +129,11 @@ namespace WarSimulation.Combat.Map
         public List<AuthoredBridgePlacement> Bridges => _bridges;
         public List<AuthoredPointFeaturePlacement> Trees => _trees;
         public List<AuthoredPointFeaturePlacement> Rocks => _rocks;
+        public bool HasFixedFeaturePlacements
+        {
+            get => _hasFixedFeaturePlacements;
+            set => _hasFixedFeaturePlacements = value;
+        }
         public List<AuthoredMagicStonePlacement> MagicStones => _magicStones;
         public List<AuthoredAssaultRoute> AssaultRoutes => _assaultRoutes;
 
@@ -179,6 +184,17 @@ namespace WarSimulation.Combat.Map
                 hash = MixForests(hash, _forests);
                 hash = MixBridges(hash, _bridges);
                 hash = MixMagicStones(hash, _magicStones);
+                if (_hasFixedFeaturePlacements)
+                {
+                    hash = Mix(hash, StableStringHash("FixedFeaturePlacements"));
+                    hash = MixPointFeatures(hash, _rocks);
+                    hash = MixPointFeatures(hash, _trees);
+                    if (_forests != null)
+                    {
+                        for (int i = 0; i < _forests.Count; i++)
+                            hash = MixPointFeatures(hash, _forests[i]?.Trees);
+                    }
+                }
                 return hash;
             }
         }
@@ -208,6 +224,11 @@ namespace WarSimulation.Combat.Map
         }
 
         public int ComputeBakeFingerprint() => ComputeGeometryFingerprint();
+
+        public static int ComputeForestTreeLayoutFingerprint(ForestClusterStampShape shape)
+        {
+            return MixForestStamp(StableStringHash("ForestTreeLayout"), shape);
+        }
 
         public bool MigrateLegacyAssaultRoutes()
         {
@@ -407,6 +428,20 @@ namespace WarSimulation.Combat.Map
                 hash = Mix(hash, p.Center);
             }
 
+            return hash;
+        }
+
+        private static int MixPointFeatures(int hash, List<AuthoredPointFeaturePlacement> list)
+        {
+            hash = Mix(hash, list != null ? list.Count : 0);
+            if (list == null) return hash;
+            for (int i = 0; i < list.Count; i++)
+            {
+                AuthoredPointFeaturePlacement p = list[i];
+                if (p == null) continue;
+                hash = Mix(hash, p.Center);
+                hash = Mix(hash, p.RotationDeg);
+            }
             return hash;
         }
 

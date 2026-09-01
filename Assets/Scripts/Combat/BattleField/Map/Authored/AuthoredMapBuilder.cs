@@ -11,6 +11,61 @@ namespace WarSimulation.Combat.Map
     {
         public static MapData Build(AuthoredMapDefinition definition)
         {
+            return Build(definition, generateAll: false, generatedForestIndex: -1, captureTarget: null);
+        }
+
+        public static MapData CaptureFeaturePlacements(AuthoredMapDefinition definition)
+        {
+            if (definition == null) throw new System.ArgumentNullException(nameof(definition));
+            definition.Rocks.Clear();
+            definition.Trees.Clear();
+            for (int i = 0; i < definition.Forests.Count; i++)
+            {
+                definition.Forests[i].Trees ??= new List<AuthoredPointFeaturePlacement>();
+                definition.Forests[i].Trees.Clear();
+            }
+
+            MapData map = Build(definition, generateAll: true, generatedForestIndex: -1, definition);
+            for (int i = 0; i < definition.Forests.Count; i++)
+                definition.Forests[i].TreeLayoutFingerprint =
+                    AuthoredMapDefinition.ComputeForestTreeLayoutFingerprint(definition.Forests[i].Shape);
+            definition.HasFixedFeaturePlacements = true;
+            return map;
+        }
+
+        public static MapData RegenerateForestTrees(AuthoredMapDefinition definition, int forestIndex)
+        {
+            if (definition == null) throw new System.ArgumentNullException(nameof(definition));
+            if (forestIndex < 0 || forestIndex >= definition.Forests.Count)
+                throw new System.ArgumentOutOfRangeException(nameof(forestIndex));
+            MapData map = Build(definition, generateAll: false, generatedForestIndex: forestIndex, definition);
+            AuthoredForestPlacement forest = definition.Forests[forestIndex];
+            forest.TreeLayoutFingerprint =
+                AuthoredMapDefinition.ComputeForestTreeLayoutFingerprint(forest.Shape);
+            return map;
+        }
+
+        public static bool RegenerateChangedForestTrees(AuthoredMapDefinition definition)
+        {
+            if (definition == null || !definition.HasFixedFeaturePlacements) return false;
+            bool changed = false;
+            for (int i = 0; i < definition.Forests.Count; i++)
+            {
+                AuthoredForestPlacement forest = definition.Forests[i];
+                int fingerprint = AuthoredMapDefinition.ComputeForestTreeLayoutFingerprint(forest.Shape);
+                if (forest.TreeLayoutFingerprint == fingerprint) continue;
+                RegenerateForestTrees(definition, i);
+                changed = true;
+            }
+            return changed;
+        }
+
+        private static MapData Build(
+            AuthoredMapDefinition definition,
+            bool generateAll,
+            int generatedForestIndex,
+            AuthoredMapDefinition captureTarget)
+        {
             if (definition == null)
                 throw new System.ArgumentNullException(nameof(definition));
             if (definition.SharedConfig == null)
@@ -29,12 +84,31 @@ namespace WarSimulation.Combat.Map
             // 固定物を後置きすると、先に散布した木・岩が予約位置を塞いでしまう。
             ApplyMagicStones(map, definition.MagicStones);
             RegisterForests(map, definition.Forests);
-            // 散布木・岩は SharedConfig のルール。魔石は手作り配置。
             IRandom rng = new SystemRandom(definition.BuildSeed);
-            // 木を先に埋めると、大きな岩の候補がマップ周縁にしか残らない。
-            new RockPhase().Execute(map, rng, config);
-            ApplyForests(map, definition.Forests);
-            new TreeScatterPhase().Execute(map, rng, config);
+            bool useGenerated = generateAll || !definition.HasFixedFeaturePlacements;
+            if (useGenerated)
+            {
+                int start = map.Features.Count;
+                new RockPhase().Execute(map, rng, config);
+                CaptureRange(map, start, FeatureType.Rock, captureTarget?.Rocks);
+            }
+            else
+            {
+                ApplyPointFeatures(map, definition.Rocks, FeatureType.Rock);
+            }
+
+            ApplyForests(map, definition.Forests, useGenerated, generatedForestIndex, captureTarget);
+
+            if (useGenerated)
+            {
+                int start = map.Features.Count;
+                new TreeScatterPhase().Execute(map, rng, config);
+                CaptureRange(map, start, FeatureType.Tree, captureTarget?.Trees);
+            }
+            else
+            {
+                ApplyPointFeatures(map, definition.Trees, FeatureType.Tree);
+            }
             return map;
         }
 
@@ -131,14 +205,67 @@ namespace WarSimulation.Combat.Map
             }
         }
 
-        private static void ApplyForests(MapData map, List<AuthoredForestPlacement> forests)
+        private static void ApplyForests(
+            MapData map,
+            List<AuthoredForestPlacement> forests,
+            bool generateAll,
+            int generatedForestIndex,
+            AuthoredMapDefinition captureTarget)
         {
             if (forests == null) return;
             for (int i = 0; i < forests.Count; i++)
             {
                 AuthoredForestPlacement entry = forests[i];
                 if (entry?.Shape == null) continue;
-                entry.Shape.PlaceTrees(map, entry.ToStampPlacement());
+                if (generateAll || i == generatedForestIndex)
+                {
+                    int start = map.Features.Count;
+                    entry.Shape.PlaceTrees(map, entry.ToStampPlacement());
+                    List<AuthoredPointFeaturePlacement> target = captureTarget?.Forests[i].Trees;
+                    if (i == generatedForestIndex && target != null) target.Clear();
+                    CaptureRange(map, start, FeatureType.Tree, target);
+                }
+                else
+                {
+                    ApplyPointFeatures(map, entry.Trees, FeatureType.Tree);
+                }
+            }
+        }
+
+        private static void ApplyPointFeatures(
+            MapData map,
+            List<AuthoredPointFeaturePlacement> placements,
+            FeatureType type)
+        {
+            if (placements == null) return;
+            for (int i = 0; i < placements.Count; i++)
+            {
+                AuthoredPointFeaturePlacement placement = placements[i];
+                if (placement == null) continue;
+                float y = map.Height.SampleAt(new Vector3(placement.Center.x, 0f, placement.Center.y));
+                map.AddFeature(new PlacedFeature(
+                    type,
+                    new Vector3(placement.Center.x, y, placement.Center.y),
+                    Quaternion.Euler(0f, placement.RotationDeg, 0f)));
+            }
+        }
+
+        private static void CaptureRange(
+            MapData map,
+            int start,
+            FeatureType type,
+            List<AuthoredPointFeaturePlacement> target)
+        {
+            if (target == null) return;
+            for (int i = start; i < map.Features.Count; i++)
+            {
+                PlacedFeature feature = map.Features[i];
+                if (feature.Type != type) continue;
+                target.Add(new AuthoredPointFeaturePlacement
+                {
+                    Center = new Vector2(feature.WorldPosition.x, feature.WorldPosition.z),
+                    RotationDeg = feature.Rotation.eulerAngles.y,
+                });
             }
         }
 
