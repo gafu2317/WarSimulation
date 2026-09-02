@@ -1,0 +1,48 @@
+{
+  "scene": "Assets/Scenes/Country.unity",
+  "iterations": [
+    {
+      "iteration": 1,
+      "evidence": "Iteration1_ExpandedOverview.png",
+      "finding": "初期試作より規模と建物数は増えたが、芝生だけの大区画が残り、施設の用途も俯瞰で読み取りにくかった。",
+      "changes": [
+        "城壁内を208×168mへ拡張",
+        "重要施設を1.12〜1.35倍へ拡大",
+        "南門・東西門の道路を城外まで延長",
+        "道路タイルの重複を排除し、地面との高さを分離"
+      ]
+    },
+    {
+      "iteration": 2,
+      "evidence": "Iteration2_ManagedSpaces.png",
+      "finding": "建物間の安全な余白がすべて同じ芝生に見え、空き地という印象がまだ強かった。",
+      "changes": [
+        "兵舎訓練場を追加",
+        "北部共同菜園を追加",
+        "礼拝堂墓地を追加",
+        "南東の荷車置場を追加",
+        "各建物の入口から道路まで専用通路を追加"
+      ]
+    },
+    {
+      "iteration": 3,
+      "evidence": "Country_Overview_Final_v2.png",
+      "finding": "近景で門と道路の接続は確認できたが、道路沿いに追加配置できる区画と生活感の弱い裏庭が残っていた。",
+      "changes": [
+        "衝突判定を通った道路沿い住宅を追加",
+        "建物・道路・管理区画を避ける生活樹を追加",
+        "酒場・倉庫・パン工房の裏庭に樽、木箱、薪棚を追加"
+      ],
+      "result": {
+        "buildings": 62,
+        "roads": 163,
+        "developedAreaRatio": 0.5625,
+        "connectedEntrances": "62/62",
+        "buildingOverlaps": 0,
+        "duplicateRoadTiles": 0,
+        "coplanarTerrainRoads": 0
+      }
+    }
+  ],
+  "fixedPoint": "全受入条件を数値検証と3視点の画像確認で満たし、残る緑地は防火・裏庭・城壁警戒用の余白として説明可能な状態。"
+}
