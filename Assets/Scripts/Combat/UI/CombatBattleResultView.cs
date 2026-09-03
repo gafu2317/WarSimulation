@@ -263,7 +263,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = true;
+        layout.childForceExpandHeight = false;
 
         LayoutElement rowElement = rowObject.GetComponent<LayoutElement>();
         rowElement.preferredHeight = isHeader ? 38f : 32f;
@@ -310,7 +310,7 @@ public sealed class CombatBattleResultView : MonoBehaviour
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = true;
+        layout.childForceExpandHeight = false;
 
         LayoutElement rowElement = rowObject.GetComponent<LayoutElement>();
         rowElement.preferredHeight = isHeader ? 25f : 24f;
