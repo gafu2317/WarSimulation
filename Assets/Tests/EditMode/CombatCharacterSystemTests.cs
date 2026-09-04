@@ -192,6 +192,102 @@ public sealed class CombatCharacterSystemTests
     }
 
     [Test]
+    public void SetParticipants_AppliesStatAdjustmentsWithoutChangingBaseStats()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        GameObject allyObject = new GameObject("Ally");
+        WeaponConfig weapon = ScriptableObject.CreateInstance<WeaponConfig>();
+
+        try
+        {
+            weapon.ApplyKindDefaults(WeaponKind.Sword);
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            Character ally = allyObject.AddComponent<Character>();
+            typeof(Character).GetProperty("STR").SetValue(ally, 20);
+            typeof(Character).GetProperty("INT").SetValue(ally, 20);
+            typeof(Character).GetProperty("FAI").SetValue(ally, 20);
+            typeof(Character).GetProperty("AGI").SetValue(ally, 20);
+            var adjustments = new Dictionary<CombatStat, int>
+            {
+                [CombatStat.STR] = 3,
+                [CombatStat.INT] = 4,
+                [CombatStat.FAI] = 5,
+                [CombatStat.AGI] = 6,
+            };
+            CombatParticipantSetup setup = new CombatParticipantSetup(
+                ally,
+                weapon,
+                null,
+                statAdjustments: adjustments);
+
+            adjustments[CombatStat.STR] = 10;
+            system.SetParticipants(
+                new[] { setup },
+                System.Array.Empty<CombatParticipantSetup>());
+
+            Assert.That(setup.StatAdjustments[CombatStat.STR], Is.EqualTo(3));
+            Assert.That(setup.StatAdjustments[CombatStat.INT], Is.EqualTo(4));
+            Assert.That(setup.StatAdjustments[CombatStat.FAI], Is.EqualTo(5));
+            Assert.That(setup.StatAdjustments[CombatStat.AGI], Is.EqualTo(6));
+            Assert.That(ally.STR, Is.EqualTo(20));
+            Assert.That(ally.INT, Is.EqualTo(20));
+            Assert.That(ally.FAI, Is.EqualTo(20));
+            Assert.That(ally.AGI, Is.EqualTo(20));
+            Assert.That(ally.GetEffectiveStat(CombatStat.STR), Is.EqualTo(35f));
+            Assert.That(ally.GetEffectiveStat(CombatStat.INT), Is.EqualTo(24f));
+            Assert.That(ally.GetEffectiveStat(CombatStat.FAI), Is.EqualTo(25f));
+            Assert.That(ally.GetEffectiveStat(CombatStat.AGI), Is.EqualTo(26f));
+
+            ally.ConfigureForBattle(
+                weapon,
+                null,
+                statAdjustments: new Dictionary<CombatStat, int>
+                {
+                    [CombatStat.STR] = -100,
+                });
+            Assert.That(ally.GetEffectiveStat(CombatStat.STR), Is.EqualTo(1f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(weapon);
+            Object.DestroyImmediate(allyObject);
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
+    [Test]
+    public void SetParticipants_AppliesAdjustedAgiToMovementSpeed()
+    {
+        GameObject characterObject = new GameObject("Character");
+
+        try
+        {
+            Character character = characterObject.AddComponent<Character>();
+            NavMeshAgent agent = characterObject.GetComponent<NavMeshAgent>();
+            CombatCharacterBody body = characterObject.GetComponent<CombatCharacterBody>();
+            typeof(CombatCharacterBody).GetMethod(
+                "Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic).Invoke(body, null);
+            typeof(Character).GetProperty("AGI").SetValue(character, 30);
+            body.BaseSpeed = 4f;
+
+            character.ConfigureForBattle(
+                null,
+                null,
+                statAdjustments: new Dictionary<CombatStat, int>
+                {
+                    [CombatStat.AGI] = 10,
+                });
+
+            Assert.That(agent.speed, Is.EqualTo(4f * 40f / 30f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(characterObject);
+        }
+    }
+
+    [Test]
     public void SetParticipants_AppliesAndClearsTagalongTarget()
     {
         GameObject systemObject = new GameObject("CharacterSystem");

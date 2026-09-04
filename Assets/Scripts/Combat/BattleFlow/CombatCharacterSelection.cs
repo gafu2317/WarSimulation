@@ -10,7 +10,17 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private const int MaxPartyDisplayCount = 10;
     private const int PartyGridRowCount = 5;
     private const float CharacterListWidth = 1600f;
+    private const string FinalStatColor = "#FF4D4D";
+    private const float StatusHeadingHeight = 32f;
+    private const float StatusValueHeight = 30f;
     private static readonly float[] MovementSpeedMultipliers = { 1f, 2f, 4f, 6f };
+    private static readonly CombatStat[] AdjustableStats =
+    {
+        CombatStat.STR,
+        CombatStat.INT,
+        CombatStat.FAI,
+        CombatStat.AGI,
+    };
 
     private static readonly WeaponKind[] DefaultPartyWeapons =
     {
@@ -319,6 +329,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void OnDestroy()
     {
         _startBattleButton?.onClick.RemoveListener(ConfirmSelection);
+        ClearRuntimeStatAdjustments(_allyRows);
+        ClearRuntimeStatAdjustments(_enemyRows);
         ClearToolbarButtons();
         ClosePicker();
         for (int i = 0; i < _builtInPersonalityOptions.Count; i++)
@@ -366,6 +378,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         IReadOnlyList<Character> allyCandidates,
         IReadOnlyList<Character> enemyCandidates)
     {
+        ClearRuntimeStatAdjustments(_allyRows);
+        ClearRuntimeStatAdjustments(_enemyRows);
         _allyRows.Clear();
         _enemyRows.Clear();
         _allyColumnRoot = null;
@@ -1075,6 +1089,14 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         }
     }
 
+    private static void ClearRuntimeStatAdjustments(List<SelectionRow> rows)
+    {
+        for (int i = 0; i < rows.Count; i++)
+        {
+            rows[i]?.Character?.ClearRuntimeStatAdjustments();
+        }
+    }
+
     private SelectionRow CreateRow(RectTransform parent, Character character)
     {
         GameObject rowObject = new GameObject(character.name, typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
@@ -1092,16 +1114,20 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             Character = character,
             WeaponIndex = FindOptionIndex(_weaponOptions, character.EquippedWeaponConfig),
             PersonalityIndex = FindPersonalityIndex(character.PersonalityProfile),
+            StatAdjustments = new Dictionary<CombatStat, int>(),
+            SelectionButton = CreateButton(rowObject.transform, null, 64f, 64f),
             CharacterButton = CreateButton(rowObject.transform, null, 300f, 64f),
             WeaponButton = CreateButton(rowObject.transform, null, 240f, 64f),
             PersonalityButton = CreateButton(rowObject.transform, null, 240f, 64f),
         };
 
-        ConfigureToolbarLabel(row.CharacterButton, 24f);
+        ConfigureSelectionMarker(row.SelectionButton);
+        ConfigureCharacterNameLabel(row.CharacterButton, 24f);
         ConfigureToolbarLabel(row.WeaponButton, 24f);
         ConfigureToolbarLabel(row.PersonalityButton, 24f);
 
-        row.CharacterButton.onClick.AddListener(() => Toggle(row));
+        row.SelectionButton.onClick.AddListener(() => Toggle(row));
+        row.CharacterButton.onClick.AddListener(() => OpenCharacterStatus(row));
         row.WeaponButton.onClick.AddListener(() => OpenWeaponPicker(row));
         row.PersonalityButton.onClick.AddListener(() => OpenPersonalityPickerForRow(row));
         return row;
@@ -1365,6 +1391,46 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 row.WeaponIndex = index;
                 RefreshRow(row);
             });
+    }
+
+    private void OpenCharacterStatus(SelectionRow row)
+    {
+        if (row == null || row.Character == null) return;
+
+        EnsurePicker();
+        SetCharacterStatusPickerLayout();
+        ClearPickerOptions();
+        ClearPickerDetails();
+        SetPickerTitle($"{row.Character.DisplayName}のステータス");
+        AddCharacterStatusDetails(row);
+        ResetPickerDetailsScroll();
+        ShowPicker();
+    }
+
+    private void RefreshCharacterStatus(SelectionRow row)
+    {
+        if (row == null || row.Character == null || _pickerDetailsContent == null) return;
+
+        ClearPickerDetails();
+        AddCharacterStatusDetails(row);
+        RefreshRow(row);
+        ResetPickerDetailsScroll();
+    }
+
+    private void AdjustStatusStat(SelectionRow row, CombatStat stat, int delta)
+    {
+        if (row == null || row.Character == null || delta == 0) return;
+
+        WeaponBase weapon = GetSelectedWeapon(row);
+        int currentAdjustment = GetStatAdjustment(row, stat);
+        int nextAdjustment = currentAdjustment + delta;
+        int minimumAdjustment = 1 - GetCharacterStat(row.Character, stat) -
+                                (weapon != null ? weapon.GetStatBonus(stat) : 0);
+        nextAdjustment = Mathf.Max(minimumAdjustment, nextAdjustment);
+        if (nextAdjustment == currentAdjustment) return;
+
+        row.StatAdjustments[stat] = nextAdjustment;
+        RefreshCharacterStatus(row);
     }
 
     private void OpenBulkWeaponPicker()
@@ -1697,6 +1763,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         if (_pickerOptionsLayout != null)
         {
+            _pickerOptionsLayout.gameObject.SetActive(true);
             _pickerOptionsLayout.flexibleWidth = 1f;
         }
 
@@ -1719,8 +1786,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         if (_pickerOptionsLayout != null)
         {
+            _pickerOptionsLayout.gameObject.SetActive(true);
             _pickerOptionsLayout.flexibleWidth = 2f;
         }
+
+        ConfigurePickerDetailsLayout(spacing: 8f, padding: 8);
 
         if (_pickerDetailsLayout != null)
         {
@@ -1734,6 +1804,44 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         _pickerGridLayout.constraintCount = 1;
         _pickerGridLayout.cellSize = new Vector2(260f, 64f);
+    }
+
+    private void SetCharacterStatusPickerLayout()
+    {
+        if (_pickerGridLayout == null) return;
+
+        if (_pickerDescription != null)
+        {
+            _pickerDescription.gameObject.SetActive(false);
+        }
+        if (_pickerPanel != null)
+        {
+            _pickerPanel.sizeDelta = new Vector2(960f, 720f);
+        }
+        if (_pickerOptionsLayout != null)
+        {
+            _pickerOptionsLayout.gameObject.SetActive(false);
+        }
+        ConfigurePickerDetailsLayout(spacing: 4f, padding: 4);
+        if (_pickerDetailsLayout != null)
+        {
+            _pickerDetailsLayout.flexibleWidth = 1f;
+        }
+        if (_pickerDetailsRoot != null)
+        {
+            _pickerDetailsRoot.gameObject.SetActive(true);
+        }
+    }
+
+    private void ConfigurePickerDetailsLayout(float spacing, int padding)
+    {
+        if (_pickerDetailsContent == null) return;
+
+        VerticalLayoutGroup layout = _pickerDetailsContent.GetComponent<VerticalLayoutGroup>();
+        if (layout == null) return;
+
+        layout.spacing = spacing;
+        layout.padding = new RectOffset(padding, padding, padding, padding);
     }
 
     private void SetWeaponPickerLayout()
@@ -1863,6 +1971,188 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ResetPickerDetailsScroll();
     }
 
+    private void AddCharacterStatusDetails(SelectionRow row)
+    {
+        Character character = row.Character;
+        WeaponConfig weaponConfig = GetOption(_weaponOptions, row.WeaponIndex);
+        WeaponBase weapon = weaponConfig != null ? weaponConfig.CreateWeapon() : WeaponBase.Unarmed;
+        CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);
+
+        AddPickerDetailText("基礎ステータス", 26f, TextAlignmentOptions.Center, StatusHeadingHeight);
+        AddPickerDetailText(
+            $"HP: {character.HP}/{Mathf.Max(1, character.MaxHP)}　CP: {character.CP}",
+            22f,
+            TextAlignmentOptions.Left,
+            StatusValueHeight);
+        AddPickerDetailText(
+            $"STR: {character.STR}　INT: {character.INT}　FAI: {character.FAI}　AGI: {character.AGI}",
+            22f,
+            TextAlignmentOptions.Left,
+            StatusValueHeight);
+
+        AddPickerDetailText("装備", 26f, TextAlignmentOptions.Center, StatusHeadingHeight);
+        AddPickerDetailText(
+            $"武器: {GetWeaponName(weaponConfig)}",
+            22f,
+            TextAlignmentOptions.Left,
+            StatusValueHeight);
+        AddPickerDetailText(
+            $"性格: {(personality != null ? personality.DisplayNameJapanese : "未設定")}",
+            22f,
+            TextAlignmentOptions.Left,
+            StatusValueHeight);
+        AddPickerDetailText(
+            $"ステ補正: {FormatStatBonus(weapon, CombatStat.STR)}　" +
+            $"{FormatStatBonus(weapon, CombatStat.INT)}　" +
+            $"{FormatStatBonus(weapon, CombatStat.FAI)}　" +
+            FormatStatBonus(weapon, CombatStat.AGI),
+            22f,
+            TextAlignmentOptions.Left,
+            StatusValueHeight);
+
+        AddPickerDetailText("補正後", 26f, TextAlignmentOptions.Center, StatusHeadingHeight);
+        for (int i = 0; i < AdjustableStats.Length; i++)
+        {
+            AddAdjustableStatRow(row, weapon, AdjustableStats[i]);
+        }
+    }
+
+    private void AddAdjustableStatRow(SelectionRow row, WeaponBase weapon, CombatStat stat)
+    {
+        GameObject rowObject = new GameObject(
+            $"CharacterStatus_{stat}",
+            typeof(RectTransform),
+            typeof(HorizontalLayoutGroup),
+            typeof(LayoutElement));
+        rowObject.transform.SetParent(_pickerDetailsContent, false);
+
+        HorizontalLayoutGroup rowLayout = rowObject.GetComponent<HorizontalLayoutGroup>();
+        rowLayout.spacing = 6f;
+        rowLayout.childControlWidth = true;
+        rowLayout.childControlHeight = true;
+        rowLayout.childForceExpandWidth = false;
+        rowLayout.childForceExpandHeight = false;
+        rowObject.GetComponent<LayoutElement>().preferredHeight = StatusValueHeight;
+
+        TMP_Text valueLabel = AddPickerDetailText(
+            FormatConfiguredStat(row.Character, weapon, stat, GetStatAdjustment(row, stat)),
+            22f,
+            TextAlignmentOptions.Left,
+            StatusValueHeight,
+            rowObject.transform);
+        valueLabel.textWrappingMode = TextWrappingModes.NoWrap;
+        LayoutElement valueLayout = valueLabel.gameObject.GetComponent<LayoutElement>();
+        valueLayout.minWidth = 0f;
+        valueLayout.flexibleWidth = 1f;
+
+        Button increaseTenButton = CreateButton(
+            rowObject.transform,
+            $"Increase10_{stat}",
+            56f,
+            StatusValueHeight,
+            () => AdjustStatusStat(row, stat, 10));
+        Button increaseButton = CreateButton(
+            rowObject.transform,
+            $"Increase_{stat}",
+            48f,
+            StatusValueHeight,
+            () => AdjustStatusStat(row, stat, 1));
+        Button decreaseButton = CreateButton(
+            rowObject.transform,
+            $"Decrease_{stat}",
+            48f,
+            StatusValueHeight,
+            () => AdjustStatusStat(row, stat, -1));
+        Button decreaseTenButton = CreateButton(
+            rowObject.transform,
+            $"Decrease10_{stat}",
+            56f,
+            StatusValueHeight,
+            () => AdjustStatusStat(row, stat, -10));
+        ConfigureCompactButtonLabel(increaseTenButton, 22f);
+        ConfigureCompactButtonLabel(increaseButton, 22f);
+        ConfigureCompactButtonLabel(decreaseButton, 22f);
+        ConfigureCompactButtonLabel(decreaseTenButton, 22f);
+        SetButtonLabel(increaseTenButton, "+10");
+        SetButtonLabel(increaseButton, "+");
+        SetButtonLabel(decreaseButton, "-");
+        SetButtonLabel(decreaseTenButton, "-10");
+        bool canDecrease = GetConfiguredStatValue(
+                               row.Character,
+                               weapon,
+                               stat,
+                               GetStatAdjustment(row, stat)) > 1;
+        decreaseButton.interactable = canDecrease;
+        decreaseTenButton.interactable = canDecrease;
+    }
+
+    private static string FormatConfiguredStat(
+        Character character,
+        WeaponBase weapon,
+        CombatStat stat,
+        int manualAdjustment)
+    {
+        int baseValue = GetCharacterStat(character, stat);
+        int bonus = weapon != null ? weapon.GetStatBonus(stat) : 0;
+        string operation = bonus < 0 ? $"- {Mathf.Abs(bonus)}" : $"+ {bonus}";
+        string manualOperation = manualAdjustment == 0
+            ? string.Empty
+            : manualAdjustment < 0
+                ? $" - {Mathf.Abs(manualAdjustment)}"
+                : $" + {manualAdjustment}";
+        int configuredValue = GetConfiguredStatValue(character, weapon, stat, manualAdjustment);
+        return $"{FormatCombatStat(stat)}: {baseValue} {operation}{manualOperation} = " +
+               $"<color={FinalStatColor}>{configuredValue}</color>";
+    }
+
+    private static int GetConfiguredStatValue(
+        Character character,
+        WeaponBase weapon,
+        CombatStat stat,
+        int manualAdjustment)
+    {
+        int baseValue = GetCharacterStat(character, stat);
+        int bonus = weapon != null ? weapon.GetStatBonus(stat) : 0;
+        return Mathf.Max(1, baseValue + bonus + manualAdjustment);
+    }
+
+    private static int GetStatAdjustment(SelectionRow row, CombatStat stat)
+    {
+        return row != null && row.StatAdjustments != null &&
+               row.StatAdjustments.TryGetValue(stat, out int adjustment)
+            ? adjustment
+            : 0;
+    }
+
+    private WeaponBase GetSelectedWeapon(SelectionRow row)
+    {
+        WeaponConfig weaponConfig = GetOption(_weaponOptions, row.WeaponIndex);
+        return weaponConfig != null ? weaponConfig.CreateWeapon() : WeaponBase.Unarmed;
+    }
+
+    private static string FormatStatBonus(WeaponBase weapon, CombatStat stat)
+    {
+        int bonus = weapon != null ? weapon.GetStatBonus(stat) : 0;
+        return $"{FormatCombatStat(stat)} {FormatSignedNumber(bonus)}";
+    }
+
+    private static string FormatSignedNumber(int value)
+    {
+        return value >= 0 ? $"+{value}" : value.ToString();
+    }
+
+    private static int GetCharacterStat(Character character, CombatStat stat)
+    {
+        return stat switch
+        {
+            CombatStat.STR => character.STR,
+            CombatStat.INT => character.INT,
+            CombatStat.FAI => character.FAI,
+            CombatStat.AGI => character.AGI,
+            _ => 0,
+        };
+    }
+
     private void AddPersonalityDetailRow(CombatAiPersonalityProfile personality)
     {
         GameObject row = new GameObject(
@@ -1987,6 +2277,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         text.text = value;
         text.fontSize = fontSize;
         text.alignment = alignment;
+        text.richText = true;
         text.enableAutoSizing = false;
         text.overflowMode = TextOverflowModes.Overflow;
         text.textWrappingMode = TextWrappingModes.Normal;
@@ -2097,7 +2388,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 weapon,
                 personality,
                 MovementSpeedMultiplier,
-                tagalongTarget));
+                tagalongTarget,
+                row.StatAdjustments));
             previousSelectedCharacter = row.Character;
         }
 
@@ -2152,16 +2444,25 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         if (row == null || row.Character == null) return;
 
-        SetButtonLabel(row.CharacterButton, $"{(row.Selected ? "■" : "□")} {row.Character.DisplayName}");
+        SetSelectionMarkerState(row.SelectionButton, row.Selected);
+        string characterName = row.Character.DisplayName;
+        if (HasStatAdjustments(row)) characterName += "(補)";
+        SetButtonLabel(row.CharacterButton, characterName);
         SetButtonLabel(row.WeaponButton, $"武器: {GetWeaponName(GetOption(_weaponOptions, row.WeaponIndex))}");
         CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);
         SetButtonLabel(row.PersonalityButton, $"性格: {(personality != null ? personality.DisplayNameJapanese : "未設定")}");
+    }
 
-        Transform indicator = row.CharacterButton.transform.Find("SelectedIndicator");
-        if (indicator != null)
+    private static bool HasStatAdjustments(SelectionRow row)
+    {
+        if (row == null || row.StatAdjustments == null) return false;
+
+        foreach (KeyValuePair<CombatStat, int> adjustment in row.StatAdjustments)
         {
-            indicator.gameObject.SetActive(row.Selected);
+            if (adjustment.Value != 0) return true;
         }
+
+        return false;
     }
 
     private static void SetButtonLabel(Button button, string value)
@@ -2184,6 +2485,47 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         label.textWrappingMode = TextWrappingModes.NoWrap;
         label.overflowMode = TextOverflowModes.Ellipsis;
         label.alignment = TextAlignmentOptions.Center;
+        label.margin = Vector4.zero;
+    }
+
+    private static void ConfigureSelectionMarker(Button button)
+    {
+        if (button == null) return;
+
+        TMP_Text label = button.GetComponentInChildren<TMP_Text>(includeInactive: true);
+        if (label == null) return;
+
+        ConfigureCompactButtonLabel(button, 28f);
+        SetButtonLabel(button, "□");
+    }
+
+    private static void ConfigureCompactButtonLabel(Button button, float fontSize)
+    {
+        TMP_Text label = button != null ? button.GetComponentInChildren<TMP_Text>(includeInactive: true) : null;
+        if (label == null) return;
+
+        ConfigureToolbarLabel(button, fontSize);
+        Stretch(label.rectTransform);
+        label.overflowMode = TextOverflowModes.Overflow;
+    }
+
+    private static void SetSelectionMarkerState(Button button, bool selected)
+    {
+        if (button == null) return;
+
+        SetButtonLabel(button, selected ? "■" : "□");
+    }
+
+    private static void ConfigureCharacterNameLabel(Button button, float fontSize)
+    {
+        TMP_Text label = button != null ? button.GetComponentInChildren<TMP_Text>(includeInactive: true) : null;
+        if (label == null) return;
+
+        label.fontSize = fontSize;
+        label.enableAutoSizing = false;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
+        label.overflowMode = TextOverflowModes.Ellipsis;
+        label.alignment = TextAlignmentOptions.Left;
         label.margin = Vector4.zero;
     }
 
@@ -2290,11 +2632,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private sealed class SelectionRow
     {
         public Character Character;
+        public Button SelectionButton;
         public Button CharacterButton;
         public Button WeaponButton;
         public Button PersonalityButton;
         public int WeaponIndex;
         public int PersonalityIndex;
+        public Dictionary<CombatStat, int> StatAdjustments;
         public bool Selected;
     }
 

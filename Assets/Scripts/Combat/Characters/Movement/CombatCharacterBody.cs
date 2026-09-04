@@ -7,6 +7,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
 {
     private const string RiverAreaName = "River";
     private const string WalkableAreaName = "Walkable";
+    private const float StandardAgi = 30f;
 
     [SerializeField] private CombatMapSystem _mapSystem;
     [SerializeField] private CombatNavigationSystem _navigationSystem;
@@ -179,7 +180,11 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
     private float GetConfiguredBaseSpeed()
     {
-        return _baseSpeed * _movementSpeedMultiplier;
+        Character owner = GetComponent<Character>();
+        float agiMultiplier = owner != null
+            ? Mathf.Max(1f, owner.GetEffectiveStat(CombatStat.AGI)) / StandardAgi
+            : 1f;
+        return _baseSpeed * _movementSpeedMultiplier * agiMultiplier;
     }
 
     private void SetRoute(Vector3[] corners)

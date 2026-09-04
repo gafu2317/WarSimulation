@@ -133,6 +133,7 @@ public class Character : MonoBehaviour
     private int _fai;
     private int _agi;
     private bool _runtimeStatsInitialized;
+    private readonly Dictionary<CombatStat, int> _runtimeStatAdjustments = new();
 
     private void Awake()
     {
@@ -269,6 +270,7 @@ public class Character : MonoBehaviour
         INT = characterData.INT;
         FAI = characterData.FAI;
         AGI = characterData.AGI;
+        ClearRuntimeStatAdjustments();
         _runtimePersonalityProfile = spirit != null ? spirit.PersonalityProfile : null;
         _health ??= GetComponent<CombatHealth>();
         _health?.Initialize(characterData.MaxHP);
@@ -296,14 +298,35 @@ public class Character : MonoBehaviour
         WeaponConfig weaponConfig,
         CombatAiPersonalityProfile personalityProfile,
         float movementSpeedMultiplier = 1f,
-        Character tagalongTarget = null)
+        Character tagalongTarget = null,
+        IReadOnlyDictionary<CombatStat, int> statAdjustments = null)
     {
         _runtimeWeaponConfig = weaponConfig;
         _runtimePersonalityProfile = personalityProfile;
         _runtimeTagalongTarget = tagalongTarget;
+        SetRuntimeStatAdjustments(statAdjustments);
+        ApplyInitialWeaponFromConfig();
         _body ??= GetComponent<CombatCharacterBody>();
         if (_body != null) _body.MovementSpeedMultiplier = movementSpeedMultiplier;
-        ApplyInitialWeaponFromConfig();
+    }
+
+    public void SetRuntimeStatAdjustments(IReadOnlyDictionary<CombatStat, int> statAdjustments)
+    {
+        _runtimeStatAdjustments.Clear();
+        if (statAdjustments == null) return;
+
+        foreach (KeyValuePair<CombatStat, int> adjustment in statAdjustments)
+        {
+            if (adjustment.Value != 0)
+            {
+                _runtimeStatAdjustments[adjustment.Key] = adjustment.Value;
+            }
+        }
+    }
+
+    public void ClearRuntimeStatAdjustments()
+    {
+        _runtimeStatAdjustments.Clear();
     }
 
     // 武器装備
@@ -327,12 +350,26 @@ public class Character : MonoBehaviour
         WeaponBase weapon = EquippedWeapon ?? WeaponBase.Unarmed;
         return stat switch
         {
-            CombatStat.STR => (STR + weapon.STRBonus) * STRBuff,
-            CombatStat.INT => (INT + weapon.INTBonus) * INTBuff,
-            CombatStat.FAI => (FAI + weapon.FAIBonus) * FAIBuff,
-            CombatStat.AGI => (AGI + weapon.AGIBonus) * AGIBuff,
+            CombatStat.STR => GetConfiguredStat(stat, weapon) * STRBuff,
+            CombatStat.INT => GetConfiguredStat(stat, weapon) * INTBuff,
+            CombatStat.FAI => GetConfiguredStat(stat, weapon) * FAIBuff,
+            CombatStat.AGI => GetConfiguredStat(stat, weapon) * AGIBuff,
             _ => 0f,
         };
+    }
+
+    private int GetConfiguredStat(CombatStat stat, WeaponBase weapon)
+    {
+        int baseValue = stat switch
+        {
+            CombatStat.STR => STR,
+            CombatStat.INT => INT,
+            CombatStat.FAI => FAI,
+            CombatStat.AGI => AGI,
+            _ => 0,
+        };
+        int adjustment = _runtimeStatAdjustments.TryGetValue(stat, out int value) ? value : 0;
+        return Mathf.Max(1, baseValue + weapon.GetStatBonus(stat) + adjustment);
     }
 
     public void SetLearnedSkillIds(IEnumerable<SkillId> skillIds)
