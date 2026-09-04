@@ -52,7 +52,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         {
             if (objectName is "Rock_Main.005" or "Rock_Front" or "Rock_Main.008")
                 return Load("RockWarm");
-            if (objectName is "Rock_Main" or "Rock_Base" or "Rock_Main.001" or "Rock_Left" or "Rock_Right")
+            if (objectName is "Rock_Main" or "Rock_Base" or "Rock_Main.001" or "Rock_Left" or "Rock_Right" or "NaturalRock_11_Trapezoid")
                 return Load("RockGranite");
             return Load("RockSlate");
         }

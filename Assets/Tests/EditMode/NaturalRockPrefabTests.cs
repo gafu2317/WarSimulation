@@ -12,7 +12,7 @@ using WarSimulation.Combat.Map;
 public sealed class NaturalRockPrefabTests
 {
     private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalRocks";
-    private static readonly int[] VariantIds = { 1, 2, 4, 8, 7 };
+    private static readonly int[] VariantIds = { 1, 2, 4, 8, 7, 11 };
 
     [Test]
     public void NaturalRockPrefabs_ExposeGroundedCollisionAndNavMeshContract()
@@ -43,6 +43,9 @@ public sealed class NaturalRockPrefabTests
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
             Bounds bounds = renderers[0].bounds;
             for (int r = 1; r < renderers.Length; r++) bounds.Encapsulate(renderers[r].bounds);
+            if (variant == 11)
+                Assert.That(AssetDatabase.GetAssetPath(renderers[0].sharedMaterial),
+                    Is.EqualTo("Assets/Materials/Environment/Natural/RockGranite.mat"), path);
             float vertexBottom = float.PositiveInfinity;
             foreach (MeshFilter mesh in prefab.GetComponentsInChildren<MeshFilter>(true))
             foreach (Vector3 vertex in mesh.sharedMesh.vertices)

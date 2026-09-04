@@ -73,7 +73,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
 
         [Header("Rock Prefabs")]
-        [Tooltip("使用する岩Prefab 5種類（01・02・04・08・07）を割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
+        [Tooltip("使用する岩Prefab 6種類（01・02・04・08・07・11）を割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
         [SerializeField] private GameObject[] _rockPrefabs;
 
         [Tooltip("岩の底面をTerrainに埋める試作補正。XZ位置・回転・大きさは変更しない。")]
@@ -182,7 +182,7 @@ namespace WarSimulation.Combat.Map
             {
                 Transform rock = root.Find($"Rock_{i}");
                 if (!RockGrounding.TryGround(
-                        rock, rock, transform, ground, cellSize, 0f, out string error))
+                        rock, rock, transform, ground, cellSize, TreeGroundSinkDepth, out string error))
                     Debug.LogWarning($"[RockGrounding] {rock.name}: {error}。位置を保持します。", rock);
             }
             Physics.SyncTransforms();
@@ -521,7 +521,7 @@ namespace WarSimulation.Combat.Map
             MarkNotWalkable(rock);
         }
 
-        private const int RockPrefabCount = 5;
+        private const int RockPrefabCount = 6;
         private bool _rockPrefabWarningLogged;
 
         private bool HasValidRockPrefabSet()

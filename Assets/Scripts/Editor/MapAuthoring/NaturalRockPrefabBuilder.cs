@@ -21,6 +21,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             "NaturalRock_04_FracturedBoulder",
             "NaturalRock_08_TwinBoulder",
             "NaturalRock_07_LeaningShard",
+            "NaturalRock_11_Trapezoid",
         };
 
         [MenuItem("WarSim/Map/Create Natural Rock Prefabs")]

@@ -25,11 +25,11 @@ public sealed class RockGroundingTests
         TerrainCollider ground = terrainRenderer.Terrain.GetComponent<TerrainCollider>();
         try
         {
-            foreach (int variant in new[] { 1, 2, 4, 8, 7 })
+            foreach (int variant in new[] { 1, 2, 4, 8, 7, 11 })
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     $"Assets/Prefabs/Environment/NaturalRocks/NaturalRock_{variant:00}.prefab");
-                SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
+                SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 6).ToArray());
                 SetField(renderer, "_enableRockGrounding", false);
                 renderer.Render(map);
                 Transform rock = host.transform.Find("GeneratedFeatures/Rock_0");
@@ -54,9 +54,10 @@ public sealed class RockGroundingTests
                 Assert.That(MeshNames(rock), Is.EqualTo(meshes));
                 Assert.That(map.Features[0].WorldPosition, Is.EqualTo(original));
                 float sink = original.y - grounded.y;
-                if (slope == 0f) Assert.That(grounded, Is.EqualTo(original), $"Flat ground: variant {variant}");
+                if (slope == 0f)
+                    Assert.That(sink, Is.EqualTo(TreeGroundSinkDepth), $"Flat ground: variant {variant}");
                 else Assert.That(sink, Is.GreaterThan(0f), $"Slope: variant {variant}");
-                Assert.That(sink, Is.EqualTo(Mathf.Max(0f, drops.Max())).Within(0.001f), $"Variant {variant}");
+                Assert.That(sink, Is.EqualTo(Mathf.Max(TreeGroundSinkDepth, drops.Max())).Within(0.001f), $"Variant {variant}");
                 Assert.That(drops.All(drop => drop - sink <= 0.001f), Is.True, $"Variant {variant}");
                 Collider[] moved = rock.GetComponentsInChildren<Collider>();
                 for (int i = 0; i < moved.Length; i++)
@@ -132,7 +133,7 @@ public sealed class RockGroundingTests
         terrainRenderer.Render(map);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
             "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_02.prefab");
-        SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
+        SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 6).ToArray());
         SetField(renderer, "_enableRockGrounding", true);
         try
         {
