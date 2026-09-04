@@ -91,7 +91,7 @@ public static class CombatAiDebugLabels
             WeaponKind.Wand => "杖",
             WeaponKind.Grimoire => "魔導書",
             WeaponKind.Bible => "聖書",
-            WeaponKind.Rosary => "ロザリオ",
+            WeaponKind.Rosary => "ロ",
             WeaponKind.Unarmed => "素手",
             _ => weapon.Kind.ToString(),
         };

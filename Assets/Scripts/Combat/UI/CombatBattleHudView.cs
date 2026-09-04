@@ -735,9 +735,10 @@ public sealed class CombatBattleHudView : MonoBehaviour
             }
 
             int maxHp = Mathf.Max(1, character.MaxHP);
-            card.Weapon.text = CombatAiDebugLabels.WeaponShort(character.EquippedWeapon);
+            card.Weapon.text =
+                $"{CombatAiDebugLabels.WeaponShort(character.EquippedWeapon)} {CombatAiDebugLabels.PersonalityShort(character.PersonalityProfile)}";
             card.Weapon.color = ResolveWeaponTextColor(character);
-            card.Hp.text = $"{character.HP}/{maxHp}";
+            card.Hp.text = character.HP.ToString();
             card.HpFill.fillAmount = Mathf.Clamp01(character.HP / (float)maxHp);
             CombatAiBrain aiBrain = character.GetComponent<CombatAiBrain>();
             CombatObjective objective = aiBrain != null
