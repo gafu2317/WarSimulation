@@ -12,7 +12,9 @@ using WarSimulation.Combat.Map;
 public sealed class NaturalRockPrefabTests
 {
     private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalRocks";
-    private static readonly int[] VariantIds = { 1, 2, 4, 8, 7, 11 };
+    private const float RockBaseSize = 2.6f;
+    private const float RockSizeTolerance = 0.001f;
+    private static readonly int[] VariantIds = { 2, 4, 8, 7, 11 };
 
     [Test]
     public void NaturalRockPrefabs_ExposeGroundedCollisionAndNavMeshContract()
@@ -103,12 +105,14 @@ public sealed class NaturalRockPrefabTests
             typeof(FeatureRenderer)
                 .GetField("_rockPrefabs", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(renderer, prefabs);
+            SetField(renderer, "_rockSize", RockBaseSize);
             MapData map = CreateRockMap();
 
             renderer.Render(map);
             Transform generated = host.transform.Find("GeneratedFeatures");
             List<string> firstMeshes = CaptureMeshes(generated);
             Quaternion[] firstRotations = CaptureRotations(generated);
+            float[] firstScales = CaptureScales(generated);
             for (int i = 0; i < generated.childCount; i++)
             {
                 Transform rock = generated.GetChild(i);
@@ -116,19 +120,57 @@ public sealed class NaturalRockPrefabTests
                 Assert.That(rock.localPosition, Is.EqualTo(map.Features[i].WorldPosition));
                 Assert.That(rock.GetComponent<MeshFilter>(), Is.Null);
                 Assert.That(rock.Find("Geometry"), Is.Not.Null);
-                Assert.That(rock.localScale.x, Is.InRange(6.63f, 8.97f));
+                Assert.That(IsOneOrTwoTimes(rock.localScale.x, RockBaseSize), Is.True);
                 Assert.That(prefabs.Select(p => p.GetComponentInChildren<MeshFilter>().sharedMesh),
                     Does.Contain(rock.GetComponentInChildren<MeshFilter>().sharedMesh));
                 Assert.That(Vector3.Angle(rock.up, Vector3.up), Is.LessThan(0.001f));
             }
+            Assert.That(firstScales.Any(scale => IsNear(scale, RockBaseSize)), Is.True);
+            Assert.That(firstScales.Any(scale => IsNear(scale, RockBaseSize * 2f)), Is.True);
             Assert.That(firstRotations.Distinct().Count(), Is.GreaterThan(1));
 
             renderer.Render(map);
             generated = host.transform.Find("GeneratedFeatures");
             Assert.That(CaptureMeshes(generated), Is.EqualTo(firstMeshes));
+            float[] secondScales = CaptureScales(generated);
             Quaternion[] secondRotations = CaptureRotations(generated);
             for (int i = 0; i < firstRotations.Length; i++)
+            {
+                Assert.That(secondScales[i], Is.EqualTo(firstScales[i]).Within(RockSizeTolerance));
                 Assert.That(Quaternion.Angle(firstRotations[i], secondRotations[i]), Is.LessThan(0.001f));
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(host);
+        }
+    }
+
+    [Test]
+    public void FeatureRenderer_FallbackUsesDeterministicOneOrTwoBaseSizeMultipliers()
+    {
+        GameObject host = new GameObject("NaturalRockFallbackTestHost");
+        try
+        {
+            FeatureRenderer renderer = host.AddComponent<FeatureRenderer>();
+            SetField(renderer, "_rockPrefabs", new GameObject[0]);
+            SetField(renderer, "_rockPrefabWarningLogged", true);
+            SetField(renderer, "_rockSize", RockBaseSize);
+            MapData map = CreateRockMap();
+
+            renderer.Render(map);
+            Transform generated = host.transform.Find("GeneratedFeatures");
+            float[] firstScales = CaptureScales(generated);
+            Assert.That(firstScales.All(scale =>
+                IsWithinSizeBand(scale, RockBaseSize, 1f, true) ||
+                IsWithinSizeBand(scale, RockBaseSize, 2f, true)), Is.True);
+            Assert.That(firstScales.Any(scale => IsWithinSizeBand(scale, RockBaseSize, 1f, true)), Is.True);
+            Assert.That(firstScales.Any(scale => IsWithinSizeBand(scale, RockBaseSize, 2f, true)), Is.True);
+
+            renderer.Render(map);
+            float[] secondScales = CaptureScales(host.transform.Find("GeneratedFeatures"));
+            for (int i = 0; i < firstScales.Length; i++)
+                Assert.That(secondScales[i], Is.EqualTo(firstScales[i]).Within(RockSizeTolerance));
         }
         finally
         {
@@ -152,6 +194,7 @@ public sealed class NaturalRockPrefabTests
                 Assert.That(renderer, Is.Not.Null, paths[i]);
                 var serialized = new SerializedObject(renderer);
                 SerializedProperty rockPrefabs = serialized.FindProperty("_rockPrefabs");
+                float baseScale = serialized.FindProperty("_rockSize").floatValue;
                 Assert.That(rockPrefabs.arraySize, Is.EqualTo(VariantIds.Length), paths[i]);
                 for (int p = 0; p < rockPrefabs.arraySize; p++)
                     Assert.That(AssetDatabase.GetAssetPath(rockPrefabs.GetArrayElementAtIndex(p).objectReferenceValue),
@@ -161,7 +204,7 @@ public sealed class NaturalRockPrefabTests
                 foreach (Transform feature in renderer.transform.Find("GeneratedFeatures"))
                 {
                     if (!feature.name.StartsWith("Rock_")) continue;
-                    Assert.That(feature.localScale.x, Is.InRange(6.63f, 8.97f), paths[i]);
+                    Assert.That(IsOneOrTwoTimes(feature.localScale.x, baseScale), Is.True, paths[i]);
                     Assert.That(allowedMeshes, Does.Contain(feature.GetComponentInChildren<MeshFilter>().sharedMesh), paths[i]);
                 }
             }
@@ -200,6 +243,34 @@ public sealed class NaturalRockPrefabTests
         for (int i = 0; i < generated.childCount; i++) values[i] = generated.GetChild(i).localRotation;
         return values;
     }
+
+    private static float[] CaptureScales(Transform generated)
+    {
+        var values = new float[generated.childCount];
+        for (int i = 0; i < generated.childCount; i++) values[i] = generated.GetChild(i).localScale.x;
+        return values;
+    }
+
+    private static bool IsOneOrTwoTimes(float actual, float baseScale) =>
+        IsNear(actual, baseScale) || IsNear(actual, baseScale * 2f);
+
+    private static bool IsNear(float actual, float expected) =>
+        Mathf.Abs(actual - expected) <= RockSizeTolerance;
+
+    private static bool IsWithinSizeBand(
+        float actual,
+        float baseScale,
+        float multiplier,
+        bool preserveShapeVariation)
+    {
+        float min = preserveShapeVariation ? 0.85f : 1f;
+        float max = preserveShapeVariation ? 1.15f : 1f;
+        return actual >= baseScale * multiplier * min - RockSizeTolerance &&
+            actual <= baseScale * multiplier * max + RockSizeTolerance;
+    }
+
+    private static void SetField(FeatureRenderer renderer, string name, object value) =>
+        typeof(FeatureRenderer).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(renderer, value);
 
     private static FeatureRenderer FindFeatureRenderer(Scene scene)
     {

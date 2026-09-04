@@ -25,11 +25,11 @@ public sealed class RockGroundingTests
         TerrainCollider ground = terrainRenderer.Terrain.GetComponent<TerrainCollider>();
         try
         {
-            foreach (int variant in new[] { 1, 2, 4, 8, 7, 11 })
+            foreach (int variant in new[] { 2, 4, 8, 7, 11 })
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     $"Assets/Prefabs/Environment/NaturalRocks/NaturalRock_{variant:00}.prefab");
-                SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 6).ToArray());
+                SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
                 SetField(renderer, "_enableRockGrounding", false);
                 renderer.Render(map);
                 Transform rock = host.transform.Find("GeneratedFeatures/Rock_0");
@@ -133,7 +133,7 @@ public sealed class RockGroundingTests
         terrainRenderer.Render(map);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
             "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_02.prefab");
-        SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 6).ToArray());
+        SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
         SetField(renderer, "_enableRockGrounding", true);
         try
         {

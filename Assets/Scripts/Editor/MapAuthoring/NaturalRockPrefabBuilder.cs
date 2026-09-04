@@ -16,7 +16,6 @@ namespace WarSimulation.Combat.Map.EditorOnly
         private const string NotWalkableAreaName = "Not Walkable";
         private static readonly string[] SelectedModels =
         {
-            "NaturalRock_01_TallMonolith",
             "NaturalRock_02_BroadAngular",
             "NaturalRock_04_FracturedBoulder",
             "NaturalRock_08_TwinBoulder",

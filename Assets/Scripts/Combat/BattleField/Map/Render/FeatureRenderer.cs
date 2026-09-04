@@ -12,7 +12,7 @@ namespace WarSimulation.Combat.Map
     /// 生成物は全て「GeneratedFeatures」子配下にまとめ、再生成のたびにクリアする。
     /// 見た目は次の構成で生成する：
     ///   - 木  ：設定済みPrefab。未設定時は円柱（幹）＋球（葉冠）の旧方式にフォールバック
-    ///   - 岩  ：立方体 1 個を横長・斜め回転で置く
+    ///   - 岩  ：設定済みPrefabを1倍または2倍で生成。未設定時は立方体へフォールバック
     ///   - 魔石：Resources の認定済みモデルPrefabを使い、Coreだけ陣営色で塗り分ける。
     /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
     /// </summary>
@@ -24,7 +24,9 @@ namespace WarSimulation.Combat.Map
         private const string NotWalkableAreaName = "Not Walkable";
         private const float TreeSizeMultiplier = 1.5f;
         private const float TreeGroundSinkDepth = 0.05f;
-        private const float RockSizeMultiplier = 3f;
+        private const float RockBaseSizeMultiplier = 1f;
+        private const float RockLargeSizeMultiplier = 2f;
+        private const float RockLargeSizeProbability = 0.5f;
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
@@ -57,7 +59,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private GameObject[] _treePrefabs;
 
         [Header("Rock Appearance")]
-        [Tooltip("岩 1 個のベースサイズ（メートル、立方体の一辺）。ランダム揺らぎで ±20% 変動する。")]
+        [Tooltip("岩 1 個の基準サイズ（メートル）。描画時に1倍または2倍を50:50で決定的に選ぶ。")]
         [SerializeField, Min(0.1f)] private float _rockSize = 2.6f;
 
         [Tooltip("岩の縦潰し比の下限。0.8 で高さ 80%、1.0 で立方体。")]
@@ -73,7 +75,7 @@ namespace WarSimulation.Combat.Map
         [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
 
         [Header("Rock Prefabs")]
-        [Tooltip("使用する岩Prefab 6種類（01・02・04・08・07・11）を割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
+        [Tooltip("使用する岩Prefab 5種類（02・04・08・07・11）を割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
         [SerializeField] private GameObject[] _rockPrefabs;
 
         [Tooltip("岩の底面をTerrainに埋める試作補正。XZ位置・回転・大きさは変更しない。")]
@@ -483,7 +485,7 @@ namespace WarSimulation.Combat.Map
 
             uint state = GetRockRandomState(map.Seed, featureIndex, f.WorldPosition);
             int variant = (int)(state % (uint)_rockPrefabs.Length);
-            float scale = _rockSize * RockSizeMultiplier * Mathf.Lerp(0.85f, 1.15f, NextFloat01(ref state));
+            float scale = _rockSize * GetRockSizeMultiplier(ref state);
             float yaw = NextFloat01(ref state) * 360f;
 
             GameObject rock = Instantiate(_rockPrefabs[variant], parent, worldPositionStays: false);
@@ -508,9 +510,10 @@ namespace WarSimulation.Combat.Map
             float hMax = Mathf.Max(_rockHeightScaleMin, _rockHeightScaleMax);
             float sy = Mathf.Lerp(hMin, hMax, NextFloat01(ref seed));
             float yaw = NextFloat01(ref seed) * 360f;
+            float sizeMultiplier = GetRockSizeMultiplier(ref seed);
 
             // Cube はローカル ±0.5 の立方体。根本を地面に合わせたいので Y 半分だけ上げる。
-            float rockSize = _rockSize * RockSizeMultiplier;
+            float rockSize = _rockSize * sizeMultiplier;
             Vector3 pos = f.WorldPosition + new Vector3(0f, rockSize * sy * 0.5f, 0f);
             rock.transform.localPosition = pos;
             rock.transform.localRotation = f.Rotation * Quaternion.Euler(0f, yaw, 0f);
@@ -521,7 +524,7 @@ namespace WarSimulation.Combat.Map
             MarkNotWalkable(rock);
         }
 
-        private const int RockPrefabCount = 6;
+        private const int RockPrefabCount = 5;
         private bool _rockPrefabWarningLogged;
 
         private bool HasValidRockPrefabSet()
@@ -546,6 +549,13 @@ namespace WarSimulation.Combat.Map
                 state = state * 16777619u ^ (uint)Mathf.RoundToInt(position.z * 100f);
                 return state == 0u ? 1u : state;
             }
+        }
+
+        private static float GetRockSizeMultiplier(ref uint state)
+        {
+            return NextFloat01(ref state) < RockLargeSizeProbability
+                ? RockBaseSizeMultiplier
+                : RockLargeSizeMultiplier;
         }
 
         /// <summary>
