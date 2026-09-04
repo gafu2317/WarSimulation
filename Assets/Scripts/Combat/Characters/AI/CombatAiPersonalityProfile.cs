@@ -84,7 +84,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.Gatekeeper =>
                 "自軍魔石の位置が分かる間は防衛を優先し、魔石前で脅威を迎撃して守備位置を維持します。",
             CombatAiPersonalityKind.Tagalong =>
-                "設定された味方を追い、同じ目的・対象へ同調し、追従先がなければ通常行動に戻ります。",
+                "編成画面で便乗屋より上にある選択済みの味方を便乗対象に設定し、その味方の目的・対象・目的地を引き継ぎます。便乗対象が設定されていない、または利用できない場合は通常行動に戻ります。",
             CombatAiPersonalityKind.Avenger =>
                 "直近で攻撃した敵が生存し位置を把握できる間は追い続け、見失うと通常の目的へ戻ります。",
             CombatAiPersonalityKind.HighGround =>

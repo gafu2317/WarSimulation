@@ -117,7 +117,8 @@ public sealed class CombatFormationCodeTests
         try
         {
             Assert.That(profile.DisplayNameJapanese, Is.EqualTo("便乗屋"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("設定された味方"));
+            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("便乗屋より上にある選択済みの味方"));
+            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("便乗対象に設定"));
         }
         finally
         {
