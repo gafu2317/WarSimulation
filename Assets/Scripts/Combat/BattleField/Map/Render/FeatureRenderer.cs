@@ -23,6 +23,7 @@ namespace WarSimulation.Combat.Map
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string NotWalkableAreaName = "Not Walkable";
         private const float TreeSizeMultiplier = 1.5f;
+        private const float TreeGroundSinkDepth = 0.05f;
         private const float RockSizeMultiplier = 2f;
 
         [Header("Tree Appearance")]
@@ -154,25 +155,34 @@ namespace WarSimulation.Combat.Map
                 }
             }
 
-            if (_enableRockGrounding && rockIdx > 0)
-                GroundRocks(root.transform, map.Height.CellSize, rockIdx);
+            if (treeIdx > 0 || (_enableRockGrounding && rockIdx > 0))
+                GroundFeatures(root.transform, map.Height.CellSize, treeIdx, _enableRockGrounding ? rockIdx : 0);
         }
 
-        private void GroundRocks(Transform root, float cellSize, int count)
+        private void GroundFeatures(Transform root, float cellSize, int treeCount, int rockCount)
         {
             Terrain terrain = GetComponent<TerrainRenderer>()?.Terrain;
             TerrainCollider ground = terrain != null ? terrain.GetComponent<TerrainCollider>() : null;
             if (ground == null || !ground.enabled || !ground.gameObject.activeInHierarchy)
             {
-                Debug.LogWarning("[RockGrounding] TerrainColliderが取得できないため、岩の位置を保持します。", this);
+                Debug.LogWarning("[FeatureGrounding] TerrainColliderが取得できないため、木・岩の位置を保持します。", this);
                 return;
             }
 
             Physics.SyncTransforms();
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < treeCount; i++)
+            {
+                Transform tree = root.Find($"Tree_{i}");
+                Transform trunk = tree.Find("Trunk") ?? tree;
+                if (!RockGrounding.TryGround(
+                        tree, trunk, transform, ground, cellSize, TreeGroundSinkDepth, out string error))
+                    Debug.LogWarning($"[TreeGrounding] {tree.name}: {error}。位置を保持します。", tree);
+            }
+            for (int i = 0; i < rockCount; i++)
             {
                 Transform rock = root.Find($"Rock_{i}");
-                if (!RockGrounding.TryGround(rock, transform, ground, cellSize, out string error))
+                if (!RockGrounding.TryGround(
+                        rock, rock, transform, ground, cellSize, 0f, out string error))
                     Debug.LogWarning($"[RockGrounding] {rock.name}: {error}。位置を保持します。", rock);
             }
             Physics.SyncTransforms();

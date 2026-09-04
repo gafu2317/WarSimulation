@@ -9,6 +9,8 @@ using WarSimulation.Combat.Map;
 
 public sealed class RockGroundingTests
 {
+    private const float TreeGroundSinkDepth = 0.05f;
+
     [TestCase(0f, 0f)]
     [TestCase(0f, 3f)]
     [TestCase(1f, 3f)]
@@ -84,6 +86,40 @@ public sealed class RockGroundingTests
         }
     }
 
+    [TestCase(0f, 0f)]
+    [TestCase(0f, 3f)]
+    [TestCase(1f, 3f)]
+    public void GeneratedTrees_SinkSlightlyOnFlatGroundAndCompensateTerrainDrop(float slope, float elevation)
+    {
+        var host = new GameObject("TreeGroundingTests");
+        host.transform.position = new Vector3(17f, -3f, 11f);
+        var terrainRenderer = host.AddComponent<TerrainRenderer>();
+        var renderer = host.AddComponent<FeatureRenderer>();
+        MapData map = CreateMap(slope, elevation, FeatureType.Tree);
+        terrainRenderer.Render(map);
+        TerrainCollider ground = terrainRenderer.Terrain.GetComponent<TerrainCollider>();
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_01.prefab");
+        SetField(renderer, "_treePrefabs", Enumerable.Repeat(prefab, 10).ToArray());
+        try
+        {
+            renderer.Render(map);
+            Transform tree = host.transform.Find("GeneratedFeatures/Tree_0");
+            float[] drops = MeasureTerrainDrops(tree.Find("Trunk"), ground, host.transform, map.Height.CellSize);
+            float sink = map.Features[0].WorldPosition.y - tree.localPosition.y;
+
+            Assert.That(tree.localPosition.x, Is.EqualTo(map.Features[0].WorldPosition.x));
+            Assert.That(tree.localPosition.z, Is.EqualTo(map.Features[0].WorldPosition.z));
+            Assert.That(sink, Is.EqualTo(Mathf.Max(TreeGroundSinkDepth, drops.Max())).Within(0.001f));
+            Assert.That(drops.All(drop => drop - sink <= 0.001f), Is.True);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(terrainRenderer.Terrain.terrainData);
+            UnityEngine.Object.DestroyImmediate(host);
+        }
+    }
+
     [Test]
     public void RockOutsideTerrain_KeepsItsOriginalPositionAndWarns()
     {
@@ -101,7 +137,7 @@ public sealed class RockGroundingTests
         try
         {
             LogAssert.Expect(LogType.Warning,
-                "[RockGrounding] Rock_0: 岩の底面直下にTerrainがありません。位置を保持します。");
+                "[RockGrounding] Rock_0: 底面直下にTerrainがありません。位置を保持します。");
             renderer.Render(map);
             Assert.That(host.transform.Find("GeneratedFeatures/Rock_0").localPosition,
                 Is.EqualTo(map.Features[0].WorldPosition));
@@ -157,13 +193,16 @@ public sealed class RockGroundingTests
         return drops.ToArray();
     }
 
-    private static MapData CreateMap(float slope, float elevation = 0f)
+    private static MapData CreateMap(
+        float slope,
+        float elevation = 0f,
+        FeatureType featureType = FeatureType.Rock)
     {
         var height = new HeightMap(129, 129, 0.1f);
         for (int z = 0; z < height.Height; z++)
         for (int x = 0; x < height.Width; x++) height.SetHeight(x, z, elevation + x * height.CellSize * slope);
         var map = new MapData(height, new GroundStateGrid(129, 129, 0.1f), 74);
-        map.AddFeature(new PlacedFeature(FeatureType.Rock, new Vector3(6.4f, elevation + 6.4f * slope, 6.4f)));
+        map.AddFeature(new PlacedFeature(featureType, new Vector3(6.4f, elevation + 6.4f * slope, 6.4f)));
         return map;
     }
 

@@ -32,6 +32,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 throw new InvalidOperationException("Required rock Layer or NavMesh Area is missing.");
 
             Directory.CreateDirectory(PrefabDirectory);
+            NaturalEnvironmentMaterialLibrary.BuildAll();
             var prefabs = new GameObject[SelectedModels.Length];
             for (int i = 0; i < SelectedModels.Length; i++)
             {
@@ -72,7 +73,9 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 MeshRenderer[] renderers = imported.GetComponentsInChildren<MeshRenderer>(includeInactive: true);
                 if (renderers.Length == 0)
                     throw new InvalidOperationException($"Rock source has no MeshRenderer: {sourcePath}");
+                PrioritizePrimaryMesh(renderers);
                 imported.transform.SetParent(geometry, worldPositionStays: true);
+                NaturalEnvironmentMaterialLibrary.ApplyRockMaterials(root);
 
                 NormalizeGeometry(root, geometry);
                 SetLayerRecursively(root, visionObstacleLayer);
@@ -87,6 +90,16 @@ namespace WarSimulation.Combat.Map.EditorOnly
             finally
             {
                 if (root != null) UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void PrioritizePrimaryMesh(MeshRenderer[] renderers)
+        {
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (!renderers[i].name.StartsWith("Rock_Main", StringComparison.Ordinal)) continue;
+                renderers[i].transform.SetSiblingIndex(0);
+                return;
             }
         }
 

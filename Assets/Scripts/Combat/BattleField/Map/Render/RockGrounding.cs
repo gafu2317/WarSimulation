@@ -6,10 +6,16 @@ namespace WarSimulation.Combat.Map
     internal static class RockGrounding
     {
         internal static bool TryGround(
-            Transform rock, Transform mapSpace, TerrainCollider ground, float cellSize, out string error)
+            Transform target,
+            Transform contactRoot,
+            Transform mapSpace,
+            TerrainCollider ground,
+            float cellSize,
+            float minimumSink,
+            out string error)
         {
             error = null;
-            Collider[] colliders = rock.GetComponentsInChildren<Collider>();
+            Collider[] colliders = contactRoot.GetComponentsInChildren<Collider>();
             var active = new List<Collider>();
             var xs = new SortedSet<float>();
             var zs = new SortedSet<float>();
@@ -40,15 +46,15 @@ namespace WarSimulation.Combat.Map
             Vector3 vertical = mapSpace.TransformVector(Vector3.up);
             float rayLength = (top - bottom) * vertical.magnitude;
             Vector3 up = vertical.normalized;
-            Vector3 origin = mapSpace.InverseTransformPoint(rock.position);
+            Vector3 origin = mapSpace.InverseTransformPoint(target.position);
             var referenceRay = new Ray(mapSpace.TransformPoint(new Vector3(origin.x, top, origin.z)), -up);
             if (!ground.Raycast(referenceRay, out RaycastHit referenceHit, rayLength))
             {
-                error = "岩の配置位置にTerrainがありません";
+                error = "配置位置にTerrainがありません";
                 return false;
             }
             float referenceHeight = mapSpace.InverseTransformPoint(referenceHit.point).y;
-            float sink = 0f;
+            float sink = minimumSink;
             bool hasContact = false;
 
             foreach (float x in xs)
@@ -67,25 +73,25 @@ namespace WarSimulation.Combat.Map
                 var downwardRay = new Ray(mapSpace.TransformPoint(new Vector3(x, top, z)), -up);
                 if (!ground.Raycast(downwardRay, out RaycastHit groundHit, rayLength))
                 {
-                    error = "岩の底面直下にTerrainがありません";
+                    error = "底面直下にTerrainがありません";
                     return false;
                 }
 
                 hasContact = true;
                 float height = mapSpace.InverseTransformPoint(groundHit.point).y;
-                // 底面自体の高さを使うと、平地でも岩本来の丸みまで埋めてしまう。
+                // 底面自体の高さを基準にすると、形状の丸みまで地中に埋めてしまう。
                 sink = Mathf.Max(sink, referenceHeight - height);
             }
 
             if (!hasContact)
             {
-                error = "岩の底面に接地点が見つかりません";
+                error = "底面に接地点が見つかりません";
                 return false;
             }
 
-            Vector3 position = rock.localPosition;
+            Vector3 position = target.localPosition;
             position.y -= sink;
-            rock.localPosition = position;
+            target.localPosition = position;
             return true;
         }
 

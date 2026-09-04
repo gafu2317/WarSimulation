@@ -52,6 +52,18 @@ public sealed class NaturalTreePrefabTests
 
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
             Assert.That(renderers, Is.Not.Empty, path);
+            for (int r = 0; r < renderers.Length; r++)
+            {
+                Material[] materials = renderers[r].sharedMaterials;
+                Assert.That(materials, Is.Not.Empty, $"{path}: {renderers[r].name}");
+                for (int m = 0; m < materials.Length; m++)
+                {
+                    Assert.That(materials[m], Is.Not.Null, $"{path}: {renderers[r].name} material {m}");
+                    Assert.That(materials[m].shader, Is.Not.Null, $"{path}: {renderers[r].name} material {m}");
+                    Assert.That(materials[m].shader.isSupported, Is.True,
+                        $"{path}: {renderers[r].name} material {m} shader {materials[m].shader.name}");
+                }
+            }
             Bounds bounds = renderers[0].bounds;
             for (int r = 1; r < renderers.Length; r++) bounds.Encapsulate(renderers[r].bounds);
             Assert.That(bounds.min.y, Is.EqualTo(0f).Within(0.01f), path);

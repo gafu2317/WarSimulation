@@ -38,6 +38,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             }
 
             Directory.CreateDirectory(PrefabDirectory);
+            NaturalEnvironmentMaterialLibrary.BuildAll();
             int visionObstacleLayer = LayerMask.NameToLayer(VisionObstacleLayerName);
             int ignoreRaycastLayer = LayerMask.NameToLayer(IgnoreRaycastLayerName);
             if (visionObstacleLayer < 0 || ignoreRaycastLayer < 0)
@@ -51,7 +52,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             for (int i = 0; i < sourcePaths.Count; i++)
             {
                 string prefabPath = $"{PrefabDirectory}/NaturalTree_{i + 1:00}.prefab";
-                BuildPrefab(sourcePaths[i], prefabPath, visionObstacleLayer, ignoreRaycastLayer);
+                BuildPrefab(sourcePaths[i], prefabPath, visionObstacleLayer, ignoreRaycastLayer, i);
             }
 
             AssetDatabase.SaveAssets();
@@ -63,7 +64,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
             string sourcePath,
             string prefabPath,
             int visionObstacleLayer,
-            int ignoreRaycastLayer)
+            int ignoreRaycastLayer,
+            int variantIndex)
         {
             GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
             if (source == null) throw new InvalidOperationException($"Tree source was not found: {sourcePath}");
@@ -101,6 +103,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
                 }
 
                 UnityEngine.Object.DestroyImmediate(imported);
+                NaturalEnvironmentMaterialLibrary.ApplyTreeMaterials(root, variantIndex);
                 NormalizeGroundPivot(root, trunk, foliage);
                 SetLayerRecursively(root, visionObstacleLayer);
                 SetLayerRecursively(foliage.gameObject, ignoreRaycastLayer);
