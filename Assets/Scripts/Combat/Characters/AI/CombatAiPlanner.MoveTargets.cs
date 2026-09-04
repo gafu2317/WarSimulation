@@ -515,11 +515,17 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateBestEnemyTarget(
         CombatAiContext context,
+        Character priorityEnemy,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         bool allowRemembered = false)
     {
-        Character enemy = FindBestEnemyCharacter(context, focusEnemy, focusCommitmentRemainingSeconds, allowRemembered);
+        Character enemy = FindBestEnemyCharacter(
+            context,
+            priorityEnemy,
+            focusEnemy,
+            focusCommitmentRemainingSeconds,
+            allowRemembered);
         if (enemy == null)
         {
             return CombatMoveTarget.None;
@@ -964,10 +970,18 @@ public static partial class CombatAiPlanner
 
     private static Character FindBestEnemyCharacter(
         CombatAiContext context,
+        Character priorityEnemy,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         bool allowRemembered)
     {
+        CombatCharacterIntel priorityIntel = context.FindEnemyIntel(priorityEnemy);
+        bool usePriority = priorityIntel.Character != null &&
+            priorityIntel.IsAlive &&
+            priorityIntel.HasKnownPosition &&
+            priorityIntel.HP - context.GetAllyPendingDamage(priorityEnemy) > 0;
+        if (usePriority) return priorityEnemy;
+
         CombatCharacterIntel focusIntel = context.FindEnemyIntel(focusEnemy);
         bool keepFocus = focusCommitmentRemainingSeconds > 0f &&
             focusIntel.Character != null &&

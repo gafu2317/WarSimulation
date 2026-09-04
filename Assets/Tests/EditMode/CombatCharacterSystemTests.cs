@@ -9,6 +9,39 @@ using WarSimulation.Combat.Map;
 public sealed class CombatCharacterSystemTests
 {
     [Test]
+    public void MagicStoneDamage_MarksTheAttackerForTheDefendingTeam()
+    {
+        GameObject stoneSystemObject = new GameObject("MagicStoneSystem");
+        GameObject characterSystemObject = new GameObject("CharacterSystem");
+        GameObject allyObject = new GameObject("Ally");
+        GameObject enemyObject = new GameObject("Enemy");
+        try
+        {
+            CombatMagicStoneSystem stoneSystem = stoneSystemObject.AddComponent<CombatMagicStoneSystem>();
+            stoneSystem.Initialize(CreateStoneTestMap());
+            CombatCharacterSystem characterSystem = characterSystemObject.AddComponent<CombatCharacterSystem>();
+            Character ally = allyObject.AddComponent<Character>();
+            Character enemy = enemyObject.AddComponent<Character>();
+            ally.Health.Initialize(30);
+            enemy.Health.Initialize(30);
+            characterSystem.SetParticipants(new[] { ally }, new[] { enemy });
+            characterSystem.ResetCharactersForBattle();
+
+            stoneSystem.TakeDamage(0, 1, enemy);
+
+            Assert.That(characterSystem.GetMarkedStoneAttacker(ally), Is.SameAs(enemy));
+            Assert.That(characterSystem.GetMarkedStoneAttacker(enemy), Is.Null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(allyObject);
+            Object.DestroyImmediate(characterSystemObject);
+            Object.DestroyImmediate(stoneSystemObject);
+        }
+    }
+
+    [Test]
     public void GenerateCandidates_CreatesTenCharactersForEachTeamFromPrefab()
     {
         GameObject systemObject = new GameObject("CharacterSystem");

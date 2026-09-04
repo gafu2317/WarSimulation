@@ -25,7 +25,8 @@ public static partial class CombatAiPlanner
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
         List<CombatAiReasonCode> selectedStateReasons = null,
-        CombatMoveTarget previousMoveTarget = default)
+        CombatMoveTarget previousMoveTarget = default,
+        bool hasReachedHighGround = false)
     {
         if (context == null || context.Owner == null) return CombatAiPlan.None;
 
@@ -34,7 +35,13 @@ public static partial class CombatAiPlanner
 
         CombatAiReasonCode reason;
         CombatObjective state;
-        using (SelectStateMarker.Auto()) state = SelectState(context, assessment, personalityProfile, out reason);
+        using (SelectStateMarker.Auto()) state = SelectState(
+            context,
+            assessment,
+            personalityProfile,
+            previousObjective,
+            hasReachedHighGround,
+            out reason);
 
         selectedStateReasons?.Clear();
         if (reason != CombatAiReasonCode.None) selectedStateReasons?.Add(reason);
@@ -63,7 +70,8 @@ public static partial class CombatAiPlanner
                 state,
                 reason,
                 tagalongLeader,
-                revengeTarget);
+                revengeTarget,
+                hasReachedHighGround);
         }
     }
 
@@ -73,7 +81,8 @@ public static partial class CombatAiPlanner
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
-        CombatMoveTarget previousMoveTarget = default)
+        CombatMoveTarget previousMoveTarget = default,
+        bool hasReachedHighGround = false)
     {
         if (context == null || context.Owner == null) return null;
 
@@ -85,7 +94,8 @@ public static partial class CombatAiPlanner
             focusCommitmentRemainingSeconds,
             previousObjective,
             null,
-            previousMoveTarget);
+            previousMoveTarget,
+            hasReachedHighGround);
         return new CombatAiDebugSnapshot
         {
             Owner = context.Owner,
@@ -100,6 +110,8 @@ public static partial class CombatAiPlanner
         CombatAiContext context,
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personality,
+        CombatObjective previousObjective,
+        bool hasReachedHighGround,
         out CombatAiReasonCode reason)
     {
         CombatAiPersonalityKind personalityKind = personality != null
@@ -173,6 +185,12 @@ public static partial class CombatAiPlanner
             return CombatObjective.DefendOwnStone;
         }
 
+        if (HasMarkedStoneAttacker(context))
+        {
+            reason = CombatAiReasonCode.OwnStoneAttackerMarked;
+            return CombatObjective.AttackEnemy;
+        }
+
         if (personalityKind == CombatAiPersonalityKind.StandoffSiege &&
             HasMagicStoneDamageSkill(context) &&
             HasLivingEnemyStone(context))
@@ -193,6 +211,15 @@ public static partial class CombatAiPlanner
         {
             reason = CombatAiReasonCode.EnemyInRange;
             return CombatObjective.AttackEnemy;
+        }
+
+        if (personalityKind == CombatAiPersonalityKind.HighGround &&
+            HasLivingEnemyStone(context) &&
+            (hasReachedHighGround || IsAtHighGround(context) ||
+             previousObjective == CombatObjective.DestroyEnemyStone))
+        {
+            reason = CombatAiReasonCode.PersonalityPreference;
+            return CombatObjective.DestroyEnemyStone;
         }
 
         if (ShouldSearchBeforeStone(context))
@@ -221,25 +248,32 @@ public static partial class CombatAiPlanner
         CombatObjective state,
         CombatAiReasonCode reason,
         CombatCharacterIntel tagalongLeader,
-        CombatCharacterIntel revengeTarget)
+        CombatCharacterIntel revengeTarget,
+        bool hasReachedHighGround)
     {
         CombatMoveTarget moveTarget = CombatMoveTarget.None;
         string actionCode;
         bool usesHighGround = personality != null && personality.Kind == CombatAiPersonalityKind.HighGround;
         bool isAtHighGround = usesHighGround && IsAtHighGround(context);
+        bool highGroundEstablished = usesHighGround && (hasReachedHighGround || isAtHighGround);
         bool hasHighGroundCandidate = usesHighGround && context.HighGroundCandidates.Count > 0;
         bool usesTagalongTarget = personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong &&
+            context.MarkedStoneAttacker == null &&
             tagalongLeader.Character != null && tagalongLeader.Objective == state &&
             TryCreateTagalongTarget(context, tagalongLeader, out moveTarget);
         bool usesRevengeTarget = personality != null && personality.Kind == CombatAiPersonalityKind.Avenger &&
+            context.MarkedStoneAttacker == null &&
             revengeTarget.Character != null && state == CombatObjective.AttackEnemy;
         bool usesBigMagic = personality != null && personality.Kind == CombatAiPersonalityKind.BigMagic &&
             HasHighImpactSkill(context);
         CombatMoveTarget highGroundTarget = CombatMoveTarget.None;
-        bool hasHighGroundMove = usesHighGround && !isAtHighGround;
+        CombatMoveTarget previousHighGroundTarget = usesHighGround
+            ? CreatePreviousHighGroundTarget(context, previousMoveTarget)
+            : CombatMoveTarget.None;
+        bool hasHighGroundMove = usesHighGround && !highGroundEstablished;
         if (hasHighGroundMove)
         {
-            highGroundTarget = CreatePreviousHighGroundTarget(context, previousMoveTarget);
+            highGroundTarget = previousHighGroundTarget;
             if (!highGroundTarget.HasDestination)
             {
                 highGroundTarget = CreateBestHighGroundTarget(context);
@@ -252,16 +286,12 @@ public static partial class CombatAiPlanner
             moveTarget = CreateRevengeTarget(context, revengeTarget);
             actionCode = CombatAiMoveCode.PersonalitySignature;
         }
-        else if (isAtHighGround)
-        {
-            actionCode = CombatAiMoveCode.PersonalitySignature;
-        }
         else if (hasHighGroundMove)
         {
             moveTarget = highGroundTarget;
             actionCode = CombatAiMoveCode.PersonalitySignature;
         }
-        else if (hasHighGroundCandidate)
+        else if (hasHighGroundCandidate && !highGroundEstablished)
         {
             actionCode = CombatAiMoveCode.PersonalitySignature;
         }
@@ -291,6 +321,8 @@ public static partial class CombatAiPlanner
                         focusEnemy,
                         focusCommitmentRemainingSeconds,
                         personality != null && personality.Kind == CombatAiPersonalityKind.BattleJunkie,
+                        context.MarkedStoneAttacker,
+                        seekHighGround: !usesHighGround,
                         out actionCode);
                     break;
                 case CombatObjective.DestroyEnemyStone:
@@ -307,14 +339,16 @@ public static partial class CombatAiPlanner
             actionCode = CombatAiMoveCode.PersonalitySignature;
         }
 
-        Character preferredTarget = personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong
-            ? tagalongLeader.IntendedTarget
-            : personality != null && personality.Kind == CombatAiPersonalityKind.Avenger
-                ? revengeTarget.Character
-                : personality != null && personality.Kind == CombatAiPersonalityKind.Gatekeeper &&
-                  state == CombatObjective.DefendOwnStone && moveTarget.TargetCharacter != null
-                    ? moveTarget.TargetCharacter
-                    : null;
+        Character preferredTarget = state == CombatObjective.AttackEnemy && context.MarkedStoneAttacker != null
+            ? context.MarkedStoneAttacker
+            : personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong
+                ? tagalongLeader.IntendedTarget
+                : personality != null && personality.Kind == CombatAiPersonalityKind.Avenger
+                    ? revengeTarget.Character
+                    : personality != null && personality.Kind == CombatAiPersonalityKind.Gatekeeper &&
+                      state == CombatObjective.DefendOwnStone && moveTarget.TargetCharacter != null
+                        ? moveTarget.TargetCharacter
+                        : null;
         SelectSkill(
             context,
             personality,
@@ -323,6 +357,14 @@ public static partial class CombatAiPlanner
             highImpactOnly: usesBigMagic,
             out SkillBase skill,
             out SkillExecutionContext skillContext);
+        if (isAtHighGround && skill != null &&
+            (state == CombatObjective.AttackEnemy ||
+             state == CombatObjective.SupportAlly ||
+             state == CombatObjective.DestroyEnemyStone))
+        {
+            moveTarget = CombatMoveTarget.None;
+            actionCode = CombatAiMoveCode.PersonalitySignature;
+        }
         return new CombatAiPlan(state, moveTarget, skill, skillContext, actionCode, reason);
     }
 
@@ -424,10 +466,12 @@ public static partial class CombatAiPlanner
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
         bool pursueRememberedEnemy,
+        Character priorityEnemy,
+        bool seekHighGround,
         out string actionCode)
     {
         WeaponKind weaponKind = GetWeaponKind(context.Owner);
-        if (weaponKind == WeaponKind.Grimoire || weaponKind == WeaponKind.Wand)
+        if (seekHighGround && (weaponKind == WeaponKind.Grimoire || weaponKind == WeaponKind.Wand))
         {
             CombatMoveTarget highGround = CreateBestHighGroundTarget(context);
             if (IsUsableMove(context, highGround) && !HasEnemyInReadySkillRange(context))
@@ -439,6 +483,7 @@ public static partial class CombatAiPlanner
 
         CombatMoveTarget enemy = CreateBestEnemyTarget(
             context,
+            priorityEnemy,
             focusEnemy,
             focusCommitmentRemainingSeconds,
             pursueRememberedEnemy);
@@ -995,7 +1040,7 @@ public static partial class CombatAiPlanner
 
         WeaponKind weaponKind = GetWeaponKind(context.Owner);
         float fragility = assessment.GetValue(CombatAiMetricIndex.AllyFragility);
-        if (weaponKind == WeaponKind.Shield && HasPreferredEscortAlly(context)) return true;
+        if (weaponKind == WeaponKind.Shield && HasPreferredEscortAlly(context)) return fragility > 0f;
         if (!HasSupportSkill(context)) return false;
         if (weaponKind == WeaponKind.Rosary) return fragility > 10f;
         if (weaponKind == WeaponKind.Bible) return fragility > 12f;
@@ -1042,6 +1087,14 @@ public static partial class CombatAiPlanner
         }
 
         return false;
+    }
+
+    private static bool HasMarkedStoneAttacker(CombatAiContext context)
+    {
+        if (context == null || context.MarkedStoneAttacker == null) return false;
+
+        CombatCharacterIntel marked = context.FindEnemyIntel(context.MarkedStoneAttacker);
+        return marked.Character != null && marked.IsAlive && marked.HasKnownPosition;
     }
 
     private static bool HasVisibleLivingEnemy(CombatAiContext context)
@@ -1126,6 +1179,15 @@ public static partial class CombatAiPlanner
     private static CombatMoveTarget CreateThreatNearOwnStoneTarget(CombatAiContext context)
     {
         if (!context.HasOwnStonePosition) return CombatMoveTarget.None;
+        CombatCharacterIntel marked = context.FindEnemyIntel(context.MarkedStoneAttacker);
+        if (marked.Character != null && marked.IsAlive && marked.HasKnownPosition &&
+            HorizontalDistance(marked.KnownPosition, context.OwnStonePosition) <= CombatAiAssessmentBuilder.OwnStoneThreatRadius)
+        {
+            return marked.HasDirectSight
+                ? CombatMoveTarget.ForCharacter(marked.Character)
+                : CombatMoveTarget.ForPosition(marked.KnownPosition);
+        }
+
         CombatCharacterIntel nearest = default;
         float nearestDistance = float.PositiveInfinity;
         for (int i = 0; i < context.EnemyIntel.Count; i++)
@@ -1192,7 +1254,7 @@ public static partial class CombatAiPlanner
         return CombatMoveTarget.None;
     }
 
-    private static bool IsAtHighGround(CombatAiContext context)
+    internal static bool IsAtHighGround(CombatAiContext context)
     {
         if (context == null || context.Owner == null) return false;
 

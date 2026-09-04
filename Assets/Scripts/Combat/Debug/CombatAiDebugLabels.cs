@@ -49,6 +49,7 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.SelfThreatHigh => Format(nameof(CombatAiReasonCode.SelfThreatHigh), "自己脅威高い"),
             CombatAiReasonCode.AllyFragilityHigh => Format(nameof(CombatAiReasonCode.AllyFragilityHigh), "味方脆弱性高い"),
             CombatAiReasonCode.EnemyLocationUncertain => Format(nameof(CombatAiReasonCode.EnemyLocationUncertain), "敵位置不確実"),
+            CombatAiReasonCode.OwnStoneAttackerMarked => Format(nameof(CombatAiReasonCode.OwnStoneAttackerMarked), "自軍魔石攻撃者をマーク"),
             _ => reason.ToString(),
         };
     }

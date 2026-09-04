@@ -125,4 +125,33 @@ public sealed class CombatAiContextCollectorTests
             Object.DestroyImmediate(systemGo);
         }
     }
+
+    [Test]
+    public void Collect_KeepsTheMarkedStoneAttackerKnownOutsideSight()
+    {
+        AiContextFixture fixture = CreateFixture();
+        GameObject stoneSystemGo = new GameObject("MagicStoneSystem");
+        try
+        {
+            CombatMagicStoneSystem stoneSystem = stoneSystemGo.AddComponent<CombatMagicStoneSystem>();
+            stoneSystem.Initialize(fixture.Map);
+            fixture.System.ResetCharactersForBattle();
+            fixture.RememberedEnemy.transform.position = new Vector3(100f, 0f, 100f);
+            Physics.SyncTransforms();
+
+            stoneSystem.TakeDamage(0, 1, fixture.RememberedEnemy);
+            CombatAiContext context = fixture.Collector.Collect(fixture.Observer);
+            CombatCharacterIntel marked = FindIntel(context.EnemyIntel, fixture.RememberedEnemy);
+
+            Assert.That(context.MarkedStoneAttacker, Is.SameAs(fixture.RememberedEnemy));
+            Assert.That(marked.HasDirectSight, Is.False);
+            Assert.That(marked.HasKnownPosition, Is.True);
+            Assert.That(marked.KnownPosition, Is.EqualTo(fixture.RememberedEnemy.transform.position));
+        }
+        finally
+        {
+            fixture.Destroy();
+            Object.DestroyImmediate(stoneSystemGo);
+        }
+    }
 }

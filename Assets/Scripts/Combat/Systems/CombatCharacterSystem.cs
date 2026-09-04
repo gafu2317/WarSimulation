@@ -44,6 +44,9 @@ public class CombatCharacterSystem : MonoBehaviour
     private readonly CombatAiTeamReservations _enemyAiReservations = new CombatAiTeamReservations();
     private CombatAiDecisionSchedule _aiDecisionSchedule;
     private GameObject _generatedCharactersRoot;
+    private CombatMagicStoneSystem _magicStoneSystem;
+    private Character _allyMarkedStoneAttacker;
+    private Character _enemyMarkedStoneAttacker;
 
     public int LastSkippedAiDecisionCount { get; private set; }
     public int TotalSkippedAiDecisionCount { get; private set; }
@@ -58,6 +61,23 @@ public class CombatCharacterSystem : MonoBehaviour
     {
         if (character == null) return System.Array.Empty<Character>();
         return character.Team == CombatTeam.Ally ? EnemyCharacters : AllyCharacters;
+    }
+
+    public Character GetMarkedStoneAttacker(Character character)
+    {
+        if (character == null) return null;
+
+        Character marked = character.Team == CombatTeam.Ally
+            ? _allyMarkedStoneAttacker
+            : _enemyMarkedStoneAttacker;
+        if (marked != null && marked.Team != character.Team && marked.Health != null && marked.Health.IsAlive)
+        {
+            return marked;
+        }
+
+        if (character.Team == CombatTeam.Ally) _allyMarkedStoneAttacker = null;
+        else _enemyMarkedStoneAttacker = null;
+        return null;
     }
 
     public void AssignTeamsFromLists()
@@ -150,6 +170,9 @@ public class CombatCharacterSystem : MonoBehaviour
     {
         using (CharacterResetMarker.Auto())
         {
+            EnsureMagicStoneSubscription();
+            _allyMarkedStoneAttacker = null;
+            _enemyMarkedStoneAttacker = null;
             AssignBattleParticipantIds();
             ResetCharactersForBattle(AllyCharacters);
             ResetCharactersForBattle(EnemyCharacters);
@@ -159,6 +182,7 @@ public class CombatCharacterSystem : MonoBehaviour
 
     public int TickAiDecisionsNow(float currentTime)
     {
+        EnsureMagicStoneSubscription();
         EnsureAiDecisionSchedule();
         if (!_aiDecisionSchedule.TryConsume(currentTime, out int skippedDecisionCount))
         {
@@ -433,6 +457,7 @@ public class CombatCharacterSystem : MonoBehaviour
 
     private void Awake()
     {
+        EnsureMagicStoneSubscription();
         if (_generateCandidatesAtRuntime)
         {
             if (_characterPrefab == null)
@@ -466,8 +491,45 @@ public class CombatCharacterSystem : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (_magicStoneSystem != null)
+        {
+            _magicStoneSystem.Damaged -= OnMagicStoneDamaged;
+        }
+
         CombatMapSystem mapSystem = ResolveMapSystem();
         if (mapSystem != null) mapSystem.CurrentMapChanged -= OnRuntimeMapReady;
+    }
+
+    private void EnsureMagicStoneSubscription()
+    {
+        CombatMagicStoneSystem resolved = CombatMagicStoneSystemResolver.Resolve();
+        if (resolved == _magicStoneSystem) return;
+
+        if (_magicStoneSystem != null)
+        {
+            _magicStoneSystem.Damaged -= OnMagicStoneDamaged;
+        }
+
+        _magicStoneSystem = resolved;
+        if (_magicStoneSystem != null)
+        {
+            _magicStoneSystem.Damaged += OnMagicStoneDamaged;
+        }
+    }
+
+    private void OnMagicStoneDamaged(int featureIndex, int damage, Character attacker)
+    {
+        if (damage <= 0 || attacker == null || _magicStoneSystem == null ||
+            !_magicStoneSystem.TryGetState(featureIndex, out MagicStoneRuntimeState state)) return;
+
+        if (state.Type == FeatureType.OwnMainStone && attacker.Team == CombatTeam.Enemy)
+        {
+            _allyMarkedStoneAttacker = attacker;
+        }
+        else if (state.Type == FeatureType.EnemyMainStone && attacker.Team == CombatTeam.Ally)
+        {
+            _enemyMarkedStoneAttacker = attacker;
+        }
     }
 
     private void OnRuntimeMapReady()

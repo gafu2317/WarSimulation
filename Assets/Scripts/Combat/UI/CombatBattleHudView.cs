@@ -601,11 +601,35 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     private void SetUiObjectVisible(string objectName, bool visible)
     {
-        Transform child = transform.Find(objectName);
+        Transform child = FindDescendant(transform, objectName);
         if (child != null)
         {
             child.gameObject.SetActive(visible);
         }
+    }
+
+    private static Transform FindDescendant(Transform root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == objectName)
+        {
+            return root;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform child = FindDescendant(root.GetChild(i), objectName);
+            if (child != null)
+            {
+                return child;
+            }
+        }
+
+        return null;
     }
 
     private void ConfigureTemporaryControls(bool debug)

@@ -51,8 +51,8 @@ public static class CombatAiAssessmentBuilder
             return 0f;
         }
 
-        float hpRatio = (float)owner.Health.HP / owner.Health.MaxHP;
-        float value = (1f - hpRatio) * 60f;
+        float value = 0f;
+        bool hasActiveThreat = false;
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel intel = context.EnemyIntel[i];
@@ -62,6 +62,7 @@ public static class CombatAiAssessmentBuilder
             if (distance <= intel.WeaponRange + 1f)
             {
                 value += 10f;
+                hasActiveThreat = true;
             }
         }
 
@@ -69,6 +70,7 @@ public static class CombatAiAssessmentBuilder
         if (incomingDamage > 0)
         {
             value += Mathf.Clamp(incomingDamage / (float)owner.Health.MaxHP * 60f, 0f, 60f);
+            hasActiveThreat = true;
         }
 
         int nearbyEnemies = CountActiveCharactersNear(context.EnemyIntel, owner.transform.position, 10f, true);
@@ -76,7 +78,13 @@ public static class CombatAiAssessmentBuilder
         if (nearbyEnemies > nearbyAllies)
         {
             value += Mathf.Min(36f, (nearbyEnemies - nearbyAllies) * 12f);
+            hasActiveThreat = true;
         }
+
+        if (!hasActiveThreat) return 0f;
+
+        float hpRatio = (float)owner.Health.HP / owner.Health.MaxHP;
+        value += (1f - hpRatio) * 60f;
 
         return ClampMetric(value);
     }

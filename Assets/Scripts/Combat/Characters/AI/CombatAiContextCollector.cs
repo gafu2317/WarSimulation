@@ -49,9 +49,12 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         IReadOnlyList<Character> allies = characterSystem != null && owner != null
             ? characterSystem.GetAlliesOf(owner)
             : Array.Empty<Character>();
+        Character markedStoneAttacker = characterSystem != null
+            ? characterSystem.GetMarkedStoneAttacker(owner)
+            : null;
 
-        BuildIntel(owner, enemies, vision, reservations, _enemyIntel);
-        BuildIntel(owner, allies, vision, reservations, _allyIntel);
+        BuildIntel(owner, enemies, vision, reservations, markedStoneAttacker, _enemyIntel);
+        BuildIntel(owner, allies, vision, reservations, null, _allyIntel);
         CollectPendingDamage(allies, owner, _allyPendingDamage);
         CollectPendingDamage(enemies, null, _enemyPendingDamage);
         if (owner != null && reservations != null)
@@ -116,7 +119,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             hasBlockedMoveDestination,
             blockedMoveDestination,
             _assaultRoutes,
-            recentAttacker);
+            recentAttacker,
+            markedStoneAttacker);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)
@@ -185,6 +189,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         IReadOnlyList<Character> characters,
         CombatVision vision,
         CombatAiTeamReservations reservations,
+        Character forceKnownCharacter,
         List<CombatCharacterIntel> destination)
     {
         if (characters == null) return;
@@ -199,13 +204,24 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 vision.TryGetLastKnownPosition(character, out lastKnownPosition);
             bool hasMemory = vision != null && vision.HasMemoryOf(character);
             bool hasDirectSight = vision != null && vision.IsVisible(character);
+            bool isForceKnown = character == forceKnownCharacter;
+            if (isForceKnown)
+            {
+                hasMemory = true;
+                hasLastKnownPosition = true;
+                lastKnownPosition = character.transform.position;
+            }
             bool hasKnownPosition = hasDirectSight || (hasMemory && hasLastKnownPosition);
             Vector3 knownPosition = hasDirectSight
                 ? character.transform.position
                 : hasKnownPosition
                     ? lastKnownPosition
                     : default;
-            float memoryAgeSeconds = vision != null ? vision.GetMemoryAgeSeconds(character) : float.PositiveInfinity;
+            float memoryAgeSeconds = isForceKnown
+                ? 0f
+                : vision != null
+                    ? vision.GetMemoryAgeSeconds(character)
+                    : float.PositiveInfinity;
             WeaponBase weapon = character.EquippedWeapon ?? WeaponBase.Unarmed;
             NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
             CombatHealth health = character.Health;

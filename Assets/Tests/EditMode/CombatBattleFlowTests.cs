@@ -136,6 +136,41 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void KuenBattleHud_SwitchingUiModeHidesReparentedProductionMemberCards()
+    {
+        GameObject hudObject = null;
+
+        try
+        {
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            Assert.That(hudPrefab, Is.Not.Null);
+            hudObject = Object.Instantiate(hudPrefab);
+
+            CombatBattleHudView hud = hudObject.GetComponent<CombatBattleHudView>();
+            Transform productionColumn = hudObject.transform.Find("AlliesColumn");
+            Assert.That(hud, Is.Not.Null);
+            Assert.That(productionColumn, Is.Not.Null);
+
+            GameObject viewportObject = new GameObject("AlliesViewport");
+            viewportObject.transform.SetParent(hudObject.transform, false);
+            productionColumn.SetParent(viewportObject.transform, false);
+
+            hud.SetDebugUiVisible(false);
+            Assert.That(productionColumn.gameObject.activeSelf, Is.True);
+
+            hud.SetDebugUiVisible(true);
+            Assert.That(productionColumn.gameObject.activeSelf, Is.False);
+
+            hud.SetDebugUiVisible(false);
+            Assert.That(productionColumn.gameObject.activeSelf, Is.True);
+        }
+        finally
+        {
+            if (hudObject != null) Object.DestroyImmediate(hudObject);
+        }
+    }
+
+    [Test]
     public void BattleUi_HasLayeredHpBarsForCharacterCardsAndMagicStones()
     {
         GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
