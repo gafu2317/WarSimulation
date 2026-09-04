@@ -26,6 +26,7 @@ public sealed class CombatAiContext
     public Vector3 BlockedMoveDestination { get; }
     public Character RecentAttacker { get; }
     public Character MarkedStoneAttacker { get; }
+    public Character TagalongTarget { get; }
 
     public CombatAiContext(
         Character owner,
@@ -49,7 +50,8 @@ public sealed class CombatAiContext
         Vector3 blockedMoveDestination = default,
         IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null,
         Character recentAttacker = null,
-        Character markedStoneAttacker = null)
+        Character markedStoneAttacker = null,
+        Character tagalongTarget = null)
     {
         Owner = owner;
         EnemyIntel = Snapshot(enemyIntel);
@@ -73,6 +75,7 @@ public sealed class CombatAiContext
         BlockedMoveDestination = blockedMoveDestination;
         RecentAttacker = recentAttacker;
         MarkedStoneAttacker = markedStoneAttacker;
+        TagalongTarget = tagalongTarget;
     }
 
     public bool IsMoveDestinationBlocked(Vector3 destination)

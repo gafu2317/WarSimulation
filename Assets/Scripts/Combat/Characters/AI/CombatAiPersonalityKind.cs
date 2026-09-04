@@ -10,7 +10,6 @@ public enum CombatAiPersonalityKind
     Gatekeeper = 20,
     Tagalong = 21,
     Avenger = 22,
-    BigMagic = 23,
     HighGround = 24,
     StandoffSiege = 25,
 }

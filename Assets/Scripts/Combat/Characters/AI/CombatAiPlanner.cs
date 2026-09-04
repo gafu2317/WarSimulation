@@ -49,7 +49,7 @@ public static partial class CombatAiPlanner
         CombatCharacterIntel tagalongLeader = default;
         if (personalityProfile != null && personalityProfile.Kind == CombatAiPersonalityKind.Tagalong)
         {
-            CombatAiPersonalityBehavior.TryFindNearestAllyWithObjective(context, out tagalongLeader);
+            CombatAiPersonalityBehavior.TryFindAssignedAllyWithObjective(context, out tagalongLeader);
         }
 
         CombatCharacterIntel revengeTarget = default;
@@ -132,17 +132,10 @@ public static partial class CombatAiPlanner
         }
 
         if (personalityKind == CombatAiPersonalityKind.Tagalong &&
-            CombatAiPersonalityBehavior.TryFindNearestAllyWithObjective(context, out CombatCharacterIntel leader))
+            CombatAiPersonalityBehavior.TryFindAssignedAllyWithObjective(context, out CombatCharacterIntel leader))
         {
             reason = CombatAiReasonCode.PersonalityPreference;
             return leader.Objective;
-        }
-
-        if (personalityKind == CombatAiPersonalityKind.BigMagic &&
-            HasHighImpactDamageSkill(context) && HasAttackTarget(context))
-        {
-            reason = CombatAiReasonCode.PersonalityPreference;
-            return CombatObjective.AttackEnemy;
         }
 
         if (personalityKind == CombatAiPersonalityKind.Reckless && HasLivingEnemyStone(context))
@@ -264,8 +257,6 @@ public static partial class CombatAiPlanner
         bool usesRevengeTarget = personality != null && personality.Kind == CombatAiPersonalityKind.Avenger &&
             context.MarkedStoneAttacker == null &&
             revengeTarget.Character != null && state == CombatObjective.AttackEnemy;
-        bool usesBigMagic = personality != null && personality.Kind == CombatAiPersonalityKind.BigMagic &&
-            HasHighImpactSkill(context);
         CombatMoveTarget highGroundTarget = CombatMoveTarget.None;
         CombatMoveTarget previousHighGroundTarget = usesHighGround
             ? CreatePreviousHighGroundTarget(context, previousMoveTarget)
@@ -334,11 +325,6 @@ public static partial class CombatAiPlanner
             }
         }
 
-        if (usesBigMagic)
-        {
-            actionCode = CombatAiMoveCode.PersonalitySignature;
-        }
-
         Character preferredTarget = state == CombatObjective.AttackEnemy && context.MarkedStoneAttacker != null
             ? context.MarkedStoneAttacker
             : personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong
@@ -354,7 +340,6 @@ public static partial class CombatAiPlanner
             personality,
             state,
             preferredTarget,
-            highImpactOnly: usesBigMagic,
             out SkillBase skill,
             out SkillExecutionContext skillContext);
         if (isAtHighGround && skill != null &&
@@ -512,8 +497,7 @@ public static partial class CombatAiPlanner
                 HasUsableMagicStoneSkillContext(
                     context,
                     personality,
-                    CombatObjective.DestroyEnemyStone,
-                    highImpactOnly: false) ||
+                    CombatObjective.DestroyEnemyStone) ||
                 HasCoolingDownMagicStoneSkillInRange(context))
             {
                 actionCode = CombatAiMoveCode.PersonalitySignature;
@@ -612,7 +596,6 @@ public static partial class CombatAiPlanner
         CombatAiPersonalityProfile personality,
         CombatObjective state,
         Character preferredTarget,
-        bool highImpactOnly,
         out SkillBase selectedSkill,
         out SkillExecutionContext selectedContext)
     {
@@ -623,7 +606,7 @@ public static partial class CombatAiPlanner
         bool restrictToMagicStone = personality != null &&
             personality.Kind == CombatAiPersonalityKind.StandoffSiege &&
             state == CombatObjective.DestroyEnemyStone &&
-            HasUsableMagicStoneSkillContext(context, personality, state, highImpactOnly);
+            HasUsableMagicStoneSkillContext(context, personality, state);
         bool restrictToEnemyStoneCenter = personality != null &&
             personality.Kind == CombatAiPersonalityKind.Reckless &&
             state == CombatObjective.DestroyEnemyStone;
@@ -631,7 +614,7 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < skills.Count; i++)
         {
             SkillBase skill = skills[i];
-            if (skill == null || highImpactOnly && !CombatAiSkillClassifier.IsHighImpactSkill(skill) ||
+            if (skill == null ||
                 !CanUseSkillInState(context, personality, state, skill)) continue;
 
             List<SkillExecutionContext> contexts = SkillContextsBuffer;
@@ -644,20 +627,13 @@ public static partial class CombatAiPlanner
                     (restrictToMagicStone && !HasMagicStoneTarget(evaluation.Context)) ||
                     (restrictToEnemyStoneCenter && !IsEnemyStoneFocusedContext(context, evaluation.Context))) continue;
 
-                if (highImpactOnly)
-                {
-                    if (!IsBetterHighImpactCandidate(context, skill, evaluation.Context, selectedSkill, selectedContext)) continue;
-                }
-                else
-                {
-                    int actionPriority = GetSkillActionPriority(state, skill, evaluation.Context);
-                    int targetPriority = GetSkillTargetPriority(context, skill, evaluation.Context);
-                    if (actionPriority > selectedActionPriority ||
-                        actionPriority == selectedActionPriority && targetPriority >= selectedTargetPriority) continue;
+                int actionPriority = GetSkillActionPriority(state, skill, evaluation.Context);
+                int targetPriority = GetSkillTargetPriority(context, skill, evaluation.Context);
+                if (actionPriority > selectedActionPriority ||
+                    actionPriority == selectedActionPriority && targetPriority >= selectedTargetPriority) continue;
 
-                    selectedActionPriority = actionPriority;
-                    selectedTargetPriority = targetPriority;
-                }
+                selectedActionPriority = actionPriority;
+                selectedTargetPriority = targetPriority;
 
                 selectedSkill = skill;
                 selectedContext = evaluation.Context;
@@ -668,14 +644,13 @@ public static partial class CombatAiPlanner
     private static bool HasUsableMagicStoneSkillContext(
         CombatAiContext context,
         CombatAiPersonalityProfile personality,
-        CombatObjective state,
-        bool highImpactOnly)
+        CombatObjective state)
     {
         IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
         for (int i = 0; i < skills.Count; i++)
         {
             SkillBase skill = skills[i];
-            if (skill == null || highImpactOnly && !CombatAiSkillClassifier.IsHighImpactSkill(skill) ||
+            if (skill == null ||
                 !CanUseSkillInState(context, personality, state, skill)) continue;
 
             List<SkillExecutionContext> contexts = SkillContextsBuffer;
@@ -722,77 +697,6 @@ public static partial class CombatAiPlanner
         }
 
         return false;
-    }
-
-    private static bool IsBetterHighImpactCandidate(
-        CombatAiContext context,
-        SkillBase candidateSkill,
-        SkillExecutionContext candidateContext,
-        SkillBase selectedSkill,
-        SkillExecutionContext selectedContext)
-    {
-        if (selectedSkill == null) return true;
-
-        long candidateEffect = GetHighImpactEffectScore(context, candidateSkill, candidateContext);
-        long selectedEffect = GetHighImpactEffectScore(context, selectedSkill, selectedContext);
-        if (candidateEffect != selectedEffect) return candidateEffect > selectedEffect;
-
-        int candidateTargetCount = candidateContext.ResolvedTargets.Count + candidateContext.ResolvedStones.Count;
-        int selectedTargetCount = selectedContext.ResolvedTargets.Count + selectedContext.ResolvedStones.Count;
-        if (candidateTargetCount != selectedTargetCount)
-        {
-            return candidateTargetCount > selectedTargetCount;
-        }
-
-        if (candidateSkill.CastTimeSeconds != selectedSkill.CastTimeSeconds)
-        {
-            return candidateSkill.CastTimeSeconds > selectedSkill.CastTimeSeconds;
-        }
-
-        if (candidateSkill.CooldownSeconds != selectedSkill.CooldownSeconds)
-        {
-            return candidateSkill.CooldownSeconds > selectedSkill.CooldownSeconds;
-        }
-
-        if (candidateSkill.AreaRadius != selectedSkill.AreaRadius)
-        {
-            return candidateSkill.AreaRadius > selectedSkill.AreaRadius;
-        }
-
-        return (int)candidateSkill.Id < (int)selectedSkill.Id;
-    }
-
-    private static long GetHighImpactEffectScore(
-        CombatAiContext context,
-        SkillBase skill,
-        SkillExecutionContext skillContext)
-    {
-        long score = 0;
-        for (int i = 0; i < skillContext.ResolvedTargets.Count; i++)
-        {
-            Character target = skillContext.ResolvedTargets[i];
-            score += Mathf.Max(0, skill.EstimateDamage(context.Owner, skillContext, target));
-            score += Mathf.Max(0, skill.EstimateHealing(context.Owner, skillContext, target));
-        }
-
-        if (skill.TargetKind == SkillTargetKind.Point &&
-            CombatAiSkillClassifier.IsHeal(skill) &&
-            skillContext.HasTargetPoint)
-        {
-            for (int i = 0; i < context.AllyIntel.Count; i++)
-            {
-                CombatCharacterIntel ally = context.AllyIntel[i];
-                if (!IsInjuredAllyAtPoint(context, ally, skillContext.TargetPoint, skill.AreaRadius)) continue;
-                score += Mathf.Max(0, skill.EstimateHealing(context.Owner, skillContext, ally.Character));
-            }
-
-            if (IsInjuredOwnerAtPoint(context, skillContext.TargetPoint, skill.AreaRadius))
-            {
-                score += Mathf.Max(0, skill.EstimateHealing(context.Owner, skillContext, context.Owner));
-            }
-        }
-
-        return score;
     }
 
     private static bool ContainsPreferredTarget(SkillExecutionContext context, Character preferredTarget)
@@ -872,33 +776,6 @@ public static partial class CombatAiPlanner
 
         if ((CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsDebuff(skill) || CombatAiSkillClassifier.IsProtect(skill)) && HasMatchingStatus(skill, skillContext)) return false;
         return true;
-    }
-
-    private static bool HasHighImpactSkill(CombatAiContext context)
-    {
-        if (context == null || context.Owner == null) return false;
-
-        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            if (CombatAiSkillClassifier.IsHighImpactSkill(skills[i])) return true;
-        }
-
-        return false;
-    }
-
-    private static bool HasHighImpactDamageSkill(CombatAiContext context)
-    {
-        if (context == null || context.Owner == null) return false;
-
-        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            if (CombatAiSkillClassifier.IsHighImpactSkill(skills[i]) &&
-                CombatAiSkillClassifier.IsDamage(skills[i])) return true;
-        }
-
-        return false;
     }
 
     private static bool HasInjuredAllyAtPoint(CombatAiContext context, Vector3 point, float radius)

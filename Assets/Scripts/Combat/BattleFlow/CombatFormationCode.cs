@@ -49,7 +49,8 @@ public static class CombatFormationCode
     };
 
     // 性格追加時は末尾へ追加する。途中へ挿入・並べ替えすると既存コードの意味が変わるため。
-    private static readonly CombatAiPersonalityKind[] CodePersonalityKinds =
+    // 削除した性格の枠を詰めると既存コードの意味が変わるため、空きスロットを保持する。
+    private static readonly CombatAiPersonalityKind?[] CodePersonalityKinds =
     {
         CombatAiPersonalityKind.Neutral,
         CombatAiPersonalityKind.AttentionSeeker,
@@ -61,7 +62,7 @@ public static class CombatFormationCode
         CombatAiPersonalityKind.Gatekeeper,
         CombatAiPersonalityKind.Tagalong,
         CombatAiPersonalityKind.Avenger,
-        CombatAiPersonalityKind.BigMagic,
+        null,
         CombatAiPersonalityKind.HighGround,
         CombatAiPersonalityKind.StandoffSiege,
     };
@@ -138,7 +139,7 @@ public static class CombatFormationCode
         if (!entry.Selected) return Alphabet[0];
 
         int weaponIndex = Array.IndexOf(CodeWeaponKinds, entry.Weapon);
-        int personalityIndex = Array.IndexOf(CodePersonalityKinds, entry.Personality);
+        int personalityIndex = Array.IndexOf(CodePersonalityKinds, (CombatAiPersonalityKind?)entry.Personality);
         if (weaponIndex < 0 || personalityIndex < 0)
         {
             throw new ArgumentException("編成コードに対応していない武器または性格です。");
@@ -165,12 +166,12 @@ public static class CombatFormationCode
         int weaponIndex = combinationIndex / PersonalitySlotCount;
         int personalityIndex = combinationIndex % PersonalitySlotCount;
         if (weaponIndex >= CodeWeaponKinds.Length) return false;
-        if (personalityIndex >= CodePersonalityKinds.Length) return false;
+        if (personalityIndex >= CodePersonalityKinds.Length || !CodePersonalityKinds[personalityIndex].HasValue) return false;
 
         entry = new CombatFormationCodeEntry(
             true,
             CodeWeaponKinds[weaponIndex],
-            CodePersonalityKinds[personalityIndex]);
+            CodePersonalityKinds[personalityIndex].Value);
         return true;
     }
 

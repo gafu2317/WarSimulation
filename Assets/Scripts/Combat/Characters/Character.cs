@@ -109,6 +109,7 @@ public class Character : MonoBehaviour
     public CombatAiPersonalityProfile PersonalityProfile => _runtimePersonalityProfile != null
         ? _runtimePersonalityProfile
         : _personalityProfile;
+    public Character TagalongTarget => _runtimeTagalongTarget;
 
     // 装備中の武器
     public WeaponBase EquippedWeapon { private set; get; }
@@ -125,6 +126,7 @@ public class Character : MonoBehaviour
     private CombatSkillCooldowns _skillCooldowns;
     private CombatSkillCaster _skillCaster;
     private CombatAiPersonalityProfile _runtimePersonalityProfile;
+    private Character _runtimeTagalongTarget;
     private WeaponConfig _runtimeWeaponConfig;
     private int _str;
     private int _int;
@@ -293,10 +295,12 @@ public class Character : MonoBehaviour
     public void ConfigureForBattle(
         WeaponConfig weaponConfig,
         CombatAiPersonalityProfile personalityProfile,
-        float movementSpeedMultiplier = 1f)
+        float movementSpeedMultiplier = 1f,
+        Character tagalongTarget = null)
     {
         _runtimeWeaponConfig = weaponConfig;
         _runtimePersonalityProfile = personalityProfile;
+        _runtimeTagalongTarget = tagalongTarget;
         _body ??= GetComponent<CombatCharacterBody>();
         if (_body != null) _body.MovementSpeedMultiplier = movementSpeedMultiplier;
         ApplyInitialWeaponFromConfig();

@@ -49,29 +49,26 @@ public static class CombatAiPersonalityBehavior
         return best;
     }
 
-    public static bool TryFindNearestAllyWithObjective(
+    public static bool TryFindAssignedAllyWithObjective(
         CombatAiContext context,
         out CombatCharacterIntel leader)
     {
         leader = default;
-        if (context == null || context.Owner == null) return false;
+        if (context == null || context.Owner == null || context.TagalongTarget == null ||
+            context.TagalongTarget == context.Owner) return false;
 
-        float bestDistance = float.PositiveInfinity;
-        for (int i = 0; i < context.AllyIntel.Count; i++)
+        CombatCharacterIntel assigned = context.FindAllyIntel(context.TagalongTarget);
+        if (assigned.Character != context.TagalongTarget || assigned.Team != context.Owner.Team ||
+            !assigned.IsAlive || !assigned.CanAct || !assigned.HasObjective ||
+            (!assigned.HasIntendedDestination && assigned.IntendedTarget == null) ||
+            assigned.IntendedTarget != null &&
+            (assigned.IntendedTarget.Health == null || !assigned.IntendedTarget.Health.IsAlive))
         {
-            CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || !ally.IsAlive || !ally.CanAct || !ally.HasObjective ||
-                (!ally.HasIntendedDestination && ally.IntendedTarget == null) ||
-                ally.IntendedTarget != null &&
-                (ally.IntendedTarget.Health == null || !ally.IntendedTarget.Health.IsAlive)) continue;
-
-            float distance = Vector3.Distance(context.Owner.transform.position, ally.CurrentPosition);
-            if (distance >= bestDistance) continue;
-            bestDistance = distance;
-            leader = ally;
+            return false;
         }
 
-        return leader.Character != null;
+        leader = assigned;
+        return true;
     }
 
     public static bool TryFindKnownRecentAttacker(

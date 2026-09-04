@@ -45,10 +45,12 @@ public sealed class CombatAiContextCollectorTests
                 {
                     new CharacterMemory(fixture.RememberedEnemy, new Vector3(4f, 0f, 7f), Time.time),
                 });
+            fixture.Observer.ConfigureForBattle(null, null, tagalongTarget: fixture.Owner);
 
             CombatAiContext context = fixture.Collector.Collect(fixture.Observer);
 
             Assert.That(context.Owner, Is.EqualTo(fixture.Observer));
+            Assert.That(context.TagalongTarget, Is.SameAs(fixture.Owner));
             Assert.That(context.HasOwnStonePosition, Is.True);
             Assert.That(context.OwnStonePosition, Is.EqualTo(new Vector3(1f, 0f, 1f)));
             Assert.That(context.HasEnemyStonePosition, Is.True);

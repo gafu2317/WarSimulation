@@ -957,16 +957,24 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private List<CombatParticipantSetup> BuildSetups(CombatAutoBattleRole[] roles, List<Character> pool)
     {
         var setups = new List<CombatParticipantSetup>(roles.Length);
+        Character previousCharacter = null;
         for (int i = 0; i < roles.Length; i++)
         {
             CombatAutoBattleRole role = roles[i];
             if (!_weapons.TryGetValue(role.Weapon, out WeaponConfig weapon))
                 throw new InvalidOperationException($"武器 {role.Weapon} の WeaponConfig がありません。");
 
+            CombatAiPersonalityProfile personality = GetOrCreatePersonality(role.Personality);
+            Character tagalongTarget = role.Personality == CombatAiPersonalityKind.Tagalong
+                ? previousCharacter
+                : null;
+
             setups.Add(new CombatParticipantSetup(
                 pool[i],
                 weapon,
-                GetOrCreatePersonality(role.Personality)));
+                personality,
+                tagalongTarget: tagalongTarget));
+            previousCharacter = pool[i];
         }
 
         return setups;

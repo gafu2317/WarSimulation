@@ -213,7 +213,7 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_TagalongCopiesTheNearestAllyObjectiveAndTarget()
+    public void Planner_TagalongCopiesTheAssignedAllyObjectiveAndTarget()
     {
         Character owner = CreateCharacter("Tagalong", new Sword(), Vector3.zero);
         Character nearerLeader = CreateCharacter("NearLeader", new Sword(), new Vector3(4f, 0f, 0f));
@@ -238,20 +238,22 @@ public sealed class CombatAiStatePlannerTests
             owner,
             enemies: new[] { Intel(focusedEnemy) },
             allies: new[] { fartherIntel, nearerIntel },
-            enemyStone: new Vector3(30f, 0f, 0f));
+            enemyStone: new Vector3(30f, 0f, 0f),
+            tagalongTarget: fartherLeader);
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong));
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
         Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.PersonalityPreference));
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
-        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(focusedEnemy));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.Null);
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(14f, 0f, 0f)));
     }
 
     [Test]
-    public void Planner_TagalongUsesTheNearestAllyTargetForSkillSelection()
+    public void Planner_TagalongUsesTheAssignedAllyTargetForSkillSelection()
     {
         Character owner = CreateCharacter("Tagalong", new Sword(), Vector3.zero);
         Character leader = CreateCharacter("Leader", new Sword(), new Vector3(4f, 0f, 0f));
@@ -269,7 +271,8 @@ public sealed class CombatAiStatePlannerTests
         CombatAiContext context = Context(
             owner,
             enemies: new[] { Intel(focusedEnemy), Intel(temptingEnemy) },
-            allies: new[] { leaderIntel });
+            allies: new[] { leaderIntel },
+            tagalongTarget: leader);
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong));
 
@@ -289,7 +292,8 @@ public sealed class CombatAiStatePlannerTests
         CombatAiContext context = Context(
             owner,
             allies: new[] { Intel(ally) },
-            enemyStone: new Vector3(20f, 0f, 0f));
+            enemyStone: new Vector3(20f, 0f, 0f),
+            tagalongTarget: ally);
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong));
 
@@ -298,6 +302,41 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
         Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyStoneKnown));
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceEnemyStone));
+    }
+
+    [Test]
+    public void Planner_TagalongDoesNotRetargetWhenAssignedAllyIsUnavailable()
+    {
+        Character owner = CreateCharacter("Tagalong", new Sword(), Vector3.zero);
+        Character assignedAlly = CreateCharacter("AssignedAlly", new Sword(), new Vector3(4f, 0f, 0f), 30, 0);
+        Character otherAlly = CreateCharacter("OtherAlly", new Sword(), new Vector3(2f, 0f, 0f));
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(8f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatCharacterIntel assignedIntel = CombatEditModeTestUtil.CreateIntel(
+            assignedAlly,
+            true,
+            assignedAlly.transform.position,
+            hasObjective: true,
+            objective: CombatObjective.AttackEnemy,
+            intendedTarget: enemy);
+        CombatCharacterIntel otherIntel = CombatEditModeTestUtil.CreateIntel(
+            otherAlly,
+            true,
+            otherAlly.transform.position,
+            hasObjective: true,
+            objective: CombatObjective.AttackEnemy,
+            intendedTarget: enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            allies: new[] { assignedIntel, otherIntel },
+            enemyStone: new Vector3(20f, 0f, 0f),
+            tagalongTarget: assignedAlly);
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.TransitionReason, Is.Not.EqualTo(CombatAiReasonCode.PersonalityPreference));
     }
 
     [Test]
@@ -427,126 +466,22 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_BigMagicChoosesTheHighestImpactSkillInsteadOfBasicAttack()
+    public void Planner_UsesStandardSkillPriorityForWand()
     {
-        Character owner = CreateCharacter("BigMagic", new Wand(), Vector3.zero);
+        Character owner = CreateCharacter("Owner", new Wand(), Vector3.zero);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        SkillBase basic = CombatSkillFactory.Create(SkillId.Wand_Bolt, owner.EquippedWeapon);
-        SkillBase arcaneBlast = CombatSkillFactory.Create(SkillId.Wand_ArcaneBlast, owner.EquippedWeapon);
-        SkillBase godsHand = CombatSkillFactory.Create(SkillId.Wand_GodsHand, owner.EquippedWeapon);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, basic, arcaneBlast, godsHand);
-        CombatAiContext context = Context(owner, enemies: new[] { Intel(enemy) });
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic));
-
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
-
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
-        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.PersonalityPreference));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
-        Assert.That(plan.Skill, Is.SameAs(godsHand));
-        Assert.That(plan.SkillTarget, Is.SameAs(enemy));
-        Assert.That(plan.Skill.CastTimeSeconds, Is.EqualTo(2.5f));
-    }
-
-    [Test]
-    public void Planner_BigMagicWaitsForHighImpactSkillWhenItIsOutOfRange()
-    {
-        Character owner = CreateCharacter("BigMagic", new Wand(), Vector3.zero);
-        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(30f, 0f, 0f), team: CombatTeam.Enemy);
         SkillBase basic = CombatSkillFactory.Create(SkillId.Wand_Bolt, owner.EquippedWeapon);
         SkillBase godsHand = CombatSkillFactory.Create(SkillId.Wand_GodsHand, owner.EquippedWeapon);
         CombatEditModeTestUtil.SetAvailableCombatSkills(owner, basic, godsHand);
         CombatAiContext context = Context(owner, enemies: new[] { Intel(enemy) });
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic));
 
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
-
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
-        Assert.That(plan.Skill, Is.Null);
-        Assert.That(plan.MoveTarget.HasDestination, Is.True);
-    }
-
-    [Test]
-    public void Planner_BigMagicFallsBackToStandardPlanWithoutAHighImpactSkill()
-    {
-        Character owner = CreateCharacter("BigMagic", new Wand(), Vector3.zero);
-        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        SkillBase basic = CombatSkillFactory.Create(SkillId.Wand_Bolt, owner.EquippedWeapon);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, basic);
-        CombatAiContext context = Context(owner, enemies: new[] { Intel(enemy) });
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic));
-
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
         Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyInRange));
         Assert.That(plan.ActionCode, Is.Not.EqualTo(CombatAiMoveCode.PersonalitySignature));
         Assert.That(plan.Skill, Is.SameAs(basic));
-    }
-
-    [Test]
-    public void Planner_BigMagicRetainsItsAttackPriorityWhenCriticallyHurt()
-    {
-        Character owner = CreateCharacter("BigMagic", new Wand(), Vector3.zero, 30, 5);
-        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        SkillBase godsHand = CombatSkillFactory.Create(SkillId.Wand_GodsHand, owner.EquippedWeapon);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, godsHand);
-        CombatAiContext context = Context(
-            owner,
-            enemies: new[] { Intel(enemy) },
-            ownStone: new Vector3(-8f, 0f, 0f),
-            forests: new[] { new Vector3(-4f, 0f, 0f) });
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic));
-
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
-
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
-        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.PersonalityPreference));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
-        Assert.That(plan.Skill, Is.SameAs(godsHand));
-    }
-
-    [Test]
-    public void Planner_BigMagicUsesAHighImpactHealInsteadOfRosaryBasicAttack()
-    {
-        Character owner = CreateCharacter("BigMagic", new Rosary(), Vector3.zero);
-        Character ally = CreateCharacter("Ally", new Sword(), new Vector3(2f, 0f, 0f), 30, 5);
-        SkillBase basic = CombatSkillFactory.Create(SkillId.Rosary_Strike, owner.EquippedWeapon);
-        SkillBase distantHeal = CombatSkillFactory.Create(SkillId.Rosary_DistantHeal, owner.EquippedWeapon);
-        SkillBase closeHeal = CombatSkillFactory.Create(SkillId.Rosary_CloseHeal, owner.EquippedWeapon);
-        SkillBase regeneration = CombatSkillFactory.Create(SkillId.Rosary_Regeneration, owner.EquippedWeapon);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, basic, distantHeal, closeHeal, regeneration);
-        CombatAiContext context = Context(owner, allies: new[] { Intel(ally) });
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic));
-
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
-
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.SupportAlly));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
-        Assert.That(plan.Skill, Is.SameAs(closeHeal));
-        Assert.That(plan.SkillTarget, Is.SameAs(ally));
-    }
-
-    [Test]
-    public void DebugSnapshotMatchesBigMagicPlan()
-    {
-        Character owner = CreateCharacter("BigMagic", new Wand(), Vector3.zero);
-        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(
-            owner,
-            CombatSkillFactory.Create(SkillId.Wand_Bolt, owner.EquippedWeapon),
-            CombatSkillFactory.Create(SkillId.Wand_GodsHand, owner.EquippedWeapon));
-        CombatAiContext context = Context(owner, enemies: new[] { Intel(enemy) });
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic));
-
-        CombatEditModeTestUtil.AssertPlanMatchesDebugSnapshot(context, profile);
+        Assert.That(plan.SkillTarget, Is.SameAs(enemy));
     }
 
     [Test]
@@ -797,7 +732,8 @@ public sealed class CombatAiStatePlannerTests
             allies: new[] { leaderIntel },
             ownStone: Vector3.zero,
             enemyStone: new Vector3(30f, 0f, 0f),
-            forests: new[] { new Vector3(-4f, 0f, 0f) });
+            forests: new[] { new Vector3(-4f, 0f, 0f) },
+            tagalongTarget: leader);
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong));
 
@@ -823,7 +759,10 @@ public sealed class CombatAiStatePlannerTests
             objective: CombatObjective.Search,
             hasIntendedDestination: true,
             intendedDestination: destination);
-        CombatAiContext context = Context(owner, allies: new[] { leaderIntel });
+        CombatAiContext context = Context(
+            owner,
+            allies: new[] { leaderIntel },
+            tagalongTarget: leader);
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong));
 
@@ -1714,7 +1653,8 @@ public sealed class CombatAiStatePlannerTests
         IReadOnlyList<CombatAiPendingHealing> pendingHealing = null,
         IReadOnlyList<CombatAiPendingDamage> pendingDamage = null,
         Character recentAttacker = null,
-        Character markedStoneAttacker = null)
+        Character markedStoneAttacker = null,
+        Character tagalongTarget = null)
     {
         return CombatEditModeTestUtil.CreatePlannerContext(
             owner,
@@ -1730,7 +1670,8 @@ public sealed class CombatAiStatePlannerTests
             assaultRoutes: routes,
             forestCandidates: forests,
             recentAttacker: recentAttacker,
-            markedStoneAttacker: markedStoneAttacker);
+            markedStoneAttacker: markedStoneAttacker,
+            tagalongTarget: tagalongTarget);
     }
 
     private Character CreateCharacter(

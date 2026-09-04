@@ -16,7 +16,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         CombatAiPersonalityKind.Gatekeeper,
         CombatAiPersonalityKind.Tagalong,
         CombatAiPersonalityKind.Avenger,
-        CombatAiPersonalityKind.BigMagic,
         CombatAiPersonalityKind.HighGround,
         CombatAiPersonalityKind.StandoffSiege,
     };
@@ -60,7 +59,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.Gatekeeper => "門番",
             CombatAiPersonalityKind.Tagalong => "便乗屋",
             CombatAiPersonalityKind.Avenger => "復讐鬼",
-            CombatAiPersonalityKind.BigMagic => "浪漫派",
             CombatAiPersonalityKind.HighGround => "高所好き",
             CombatAiPersonalityKind.StandoffSiege => "怖がり",
             _ => "標準",
@@ -86,11 +84,9 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.Gatekeeper =>
                 "自軍魔石の位置が分かる間は防衛を優先し、魔石前で脅威を迎撃して守備位置を維持します。",
             CombatAiPersonalityKind.Tagalong =>
-                "目的を持つ近い味方を追い、同じ目的・対象へ同調し、追従先がなければ通常行動に戻ります。",
+                "設定された味方を追い、同じ目的・対象へ同調し、追従先がなければ通常行動に戻ります。",
             CombatAiPersonalityKind.Avenger =>
                 "直近で攻撃した敵が生存し位置を把握できる間は追い続け、見失うと通常の目的へ戻ります。",
-            CombatAiPersonalityKind.BigMagic =>
-                "基本攻撃を使わず大技の準備を待ち、使える大技がなければ通常の技能選択に戻ります。",
             CombatAiPersonalityKind.HighGround =>
                 "高所候補への移動を優先し、到着後は戦況に関わらずその場で通常の技能だけを使います。",
             CombatAiPersonalityKind.StandoffSiege =>

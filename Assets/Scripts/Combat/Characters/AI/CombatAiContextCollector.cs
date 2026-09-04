@@ -120,7 +120,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             blockedMoveDestination,
             _assaultRoutes,
             recentAttacker,
-            markedStoneAttacker);
+            markedStoneAttacker,
+            owner != null ? owner.TagalongTarget : null);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)

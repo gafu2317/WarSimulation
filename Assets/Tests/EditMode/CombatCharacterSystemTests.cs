@@ -192,6 +192,50 @@ public sealed class CombatCharacterSystemTests
     }
 
     [Test]
+    public void SetParticipants_AppliesAndClearsTagalongTarget()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        GameObject allyObject = new GameObject("Ally");
+        GameObject targetObject = new GameObject("Target");
+        CombatAiPersonalityProfile tagalong = CombatAiPersonalityProfile.CreateBuiltInProfile(
+            CombatAiPersonalityKind.Tagalong);
+
+        try
+        {
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            Character ally = allyObject.AddComponent<Character>();
+            Character target = targetObject.AddComponent<Character>();
+
+            system.SetParticipants(
+                new[]
+                {
+                    new CombatParticipantSetup(
+                        ally,
+                        null,
+                        tagalong,
+                        tagalongTarget: target),
+                    new CombatParticipantSetup(target, null, null),
+                },
+                System.Array.Empty<CombatParticipantSetup>());
+
+            Assert.That(ally.TagalongTarget, Is.SameAs(target));
+
+            system.SetParticipants(
+                new[] { new CombatParticipantSetup(ally, null, null) },
+                System.Array.Empty<CombatParticipantSetup>());
+
+            Assert.That(ally.TagalongTarget, Is.Null);
+        }
+        finally
+        {
+            Object.DestroyImmediate(tagalong);
+            Object.DestroyImmediate(targetObject);
+            Object.DestroyImmediate(allyObject);
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
+    [Test]
     public void SetParticipants_RegistersSelectedCharactersAndDisablesOthers()
     {
         GameObject systemObject = new GameObject("CharacterSystem");

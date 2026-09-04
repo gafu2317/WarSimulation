@@ -117,7 +117,7 @@ public sealed class CombatFormationCodeTests
         try
         {
             Assert.That(profile.DisplayNameJapanese, Is.EqualTo("便乗屋"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("近い味方"));
+            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("設定された味方"));
         }
         finally
         {
@@ -161,38 +161,12 @@ public sealed class CombatFormationCodeTests
     }
 
     [Test]
-    public void EncodeAndDecode_SupportsBigMagicWithoutChangingEntryShape()
+    public void Decode_RejectsRemovedPersonalitySlot()
     {
-        var entries = new List<CombatFormationCodeEntry>
-        {
-            new(true, WeaponKind.Wand, CombatAiPersonalityKind.BigMagic),
-        };
-
-        string code = CombatFormationCode.Encode(entries);
-
         Assert.That(
-            CombatFormationCode.TryDecode(code, entries.Count, out CombatFormationCodeData data, out string error),
-            Is.True,
-            error);
-        Assert.That(data.Entries[0].Selected, Is.True);
-        Assert.That(data.Entries[0].Weapon, Is.EqualTo(WeaponKind.Wand));
-        Assert.That(data.Entries[0].Personality, Is.EqualTo(CombatAiPersonalityKind.BigMagic));
-    }
-
-    [Test]
-    public void BuiltInProfile_RegistersBigMagicNameAndDescription()
-    {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BigMagic);
-        try
-        {
-        Assert.That(profile.DisplayNameJapanese, Is.EqualTo("浪漫派"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("基本攻撃"));
-        }
-        finally
-        {
-            Object.DestroyImmediate(profile);
-        }
+            CombatFormationCode.TryDecode("ヘ", 1, out _, out string error),
+            Is.False);
+        Assert.That(error, Does.Contain("対応していません"));
     }
 
     [Test]
@@ -205,6 +179,7 @@ public sealed class CombatFormationCodeTests
 
         string code = CombatFormationCode.Encode(entries);
 
+        Assert.That(code, Is.EqualTo("E"));
         Assert.That(
             CombatFormationCode.TryDecode(code, entries.Count, out CombatFormationCodeData data, out string error),
             Is.True,
@@ -240,6 +215,7 @@ public sealed class CombatFormationCodeTests
 
         string code = CombatFormationCode.Encode(entries);
 
+        Assert.That(code, Is.EqualTo("マ"));
         Assert.That(
             CombatFormationCode.TryDecode(code, entries.Count, out CombatFormationCodeData data, out string error),
             Is.True,

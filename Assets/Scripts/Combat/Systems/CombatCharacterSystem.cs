@@ -765,7 +765,8 @@ public class CombatCharacterSystem : MonoBehaviour
             setup.Character.ConfigureForBattle(
                 setup.Weapon,
                 setup.Personality,
-                setup.MovementSpeedMultiplier);
+                setup.MovementSpeedMultiplier,
+                setup.TagalongTarget);
             characters.Add(setup.Character);
         }
 

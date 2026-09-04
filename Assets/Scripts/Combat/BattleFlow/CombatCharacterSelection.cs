@@ -2079,16 +2079,26 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private List<CombatParticipantSetup> BuildSetups(List<SelectionRow> rows)
     {
         var setups = new List<CombatParticipantSetup>();
+        Character previousSelectedCharacter = null;
         for (int i = 0; i < rows.Count; i++)
         {
             SelectionRow row = rows[i];
             if (!row.Selected) continue;
 
+            WeaponConfig weapon = GetOption(_weaponOptions, row.WeaponIndex);
+            CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);
+            Character tagalongTarget = personality != null &&
+                personality.Kind == CombatAiPersonalityKind.Tagalong
+                ? previousSelectedCharacter
+                : null;
+
             setups.Add(new CombatParticipantSetup(
                 row.Character,
-                GetOption(_weaponOptions, row.WeaponIndex),
-                GetOption(_personalityOptions, row.PersonalityIndex),
-                MovementSpeedMultiplier));
+                weapon,
+                personality,
+                MovementSpeedMultiplier,
+                tagalongTarget));
+            previousSelectedCharacter = row.Character;
         }
 
         return setups;

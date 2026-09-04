@@ -432,6 +432,136 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void CharacterSelection_BuildsTagalongTargetsFromPreviousSelectedRow()
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+
+        try
+        {
+            GameObject selectionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
+            Assert.That(selectionPrefab, Is.Not.Null);
+
+            selectionObject = Object.Instantiate(selectionPrefab);
+            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            List<Character> allies = CreateCharacters("Ally", CombatTeam.Ally, 4, characters);
+            List<Character> enemies = CreateCharacters("Enemy", CombatTeam.Enemy, 2, characters);
+            selection.Initialize(allies, enemies, null);
+
+            List<CombatAiPersonalityProfile> personalityOptions = GetPrivateField<List<CombatAiPersonalityProfile>>(
+                selection,
+                "_personalityOptions");
+            int tagalongIndex = -1;
+            for (int i = 0; i < personalityOptions.Count; i++)
+            {
+                if (personalityOptions[i] != null &&
+                    personalityOptions[i].Kind == CombatAiPersonalityKind.Tagalong)
+                {
+                    tagalongIndex = i;
+                    break;
+                }
+            }
+
+            Assert.That(tagalongIndex, Is.GreaterThanOrEqualTo(0));
+
+            IList allyRows = GetPrivateField<IList>(selection, "_allyRows");
+            IList enemyRows = GetPrivateField<IList>(selection, "_enemyRows");
+            for (int i = 0; i < allyRows.Count; i++) SetPrivateField(allyRows[i], "Selected", false);
+            for (int i = 0; i < enemyRows.Count; i++) SetPrivateField(enemyRows[i], "Selected", false);
+
+            SetPrivateField(allyRows[0], "Selected", true);
+            SetPrivateField(allyRows[2], "Selected", true);
+            SetPrivateField(allyRows[2], "PersonalityIndex", tagalongIndex);
+            SetPrivateField(allyRows[3], "Selected", true);
+            SetPrivateField(allyRows[3], "PersonalityIndex", tagalongIndex);
+
+            SetPrivateField(enemyRows[0], "Selected", true);
+            SetPrivateField(enemyRows[0], "PersonalityIndex", tagalongIndex);
+            SetPrivateField(enemyRows[1], "Selected", true);
+            SetPrivateField(enemyRows[1], "PersonalityIndex", tagalongIndex);
+
+            MethodInfo buildSetups = typeof(CombatCharacterSelection).GetMethod(
+                "BuildSetups",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(buildSetups, Is.Not.Null);
+
+            var allySetups = (List<CombatParticipantSetup>)buildSetups.Invoke(selection, new object[] { allyRows });
+            var enemySetups = (List<CombatParticipantSetup>)buildSetups.Invoke(selection, new object[] { enemyRows });
+
+            Assert.That(allySetups, Has.Count.EqualTo(3));
+            Assert.That(allySetups[0].TagalongTarget, Is.Null);
+            Assert.That(allySetups[1].Character, Is.SameAs(allies[2]));
+            Assert.That(allySetups[1].TagalongTarget, Is.SameAs(allies[0]));
+            Assert.That(allySetups[2].TagalongTarget, Is.SameAs(allies[2]));
+
+            Assert.That(enemySetups, Has.Count.EqualTo(2));
+            Assert.That(enemySetups[0].TagalongTarget, Is.Null);
+            Assert.That(enemySetups[1].TagalongTarget, Is.SameAs(enemies[0]));
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
+        }
+    }
+
+    [Test]
+    public void AutoBattleRunner_BuildsTagalongTargetsFromRoleOrder()
+    {
+        GameObject runnerObject = new GameObject("AutoBattleRunner");
+        var characters = new List<GameObject>();
+        WeaponConfig weapon = ScriptableObject.CreateInstance<WeaponConfig>();
+        var personalities = new HashSet<CombatAiPersonalityProfile>();
+
+        try
+        {
+            weapon.ApplyKindDefaults(WeaponKind.Sword);
+            CombatAutoBattleRunner runner = runnerObject.AddComponent<CombatAutoBattleRunner>();
+            Dictionary<WeaponKind, WeaponConfig> weapons = GetPrivateField<Dictionary<WeaponKind, WeaponConfig>>(
+                runner,
+                "_weapons");
+            weapons[WeaponKind.Sword] = weapon;
+
+            List<Character> pool = CreateCharacters("AutoBattle", CombatTeam.Ally, 3, characters);
+            var roles = new[]
+            {
+                new CombatAutoBattleRole { Weapon = WeaponKind.Sword, Personality = CombatAiPersonalityKind.Neutral },
+                new CombatAutoBattleRole { Weapon = WeaponKind.Sword, Personality = CombatAiPersonalityKind.Tagalong },
+                new CombatAutoBattleRole { Weapon = WeaponKind.Sword, Personality = CombatAiPersonalityKind.Tagalong },
+            };
+            MethodInfo buildSetups = typeof(CombatAutoBattleRunner).GetMethod(
+                "BuildSetups",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(buildSetups, Is.Not.Null);
+
+            var setups = (List<CombatParticipantSetup>)buildSetups.Invoke(runner, new object[] { roles, pool });
+            for (int i = 0; i < setups.Count; i++) personalities.Add(setups[i].Personality);
+
+            Assert.That(setups[0].TagalongTarget, Is.Null);
+            Assert.That(setups[1].TagalongTarget, Is.SameAs(pool[0]));
+            Assert.That(setups[2].TagalongTarget, Is.SameAs(pool[1]));
+        }
+        finally
+        {
+            foreach (CombatAiPersonalityProfile personality in personalities)
+            {
+                if (personality != null) Object.DestroyImmediate(personality);
+            }
+
+            Object.DestroyImmediate(weapon);
+            Object.DestroyImmediate(runnerObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
+        }
+    }
+
+    [Test]
     public void CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker()
     {
         GameObject selectionObject = null;

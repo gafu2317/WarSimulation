@@ -130,7 +130,8 @@ internal static partial class CombatEditModeTestUtil
         bool hasBlockedMoveDestination = false,
         Vector3 blockedMoveDestination = default,
         Character recentAttacker = null,
-        Character markedStoneAttacker = null)
+        Character markedStoneAttacker = null,
+        Character tagalongTarget = null)
     {
         return new CombatAiContext(
             owner,
@@ -154,7 +155,8 @@ internal static partial class CombatEditModeTestUtil
             blockedMoveDestination,
             assaultRoutes,
             recentAttacker,
-            markedStoneAttacker);
+            markedStoneAttacker,
+            tagalongTarget);
     }
 
     internal static void AssertPlanMatchesDebugSnapshot(
