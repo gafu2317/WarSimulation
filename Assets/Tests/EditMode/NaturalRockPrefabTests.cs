@@ -113,7 +113,7 @@ public sealed class NaturalRockPrefabTests
                 Assert.That(rock.localPosition, Is.EqualTo(map.Features[i].WorldPosition));
                 Assert.That(rock.GetComponent<MeshFilter>(), Is.Null);
                 Assert.That(rock.Find("Geometry"), Is.Not.Null);
-                Assert.That(rock.localScale.x, Is.InRange(4.42f, 5.98f));
+                Assert.That(rock.localScale.x, Is.InRange(6.63f, 8.97f));
                 Assert.That(prefabs.Select(p => p.GetComponentInChildren<MeshFilter>().sharedMesh),
                     Does.Contain(rock.GetComponentInChildren<MeshFilter>().sharedMesh));
                 Assert.That(Vector3.Angle(rock.up, Vector3.up), Is.LessThan(0.001f));
@@ -158,6 +158,7 @@ public sealed class NaturalRockPrefabTests
                 foreach (Transform feature in renderer.transform.Find("GeneratedFeatures"))
                 {
                     if (!feature.name.StartsWith("Rock_")) continue;
+                    Assert.That(feature.localScale.x, Is.InRange(6.63f, 8.97f), paths[i]);
                     Assert.That(allowedMeshes, Does.Contain(feature.GetComponentInChildren<MeshFilter>().sharedMesh), paths[i]);
                 }
             }

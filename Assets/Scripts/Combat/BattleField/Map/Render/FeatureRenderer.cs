@@ -24,7 +24,7 @@ namespace WarSimulation.Combat.Map
         private const string NotWalkableAreaName = "Not Walkable";
         private const float TreeSizeMultiplier = 1.5f;
         private const float TreeGroundSinkDepth = 0.05f;
-        private const float RockSizeMultiplier = 2f;
+        private const float RockSizeMultiplier = 3f;
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
