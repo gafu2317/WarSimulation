@@ -141,7 +141,7 @@ public static partial class CombatAiPlanner
 
         if (personalityKind == CombatAiPersonalityKind.BattleJunkie)
         {
-            if (HasAttackTarget(context))
+            if (HasAttackTarget(context, allowRemembered: true))
             {
                 reason = CombatAiReasonCode.PersonalityPreference;
                 return CombatObjective.AttackEnemy;
@@ -277,13 +277,21 @@ public static partial class CombatAiPlanner
                     moveTarget = BuildRetreatMove(context, out actionCode);
                     break;
                 case CombatObjective.DefendOwnStone:
-                    moveTarget = BuildDefendMove(context, focusCommitmentRemainingSeconds, out actionCode);
+                    moveTarget = BuildDefendMove(
+                        context,
+                        personality != null && personality.Kind == CombatAiPersonalityKind.Gatekeeper,
+                        out actionCode);
                     break;
                 case CombatObjective.SupportAlly:
                     moveTarget = BuildSupportMove(context, personality, out actionCode);
                     break;
                 case CombatObjective.AttackEnemy:
-                    moveTarget = BuildAttackMove(context, focusEnemy, focusCommitmentRemainingSeconds, out actionCode);
+                    moveTarget = BuildAttackMove(
+                        context,
+                        focusEnemy,
+                        focusCommitmentRemainingSeconds,
+                        personality != null && personality.Kind == CombatAiPersonalityKind.BattleJunkie,
+                        out actionCode);
                     break;
                 case CombatObjective.DestroyEnemyStone:
                     moveTarget = BuildDestroyStoneMove(context, personality, previousState, previousMoveTarget, out actionCode);
@@ -303,7 +311,10 @@ public static partial class CombatAiPlanner
             ? tagalongLeader.IntendedTarget
             : personality != null && personality.Kind == CombatAiPersonalityKind.Avenger
                 ? revengeTarget.Character
-                : null;
+                : personality != null && personality.Kind == CombatAiPersonalityKind.Gatekeeper &&
+                  state == CombatObjective.DefendOwnStone && moveTarget.TargetCharacter != null
+                    ? moveTarget.TargetCharacter
+                    : null;
         SelectSkill(
             context,
             personality,
@@ -337,17 +348,17 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget BuildDefendMove(
         CombatAiContext context,
-        float focusCommitmentRemainingSeconds,
+        bool guardsOwnStone,
         out string actionCode)
     {
-        CombatMoveTarget block = CreateBestBodyBlockTarget(context);
+        CombatMoveTarget block = CreateBestBodyBlockTarget(context, includeAllies: !guardsOwnStone);
         if (IsUsableMove(context, block))
         {
             actionCode = CombatAiMoveCode.InterceptThreat;
             return block;
         }
 
-        CombatMoveTarget threat = CreateThreatNearOwnStoneTarget(context, focusCommitmentRemainingSeconds);
+        CombatMoveTarget threat = CreateThreatNearOwnStoneTarget(context);
         if (IsUsableMove(context, threat))
         {
             actionCode = CombatAiMoveCode.PursueEnemy;
@@ -412,6 +423,7 @@ public static partial class CombatAiPlanner
         CombatAiContext context,
         Character focusEnemy,
         float focusCommitmentRemainingSeconds,
+        bool pursueRememberedEnemy,
         out string actionCode)
     {
         WeaponKind weaponKind = GetWeaponKind(context.Owner);
@@ -425,7 +437,11 @@ public static partial class CombatAiPlanner
             }
         }
 
-        CombatMoveTarget enemy = CreateBestEnemyTarget(context, focusEnemy, focusCommitmentRemainingSeconds);
+        CombatMoveTarget enemy = CreateBestEnemyTarget(
+            context,
+            focusEnemy,
+            focusCommitmentRemainingSeconds,
+            pursueRememberedEnemy);
         if (IsUsableMove(context, enemy))
         {
             actionCode = CombatAiMoveCode.PursueEnemy;
@@ -446,8 +462,25 @@ public static partial class CombatAiPlanner
         if (personality != null && personality.Kind == CombatAiPersonalityKind.StandoffSiege &&
             HasMagicStoneDamageSkill(context))
         {
-            actionCode = CombatAiMoveCode.PersonalitySignature;
-            return CreateStandoffStoneTarget(context, previousState);
+            CombatMoveTarget standoff = CreateStandoffStoneTarget(context, previousState, out bool holdsAttackPosition);
+            if (!holdsAttackPosition ||
+                HasUsableMagicStoneSkillContext(
+                    context,
+                    personality,
+                    CombatObjective.DestroyEnemyStone,
+                    highImpactOnly: false) ||
+                HasCoolingDownMagicStoneSkillInRange(context))
+            {
+                actionCode = CombatAiMoveCode.PersonalitySignature;
+                return standoff;
+            }
+
+            CombatMoveTarget approach = CreateEnemyStoneTarget(context);
+            if (IsUsableMove(context, approach))
+            {
+                actionCode = CombatAiMoveCode.AdvanceEnemyStone;
+                return approach;
+            }
         }
 
         if (personality != null && personality.Kind == CombatAiPersonalityKind.Cunning)
@@ -546,6 +579,9 @@ public static partial class CombatAiPlanner
             personality.Kind == CombatAiPersonalityKind.StandoffSiege &&
             state == CombatObjective.DestroyEnemyStone &&
             HasUsableMagicStoneSkillContext(context, personality, state, highImpactOnly);
+        bool restrictToEnemyStoneCenter = personality != null &&
+            personality.Kind == CombatAiPersonalityKind.Reckless &&
+            state == CombatObjective.DestroyEnemyStone;
         IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
         for (int i = 0; i < skills.Count; i++)
         {
@@ -560,7 +596,8 @@ public static partial class CombatAiPlanner
                 CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, contexts[j]);
                 if (!evaluation.CanUse || !IsUsefulSkillContext(context, state, skill, evaluation.Context) ||
                     !ContainsPreferredTarget(evaluation.Context, preferredTarget) ||
-                    restrictToMagicStone && !HasMagicStoneTarget(evaluation.Context)) continue;
+                    (restrictToMagicStone && !HasMagicStoneTarget(evaluation.Context)) ||
+                    (restrictToEnemyStoneCenter && !IsEnemyStoneFocusedContext(context, evaluation.Context))) continue;
 
                 if (highImpactOnly)
                 {
@@ -612,6 +649,34 @@ public static partial class CombatAiPlanner
     private static bool HasMagicStoneTarget(SkillExecutionContext context)
     {
         return context.PrimaryStone != null || context.ResolvedStones.Count > 0;
+    }
+
+    private static bool IsEnemyStoneFocusedContext(CombatAiContext context, SkillExecutionContext skillContext)
+    {
+        if (skillContext.PrimaryStone != null) return true;
+        if (context == null || !context.HasEnemyStonePosition || !skillContext.HasTargetPoint) return false;
+
+        return HorizontalDistance(context.EnemyStonePosition, skillContext.TargetPoint) <= 0.01f;
+    }
+
+    private static bool HasCoolingDownMagicStoneSkillInRange(CombatAiContext context)
+    {
+        if (context == null || context.Owner == null || !context.HasEnemyStonePosition) return false;
+
+        CombatSkillCooldowns cooldowns = context.Owner.SkillCooldowns;
+        if (cooldowns == null) return false;
+
+        float distance = HorizontalDistance(context.Owner.transform.position, context.EnemyStonePosition);
+        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
+        for (int i = 0; i < skills.Count; i++)
+        {
+            SkillBase skill = skills[i];
+            if (skill == null || !CombatAiSkillClassifier.IsDamage(skill) || !skill.CanTargetMagicStone ||
+                cooldowns.IsReady(skill)) continue;
+            if (float.IsPositiveInfinity(skill.MaxRange) || distance <= skill.MaxRange) return true;
+        }
+
+        return false;
     }
 
     private static bool IsBetterHighImpactCandidate(
@@ -931,6 +996,7 @@ public static partial class CombatAiPlanner
         WeaponKind weaponKind = GetWeaponKind(context.Owner);
         float fragility = assessment.GetValue(CombatAiMetricIndex.AllyFragility);
         if (weaponKind == WeaponKind.Shield && HasPreferredEscortAlly(context)) return true;
+        if (!HasSupportSkill(context)) return false;
         if (weaponKind == WeaponKind.Rosary) return fragility > 10f;
         if (weaponKind == WeaponKind.Bible) return fragility > 12f;
         return fragility > 25f;
@@ -966,12 +1032,12 @@ public static partial class CombatAiPlanner
         return false;
     }
 
-    private static bool HasAttackTarget(CombatAiContext context)
+    private static bool HasAttackTarget(CombatAiContext context, bool allowRemembered = false)
     {
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character != null && enemy.IsAlive && enemy.HasDirectSight &&
+            if (enemy.Character != null && enemy.IsAlive && (enemy.HasDirectSight || allowRemembered) &&
                 enemy.HasKnownPosition && enemy.HP - context.GetAllyPendingDamage(enemy.Character) > 0) return true;
         }
 
@@ -1020,11 +1086,28 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.CanAct && CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) return true;
+            if (ally.CanAct && !IsSupportingAlly(ally) &&
+                CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) return true;
         }
 
         return false;
     }
+
+    private static bool HasSupportSkill(CombatAiContext context)
+    {
+        if (context == null || context.Owner == null) return false;
+
+        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
+        for (int i = 0; i < skills.Count; i++)
+        {
+            if (CombatAiSkillClassifier.IsSupport(skills[i])) return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsSupportingAlly(CombatCharacterIntel ally) =>
+        ally.HasObjective && ally.Objective == CombatObjective.SupportAlly;
 
     private static bool HasEnemyInReadySkillRange(CombatAiContext context)
     {
@@ -1040,7 +1123,7 @@ public static partial class CombatAiPlanner
         return false;
     }
 
-    private static CombatMoveTarget CreateThreatNearOwnStoneTarget(CombatAiContext context, float focusCommitmentRemainingSeconds)
+    private static CombatMoveTarget CreateThreatNearOwnStoneTarget(CombatAiContext context)
     {
         if (!context.HasOwnStonePosition) return CombatMoveTarget.None;
         CombatCharacterIntel nearest = default;
@@ -1050,6 +1133,7 @@ public static partial class CombatAiPlanner
             CombatCharacterIntel enemy = context.EnemyIntel[i];
             if (enemy.Character == null || !enemy.IsAlive || !enemy.HasKnownPosition) continue;
             float distance = HorizontalDistance(enemy.KnownPosition, context.OwnStonePosition);
+            if (distance > CombatAiAssessmentBuilder.OwnStoneThreatRadius) continue;
             if (distance >= nearestDistance) continue;
             nearestDistance = distance;
             nearest = enemy;
@@ -1057,7 +1141,7 @@ public static partial class CombatAiPlanner
 
         if (nearest.Character == null) return CombatMoveTarget.None;
         return nearest.HasDirectSight
-            ? CreateBestEnemyTarget(context, nearest.Character, focusCommitmentRemainingSeconds)
+            ? CombatMoveTarget.ForCharacter(nearest.Character)
             : CombatMoveTarget.ForPosition(nearest.KnownPosition);
     }
 

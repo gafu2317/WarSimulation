@@ -32,7 +32,8 @@ public static class CombatAiPersonalityBehavior
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || !ally.IsAlive || ally.MaxHP <= 0) continue;
+            if (ally.Character == null || !ally.IsAlive || ally.MaxHP <= 0 ||
+                ally.HasObjective && ally.Objective == CombatObjective.SupportAlly) continue;
 
             float distance = Vector3.Distance(context.Owner.transform.position, ally.CurrentPosition);
             if (distance > radius) continue;

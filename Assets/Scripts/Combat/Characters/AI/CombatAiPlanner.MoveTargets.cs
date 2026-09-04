@@ -112,8 +112,10 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateStandoffStoneTarget(
         CombatAiContext context,
-        CombatObjective previousState)
+        CombatObjective previousState,
+        out bool holdsAttackPosition)
     {
+        holdsAttackPosition = false;
         if (context == null || context.Owner == null || !context.HasEnemyStonePosition)
         {
             return CombatMoveTarget.None;
@@ -129,6 +131,7 @@ public static partial class CombatAiPlanner
             HorizontalDistance(ownerPosition, nearestThreat.KnownPosition) < StandoffEnemyClearanceDistance;
         if (!threatTooClose && currentStoneDistance <= desiredDistance + StandoffRangeSlack)
         {
+            holdsAttackPosition = true;
             return CombatMoveTarget.None;
         }
 
@@ -510,12 +513,22 @@ public static partial class CombatAiPlanner
         return best;
     }
 
-    private static CombatMoveTarget CreateBestEnemyTarget(CombatAiContext context, Character focusEnemy, float focusCommitmentRemainingSeconds)
+    private static CombatMoveTarget CreateBestEnemyTarget(
+        CombatAiContext context,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        bool allowRemembered = false)
     {
-        Character enemy = FindBestEnemyCharacter(context, focusEnemy, focusCommitmentRemainingSeconds);
+        Character enemy = FindBestEnemyCharacter(context, focusEnemy, focusCommitmentRemainingSeconds, allowRemembered);
         if (enemy == null)
         {
             return CombatMoveTarget.None;
+        }
+
+        CombatCharacterIntel enemyIntel = context.FindEnemyIntel(enemy);
+        if (!enemyIntel.HasDirectSight && enemyIntel.HasKnownPosition)
+        {
+            return CombatMoveTarget.ForPosition(enemyIntel.KnownPosition);
         }
 
         Character owner = context != null ? context.Owner : null;
@@ -556,7 +569,7 @@ public static partial class CombatAiPlanner
         return CombatMoveTarget.ForCharacter(ally);
     }
 
-    private static CombatMoveTarget CreateBestBodyBlockTarget(CombatAiContext context)
+    private static CombatMoveTarget CreateBestBodyBlockTarget(CombatAiContext context, bool includeAllies = true)
     {
         Character owner = context != null ? context.Owner : null;
         if (owner == null || owner.EquippedWeapon == null || owner.EquippedWeapon.Kind != WeaponKind.Shield)
@@ -571,10 +584,11 @@ public static partial class CombatAiPlanner
             CombatCharacterIntel enemy = context.EnemyIntel[i];
             if (!enemy.IsAlive || !enemy.HasKnownPosition || !enemy.CanAct) continue;
 
-            for (int j = 0; j < context.AllyIntel.Count; j++)
+            for (int j = 0; includeAllies && j < context.AllyIntel.Count; j++)
             {
                 CombatCharacterIntel ally = context.AllyIntel[j];
-                if (!ally.CanAct || !CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) continue;
+                if (!ally.CanAct || IsSupportingAlly(ally) ||
+                    !CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) continue;
                 TrySelectBodyBlockPosition(owner, enemy, ally.CurrentPosition, GetProtectedAllyValue(context, ally), ref bestValue, ref bestPosition);
             }
 
@@ -734,7 +748,8 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || !ally.CanAct || !CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) continue;
+            if (ally.Character == null || !ally.CanAct || IsSupportingAlly(ally) ||
+                !CombatAiPositioning.IsFrontlineFollowAlly(context, ally)) continue;
 
             float priority = GetProtectedAllyValue(context, ally);
             if (HasEnemyNearby(context.EnemyIntel, ally.CurrentPosition, 8f)) priority += 20f;
@@ -947,13 +962,17 @@ public static partial class CombatAiPlanner
         return hitCharacter == target;
     }
 
-    private static Character FindBestEnemyCharacter(CombatAiContext context, Character focusEnemy, float focusCommitmentRemainingSeconds)
+    private static Character FindBestEnemyCharacter(
+        CombatAiContext context,
+        Character focusEnemy,
+        float focusCommitmentRemainingSeconds,
+        bool allowRemembered)
     {
         CombatCharacterIntel focusIntel = context.FindEnemyIntel(focusEnemy);
         bool keepFocus = focusCommitmentRemainingSeconds > 0f &&
             focusIntel.Character != null &&
             focusIntel.IsAlive &&
-            focusIntel.HasDirectSight &&
+            (focusIntel.HasDirectSight || allowRemembered) &&
             focusIntel.HasKnownPosition &&
             focusIntel.HP - context.GetAllyPendingDamage(focusEnemy) > 0;
         if (keepFocus) return focusEnemy;
@@ -965,7 +984,8 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.EnemyIntel.Count; i++)
         {
             CombatCharacterIntel enemy = context.EnemyIntel[i];
-            if (enemy.Character == null || !enemy.IsAlive || !enemy.HasDirectSight || !enemy.HasKnownPosition) continue;
+            if (enemy.Character == null || !enemy.IsAlive || !enemy.HasKnownPosition ||
+                !enemy.HasDirectSight && !allowRemembered) continue;
             int projectedHp = enemy.HP - context.GetAllyPendingDamage(enemy.Character);
             if (projectedHp <= 0) continue;
             if (best != null && enemy.HasDirectSight == bestVisible && projectedHp >= bestProjectedHp) continue;
@@ -986,7 +1006,7 @@ public static partial class CombatAiPlanner
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
-            if (ally.Character == null || !ally.IsAlive) continue;
+            if (ally.Character == null || !ally.IsAlive || IsSupportingAlly(ally)) continue;
             int projectedHP = Mathf.Min(
                 ally.MaxHP,
                 ally.HP + context.GetAllyPendingHealing(ally.Character));

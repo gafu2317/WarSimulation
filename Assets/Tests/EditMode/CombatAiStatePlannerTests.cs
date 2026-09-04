@@ -38,6 +38,37 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_DoesNotRetreatFromEnemiesRememberedWithoutDirectSight()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        var memories = new List<CombatCharacterIntel>();
+        for (int i = 0; i < 3; i++)
+        {
+            Character enemy = CreateCharacter(
+                $"RememberedEnemy{i}",
+                new Sword(),
+                new Vector3(100f + i, 0f, 0f),
+                team: CombatTeam.Enemy);
+            memories.Add(CombatEditModeTestUtil.CreateIntel(
+                enemy,
+                true,
+                new Vector3(i + 1f, 0f, 0f),
+                hasDirectSight: false,
+                hasMemory: true));
+        }
+
+        CombatAiContext context = Context(
+            owner,
+            enemies: memories,
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyStoneKnown));
+    }
+
+    [Test]
     public void Planner_SelectsDefendOwnStoneForKnownStoneThreat()
     {
         Character owner = CreateCharacter("Owner", new Shield(), new Vector3(5f, 0f, 0f));
@@ -73,6 +104,27 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.PersonalityPreference));
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.ReturnOwnStone));
         Assert.That(plan.MoveTarget.Destination, Is.EqualTo(Vector3.zero));
+    }
+
+    [Test]
+    public void Planner_GatekeeperReturnsToOwnStoneWhenEnemyIsOutsideDefenseRadius()
+    {
+        Character owner = CreateCharacter("Gatekeeper", new Sword(), new Vector3(8f, 0f, 0f));
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(30f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Gatekeeper));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DefendOwnStone));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.ReturnOwnStone));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(Vector3.zero));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.Null);
     }
 
     [Test]
@@ -675,7 +727,7 @@ public sealed class CombatAiStatePlannerTests
     {
         Character owner = CreateCharacter("StandoffSiege", new Wand(), Vector3.zero);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new WandBoltSkill());
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, CreateMagicStoneDamageSkill(WeaponKind.Wand));
         CombatAiContext context = Context(
             owner,
             enemies: new[] { Intel(enemy) },
@@ -731,7 +783,7 @@ public sealed class CombatAiStatePlannerTests
         Wand wand = new Wand();
         Character owner = CreateCharacter("StandoffSiege", wand, Vector3.zero);
         Character closeEnemy = CreateCharacter("CloseEnemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new WandBoltSkill());
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, CreateMagicStoneDamageSkill(WeaponKind.Wand));
         var enemies = new List<CombatCharacterIntel> { Intel(closeEnemy) };
         float ringDistance = wand.Range - 1f;
         Vector3 awayFromStone = Vector3.left;
@@ -764,7 +816,7 @@ public sealed class CombatAiStatePlannerTests
     {
         Character owner = CreateCharacter("StandoffSiege", new Wand(), Vector3.zero);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new WandBoltSkill());
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, CreateMagicStoneDamageSkill(WeaponKind.Wand));
         Wand wand = (Wand)owner.EquippedWeapon;
         var blockingEnemies = new List<CombatCharacterIntel> { Intel(enemy) };
         float ringDistance = wand.Range - 1f;
@@ -809,7 +861,7 @@ public sealed class CombatAiStatePlannerTests
     public void Planner_StandoffSiegeDoesNotKeepAnOldAssaultRouteTarget()
     {
         Character owner = CreateCharacter("StandoffSiege", new Wand(), Vector3.zero);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new WandBoltSkill());
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, CreateMagicStoneDamageSkill(WeaponKind.Wand));
         var route = new CombatAiAssaultRoute(
             "Direct",
             "Direct",
@@ -869,7 +921,8 @@ public sealed class CombatAiStatePlannerTests
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
         Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyInRange));
-        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(enemy));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PursueEnemy));
+        Assert.That(plan.MoveTarget.HasDestination, Is.True);
     }
 
     [Test]
@@ -877,7 +930,7 @@ public sealed class CombatAiStatePlannerTests
     {
         Character owner = CreateCharacter("StandoffSiege", new Bible(), Vector3.zero);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(4f, 0f, 0f), team: CombatTeam.Enemy);
-        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new BibleSmiteSkill());
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, CreateMagicStoneDamageSkill(WeaponKind.Bible));
         CombatAiContext context = Context(
             owner,
             enemies: new[] { Intel(enemy) },
@@ -914,7 +967,7 @@ public sealed class CombatAiStatePlannerTests
 
         Character owner = CreateCharacter("StandoffSiege", new Wand(), Vector3.zero);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(3f, 0f, 0f), team: CombatTeam.Enemy);
-        var stoneSkill = new WandBoltSkill();
+        SkillBase stoneSkill = CreateMagicStoneDamageSkill(WeaponKind.Wand);
         CombatEditModeTestUtil.SetAvailableCombatSkills(owner, stoneSkill);
         CombatAiContext context = Context(
             owner,
@@ -933,6 +986,67 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_StandoffSiegeApproachesStoneWhenPreferredRangeCannotAttack()
+    {
+        Character owner = CreateCharacter("StandoffSiege", new Wand(), Vector3.zero);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, CreateMagicStoneDamageSkill(WeaponKind.Wand));
+        Vector3 enemyStone = new Vector3(10f, 0f, 0f);
+        CombatAiContext context = Context(
+            owner,
+            ownStone: new Vector3(-20f, 0f, 0f),
+            enemyStone: enemyStone);
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.StandoffSiege));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceEnemyStone));
+        Assert.That(plan.MoveTarget.HasDestination, Is.True);
+        Assert.That(
+            Vector3.Distance(plan.MoveTarget.Destination, enemyStone),
+            Is.LessThan(Vector3.Distance(owner.transform.position, enemyStone)));
+    }
+
+    [Test]
+    public void Planner_RecklessCentersAreaDamageOnEnemyStone()
+    {
+        GameObject systemGo = Track(new GameObject("MagicStoneSystem"));
+        CombatMagicStoneSystem system = systemGo.AddComponent<CombatMagicStoneSystem>();
+        var map = new MapData(
+            new HeightMap(4, 4, 1f),
+            new GroundStateGrid(4, 4, 1f),
+            seed: 1);
+        map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(-20f, 0f, 0f)));
+        map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(10f, 0f, 0f)));
+        system.Initialize(map);
+
+        GameObject stoneGo = Track(new GameObject("EnemyMainStone"));
+        MagicStone stone = stoneGo.AddComponent<MagicStone>();
+        stone.Setup(featureIndex: 1, FeatureType.EnemyMainStone, stoneHeight: 3f);
+        stoneGo.transform.position = new Vector3(10f, 0f, 0f);
+
+        Character owner = CreateCharacter("Reckless", new Wand(), Vector3.zero);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(9f, 0f, 0f), team: CombatTeam.Enemy);
+        SkillBase areaSkill = CombatSkillFactory.Create(SkillId.Wand_AreaBlast, owner.EquippedWeapon);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, areaSkill);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            ownStone: new Vector3(-20f, 0f, 0f),
+            enemyStone: stoneGo.transform.position);
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Reckless));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.Skill, Is.SameAs(areaSkill));
+        Assert.That(plan.SkillContext.TargetPoint, Is.EqualTo(stoneGo.transform.position));
+        Assert.That(plan.SkillContext.ResolvedStones, Does.Contain(stone));
+    }
+
+    [Test]
     public void Planner_SelectsSupportAllyForRosaryAndFragileAlly()
     {
         Character owner = CreateCharacter("Owner", new Rosary(), Vector3.zero);
@@ -944,6 +1058,105 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.SupportAlly));
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.SupportAlly));
         Assert.That(plan.MoveTarget.HasDestination, Is.True);
+    }
+
+    [Test]
+    public void Planner_AssaultWeaponAttacksInsteadOfSupportingWithoutSupportSkill()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character ally = CreateCharacter("Ally", new Sword(), new Vector3(2f, 0f, 0f), 30, 5);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(3f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(
+            owner,
+            new CombatEditModeTestUtil.AiPlannerBasicAttackSkill());
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            allies: new[] { Intel(ally) },
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(enemy));
+    }
+
+    [Test]
+    public void Planner_SupportThreatUsesMostFragileAllyInsteadOfTeamTotal()
+    {
+        Character owner = CreateCharacter("Owner", new Rosary(), Vector3.zero);
+        Character firstAlly = CreateCharacter("FirstAlly", new Sword(), new Vector3(1f, 0f, 0f));
+        Character secondAlly = CreateCharacter("SecondAlly", new Sword(), new Vector3(2f, 0f, 0f));
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(7f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            allies: new[] { Intel(firstAlly), Intel(secondAlly) });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+    }
+
+    [Test]
+    public void Planner_SupportMoveDoesNotFollowAnAllyAlreadySupporting()
+    {
+        Character owner = CreateCharacter("Owner", WeaponBase.Unarmed, Vector3.zero);
+        Character supportingAlly = CreateCharacter("SupportingAlly", new Rosary(), new Vector3(2f, 0f, 0f), 30, 1);
+        Character advancingAlly = CreateCharacter("AdvancingAlly", new Sword(), new Vector3(4f, 0f, 0f), 30, 5);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(6f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(
+            owner,
+            new CombatEditModeTestUtil.AiPlannerHealSkill());
+        CombatCharacterIntel supportingIntel = CombatEditModeTestUtil.CreateIntel(
+            supportingAlly,
+            true,
+            supportingAlly.transform.position,
+            hasObjective: true,
+            objective: CombatObjective.SupportAlly,
+            intendedTarget: advancingAlly);
+        CombatCharacterIntel advancingIntel = CombatEditModeTestUtil.CreateIntel(
+            advancingAlly,
+            true,
+            advancingAlly.transform.position,
+            hasObjective: true,
+            objective: CombatObjective.DestroyEnemyStone,
+            hasIntendedDestination: true,
+            intendedDestination: new Vector3(20f, 0f, 0f));
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            allies: new[] { supportingIntel, advancingIntel },
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(advancingAlly));
+    }
+
+    [Test]
+    public void Planner_SupportingAllyDoesNotTriggerAnotherSupportPlan()
+    {
+        Character owner = CreateCharacter("Owner", new Rosary(), Vector3.zero);
+        Character supportingAlly = CreateCharacter("SupportingAlly", new Rosary(), new Vector3(2f, 0f, 0f), 30, 1);
+        Character healthyAlly = CreateCharacter("HealthyAlly", new Sword(), new Vector3(3f, 0f, 0f));
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(6f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatCharacterIntel supportingIntel = CombatEditModeTestUtil.CreateIntel(
+            supportingAlly,
+            true,
+            supportingAlly.transform.position,
+            hasObjective: true,
+            objective: CombatObjective.SupportAlly,
+            intendedTarget: healthyAlly);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            allies: new[] { supportingIntel, Intel(healthyAlly) });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
     }
 
     [Test]
@@ -1144,6 +1357,38 @@ public sealed class CombatAiStatePlannerTests
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
         Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(focused));
+    }
+
+    [Test]
+    public void Planner_BattleJunkiePursuesRememberedFocusedEnemyPosition()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character focused = CreateCharacter("Focused", new Sword(), new Vector3(100f, 0f, 0f), team: CombatTeam.Enemy);
+        Vector3 rememberedPosition = new Vector3(6f, 0f, 2f);
+        CombatCharacterIntel memory = CombatEditModeTestUtil.CreateIntel(
+            focused,
+            true,
+            rememberedPosition,
+            hasDirectSight: false,
+            hasMemory: true);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { memory },
+            enemyStone: new Vector3(30f, 0f, 0f));
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.BattleJunkie));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(
+            context,
+            profile,
+            focusEnemy: focused,
+            focusCommitmentRemainingSeconds: 1f);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.PersonalityPreference));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PursueEnemy));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(rememberedPosition));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.Null);
     }
 
     [Test]
@@ -1373,16 +1618,17 @@ public sealed class CombatAiStatePlannerTests
 
     private static SkillBase CreateMagicStoneDamageSkill(WeaponKind kind)
     {
-        return kind switch
+        SkillId skillId = kind switch
         {
-            WeaponKind.Sword => new SwordSlashSkill(),
-            WeaponKind.Shield => new ShieldSlashSkill(),
-            WeaponKind.Wand => new WandBoltSkill(),
-            WeaponKind.Grimoire => new GrimoireBoltSkill(),
-            WeaponKind.Bible => new BibleSmiteSkill(),
-            WeaponKind.Rosary => new RosaryStrikeSkill(),
+            WeaponKind.Sword => SkillId.Sword_Slash,
+            WeaponKind.Shield => SkillId.Shield_Slash,
+            WeaponKind.Wand => SkillId.Wand_Bolt,
+            WeaponKind.Grimoire => SkillId.Grimoire_Bolt,
+            WeaponKind.Bible => SkillId.Bible_Smite,
+            WeaponKind.Rosary => SkillId.Rosary_Strike,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
+        return CombatSkillFactory.Create(skillId, CreateWeapon(kind));
     }
 
     private T Track<T>(T value) where T : UnityEngine.Object
