@@ -94,6 +94,25 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Collect_UsesSeventyPercentOfMountainExtentForHighGround()
+    {
+        AiContextFixture fixture = CreateFixture();
+        try
+        {
+            CombatAiContext context = fixture.Collector.Collect(fixture.Observer);
+            CombatAiHighGroundRegion region = context.HighGroundRegions[0];
+
+            Assert.That(region.Radius, Is.EqualTo(2f * 0.7f).Within(0.001f));
+            Assert.That(region.Contains(new Vector3(7.3f, 0f, 5f)), Is.True);
+            Assert.That(region.Contains(new Vector3(7.5f, 0f, 5f)), Is.False);
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
     public void Collect_WithoutSystems_ReturnsEmptyContext()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");

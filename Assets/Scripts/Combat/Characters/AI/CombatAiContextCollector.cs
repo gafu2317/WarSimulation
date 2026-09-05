@@ -7,6 +7,8 @@ using WarSimulation.Combat.Map;
 [DisallowMultipleComponent]
 public sealed class CombatAiContextCollector : MonoBehaviour
 {
+    private const float HighGroundExtentRatio = 0.7f;
+
     [SerializeField] private CombatCharacterSystem _characterSystem;
     [SerializeField] private CombatMapSystem _mapSystem;
 
@@ -378,7 +380,9 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             Vector3 localCenter = new Vector3(mountain.Center.x, 0f, mountain.Center.y);
             Vector3 center = ToWorldSurfacePosition(mapSystem, localCenter);
             _highGroundCandidates.Add(center);
-            _highGroundRegions.Add(new CombatAiHighGroundRegion(center, mountain.Extent));
+            _highGroundRegions.Add(new CombatAiHighGroundRegion(
+                center,
+                mountain.Extent * HighGroundExtentRatio));
         }
 
         List<ForestRegion> forests = map.ForestRegions;

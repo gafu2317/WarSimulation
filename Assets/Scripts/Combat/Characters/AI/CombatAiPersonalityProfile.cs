@@ -86,7 +86,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.Avenger =>
                 "直近で攻撃した敵が生存し位置を把握できる間は追い続け、見失うと通常の目的へ戻ります。",
             CombatAiPersonalityKind.HighGround =>
-                "一定高度以上の高所領域を維持し、技能が使えない場合は高所内から敵・味方・敵魔石を探します。",
+                "山スタンプのExtentの70%以内を高所領域として維持し、技能が使えない場合は高所内から敵・味方・敵魔石を探します。",
             _ => "特別な偏りはなく、装備した武器の役割と戦況に応じて通常の目的を選びます。",
         };
     }

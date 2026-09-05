@@ -767,7 +767,7 @@ public sealed class CombatAiStatePlannerTests
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-        Assert.That(CombatAiPlanner.IsAtHighGround(context), Is.True);
+        Assert.That(highGroundRegions[0].Contains(owner.transform.position), Is.True);
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
         Assert.That(plan.MoveTarget.HasDestination, Is.True);
         Assert.That(highGroundRegions[0].Contains(plan.MoveTarget.Destination), Is.True);
