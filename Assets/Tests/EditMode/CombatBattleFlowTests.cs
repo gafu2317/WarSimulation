@@ -119,8 +119,8 @@ public sealed class CombatBattleFlowTests
             Assert.That(Time.timeScale, Is.EqualTo(4f));
 
             speedButton.onClick.Invoke();
-            Assert.That(Time.timeScale, Is.EqualTo(6f));
-            Assert.That(speedText.text, Is.EqualTo("6x"));
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+            Assert.That(speedText.text, Is.EqualTo("1x"));
 
             Button smokeButton = hudObject.transform.Find("UserCommandPanel/Smoke/Image").GetComponent<Button>();
             Button weatherButton = hudObject.transform.Find("UserCommandPanel/WeatherChange/Image/Option1").GetComponent<Button>();
@@ -133,6 +133,47 @@ public sealed class CombatBattleFlowTests
             if (hudObject != null) Object.DestroyImmediate(hudObject);
             Object.DestroyImmediate(flowObject);
             Object.DestroyImmediate(battleFlowObject);
+        }
+    }
+
+    [Test]
+    public void CharacterSelection_CyclesMovementSpeedWithoutSixfoldOption()
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+
+        try
+        {
+            GameObject selectionPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
+            Assert.That(selectionPrefab, Is.Not.Null);
+
+            selectionObject = Object.Instantiate(selectionPrefab);
+            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            selection.Initialize(
+                CreateCharacters("Ally", CombatTeam.Ally, 1, characters),
+                CreateCharacters("Enemy", CombatTeam.Enemy, 1, characters),
+                null);
+
+            Button movementSpeedButton = GetPrivateField<Button>(selection, "_movementSpeedButton");
+            TMP_Text movementSpeedText = movementSpeedButton.GetComponentInChildren<TMP_Text>(true);
+
+            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(1f));
+            movementSpeedButton.onClick.Invoke();
+            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(2f));
+            movementSpeedButton.onClick.Invoke();
+            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(4f));
+            movementSpeedButton.onClick.Invoke();
+            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(1f));
+            Assert.That(movementSpeedText.text, Is.EqualTo("移動速度: 1x"));
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
         }
     }
 

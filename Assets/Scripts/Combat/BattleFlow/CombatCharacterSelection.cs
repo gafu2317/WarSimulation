@@ -13,7 +13,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private const string FinalStatColor = "#FF4D4D";
     private const float StatusHeadingHeight = 32f;
     private const float StatusValueHeight = 30f;
-    private static readonly float[] MovementSpeedMultipliers = { 1f, 2f, 4f, 6f };
+    private static readonly float[] MovementSpeedMultipliers = { 1f, 2f, 4f };
     private static readonly CombatStat[] AdjustableStats =
     {
         CombatStat.STR,
