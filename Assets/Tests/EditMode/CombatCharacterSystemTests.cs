@@ -288,6 +288,42 @@ public sealed class CombatCharacterSystemTests
     }
 
     [Test]
+    public void CombatCharacterBody_ResolvesRecklessRiverCostAndRestoresItForNeutral()
+    {
+        GameObject characterObject = new GameObject("Character");
+        CombatAiPersonalityProfile reckless = CombatAiPersonalityProfile.CreateBuiltInProfile(
+            CombatAiPersonalityKind.Reckless);
+        try
+        {
+            Character character = characterObject.AddComponent<Character>();
+            CombatCharacterBody body = characterObject.GetComponent<CombatCharacterBody>();
+            typeof(CombatCharacterBody).GetMethod(
+                "Awake",
+                BindingFlags.Instance | BindingFlags.NonPublic).Invoke(body, null);
+            MethodInfo resolveCost = typeof(CombatCharacterBody).GetMethod(
+                "ResolveRiverNavigationCost",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            int riverArea = NavMesh.GetAreaFromName("River");
+            int walkableArea = NavMesh.GetAreaFromName("Walkable");
+
+            Assert.That(riverArea, Is.GreaterThanOrEqualTo(0));
+            Assert.That(walkableArea, Is.GreaterThanOrEqualTo(0));
+            character.ConfigureForBattle(null, reckless);
+            float recklessCost = (float)resolveCost.Invoke(body, new object[] { riverArea });
+            Assert.That(recklessCost, Is.EqualTo(NavMesh.GetAreaCost(walkableArea)).Within(0.001f));
+
+            character.ConfigureForBattle(null, null);
+            float neutralCost = (float)resolveCost.Invoke(body, new object[] { riverArea });
+            Assert.That(neutralCost, Is.EqualTo(NavMesh.GetAreaCost(riverArea)).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(reckless);
+            Object.DestroyImmediate(characterObject);
+        }
+    }
+
+    [Test]
     public void SetParticipants_AppliesAndClearsTagalongTarget()
     {
         GameObject systemObject = new GameObject("CharacterSystem");

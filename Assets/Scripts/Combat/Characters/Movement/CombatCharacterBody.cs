@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.AI;
+using WarSimulation.Combat.Map;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public sealed class CombatCharacterBody : MonoBehaviour
@@ -23,6 +24,8 @@ public sealed class CombatCharacterBody : MonoBehaviour
     private float _baseSpeed;
     private float _movementSpeedMultiplier = 1f;
     private bool _hasVisiblePath;
+    private bool _hasRiverCrossingDestination;
+    private Vector3 _riverCrossingDestination;
 
     public bool IsMoving =>
         _agent != null &&
@@ -102,11 +105,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
         if (!isRetreat && IsMovementRestricted()) return false;
 
         ApplyPersonalityNavigationCosts();
-        if (!ResolveNavigationSystem().TryResolveDestination(
-                _agent,
-                worldPosition,
-                out Vector3 destination,
-                out NavMeshPath path))
+        if (!TryResolveMoveDestination(worldPosition, out Vector3 destination, out NavMeshPath path))
         {
             return false;
         }
@@ -121,18 +120,123 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
     private void ApplyPersonalityNavigationCosts()
     {
-        Character owner = GetComponent<Character>();
-        if (_agent == null || owner?.PersonalityProfile == null ||
-            owner.PersonalityProfile.Kind != CombatAiPersonalityKind.Reckless)
-        {
-            return;
-        }
+        if (_agent == null) return;
 
         int riverArea = NavMesh.GetAreaFromName(RiverAreaName);
-        int walkableArea = NavMesh.GetAreaFromName(WalkableAreaName);
-        if (riverArea < 0 || walkableArea < 0) return;
+        if (riverArea < 0) return;
 
-        _agent.SetAreaCost(riverArea, NavMesh.GetAreaCost(walkableArea));
+        _agent.SetAreaCost(riverArea, ResolveRiverNavigationCost(riverArea));
+    }
+
+    private float ResolveRiverNavigationCost(int riverArea)
+    {
+        Character owner = GetComponent<Character>();
+        bool isReckless = owner?.PersonalityProfile != null &&
+            owner.PersonalityProfile.Kind == CombatAiPersonalityKind.Reckless;
+        int costArea = isReckless
+            ? NavMesh.GetAreaFromName(WalkableAreaName)
+            : riverArea;
+        if (costArea < 0) costArea = riverArea;
+        return NavMesh.GetAreaCost(costArea);
+    }
+
+    private bool TryResolveMoveDestination(
+        Vector3 requestedWorldPosition,
+        out Vector3 destination,
+        out NavMeshPath path)
+    {
+        destination = default;
+        path = null;
+
+        CombatNavigationSystem navigation = ResolveNavigationSystem();
+        bool shouldCrossRiver = IsRecklessEnemyStoneMove(requestedWorldPosition);
+        if (!shouldCrossRiver)
+        {
+            ClearRiverCrossingDestination();
+            return navigation.TryResolveDestination(
+                _agent,
+                requestedWorldPosition,
+                out destination,
+                out path);
+        }
+
+        if (_hasRiverCrossingDestination)
+        {
+            if (HorizontalDistance(transform.position, _riverCrossingDestination) >
+                Mathf.Max(_agent.radius, _agent.stoppingDistance))
+            {
+                if (navigation.TryResolveDestination(
+                        _agent,
+                        _riverCrossingDestination,
+                        out destination,
+                        out path))
+                {
+                    return true;
+                }
+            }
+
+            ClearRiverCrossingDestination();
+        }
+
+        if (!navigation.TryResolveDestination(
+                _agent,
+                requestedWorldPosition,
+                out destination,
+                out path))
+        {
+            return false;
+        }
+
+        if (navigation.PathTouchesRiver(_agent, path)) return true;
+        if (!navigation.TryFindRiverCrossingDestination(
+                _agent,
+                requestedWorldPosition,
+                out _riverCrossingDestination,
+                out NavMeshPath crossingPath))
+        {
+            return true;
+        }
+
+        _hasRiverCrossingDestination = true;
+        destination = _riverCrossingDestination;
+        path = crossingPath;
+        return true;
+    }
+
+    private bool IsRecklessEnemyStoneMove(Vector3 requestedWorldPosition)
+    {
+        Character owner = GetComponent<Character>();
+        if (owner?.PersonalityProfile == null ||
+            owner.PersonalityProfile.Kind != CombatAiPersonalityKind.Reckless)
+        {
+            return false;
+        }
+
+        CombatMapSystem mapSystem = ResolveMapSystem();
+        MapData map = mapSystem != null ? mapSystem.CurrentMap : null;
+        if (map == null) return false;
+
+        FeatureType enemyStoneType = owner.Team == CombatTeam.Ally
+            ? FeatureType.EnemyMainStone
+            : FeatureType.OwnMainStone;
+        for (int i = 0; i < map.Features.Count; i++)
+        {
+            PlacedFeature feature = map.Features[i];
+            if (feature.Type != enemyStoneType) continue;
+
+            Vector3 stonePosition = mapSystem.MapOrigin != null
+                ? mapSystem.MapOrigin.TransformPoint(feature.WorldPosition)
+                : feature.WorldPosition;
+            return HorizontalDistance(requestedWorldPosition, stonePosition) <= 2f;
+        }
+
+        return false;
+    }
+
+    private void ClearRiverCrossingDestination()
+    {
+        _hasRiverCrossingDestination = false;
+        _riverCrossingDestination = default;
     }
 
     public void Stop()
@@ -143,6 +247,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
         _agent.ResetPath();
         _agent.speed = GetConfiguredBaseSpeed();
         ClearRoute();
+        ClearRiverCrossingDestination();
     }
 
     public float GetTerrainSpeedMultiplier()
@@ -268,5 +373,12 @@ public sealed class CombatCharacterBody : MonoBehaviour
         return owner != null &&
             owner.StatusEffects != null &&
             (owner.StatusEffects.IsRooted || owner.StatusEffects.IsBound);
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
     }
 }

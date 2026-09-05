@@ -1521,6 +1521,28 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_RecklessAdvancesDirectlyToEnemyStoneInsteadOfUsingAssaultRoute()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        var route = new CombatAiAssaultRoute(
+            "Bridge",
+            "Bridge",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 5f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext context = Context(
+            owner,
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { route });
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Reckless));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceEnemyStone));
+        Assert.That(plan.MoveTarget.HasAssaultRouteKey, Is.False);
+    }
+
+    [Test]
     public void Planner_CunningChoosesTheLowerRiskAuthoredRoute()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);

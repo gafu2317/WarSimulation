@@ -532,6 +532,16 @@ public static partial class CombatAiPlanner
             }
         }
 
+        if (personality != null && personality.Kind == CombatAiPersonalityKind.Reckless)
+        {
+            CombatMoveTarget reckless = CreateEnemyStoneTarget(context);
+            if (IsUsableMove(context, reckless))
+            {
+                actionCode = CombatAiMoveCode.AdvanceEnemyStone;
+                return reckless;
+            }
+        }
+
         CombatMoveTarget routeTarget = CreateLeastCongestedAssaultTarget(context, out actionCode);
         if (IsUsableMove(context, routeTarget)) return routeTarget;
 
