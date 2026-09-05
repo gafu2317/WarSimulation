@@ -27,8 +27,7 @@ public static partial class CombatAiPlanner
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
         List<CombatAiReasonCode> selectedStateReasons = null,
-        CombatMoveTarget previousMoveTarget = default,
-        bool hasReachedHighGround = false)
+        CombatMoveTarget previousMoveTarget = default)
     {
         if (context == null || context.Owner == null) return CombatAiPlan.None;
 
@@ -43,7 +42,6 @@ public static partial class CombatAiPlanner
             personalityProfile,
             previousObjective,
             previousMoveTarget,
-            hasReachedHighGround,
             out reason);
 
         selectedStateReasons?.Clear();
@@ -73,8 +71,7 @@ public static partial class CombatAiPlanner
                 state,
                 reason,
                 tagalongLeader,
-                revengeTarget,
-                hasReachedHighGround);
+                revengeTarget);
         }
     }
 
@@ -84,8 +81,7 @@ public static partial class CombatAiPlanner
         Character focusEnemy = null,
         float focusCommitmentRemainingSeconds = 0f,
         CombatObjective previousObjective = CombatObjective.Search,
-        CombatMoveTarget previousMoveTarget = default,
-        bool hasReachedHighGround = false)
+        CombatMoveTarget previousMoveTarget = default)
     {
         if (context == null || context.Owner == null) return null;
 
@@ -97,8 +93,7 @@ public static partial class CombatAiPlanner
             focusCommitmentRemainingSeconds,
             previousObjective,
             null,
-            previousMoveTarget,
-            hasReachedHighGround);
+            previousMoveTarget);
         return new CombatAiDebugSnapshot
         {
             Owner = context.Owner,
@@ -115,7 +110,6 @@ public static partial class CombatAiPlanner
         CombatAiPersonalityProfile personality,
         CombatObjective previousObjective,
         CombatMoveTarget previousMoveTarget,
-        bool hasReachedHighGround,
         out CombatAiReasonCode reason)
     {
         CombatAiPersonalityKind personalityKind = personality != null
@@ -204,7 +198,7 @@ public static partial class CombatAiPlanner
 
         if (personalityKind == CombatAiPersonalityKind.HighGround &&
             HasLivingEnemyStone(context) &&
-            (hasReachedHighGround || IsAtHighGround(context) ||
+            (IsAtHighGround(context) ||
              previousObjective == CombatObjective.DestroyEnemyStone))
         {
             reason = CombatAiReasonCode.PersonalityPreference;
@@ -277,15 +271,14 @@ public static partial class CombatAiPlanner
         CombatObjective state,
         CombatAiReasonCode reason,
         CombatCharacterIntel tagalongLeader,
-        CombatCharacterIntel revengeTarget,
-        bool hasReachedHighGround)
+        CombatCharacterIntel revengeTarget)
     {
         CombatMoveTarget moveTarget = CombatMoveTarget.None;
         string actionCode;
         bool usesHighGround = personality != null && personality.Kind == CombatAiPersonalityKind.HighGround;
         bool isAtHighGround = usesHighGround && IsAtHighGround(context);
-        bool highGroundEstablished = usesHighGround && (hasReachedHighGround || isAtHighGround);
-        bool hasHighGroundCandidate = usesHighGround && context.HighGroundCandidates.Count > 0;
+        bool hasHighGroundCandidate = usesHighGround &&
+            (context.HighGroundCandidates.Count > 0 || context.HighGroundRegions.Count > 0);
         bool usesTagalongTarget = personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong &&
             context.MarkedStoneAttacker == null &&
             tagalongLeader.Character != null && tagalongLeader.Objective == state &&
@@ -297,7 +290,7 @@ public static partial class CombatAiPlanner
         CombatMoveTarget previousHighGroundTarget = usesHighGround
             ? CreatePreviousHighGroundTarget(context, previousMoveTarget)
             : CombatMoveTarget.None;
-        bool hasHighGroundMove = usesHighGround && !highGroundEstablished;
+        bool hasHighGroundMove = usesHighGround && !isAtHighGround;
         if (hasHighGroundMove)
         {
             highGroundTarget = previousHighGroundTarget;
@@ -322,7 +315,7 @@ public static partial class CombatAiPlanner
             moveTarget = highGroundTarget;
             actionCode = CombatAiMoveCode.PersonalitySignature;
         }
-        else if (hasHighGroundCandidate && !highGroundEstablished)
+        else if (hasHighGroundCandidate && !isAtHighGround)
         {
             actionCode = CombatAiMoveCode.PersonalitySignature;
         }
@@ -379,13 +372,12 @@ public static partial class CombatAiPlanner
             preferredTarget,
             out SkillBase skill,
             out SkillExecutionContext skillContext);
-        if (isAtHighGround && skill != null &&
-            (state == CombatObjective.AttackEnemy ||
-             state == CombatObjective.SupportAlly ||
-             state == CombatObjective.DestroyEnemyStone))
+        if (usesHighGround && isAtHighGround && state != CombatObjective.EmergencyRetreat)
         {
-            moveTarget = CombatMoveTarget.None;
             actionCode = CombatAiMoveCode.PersonalitySignature;
+            moveTarget = skill != null
+                ? CombatMoveTarget.None
+                : CreateHighGroundActionTarget(context, state);
         }
         return new CombatAiPlan(state, moveTarget, skill, skillContext, actionCode, reason);
     }
@@ -1107,26 +1099,182 @@ public static partial class CombatAiPlanner
         float bestDistance = float.PositiveInfinity;
         for (int i = 0; i < context.HighGroundCandidates.Count; i++)
         {
-            Vector3 candidate = context.HighGroundCandidates[i];
-            CombatMoveTarget target = CreatePositionTargetIfMeaningful(context.Owner, candidate);
-            if (!IsUsableMove(context, target)) continue;
+            ConsiderHighGroundCandidate(
+                context,
+                context.HighGroundCandidates[i],
+                ref best,
+                ref bestVisibleTargets,
+                ref bestDistance);
+        }
 
-            int visibleTargets = 0;
-            for (int j = 0; j < context.EnemyIntel.Count; j++)
-            {
-                CombatCharacterIntel enemy = context.EnemyIntel[j];
-                if (enemy.IsAlive && enemy.HasDirectSight && enemy.Character != null &&
-                    HasLineOfSightFrom(candidate, enemy.Character)) visibleTargets++;
-            }
-
-            float distance = HorizontalDistance(context.Owner.transform.position, candidate);
-            if (visibleTargets < bestVisibleTargets || visibleTargets == bestVisibleTargets && distance >= bestDistance) continue;
-            bestVisibleTargets = visibleTargets;
-            bestDistance = distance;
-            best = target;
+        for (int i = 0; i < context.HighGroundRegions.Count; i++)
+        {
+            ConsiderHighGroundCandidate(
+                context,
+                CreateHighGroundSearchPoint(context.HighGroundRegions[i], context.Owner.transform.position),
+                ref best,
+                ref bestVisibleTargets,
+                ref bestDistance);
         }
 
         return best;
+    }
+
+    private static void ConsiderHighGroundCandidate(
+        CombatAiContext context,
+        Vector3 candidate,
+        ref CombatMoveTarget best,
+        ref int bestVisibleTargets,
+        ref float bestDistance)
+    {
+        CombatMoveTarget target = CreatePositionTargetIfMeaningful(context.Owner, candidate);
+        if (!IsUsableMove(context, target)) return;
+
+        int visibleTargets = 0;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.IsAlive && enemy.HasDirectSight && enemy.Character != null &&
+                HasLineOfSightFrom(candidate, enemy.Character)) visibleTargets++;
+        }
+
+        float distance = HorizontalDistance(context.Owner.transform.position, candidate);
+        if (visibleTargets < bestVisibleTargets || visibleTargets == bestVisibleTargets && distance >= bestDistance) return;
+        bestVisibleTargets = visibleTargets;
+        bestDistance = distance;
+        best = target;
+    }
+
+    private static CombatMoveTarget CreateHighGroundActionTarget(
+        CombatAiContext context,
+        CombatObjective state)
+    {
+        if (TryGetHighGroundFocus(context, state, out Vector3 focus))
+        {
+            CombatMoveTarget towardsFocus = CreateHighGroundTargetTowards(context, focus);
+            if (towardsFocus.HasDestination) return towardsFocus;
+        }
+
+        return CreateBestHighGroundTarget(context);
+    }
+
+    private static bool TryGetHighGroundFocus(
+        CombatAiContext context,
+        CombatObjective state,
+        out Vector3 focus)
+    {
+        focus = default;
+        switch (state)
+        {
+            case CombatObjective.SupportAlly:
+                Character ally = FindBestAllyCharacter(context);
+                if (ally == null) return false;
+                focus = ally.transform.position;
+                return true;
+            case CombatObjective.DestroyEnemyStone:
+                if (!context.HasEnemyStonePosition) return false;
+                focus = context.EnemyStonePosition;
+                return true;
+            case CombatObjective.DefendOwnStone:
+                if (!context.HasOwnStonePosition) return false;
+                focus = context.OwnStonePosition;
+                return true;
+            case CombatObjective.AttackEnemy:
+            case CombatObjective.Search:
+                CombatCharacterIntel enemy = FindNearestKnownEnemyIntel(
+                    context,
+                    context.Owner.transform.position);
+                if (enemy.Character == null) return false;
+                focus = enemy.KnownPosition;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static CombatMoveTarget CreateHighGroundTargetTowards(
+        CombatAiContext context,
+        Vector3 focus)
+    {
+        CombatMoveTarget best = CombatMoveTarget.None;
+        float bestFocusDistance = float.PositiveInfinity;
+        float bestOwnerDistance = float.PositiveInfinity;
+        for (int i = 0; i < context.HighGroundCandidates.Count; i++)
+        {
+            ConsiderHighGroundTargetTowards(
+                context,
+                context.HighGroundCandidates[i],
+                focus,
+                ref best,
+                ref bestFocusDistance,
+                ref bestOwnerDistance);
+        }
+
+        for (int i = 0; i < context.HighGroundRegions.Count; i++)
+        {
+            CombatAiHighGroundRegion region = context.HighGroundRegions[i];
+            Vector3 candidate = CreateHighGroundPointTowards(
+                region,
+                focus,
+                context.Owner.transform.position);
+            ConsiderHighGroundTargetTowards(
+                context,
+                candidate,
+                focus,
+                ref best,
+                ref bestFocusDistance,
+                ref bestOwnerDistance);
+        }
+
+        return best;
+    }
+
+    private static void ConsiderHighGroundTargetTowards(
+        CombatAiContext context,
+        Vector3 candidate,
+        Vector3 focus,
+        ref CombatMoveTarget best,
+        ref float bestFocusDistance,
+        ref float bestOwnerDistance)
+    {
+        CombatMoveTarget target = CreatePositionTargetIfMeaningful(context.Owner, candidate);
+        if (!IsUsableMove(context, target)) return;
+
+        float focusDistance = HorizontalDistance(candidate, focus);
+        float ownerDistance = HorizontalDistance(context.Owner.transform.position, candidate);
+        if (focusDistance > bestFocusDistance ||
+            focusDistance >= bestFocusDistance && ownerDistance >= bestOwnerDistance) return;
+
+        best = target;
+        bestFocusDistance = focusDistance;
+        bestOwnerDistance = ownerDistance;
+    }
+
+    private static Vector3 CreateHighGroundPointTowards(
+        CombatAiHighGroundRegion region,
+        Vector3 focus,
+        Vector3 ownerPosition)
+    {
+        Vector3 direction = Flatten(focus - region.Center);
+        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        {
+            direction = Flatten(ownerPosition - region.Center);
+        }
+
+        if (direction.sqrMagnitude <= Mathf.Epsilon) direction = Vector3.forward;
+        float distance = Mathf.Min(direction.magnitude, region.Radius);
+        return region.Center + direction.normalized * distance;
+    }
+
+    private static Vector3 CreateHighGroundSearchPoint(
+        CombatAiHighGroundRegion region,
+        Vector3 ownerPosition)
+    {
+        Vector3 radial = Flatten(ownerPosition - region.Center);
+        Vector3 direction = radial.sqrMagnitude > Mathf.Epsilon
+            ? new Vector3(-radial.z, 0f, radial.x)
+            : Vector3.forward;
+        return region.Center + direction.normalized * region.Radius;
     }
 
     private static CombatMoveTarget CreatePreviousHighGroundTarget(
@@ -1144,12 +1292,30 @@ public static partial class CombatAiPlanner
             }
         }
 
+        for (int i = 0; i < context.HighGroundRegions.Count; i++)
+        {
+            if (context.HighGroundRegions[i].Contains(previousMoveTarget.Destination))
+            {
+                return previousMoveTarget;
+            }
+        }
+
         return CombatMoveTarget.None;
     }
 
     internal static bool IsAtHighGround(CombatAiContext context)
     {
         if (context == null || context.Owner == null) return false;
+
+        if (context.HighGroundRegions.Count > 0)
+        {
+            for (int i = 0; i < context.HighGroundRegions.Count; i++)
+            {
+                if (context.HighGroundRegions[i].Contains(context.Owner.transform.position)) return true;
+            }
+
+            return false;
+        }
 
         for (int i = 0; i < context.HighGroundCandidates.Count; i++)
         {

@@ -59,6 +59,8 @@ public sealed class CombatAiContextCollectorTests
             Assert.That(context.AssaultRoutes, Is.Empty);
             Assert.That(context.HighGroundCandidates, Does.Contain(new Vector3(6f, 4f, 5f)));
             Assert.That(context.HighGroundCandidates, Does.Contain(new Vector3(9f, 2f, 9f)));
+            Assert.That(context.HighGroundRegions.Count, Is.EqualTo(2));
+            Assert.That(context.HighGroundRegions[0].Contains(new Vector3(7f, 0f, 5f)), Is.True);
             Assert.That(context.ForestCandidates.Count, Is.GreaterThan(0));
 
             CombatCharacterIntel enemyIntel = FindIntel(context.EnemyIntel, fixture.Enemy);

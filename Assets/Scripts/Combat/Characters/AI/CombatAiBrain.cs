@@ -33,7 +33,6 @@ public sealed class CombatAiBrain : MonoBehaviour
     private int _consecutiveMoveFailures;
     private Vector3 _blockedMoveDestination;
     private int _blockedMoveUntilDecisionTick;
-    private bool _hasReachedHighGround;
 
     public CombatAiPlan LastPlan { get; private set; } = CombatAiPlan.None;
     public CombatAiContext LastContext { get; private set; }
@@ -115,7 +114,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         _consecutiveMoveFailures = 0;
         _blockedMoveDestination = default;
         _blockedMoveUntilDecisionTick = 0;
-        _hasReachedHighGround = false;
     }
 
     private bool PrepareDecisionCore(
@@ -141,12 +139,6 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (!_owner.Health.CanAct) return false;
         PruneFocusedEnemy(nextContext);
         PruneRevengeTarget(nextContext);
-        if (_owner.PersonalityProfile != null &&
-            _owner.PersonalityProfile.Kind == CombatAiPersonalityKind.HighGround &&
-            CombatAiPlanner.IsAtHighGround(nextContext))
-        {
-            _hasReachedHighGround = true;
-        }
         CombatAiPlan previousPlan = LastPlan;
         _objectiveReasonCodes.Clear();
 
@@ -160,8 +152,7 @@ public sealed class CombatAiBrain : MonoBehaviour
                 GetFocusCommitmentRemainingSeconds(),
                 previousPlan.Objective,
                 _objectiveReasonCodes,
-                previousPlan.MoveTarget,
-                _hasReachedHighGround);
+                previousPlan.MoveTarget);
         }
         SetPreparedDecision(previousPlan, nextPlan, nextContext);
         return true;

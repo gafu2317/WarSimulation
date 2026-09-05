@@ -14,6 +14,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     private readonly List<CombatCharacterIntel> _allyIntel = new();
     private readonly List<CombatAiAssaultRoute> _assaultRoutes = new();
     private readonly List<Vector3> _highGroundCandidates = new();
+    private readonly List<CombatAiHighGroundRegion> _highGroundRegions = new();
     private readonly List<Vector3> _forestCandidates = new();
     private readonly List<CombatAiPendingDamage> _allyPendingDamage = new();
     private readonly List<CombatAiPendingDamage> _enemyPendingDamage = new();
@@ -121,7 +122,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             _assaultRoutes,
             recentAttacker,
             markedStoneAttacker,
-            owner != null ? owner.TagalongTarget : null);
+            owner != null ? owner.TagalongTarget : null,
+            _highGroundRegions);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)
@@ -150,6 +152,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         _allyIntel.Clear();
         _assaultRoutes.Clear();
         _highGroundCandidates.Clear();
+        _highGroundRegions.Clear();
         _forestCandidates.Clear();
         _allyPendingDamage.Clear();
         _enemyPendingDamage.Clear();
@@ -373,7 +376,9 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         {
             MountainRegion mountain = mountains[i];
             Vector3 localCenter = new Vector3(mountain.Center.x, 0f, mountain.Center.y);
-            _highGroundCandidates.Add(ToWorldSurfacePosition(mapSystem, localCenter));
+            Vector3 center = ToWorldSurfacePosition(mapSystem, localCenter);
+            _highGroundCandidates.Add(center);
+            _highGroundRegions.Add(new CombatAiHighGroundRegion(center, mountain.Extent));
         }
 
         List<ForestRegion> forests = map.ForestRegions;

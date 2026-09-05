@@ -686,47 +686,95 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_HighGroundObsessivePursuesEnemyAfterReachingHighGround()
+    public void Planner_HighGroundObsessiveMovesWithinHighGroundToReachEnemy()
     {
         Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(5f, 0f, 0f));
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(14f, 0f, 0f), team: CombatTeam.Enemy);
         CombatEditModeTestUtil.SetAvailableCombatSkills(owner);
         Vector3 highGround = new Vector3(5f, 4f, 0f);
+        Vector3 enemySideHighGround = new Vector3(10f, 4f, 0f);
         CombatAiContext context = Context(
             owner,
             enemies: new[] { Intel(enemy) },
-            highGround: new[] { highGround });
+            highGround: new[] { highGround, enemySideHighGround });
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround));
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PursueEnemy));
-        Assert.That(plan.MoveTarget.HasDestination, Is.True);
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(enemySideHighGround));
     }
 
     [Test]
-    public void Planner_HighGroundObsessiveAdvancesOnStoneAfterReachingHighGround()
+    public void Planner_HighGroundObsessiveMovesWithinHighGroundToReachEnemyStone()
     {
         Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(5f, 0f, 0f));
         Vector3 highGround = new Vector3(5f, 4f, 0f);
+        Vector3 stoneSideHighGround = new Vector3(10f, 4f, 0f);
         CombatAiContext context = Context(
             owner,
             enemyStone: new Vector3(30f, 0f, 0f),
-            highGround: new[] { highGround });
+            highGround: new[] { highGround, stoneSideHighGround });
         CombatAiPersonalityProfile profile = Track(
             CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround));
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceEnemyStone));
-        Assert.That(plan.MoveTarget.HasDestination, Is.True);
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(stoneSideHighGround));
     }
 
     [Test]
-    public void Planner_HighGroundObsessiveDoesNotClimbAgainAfterLeavingHighGroundToFight()
+    public void Planner_HighGroundObsessiveMovesWithinHighGroundToReachAllyWhenSkillIsOutOfRange()
+    {
+        Character owner = CreateCharacter("HighGround", new Bible(), new Vector3(5f, 0f, 0f));
+        Character ally = CreateCharacter("Ally", new Sword(), new Vector3(30f, 0f, 0f), 30, 5);
+        var heal = new CombatEditModeTestUtil.AiPlannerHealSkill();
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, heal);
+        Vector3 highGround = new Vector3(5f, 4f, 0f);
+        Vector3 allySideHighGround = new Vector3(20f, 4f, 0f);
+        CombatAiContext context = Context(
+            owner,
+            allies: new[] { Intel(ally) },
+            highGround: new[] { highGround, allySideHighGround });
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.SupportAlly));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
+        Assert.That(plan.Skill, Is.Null);
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(allySideHighGround));
+    }
+
+    [Test]
+    public void Planner_HighGroundObsessiveAcceptsAnyPositionInsideHighGroundRegion()
+    {
+        Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(7f, 0f, 5f));
+        Vector3 highGroundCenter = new Vector3(6f, 4f, 5f);
+        var highGroundRegions = new[] { new CombatAiHighGroundRegion(highGroundCenter, 2f) };
+        CombatAiContext context = Context(
+            owner,
+            enemyStone: new Vector3(30f, 0f, 5f),
+            highGround: new[] { highGroundCenter },
+            highGroundRegions: highGroundRegions);
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(CombatAiPlanner.IsAtHighGround(context), Is.True);
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
+        Assert.That(plan.MoveTarget.HasDestination, Is.True);
+        Assert.That(highGroundRegions[0].Contains(plan.MoveTarget.Destination), Is.True);
+    }
+
+    [Test]
+    public void Planner_HighGroundObsessiveReturnsAfterLeavingHighGround()
     {
         Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(10f, 0f, 0f));
         Vector3 highGround = new Vector3(5f, 4f, 0f);
@@ -741,13 +789,11 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(
             context,
             profile,
-            previousObjective: CombatObjective.AttackEnemy,
-            hasReachedHighGround: true);
+            previousObjective: CombatObjective.DestroyEnemyStone);
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
-        Assert.That(plan.ActionCode, Is.Not.EqualTo(CombatAiMoveCode.PersonalitySignature));
-        Assert.That(plan.MoveTarget.Destination, Is.Not.EqualTo(highGround));
-        Assert.That(plan.MoveTarget.HasDestination, Is.True);
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(highGround));
     }
 
     [Test]
@@ -1500,7 +1546,8 @@ public sealed class CombatAiStatePlannerTests
         IReadOnlyList<CombatAiPendingDamage> pendingDamage = null,
         Character recentAttacker = null,
         Character markedStoneAttacker = null,
-        Character tagalongTarget = null)
+        Character tagalongTarget = null,
+        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null)
     {
         return CombatEditModeTestUtil.CreatePlannerContext(
             owner,
@@ -1517,7 +1564,8 @@ public sealed class CombatAiStatePlannerTests
             forestCandidates: forests,
             recentAttacker: recentAttacker,
             markedStoneAttacker: markedStoneAttacker,
-            tagalongTarget: tagalongTarget);
+            tagalongTarget: tagalongTarget,
+            highGroundRegions: highGroundRegions);
     }
 
     private Character CreateCharacter(

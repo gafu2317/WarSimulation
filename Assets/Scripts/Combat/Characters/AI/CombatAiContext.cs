@@ -17,6 +17,7 @@ public sealed class CombatAiContext
     public int EnemyStoneMaxHP { get; }
     public IReadOnlyList<CombatAiAssaultRoute> AssaultRoutes { get; }
     public IReadOnlyList<Vector3> HighGroundCandidates { get; }
+    public IReadOnlyList<CombatAiHighGroundRegion> HighGroundRegions { get; }
     public IReadOnlyList<Vector3> ForestCandidates { get; }
     public IReadOnlyList<CombatAiPendingDamage> AllyPendingDamage { get; }
     public IReadOnlyList<CombatAiPendingDamage> EnemyPendingDamage { get; }
@@ -51,7 +52,8 @@ public sealed class CombatAiContext
         IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = null,
         Character recentAttacker = null,
         Character markedStoneAttacker = null,
-        Character tagalongTarget = null)
+        Character tagalongTarget = null,
+        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null)
     {
         Owner = owner;
         EnemyIntel = Snapshot(enemyIntel);
@@ -66,6 +68,7 @@ public sealed class CombatAiContext
         EnemyStoneMaxHP = enemyStoneMaxHP;
         AssaultRoutes = Snapshot(assaultRoutes);
         HighGroundCandidates = Snapshot(highGroundCandidates);
+        HighGroundRegions = Snapshot(highGroundRegions);
         ForestCandidates = Snapshot(forestCandidates);
         AllyPendingDamage = Snapshot(allyPendingDamage);
         EnemyPendingDamage = Snapshot(enemyPendingDamage);
@@ -171,6 +174,25 @@ public sealed class CombatAiContext
         var snapshot = new T[source.Count];
         for (int i = 0; i < source.Count; i++) snapshot[i] = source[i];
         return snapshot;
+    }
+}
+
+public readonly struct CombatAiHighGroundRegion
+{
+    public Vector3 Center { get; }
+    public float Radius { get; }
+
+    public CombatAiHighGroundRegion(Vector3 center, float radius)
+    {
+        Center = center;
+        Radius = Mathf.Max(0f, radius);
+    }
+
+    public bool Contains(Vector3 position)
+    {
+        Vector3 offset = position - Center;
+        offset.y = 0f;
+        return offset.sqrMagnitude <= Radius * Radius;
     }
 }
 
