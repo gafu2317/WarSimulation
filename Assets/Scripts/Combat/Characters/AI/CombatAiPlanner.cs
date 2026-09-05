@@ -166,7 +166,7 @@ public static partial class CombatAiPlanner
             return CombatObjective.Search;
         }
 
-        if (assessment.GetValue(CombatAiMetricIndex.SelfThreat) > 30f)
+        if (assessment.GetValue(CombatAiMetricIndex.SelfThreat) > 60f)
         {
             reason = CombatAiReasonCode.SelfThreatHigh;
             return CombatObjective.Retreat;

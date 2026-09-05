@@ -21,7 +21,7 @@ public sealed class CombatAiStatePlannerTests
     [Test]
     public void Planner_SelectsRetreatBeforeOtherStatesWhenSelfThreatIsHigh()
     {
-        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 30, 5);
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 30, 4);
         Character enemy = CreateCharacter("Enemy", new Sword(), Vector3.one, 30, 30, CombatTeam.Enemy);
         CombatAiContext context = Context(
             owner,
