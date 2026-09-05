@@ -14,7 +14,7 @@ public static class CombatAiDebugLabels
             CombatObjective.AttackEnemy => Format(nameof(CombatObjective.AttackEnemy), "敵を攻撃"),
             CombatObjective.SupportAlly => Format(nameof(CombatObjective.SupportAlly), "味方を援護"),
             CombatObjective.Search => Format(nameof(CombatObjective.Search), "索敵"),
-            CombatObjective.Retreat => Format(nameof(CombatObjective.Retreat), "撤退"),
+            CombatObjective.EmergencyRetreat => Format(nameof(CombatObjective.EmergencyRetreat), "緊急撤退"),
             _ => Format(objective.ToString(), objective.ToString()),
         };
     }
@@ -28,7 +28,7 @@ public static class CombatAiDebugLabels
             CombatObjective.AttackEnemy => "敵を攻撃",
             CombatObjective.SupportAlly => "味方を援護",
             CombatObjective.Search => "索敵",
-            CombatObjective.Retreat => "撤退",
+            CombatObjective.EmergencyRetreat => "緊急撤退",
             _ => objective.ToString(),
         };
     }
@@ -46,7 +46,7 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.EnemyStoneKnown => Format(nameof(CombatAiReasonCode.EnemyStoneKnown), "敵魔石位置既知"),
             CombatAiReasonCode.PersonalityPreference => Format(nameof(CombatAiReasonCode.PersonalityPreference), "性格傾向"),
             CombatAiReasonCode.OwnStoneThreatHigh => Format(nameof(CombatAiReasonCode.OwnStoneThreatHigh), "自軍魔石脅威高い"),
-            CombatAiReasonCode.SelfThreatHigh => Format(nameof(CombatAiReasonCode.SelfThreatHigh), "自己脅威高い"),
+            CombatAiReasonCode.EmergencyRetreat => Format(nameof(CombatAiReasonCode.EmergencyRetreat), "HP15%以下で緊急撤退"),
             CombatAiReasonCode.AllyFragilityHigh => Format(nameof(CombatAiReasonCode.AllyFragilityHigh), "味方脆弱性高い"),
             CombatAiReasonCode.EnemyLocationUncertain => Format(nameof(CombatAiReasonCode.EnemyLocationUncertain), "敵位置不確実"),
             CombatAiReasonCode.OwnStoneAttackerMarked => Format(nameof(CombatAiReasonCode.OwnStoneAttackerMarked), "自軍魔石攻撃者をマーク"),

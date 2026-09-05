@@ -491,7 +491,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
             CombatObjective.AttackEnemy => _attackColor,
             CombatObjective.SupportAlly => _supportColor,
             CombatObjective.Search => _searchColor,
-            CombatObjective.Retreat => _retreatColor,
+            CombatObjective.EmergencyRetreat => _retreatColor,
             _ => _defaultTextColor,
         };
     }

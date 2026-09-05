@@ -1,9 +1,8 @@
 public static class CombatAiMetricIndex
 {
     public const int OwnStoneThreat = 0;
-    public const int SelfThreat = 1;
-    public const int AllyFragility = 2;
-    public const int Count = 3;
+    public const int AllyFragility = 1;
+    public const int Count = 2;
 }
 
 public sealed class CombatAiAssessment

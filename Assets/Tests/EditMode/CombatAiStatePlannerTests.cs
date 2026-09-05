@@ -19,26 +19,186 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_SelectsRetreatBeforeOtherStatesWhenSelfThreatIsHigh()
+    public void Planner_SelectsEmergencyRetreatAtOrBelowFifteenPercentBeforePersonality()
     {
-        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 30, 4);
-        Character enemy = CreateCharacter("Enemy", new Sword(), Vector3.one, 30, 30, CombatTeam.Enemy);
+        Character owner = CreateCharacter("Owner", new Shield(), new Vector3(30f, 0f, 0f), 100, 15);
         CombatAiContext context = Context(
             owner,
-            enemies: new[] { Intel(enemy) },
-            ownStone: new Vector3(-10f, 0f, 0f),
-            enemyStone: new Vector3(10f, 0f, 0f),
-            forests: new[] { new Vector3(-4f, 0f, 0f) });
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Gatekeeper));
 
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Retreat));
-        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.SelfThreatHigh));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.MoveForest));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EmergencyRetreat));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.ReturnOwnStone));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(Vector3.zero));
     }
 
     [Test]
-    public void Planner_DoesNotRetreatFromEnemiesRememberedWithoutDirectSight()
+    public void Planner_DoesNotEmergencyRetreatAboveFifteenPercentWhenEnemyApproaches()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 16);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(31f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.Objective, Is.Not.EqualTo(CombatObjective.EmergencyRetreat));
+    }
+
+    [Test]
+    public void Planner_ReleasesEmergencyRetreatInsideOwnStoneArea()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(17f, 0f, 0f), 100, 15);
+        CombatAiContext context = Context(
+            owner,
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(
+            context,
+            null,
+            previousObjective: CombatObjective.EmergencyRetreat,
+            previousMoveTarget: CombatMoveTarget.ForPosition(Vector3.zero));
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.Objective, Is.Not.EqualTo(CombatObjective.EmergencyRetreat));
+    }
+
+    [Test]
+    public void Planner_ReentersEmergencyRetreatAfterLeavingOwnStoneArea()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(19f, 0f, 0f), 100, 15);
+        CombatAiContext context = Context(
+            owner,
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(
+            context,
+            null,
+            previousObjective: CombatObjective.AttackEnemy);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.ReturnOwnStone));
+    }
+
+    [Test]
+    public void Planner_RetainsRosaryEmergencyRetreatUntilHpReachesFiftyPercent()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 49);
+        Character rosary = CreateCharacter("Rosary", new Rosary(), new Vector3(25f, 0f, 0f));
+        CombatAiContext context = Context(
+            owner,
+            allies: new[] { Intel(rosary) },
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+
+        CombatAiPlan initialPlan = CombatAiPlanner.BuildPlan(context, null);
+        owner.transform.position = rosary.transform.position;
+        CombatAiPlan waitingPlan = CombatAiPlanner.BuildPlan(
+            context,
+            null,
+            previousObjective: CombatObjective.EmergencyRetreat,
+            previousMoveTarget: initialPlan.MoveTarget);
+
+        Assert.That(initialPlan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(initialPlan.MoveTarget.TargetCharacter, Is.SameAs(rosary));
+        Assert.That(waitingPlan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(waitingPlan.MoveTarget.TargetCharacter, Is.SameAs(rosary));
+
+        owner.Health.Initialize(100, 50);
+        CombatAiPlan recoveredPlan = CombatAiPlanner.BuildPlan(
+            context,
+            null,
+            previousObjective: CombatObjective.EmergencyRetreat,
+            previousMoveTarget: waitingPlan.MoveTarget);
+
+        Assert.That(recoveredPlan.Objective, Is.Not.EqualTo(CombatObjective.EmergencyRetreat));
+    }
+
+    [Test]
+    public void Planner_ReusesEmergencyRetreatDestinationUntilItBecomesInvalid()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
+        Character firstRosary = CreateCharacter("FirstRosary", new Rosary(), new Vector3(25f, 0f, 0f));
+        Character secondRosary = CreateCharacter("SecondRosary", new Rosary(), new Vector3(20f, 0f, 0f));
+        CombatAiContext context = Context(
+            owner,
+            allies: new[] { Intel(firstRosary), Intel(secondRosary) },
+            ownStone: Vector3.zero);
+
+        CombatAiPlan initialPlan = CombatAiPlanner.BuildPlan(context, null);
+        secondRosary.transform.position = new Vector3(29f, 0f, 0f);
+        CombatAiContext closerAlternativeContext = Context(
+            owner,
+            allies: new[] { Intel(firstRosary), Intel(secondRosary) },
+            ownStone: Vector3.zero);
+        CombatAiPlan retainedPlan = CombatAiPlanner.BuildPlan(
+            closerAlternativeContext,
+            null,
+            previousObjective: CombatObjective.EmergencyRetreat,
+            previousMoveTarget: initialPlan.MoveTarget);
+
+        Assert.That(initialPlan.MoveTarget.TargetCharacter, Is.SameAs(firstRosary));
+        Assert.That(retainedPlan.MoveTarget.TargetCharacter, Is.SameAs(firstRosary));
+
+        firstRosary.Health.Initialize(100, 0);
+        CombatAiContext invalidTargetContext = Context(
+            owner,
+            allies: new[] { Intel(firstRosary), Intel(secondRosary) },
+            ownStone: Vector3.zero);
+        CombatAiPlan fallbackPlan = CombatAiPlanner.BuildPlan(
+            invalidTargetContext,
+            null,
+            previousObjective: CombatObjective.EmergencyRetreat,
+            previousMoveTarget: retainedPlan.MoveTarget);
+
+        Assert.That(fallbackPlan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(fallbackPlan.MoveTarget.TargetCharacter, Is.SameAs(secondRosary));
+    }
+
+    [Test]
+    public void Planner_HoldsEmergencyRetreatWhenNoDestinationIsAvailable()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
+        CombatAiContext context = Context(owner);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.HoldPosition));
+        Assert.That(plan.MoveTarget.HasDestination, Is.False);
+    }
+
+    [Test]
+    public void Planner_DoesNotSelectAnAttackSkillDuringEmergencyRetreat()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(31f, 0f, 0f), team: CombatTeam.Enemy);
+        var attack = new CombatEditModeTestUtil.AiPlannerBasicAttackSkill();
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, attack);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            ownStone: Vector3.zero);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.Skill, Is.Null);
+    }
+
+    [Test]
+    public void Planner_DoesNotEmergencyRetreatFromEnemiesRememberedWithoutDirectSight()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
         var memories = new List<CombatCharacterIntel>();
@@ -69,7 +229,7 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_DoesNotRetreatWhenLowHpHasNoActiveThreat()
+    public void Planner_DoesNotEmergencyRetreatAboveFifteenPercentWithoutActiveThreat()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 30, 5);
         CombatAiContext context = Context(
@@ -428,7 +588,7 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_AvengerFollowsTheAttackerInsteadOfRetreatingWhenCriticallyHurt()
+    public void Planner_AvengerFollowsTheAttackerAboveTheEmergencyThreshold()
     {
         Character owner = CreateCharacter("Avenger", new Shield(), Vector3.zero, 30, 5);
         Character attacker = CreateCharacter("Attacker", new Sword(), new Vector3(8f, 0f, 0f), team: CombatTeam.Enemy);
@@ -526,29 +686,6 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_HighGroundObsessiveRetreatsAfterReachingHighGroundWhenThreatened()
-    {
-        Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(5f, 0f, 0f), 30, 5);
-        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(6f, 0f, 0f), team: CombatTeam.Enemy);
-        Vector3 highGround = new Vector3(5f, 4f, 0f);
-        CombatAiContext context = Context(
-            owner,
-            enemies: new[] { Intel(enemy) },
-            highGround: new[] { highGround },
-            forests: new[] { new Vector3(2f, 0f, 0f) },
-            ownStone: Vector3.zero,
-            enemyStone: new Vector3(30f, 0f, 0f));
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround));
-
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
-
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Retreat));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.MoveForest));
-        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(2f, 0f, 0f)));
-    }
-
-    [Test]
     public void Planner_HighGroundObsessivePursuesEnemyAfterReachingHighGround()
     {
         Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(5f, 0f, 0f));
@@ -611,33 +748,6 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.ActionCode, Is.Not.EqualTo(CombatAiMoveCode.PersonalitySignature));
         Assert.That(plan.MoveTarget.Destination, Is.Not.EqualTo(highGround));
         Assert.That(plan.MoveTarget.HasDestination, Is.True);
-    }
-
-    [Test]
-    public void Planner_HighGroundObsessiveRetreatsWithoutClimbingAgainAfterLeavingHighGround()
-    {
-        Character owner = CreateCharacter("HighGround", new Grimoire(), new Vector3(10f, 0f, 0f), 30, 5);
-        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(11f, 0f, 0f), team: CombatTeam.Enemy);
-        Vector3 highGround = new Vector3(5f, 4f, 0f);
-        Vector3 forest = new Vector3(7f, 0f, 0f);
-        CombatAiContext context = Context(
-            owner,
-            enemies: new[] { Intel(enemy) },
-            highGround: new[] { highGround },
-            forests: new[] { forest },
-            ownStone: Vector3.zero);
-        CombatAiPersonalityProfile profile = Track(
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround));
-
-        CombatAiPlan plan = CombatAiPlanner.BuildPlan(
-            context,
-            profile,
-            previousObjective: CombatObjective.AttackEnemy,
-            hasReachedHighGround: true);
-
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Retreat));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.MoveForest));
-        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(forest));
     }
 
     [Test]

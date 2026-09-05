@@ -4,6 +4,8 @@ using UnityEngine;
 
 public static partial class CombatAiPlanner
 {
+    internal const float EmergencyRetreatTriggerHpRatio = 0.15f;
+    internal const float EmergencyRetreatReleaseHpRatio = 0.5f;
     private const float RosaryPreferredSupportDistance = 5.5f;
     private const float RosaryCloseHealDistance = 2.5f;
     private const float RosaryEnemyClearanceDistance = 6.5f;
@@ -40,6 +42,7 @@ public static partial class CombatAiPlanner
             assessment,
             personalityProfile,
             previousObjective,
+            previousMoveTarget,
             hasReachedHighGround,
             out reason);
 
@@ -111,12 +114,19 @@ public static partial class CombatAiPlanner
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personality,
         CombatObjective previousObjective,
+        CombatMoveTarget previousMoveTarget,
         bool hasReachedHighGround,
         out CombatAiReasonCode reason)
     {
         CombatAiPersonalityKind personalityKind = personality != null
             ? personality.Kind
             : CombatAiPersonalityKind.Neutral;
+
+        if (ShouldSelectEmergencyRetreat(context, previousObjective, previousMoveTarget))
+        {
+            reason = CombatAiReasonCode.EmergencyRetreat;
+            return CombatObjective.EmergencyRetreat;
+        }
 
         if (personalityKind == CombatAiPersonalityKind.Gatekeeper && context.HasOwnStonePosition)
         {
@@ -164,12 +174,6 @@ public static partial class CombatAiPlanner
         {
             reason = CombatAiReasonCode.PersonalityPreference;
             return CombatObjective.Search;
-        }
-
-        if (assessment.GetValue(CombatAiMetricIndex.SelfThreat) > 60f)
-        {
-            reason = CombatAiReasonCode.SelfThreatHigh;
-            return CombatObjective.Retreat;
         }
 
         if (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 25f)
@@ -231,6 +235,46 @@ public static partial class CombatAiPlanner
         return CombatObjective.Search;
     }
 
+    private static bool ShouldSelectEmergencyRetreat(
+        CombatAiContext context,
+        CombatObjective previousObjective,
+        CombatMoveTarget previousMoveTarget)
+    {
+        float hpRatio = GetHealthRatio(context.Owner);
+        if (hpRatio >= EmergencyRetreatReleaseHpRatio) return false;
+
+        if (previousObjective == CombatObjective.EmergencyRetreat)
+        {
+            if (IsEmergencyRetreatRosaryTarget(context, previousMoveTarget)) return true;
+            return !IsAtOwnStoneSafetyArea(context);
+        }
+
+        return hpRatio <= EmergencyRetreatTriggerHpRatio && !IsAtOwnStoneSafetyArea(context);
+    }
+
+    private static float GetHealthRatio(Character owner)
+    {
+        if (owner == null || owner.Health == null || owner.Health.MaxHP <= 0) return 1f;
+        return owner.Health.HP / (float)owner.Health.MaxHP;
+    }
+
+    private static bool IsAtOwnStoneSafetyArea(CombatAiContext context)
+    {
+        return context.HasOwnStonePosition &&
+            HorizontalDistance(context.Owner.transform.position, context.OwnStonePosition) <=
+            CombatAiAssessmentBuilder.OwnStoneAreaRadius;
+    }
+
+    private static bool IsEmergencyRetreatRosaryTarget(
+        CombatAiContext context,
+        CombatMoveTarget moveTarget)
+    {
+        if (moveTarget.Kind != CombatMoveTargetKind.Character || moveTarget.TargetCharacter == null) return false;
+
+        CombatCharacterIntel ally = context.FindAllyIntel(moveTarget.TargetCharacter);
+        return ally.Character != null && ally.IsAlive && ally.CanAct && ally.WeaponKind == WeaponKind.Rosary;
+    }
+
     private static CombatAiPlan BuildPlanForState(
         CombatAiContext context,
         CombatAiPersonalityProfile personality,
@@ -272,7 +316,11 @@ public static partial class CombatAiPlanner
 
             hasHighGroundMove = IsUsableMove(context, highGroundTarget);
         }
-        if (usesRevengeTarget)
+        if (state == CombatObjective.EmergencyRetreat)
+        {
+            moveTarget = BuildEmergencyRetreatMove(context, previousState, previousMoveTarget, out actionCode);
+        }
+        else if (usesRevengeTarget)
         {
             moveTarget = CreateRevengeTarget(context, revengeTarget);
             actionCode = CombatAiMoveCode.PersonalitySignature;
@@ -294,9 +342,6 @@ public static partial class CombatAiPlanner
         {
             switch (state)
             {
-                case CombatObjective.Retreat:
-                    moveTarget = BuildRetreatMove(context, out actionCode);
-                    break;
                 case CombatObjective.DefendOwnStone:
                     moveTarget = BuildDefendMove(
                         context,
@@ -353,24 +398,78 @@ public static partial class CombatAiPlanner
         return new CombatAiPlan(state, moveTarget, skill, skillContext, actionCode, reason);
     }
 
-    private static CombatMoveTarget BuildRetreatMove(CombatAiContext context, out string actionCode)
+    private static CombatMoveTarget BuildEmergencyRetreatMove(
+        CombatAiContext context,
+        CombatObjective previousState,
+        CombatMoveTarget previousMoveTarget,
+        out string actionCode)
     {
-        CombatMoveTarget forest = CreateSafestPositionTarget(context, context.ForestCandidates);
-        if (IsUsableMove(context, forest))
+        if (previousState == CombatObjective.EmergencyRetreat &&
+            TryReuseEmergencyRetreatTarget(context, previousMoveTarget, out CombatMoveTarget retainedTarget, out actionCode))
         {
-            actionCode = CombatAiMoveCode.MoveForest;
-            return forest;
+            return retainedTarget;
         }
+
+        CombatMoveTarget selected = CombatMoveTarget.None;
+        float selectedDistance = float.PositiveInfinity;
+        string selectedActionCode = CombatAiMoveCode.HoldPosition;
 
         CombatMoveTarget ownStone = CreateOwnStoneTarget(context);
         if (IsUsableMove(context, ownStone))
         {
-            actionCode = CombatAiMoveCode.ReturnOwnStone;
-            return ownStone;
+            selected = ownStone;
+            selectedDistance = HorizontalDistance(context.Owner.transform.position, ownStone.Destination);
+            selectedActionCode = CombatAiMoveCode.ReturnOwnStone;
         }
 
+        for (int i = 0; i < context.AllyIntel.Count; i++)
+        {
+            CombatCharacterIntel ally = context.AllyIntel[i];
+            if (ally.Character == null || !ally.IsAlive || !ally.CanAct || ally.WeaponKind != WeaponKind.Rosary) continue;
+
+            CombatMoveTarget rosary = CombatMoveTarget.ForCharacter(ally.Character);
+            if (!IsUsableMove(context, rosary)) continue;
+
+            float distance = HorizontalDistance(context.Owner.transform.position, ally.CurrentPosition);
+            if (distance >= selectedDistance) continue;
+
+            selected = rosary;
+            selectedDistance = distance;
+            selectedActionCode = CombatAiMoveCode.SupportAlly;
+        }
+
+        actionCode = selectedActionCode;
+        return selected;
+    }
+
+    private static bool TryReuseEmergencyRetreatTarget(
+        CombatAiContext context,
+        CombatMoveTarget previousMoveTarget,
+        out CombatMoveTarget retainedTarget,
+        out string actionCode)
+    {
+        retainedTarget = CombatMoveTarget.None;
         actionCode = CombatAiMoveCode.HoldPosition;
-        return CombatMoveTarget.None;
+
+        if (previousMoveTarget.Kind == CombatMoveTargetKind.Position && context.HasOwnStonePosition &&
+            HorizontalDistance(previousMoveTarget.Destination, context.OwnStonePosition) <= 0.01f)
+        {
+            CombatMoveTarget ownStone = CreateOwnStoneTarget(context);
+            if (!IsUsableMove(context, ownStone)) return false;
+
+            retainedTarget = ownStone;
+            actionCode = CombatAiMoveCode.ReturnOwnStone;
+            return true;
+        }
+
+        if (!IsEmergencyRetreatRosaryTarget(context, previousMoveTarget)) return false;
+
+        CombatMoveTarget rosary = CombatMoveTarget.ForCharacter(previousMoveTarget.TargetCharacter);
+        if (!IsUsableMove(context, rosary)) return false;
+
+        retainedTarget = rosary;
+        actionCode = CombatAiMoveCode.SupportAlly;
+        return true;
     }
 
     private static CombatMoveTarget BuildDefendMove(
@@ -727,6 +826,13 @@ public static partial class CombatAiPlanner
         CombatObjective state,
         SkillBase skill)
     {
+        if (state == CombatObjective.EmergencyRetreat)
+        {
+            return CombatAiSkillClassifier.IsHeal(skill) ||
+                CombatAiSkillClassifier.IsProtect(skill) ||
+                CombatAiSkillClassifier.IsStealth(skill);
+        }
+
         if (personality != null && personality.Kind == CombatAiPersonalityKind.Lonely &&
             !CombatAiPersonalityBehavior.HasNearbyAlly(context, CombatAiPersonalityBehavior.LonelyNearbyAllyRadius)) return false;
 
@@ -735,7 +841,7 @@ public static partial class CombatAiPlanner
 
         return state switch
         {
-            CombatObjective.Retreat => CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill),
+            CombatObjective.EmergencyRetreat => CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill),
             CombatObjective.SupportAlly => CombatAiSkillClassifier.IsSupport(skill),
             CombatObjective.Search => CombatAiSkillClassifier.IsMobility(skill) || CombatAiSkillClassifier.IsStealth(skill),
             CombatObjective.DestroyEnemyStone => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsBuff(skill),
@@ -831,9 +937,9 @@ public static partial class CombatAiPlanner
     {
         return state switch
         {
-            CombatObjective.Retreat when CombatAiSkillClassifier.IsProtect(skill) => 0,
-            CombatObjective.Retreat when CombatAiSkillClassifier.IsHeal(skill) => 1,
-            CombatObjective.Retreat => 2,
+            CombatObjective.EmergencyRetreat when CombatAiSkillClassifier.IsProtect(skill) => 0,
+            CombatObjective.EmergencyRetreat when CombatAiSkillClassifier.IsHeal(skill) => 1,
+            CombatObjective.EmergencyRetreat => 2,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsHeal(skill) => 0,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsProtect(skill) => 1,
             CombatObjective.SupportAlly => 2,
@@ -1068,7 +1174,7 @@ public static partial class CombatAiPlanner
         if (!context.HasOwnStonePosition) return CombatMoveTarget.None;
         CombatCharacterIntel marked = context.FindEnemyIntel(context.MarkedStoneAttacker);
         if (marked.Character != null && marked.IsAlive && marked.HasKnownPosition &&
-            HorizontalDistance(marked.KnownPosition, context.OwnStonePosition) <= CombatAiAssessmentBuilder.OwnStoneThreatRadius)
+            HorizontalDistance(marked.KnownPosition, context.OwnStonePosition) <= CombatAiAssessmentBuilder.OwnStoneAreaRadius)
         {
             return marked.HasDirectSight
                 ? CombatMoveTarget.ForCharacter(marked.Character)
@@ -1082,7 +1188,7 @@ public static partial class CombatAiPlanner
             CombatCharacterIntel enemy = context.EnemyIntel[i];
             if (enemy.Character == null || !enemy.IsAlive || !enemy.HasKnownPosition) continue;
             float distance = HorizontalDistance(enemy.KnownPosition, context.OwnStonePosition);
-            if (distance > CombatAiAssessmentBuilder.OwnStoneThreatRadius) continue;
+            if (distance > CombatAiAssessmentBuilder.OwnStoneAreaRadius) continue;
             if (distance >= nearestDistance) continue;
             nearestDistance = distance;
             nearest = enemy;
@@ -1175,26 +1281,6 @@ public static partial class CombatAiPlanner
             float distance = HorizontalDistance(context.Owner.transform.position, candidate);
             if (distance >= bestDistance) continue;
             bestDistance = distance;
-            best = target;
-        }
-
-        return best;
-    }
-
-    private static CombatMoveTarget CreateSafestPositionTarget(CombatAiContext context, IReadOnlyList<Vector3> positions)
-    {
-        CombatMoveTarget best = CombatMoveTarget.None;
-        float lowestRisk = float.PositiveInfinity;
-        float shortestDistance = float.PositiveInfinity;
-        for (int i = 0; i < positions.Count; i++)
-        {
-            CombatMoveTarget target = CombatMoveTarget.ForPosition(positions[i]);
-            if (!IsUsableMove(context, target)) continue;
-            float risk = CombatAiNavigation.EvaluateRouteRisk(context, context.Owner.transform.position, positions[i]);
-            float distance = HorizontalDistance(context.Owner.transform.position, positions[i]);
-            if (risk > lowestRisk || Mathf.Approximately(risk, lowestRisk) && distance >= shortestDistance) continue;
-            lowestRisk = risk;
-            shortestDistance = distance;
             best = target;
         }
 

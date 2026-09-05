@@ -5,5 +5,5 @@ public enum CombatObjective
     AttackEnemy = 2,
     SupportAlly = 3,
     Search = 4,
-    Retreat = 5,
+    EmergencyRetreat = 5,
 }
