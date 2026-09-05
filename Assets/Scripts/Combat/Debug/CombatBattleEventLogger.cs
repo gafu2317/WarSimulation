@@ -9,6 +9,17 @@ using WarSimulation.Combat.Map;
 [DisallowMultipleComponent]
 public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 {
+    private sealed class ActivePlanLog
+    {
+        public CombatAiPlan Plan;
+        public int PlanId;
+        public int SuppressedCount;
+        public int DestinationUpdates;
+        public float FirstSeenTime;
+        public string LastDestination;
+        public bool HasPlan;
+    }
+
     public override string InspectorDescription => "戦闘開始から終了まで、AI判断・HP変化・定期状態をログファイルへ記録します。";
 
     [SerializeField] private bool _enabled = true;
@@ -17,15 +28,20 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
     private readonly CombatBattleLogFormatter _formatter = new CombatBattleLogFormatter();
     private readonly List<CombatHealth> _subscribedHealth = new List<CombatHealth>();
+    private readonly Dictionary<Character, ActivePlanLog> _activePlans = new Dictionary<Character, ActivePlanLog>();
 
     private StreamWriter _writer;
     private CombatBattleState _lastBattleState = CombatBattleState.WaitingToStart;
     private float _battleStartTime;
     private float _nextSnapshotTime;
     private string _logFilePath;
+    private int _nextPlanId;
+    private bool _applicationQuitting;
     private CombatMagicStoneSystem _magicStoneSystem;
     private CombatCharacterSystem _characterSystem;
     private CombatBattleFlow _battleFlow;
+    private CombatMapSystem _mapSystem;
+    private CombatAutoBattleRunner _autoBattleRunner;
 
     public string CurrentLogFilePath => _logFilePath;
 
@@ -46,13 +62,44 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     private void OnDisable()
     {
         UnsubscribeEvents();
+        if (_writer == null)
+        {
+            FlushVisionDiagnostics();
+            return;
+        }
+
+        float duration = Mathf.Max(0f, Time.time - _battleStartTime);
         FlushVisionDiagnostics();
+        FlushPlanRepeats(duration);
+        WriteLine(_formatter.FormatBattleAborted(
+            duration,
+            _applicationQuitting ? "ApplicationQuit" : "ComponentDisabled"));
+        string closedPath = _logFilePath;
         CloseLog();
+        if (!string.IsNullOrEmpty(closedPath))
+        {
+            Debug.Log($"[診断ログ] 書き込み中断: {Path.GetFileName(closedPath)}", this);
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        _applicationQuitting = true;
     }
 
     private void Update()
     {
-        if (!_enabled || !IsDebugAllowed()) return;
+        if (!IsDebugAllowed())
+        {
+            AbortOpenLog("DebugBuildUnavailable");
+            return;
+        }
+
+        if (!_enabled)
+        {
+            AbortOpenLog("LoggerDisabled");
+            return;
+        }
 
         PollBattleState();
         MaybeWriteSnapshot();
@@ -70,7 +117,14 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         }
         else if (_lastBattleState == CombatBattleState.Running && state != CombatBattleState.Running)
         {
-            EndLog(state);
+            if (state == CombatBattleState.Victory || state == CombatBattleState.Defeat)
+            {
+                EndLog(state);
+            }
+            else
+            {
+                EndAbortedLog("BattleReset");
+            }
         }
 
         _lastBattleState = state;
@@ -78,12 +132,24 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
     private void StartLog()
     {
-        CloseLog();
+        if (_writer != null)
+        {
+            CloseBattleLog("Restarted", aborted: true);
+        }
+        else
+        {
+            CloseLog();
+        }
+
         _formatter.Reset();
+        _activePlans.Clear();
+        _nextPlanId = 0;
+        _applicationQuitting = false;
         CombatVisionObstructionDiagnostics.BeginBattle();
         _battleStartTime = Time.time;
         _nextSnapshotTime = _battleStartTime + _snapshotIntervalSeconds;
 
+        ResolveDependencies();
         string directoryPath = GetLogDirectoryPath();
         Directory.CreateDirectory(directoryPath);
         PruneOldLogFiles(directoryPath);
@@ -93,49 +159,86 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
         Debug.Log($"[診断ログ] 書き込み開始: {fileName}\n{_logFilePath}", this);
 
-        string weatherLabel = ResolveWeatherLabel();
-        WriteLine(_formatter.FormatBattleHeader(_logFilePath, weatherLabel));
+        WriteLine(_formatter.FormatBattleHeader(_logFilePath, BuildHeaderMetadata()));
         WriteLine("[t=0.0s] BATTLE_START");
         SubscribeCharacterHealth();
         WriteSnapshotIfPossible(force: true);
+        FlushWriter();
     }
 
     private void EndLog(CombatBattleState outcome)
+    {
+        if (outcome == CombatBattleState.WaitingToStart)
+        {
+            EndAbortedLog("BattleReset");
+            return;
+        }
+
+        CloseBattleLog(outcome.ToString(), aborted: false);
+    }
+
+    private void EndAbortedLog(string reason)
+    {
+        CloseBattleLog(reason, aborted: true);
+    }
+
+    private void CloseBattleLog(string outcomeOrReason, bool aborted)
     {
         if (_writer == null) return;
 
         float duration = Mathf.Max(0f, Time.time - _battleStartTime);
         FlushVisionDiagnostics();
-        TryGetBattleSnapshot(out int ownStoneHp, out int ownStoneMaxHp, out int enemyStoneHp, out int enemyStoneMaxHp, out int allyAlive, out int enemyAlive);
-        string outcomeLabel = outcome == CombatBattleState.WaitingToStart
-            ? "Timeout"
-            : outcome.ToString();
-        WriteLine(_formatter.FormatBattleEnd(duration, outcomeLabel, ownStoneHp, enemyStoneHp, allyAlive, enemyAlive));
+        FlushPlanRepeats(duration);
+        if (aborted)
+        {
+            WriteLine(_formatter.FormatBattleAborted(duration, outcomeOrReason));
+        }
+        else
+        {
+            TryGetBattleSnapshot(
+                out int ownStoneHp,
+                out _,
+                out int enemyStoneHp,
+                out _,
+                out int allyAlive,
+                out int enemyAlive);
+            WriteLine(_formatter.FormatBattleEnd(
+                duration,
+                outcomeOrReason,
+                ownStoneHp,
+                enemyStoneHp,
+                allyAlive,
+                enemyAlive));
+        }
+
         UnsubscribeCharacterHealth();
         string closedPath = _logFilePath;
         CloseLog();
         if (!string.IsNullOrEmpty(closedPath))
-            Debug.Log($"[診断ログ] 書き込み終了: {Path.GetFileName(closedPath)} outcome={outcomeLabel}", this);
+        {
+            string marker = aborted ? "aborted=" + outcomeOrReason : "outcome=" + outcomeOrReason;
+            Debug.Log($"[診断ログ] 書き込み終了: {Path.GetFileName(closedPath)} {marker}", this);
+        }
     }
 
-    /// <summary>
-    /// Ends the open battle log as Timeout using the pre-reset snapshot.
-    /// Call before AbortBattle so HP/stones are still battle-end values.
-    /// </summary>
     public void FlushTimeoutEnd()
     {
         if (_writer == null) return;
-        EndLog(CombatBattleState.WaitingToStart);
+        CloseBattleLog("Timeout", aborted: false);
+        _lastBattleState = CombatBattleState.WaitingToStart;
+    }
+
+    private void AbortOpenLog(string reason)
+    {
+        if (_writer == null) return;
+        UnsubscribeEvents();
+        EndAbortedLog(reason);
         _lastBattleState = CombatBattleState.WaitingToStart;
     }
 
     private void FlushVisionDiagnostics()
     {
-        CombatVisionObstructionDiagnostics.WriteTo(line =>
-        {
-            WriteLine(line);
-            Debug.Log(line, this);
-        });
+        CombatVisionObstructionDiagnostics.WriteTo(WriteLine);
     }
 
     private void MaybeWriteSnapshot()
@@ -143,12 +246,19 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         if (_writer == null || Time.time < _nextSnapshotTime) return;
         _nextSnapshotTime = Time.time + _snapshotIntervalSeconds;
         WriteSnapshotIfPossible(force: false);
+        FlushWriter();
     }
 
     private void WriteSnapshotIfPossible(bool force)
     {
         if (_writer == null) return;
-        if (!TryGetBattleSnapshot(out int ownStoneHp, out int ownStoneMaxHp, out int enemyStoneHp, out int enemyStoneMaxHp, out int allyAlive, out int enemyAlive))
+        if (!TryGetBattleSnapshot(
+                out int ownStoneHp,
+                out int ownStoneMaxHp,
+                out int enemyStoneHp,
+                out int enemyStoneMaxHp,
+                out int allyAlive,
+                out int enemyAlive))
         {
             if (!force) return;
             ownStoneHp = 0;
@@ -180,6 +290,8 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         CombatAiDecisionEvents.PlanExecuted += OnPlanExecuted;
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
         CombatSkillActionEvents.Completed += OnSkillCompleted;
+        CombatSkillActionEvents.Cancelled -= OnSkillCancelled;
+        CombatSkillActionEvents.Cancelled += OnSkillCancelled;
         ResolveDependencies();
         if (_magicStoneSystem != null)
         {
@@ -194,6 +306,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         CombatAiDecisionEvents.PlanSelected -= OnPlanSelected;
         CombatAiDecisionEvents.PlanExecuted -= OnPlanExecuted;
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
+        CombatSkillActionEvents.Cancelled -= OnSkillCancelled;
         if (_magicStoneSystem != null)
         {
             _magicStoneSystem.MainStoneDestroyed -= OnMainStoneDestroyed;
@@ -235,7 +348,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         CombatObjective next,
         IReadOnlyList<CombatAiReasonCode> reasonCodes)
     {
-        if (_writer == null || owner == null) return;
+        if (!CanLogActiveAiEvent(owner)) return;
 
         var reasonLabels = new List<string>();
         if (reasonCodes != null)
@@ -245,6 +358,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
                 reasonLabels.Add(CombatAiDebugLabels.Reason(reasonCodes[i]));
             }
         }
+
         string weaponLabel = CombatAiDebugLabels.WeaponShort(owner.EquippedWeapon);
         float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
         WriteLine(_formatter.FormatObjectiveChange(
@@ -258,9 +372,42 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
     private void OnPlanSelected(Character owner, CombatAiPlan previous, CombatAiPlan next)
     {
-        if (_writer == null || owner == null) return;
+        if (!CanLogActiveAiEvent(owner)) return;
+
         float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
-        WriteLine(_formatter.FormatAiPlan(battleTime, owner.name, previous.Objective, next));
+        if (!_activePlans.TryGetValue(owner, out ActivePlanLog active))
+        {
+            active = new ActivePlanLog();
+            _activePlans.Add(owner, active);
+        }
+
+        if (!active.HasPlan || CombatBattleLogFormatter.HasMeaningfulPlanChange(active.Plan, next))
+        {
+            FlushPlanRepeat(owner, active, battleTime);
+            active.Plan = next;
+            active.PlanId = ++_nextPlanId;
+            active.SuppressedCount = 0;
+            active.DestinationUpdates = 0;
+            active.FirstSeenTime = battleTime;
+            active.LastDestination = ResolveDestination(next);
+            active.HasPlan = true;
+            WriteLine(_formatter.FormatAiPlan(
+                battleTime,
+                owner.name,
+                previous.Objective,
+                next,
+                active.PlanId,
+                CombatBattleRandom.GetDecisionTick(owner)));
+            return;
+        }
+
+        active.SuppressedCount++;
+        string destination = ResolveDestination(next);
+        if (destination != active.LastDestination)
+        {
+            active.DestinationUpdates++;
+            active.LastDestination = destination;
+        }
     }
 
     private void OnPlanExecuted(
@@ -271,10 +418,37 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         string failureReason)
     {
         if (_writer == null || owner == null) return;
+
+        _activePlans.TryGetValue(owner, out ActivePlanLog active);
+        int planId = active != null && active.HasPlan ? active.PlanId : 0;
+        int decisionTick = CombatBattleRandom.GetDecisionTick(owner);
+        bool actorDefeated = owner.Health != null && !owner.Health.IsAlive;
+        bool battleEnded = _battleFlow != null && _battleFlow.State != CombatBattleState.Running;
         float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
+
+        if (!movementStarted && !skillStarted && (actorDefeated || battleEnded))
+        {
+            WriteLine(_formatter.FormatAiCancelled(
+                battleTime,
+                owner.name,
+                plan,
+                planId,
+                decisionTick,
+                actorDefeated ? "ActorDefeated" : "BattleEnded"));
+            return;
+        }
+
+        if (!CombatBattleLogFormatter.ShouldLogAiExecution(movementStarted, skillStarted, failureReason))
+        {
+            return;
+        }
+
         WriteLine(_formatter.FormatAiExecution(
             battleTime,
             owner.name,
+            plan,
+            planId,
+            decisionTick,
             movementStarted,
             skillStarted,
             failureReason));
@@ -282,11 +456,69 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
 
     private void OnSkillCompleted(CombatSkillActionResult result)
     {
+        LogSkillAction(result);
+    }
+
+    private void OnSkillCancelled(CombatSkillActionResult result)
+    {
+        LogSkillAction(result);
+    }
+
+    private void LogSkillAction(CombatSkillActionResult result)
+    {
         Character user = result?.Action.Actor;
-        if (_writer == null || user == null || result.Outcome == CombatSkillActionOutcome.Failed) return;
+        if (_writer == null || user == null || result == null) return;
 
-        WriteMagicStoneTargetDiagnostics(result, user);
+        float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
+        if (result.Effects.Count > 0)
+        {
+            WriteMagicStoneTargetDiagnostics(result, user, battleTime);
+        }
 
+        string targetName = ResolveSkillTargetName(result);
+        string line = result.Outcome == CombatSkillActionOutcome.Completed
+            ? _formatter.FormatSkillUsed(
+                battleTime,
+                user.name,
+                result.Action.SkillName,
+                targetName,
+                result.Action.ActionId,
+                result.Action.DecisionTick,
+                result.Action.SkillId)
+            : _formatter.FormatSkillResult(
+                battleTime,
+                user.name,
+                result.Action.SkillName,
+                targetName,
+                result.Outcome,
+                result.Action.ActionId,
+                result.Action.DecisionTick,
+                result.Action.SkillId);
+        WriteLine(line);
+    }
+
+    private void WriteMagicStoneTargetDiagnostics(
+        CombatSkillActionResult result,
+        Character user,
+        float battleTime)
+    {
+        for (int i = 0; i < result.Effects.Count; i++)
+        {
+            CombatActionEffect effect = result.Effects[i];
+            if (effect.Kind != CombatActionEffectKind.MagicStoneDamage) continue;
+
+            WriteLine(_formatter.FormatStoneTarget(
+                battleTime,
+                user.name,
+                effect.MagicStoneFeatureIndex,
+                effect.Amount,
+                result.Action.ActionId,
+                result.Action.DecisionTick));
+        }
+    }
+
+    private static string ResolveSkillTargetName(CombatSkillActionResult result)
+    {
         Character target = result.Action.Context.PrimaryTarget;
         if (target == null)
         {
@@ -298,66 +530,55 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
             }
         }
 
-        float battleTime = Mathf.Max(0f, Time.time - _battleStartTime);
-        string line = _formatter.FormatSkillUsed(
-            battleTime,
-            user.name,
-            result.Action.SkillName,
-            target != null ? target.name : null);
-        if (!string.IsNullOrEmpty(line))
+        if (target != null) return target.name;
+
+        MagicStone stone = result.Action.Context.PrimaryStone;
+        if (stone == null && result.Action.Context.ResolvedStones != null &&
+            result.Action.Context.ResolvedStones.Count > 0)
         {
-            WriteLine(line);
+            stone = result.Action.Context.ResolvedStones[0];
         }
+
+        return stone != null ? "stone#" + stone.FeatureIndex : null;
     }
 
-    private void WriteMagicStoneTargetDiagnostics(CombatSkillActionResult result, Character user)
+    private void FlushPlanRepeats(float battleTime)
     {
-        for (int i = 0; i < result.Effects.Count; i++)
+        foreach (KeyValuePair<Character, ActivePlanLog> pair in _activePlans)
         {
-            CombatActionEffect effect = result.Effects[i];
-            if (effect.Kind != CombatActionEffectKind.MagicStoneDamage) continue;
-
-            MagicStone view = null;
-            IReadOnlyList<MagicStone> resolvedStones = result.Action.Context.ResolvedStones;
-            for (int s = 0; s < resolvedStones.Count; s++)
-            {
-                MagicStone candidate = resolvedStones[s];
-                if (candidate != null && candidate.FeatureIndex == effect.MagicStoneFeatureIndex)
-                {
-                    view = candidate;
-                    break;
-                }
-            }
-
-            MagicStoneRuntimeState state = null;
-            _magicStoneSystem?.TryGetState(
-                effect.MagicStoneFeatureIndex,
-                out state);
-            CombatMapSystem mapSystem = CombatSceneContext.Instance?.MapSystem;
-            mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
-            Camera camera = Camera.main;
-            OrbitCameraController orbit = camera != null
-                ? camera.GetComponent<OrbitCameraController>()
-                : null;
-            EditorStyleCameraController editorStyle = camera != null
-                ? camera.GetComponent<EditorStyleCameraController>()
-                : null;
-
-            string line =
-                $"[STONE_TARGET] actor={user.name} team={user.Team} " +
-                $"featureIndex={effect.MagicStoneFeatureIndex} " +
-                $"viewType={(view != null ? view.FeatureType.ToString() : "none")} " +
-                $"stateType={(state != null ? state.Type.ToString() : "none")} " +
-                $"targetPos={(view != null ? view.transform.position.ToString() : "none")} " +
-                $"reversed={(mapSystem != null && mapSystem.IsStonePositionReversed)} " +
-                $"orbitEnabled={(orbit != null && orbit.enabled)} " +
-                $"editorStyleEnabled={(editorStyle != null && editorStyle.enabled)} " +
-                $"cameraPos={(camera != null ? camera.transform.position.ToString() : "none")} " +
-                $"cameraRot={(camera != null ? camera.transform.eulerAngles.ToString() : "none")} " +
-                $"amount={effect.Amount}";
-            WriteLine(line);
-            Debug.Log(line, this);
+            FlushPlanRepeat(pair.Key, pair.Value, battleTime);
         }
+
+        _activePlans.Clear();
+    }
+
+    private void FlushPlanRepeat(Character owner, ActivePlanLog active, float battleTime)
+    {
+        if (active == null || !active.HasPlan || active.SuppressedCount == 0) return;
+
+        WriteLine(_formatter.FormatAiPlanRepeat(
+            battleTime,
+            owner != null ? owner.name : "unknown",
+            active.PlanId,
+            active.SuppressedCount,
+            Mathf.Max(0f, battleTime - active.FirstSeenTime),
+            active.DestinationUpdates,
+            active.LastDestination));
+        active.SuppressedCount = 0;
+    }
+
+    private static string ResolveDestination(CombatAiPlan plan)
+    {
+        return plan.MoveTarget.HasDestination
+            ? CombatBattleLogFormatter.FormatPosition(plan.MoveTarget.Destination)
+            : string.Empty;
+    }
+
+    private bool CanLogActiveAiEvent(Character owner)
+    {
+        if (_writer == null || owner == null) return false;
+        if (_battleFlow != null && _battleFlow.State != CombatBattleState.Running) return false;
+        return owner.Health == null || owner.Health.IsAlive;
     }
 
     private void OnCharacterDefeated(Character victim, Character killer)
@@ -437,18 +658,69 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         return count;
     }
 
+    private CombatBattleLogMetadata BuildHeaderMetadata()
+    {
+        string mapName = _mapSystem != null && _mapSystem.AuthoredMap != null
+            ? _mapSystem.AuthoredMap.name
+            : "runtime";
+        string preserveFixedDeltaTime = _autoBattleRunner != null
+            ? (_autoBattleRunner.IsPreservingFixedDeltaTime ? "true" : "false")
+            : "n/a";
+        return new CombatBattleLogMetadata(
+            mapName,
+            CombatBattleRandom.CurrentSeed,
+            _mapSystem != null && _mapSystem.IsStonePositionReversed,
+            ResolveWeatherLabel(),
+            Time.timeScale,
+            Time.fixedDeltaTime,
+            preserveFixedDeltaTime,
+            Application.unityVersion,
+            Application.buildGUID,
+            BuildParticipantSummary());
+    }
+
+    private string BuildParticipantSummary()
+    {
+        if (_characterSystem == null) return "unknown";
+
+        var entries = new List<string>();
+        AppendParticipantSummary(entries, "A", _characterSystem.AllyCharacters);
+        AppendParticipantSummary(entries, "E", _characterSystem.EnemyCharacters);
+        return entries.Count > 0 ? string.Join("|", entries) : "none";
+    }
+
+    private static void AppendParticipantSummary(
+        List<string> entries,
+        string teamLabel,
+        List<Character> characters)
+    {
+        if (characters == null) return;
+        for (int i = 0; i < characters.Count; i++)
+        {
+            Character character = characters[i];
+            if (character == null) continue;
+            entries.Add(
+                teamLabel + ":" + character.name + "[" +
+                CombatAiDebugLabels.WeaponShort(character.EquippedWeapon) + "/" +
+                CombatAiDebugLabels.PersonalityShort(character.PersonalityProfile) + "]");
+        }
+    }
+
     private string ResolveWeatherLabel()
     {
-        CombatMapSystem mapSystem = CombatSceneContext.Instance != null ? CombatSceneContext.Instance.MapSystem : null;
-        mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
-        if (mapSystem == null) return string.Empty;
-        return mapSystem.CurrentWeather.ToString();
+        ResolveDependencies();
+        return _mapSystem != null ? _mapSystem.CurrentWeather.ToString() : string.Empty;
     }
 
     private void ResolveDependencies()
     {
         _battleFlow ??= FindAnyObjectByType<CombatBattleFlow>();
         _magicStoneSystem ??= CombatMagicStoneSystemResolver.Resolve();
+        _mapSystem ??= CombatSceneContext.Instance != null
+            ? CombatSceneContext.Instance.MapSystem
+            : null;
+        _mapSystem ??= FindAnyObjectByType<CombatMapSystem>();
+        _autoBattleRunner ??= FindAnyObjectByType<CombatAutoBattleRunner>();
         if (_characterSystem == null)
         {
             CombatSceneContext context = CombatSceneContext.Instance;
@@ -488,7 +760,11 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
     {
         if (_writer == null || string.IsNullOrEmpty(line)) return;
         _writer.WriteLine(line);
-        _writer.Flush();
+    }
+
+    private void FlushWriter()
+    {
+        _writer?.Flush();
     }
 
     private void CloseLog()

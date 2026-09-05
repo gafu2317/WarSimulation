@@ -46,6 +46,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private bool _preserveFixedDeltaTime;
     private float _previousFixedDeltaTime;
 
+    public bool IsPreservingFixedDeltaTime => _preserveFixedDeltaTime;
+
     private void Start()
     {
         if (CombatAutoBattleConfigLoader.TryLoadSweepFromCommandLine(
