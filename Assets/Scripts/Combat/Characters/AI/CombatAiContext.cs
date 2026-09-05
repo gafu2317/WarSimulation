@@ -53,7 +53,8 @@ public sealed class CombatAiContext
         Character recentAttacker = null,
         Character markedStoneAttacker = null,
         Character tagalongTarget = null,
-        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null)
+        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null,
+        bool reuseStaticCollections = false)
     {
         Owner = owner;
         EnemyIntel = Snapshot(enemyIntel);
@@ -66,10 +67,18 @@ public sealed class CombatAiContext
         HasEnemyStoneHealth = hasEnemyStoneHealth;
         EnemyStoneHP = enemyStoneHP;
         EnemyStoneMaxHP = enemyStoneMaxHP;
-        AssaultRoutes = Snapshot(assaultRoutes);
-        HighGroundCandidates = Snapshot(highGroundCandidates);
-        HighGroundRegions = Snapshot(highGroundRegions);
-        ForestCandidates = Snapshot(forestCandidates);
+        AssaultRoutes = reuseStaticCollections
+            ? assaultRoutes ?? Array.Empty<CombatAiAssaultRoute>()
+            : Snapshot(assaultRoutes);
+        HighGroundCandidates = reuseStaticCollections
+            ? highGroundCandidates ?? Array.Empty<Vector3>()
+            : Snapshot(highGroundCandidates);
+        HighGroundRegions = reuseStaticCollections
+            ? highGroundRegions ?? Array.Empty<CombatAiHighGroundRegion>()
+            : Snapshot(highGroundRegions);
+        ForestCandidates = reuseStaticCollections
+            ? forestCandidates ?? Array.Empty<Vector3>()
+            : Snapshot(forestCandidates);
         AllyPendingDamage = Snapshot(allyPendingDamage);
         EnemyPendingDamage = Snapshot(enemyPendingDamage);
         AllyPendingHealing = Snapshot(allyPendingHealing);

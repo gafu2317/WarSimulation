@@ -18,6 +18,7 @@ public sealed class CombatAiBrain : MonoBehaviour
 
     private Character _owner;
     private CombatAiContextCollector _contextCollector;
+    private CombatCharacterBody _body;
     private Character _focusedEnemy;
     private float _focusedEnemyLockedUntilTime;
     private Character _revengeTarget;
@@ -72,12 +73,28 @@ public sealed class CombatAiBrain : MonoBehaviour
         CombatAiTeamReservations reservations,
         bool perceptionPrepared)
     {
+        return PrepareScheduledDecision(reservations, perceptionPrepared, null, null);
+    }
+
+    internal bool PrepareScheduledDecision(
+        CombatAiTeamReservations reservations,
+        bool perceptionPrepared,
+        CombatAiWorldSnapshot worldSnapshot,
+        CombatAiBatchPhaseMeasurements phaseMeasurements)
+    {
         if (!_enabled) return false;
 
         ResolveDependencies();
         CombatBattleRandom.AdvanceDecisionTick(_owner);
         UpdateMoveProgress();
-        return PrepareDecisionCore(reservations, perceptionPrepared);
+        _body?.BeginAiNavigationDecision();
+        bool prepared = PrepareDecisionCore(
+            reservations,
+            perceptionPrepared,
+            worldSnapshot,
+            phaseMeasurements);
+        if (!prepared) _body?.EndAiNavigationDecision();
+        return prepared;
     }
 
     public bool TryGetPreparedPlan(out CombatAiPlan plan)
@@ -94,7 +111,9 @@ public sealed class CombatAiBrain : MonoBehaviour
         LastContext = _preparedContext;
         LastPlan = _preparedPlan;
         NotifyPlanSelected(_preparedPreviousPlan, LastPlan);
-        return ExecutePlan(LastPlan);
+        bool executed = ExecutePlan(LastPlan);
+        _body?.EndAiNavigationDecision();
+        return executed;
     }
 
     public void ResetForBattle()
@@ -114,11 +133,14 @@ public sealed class CombatAiBrain : MonoBehaviour
         _consecutiveMoveFailures = 0;
         _blockedMoveDestination = default;
         _blockedMoveUntilDecisionTick = 0;
+        _body?.EndAiNavigationDecision();
     }
 
     private bool PrepareDecisionCore(
         CombatAiTeamReservations reservations,
-        bool perceptionPrepared)
+        bool perceptionPrepared,
+        CombatAiWorldSnapshot worldSnapshot,
+        CombatAiBatchPhaseMeasurements phaseMeasurements)
     {
         _hasPreparedDecision = false;
         ResolveDependencies();
@@ -126,6 +148,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         if (_owner.SkillCaster.IsCasting) return false;
 
         CombatAiContext nextContext;
+        long phaseStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         using (CollectContextMarker.Auto())
         {
             nextContext = _contextCollector.Collect(
@@ -134,8 +157,10 @@ public sealed class CombatAiBrain : MonoBehaviour
                 perceptionPrepared,
                 IsMoveDestinationBlocked(),
                 _blockedMoveDestination,
-                _revengeTarget);
+                _revengeTarget,
+                worldSnapshot);
         }
+        phaseMeasurements?.AddContext(phaseStartTimestamp);
         if (!_owner.Health.CanAct) return false;
         PruneFocusedEnemy(nextContext);
         PruneRevengeTarget(nextContext);
@@ -143,6 +168,7 @@ public sealed class CombatAiBrain : MonoBehaviour
         _objectiveReasonCodes.Clear();
 
         CombatAiPlan nextPlan;
+        phaseStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         using (BuildPlanMarker.Auto())
         {
             nextPlan = CombatAiPlanner.BuildPlan(
@@ -154,6 +180,7 @@ public sealed class CombatAiBrain : MonoBehaviour
                 _objectiveReasonCodes,
                 previousPlan.MoveTarget);
         }
+        phaseMeasurements?.AddPlanning(phaseStartTimestamp);
         SetPreparedDecision(previousPlan, nextPlan, nextContext);
         return true;
     }
@@ -515,6 +542,11 @@ public sealed class CombatAiBrain : MonoBehaviour
             {
                 _contextCollector = gameObject.AddComponent<CombatAiContextCollector>();
             }
+        }
+
+        if (_body == null)
+        {
+            _body = GetComponent<CombatCharacterBody>();
         }
     }
 

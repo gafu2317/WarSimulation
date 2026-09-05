@@ -6,6 +6,7 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using WarSimulation.Combat.Map;
 
 public sealed class CombatBattleFlowTests
 {
@@ -198,6 +199,69 @@ public sealed class CombatBattleFlowTests
         finally
         {
             Object.DestroyImmediate(hudObject);
+        }
+    }
+
+    [Test]
+    public void DebugBattleUi_UpdatesMagicStoneAndCharacterHpBarsAfterDamage()
+    {
+        GameObject hudObject = null;
+        GameObject characterSystemObject = new GameObject("CharacterSystem");
+        GameObject stoneSystemObject = new GameObject("MagicStoneSystem");
+        var characters = new List<GameObject>();
+
+        try
+        {
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            Assert.That(hudPrefab, Is.Not.Null);
+            hudObject = Object.Instantiate(hudPrefab);
+
+            CombatBattleHudView hud = hudObject.GetComponent<CombatBattleHudView>();
+            CombatCharacterSystem characterSystem = characterSystemObject.AddComponent<CombatCharacterSystem>();
+            Character character = CreateCharacters("Ally", CombatTeam.Ally, 1, characters)[0];
+            character.Health.Initialize(100);
+            characterSystem.AllyCharacters.Add(character);
+
+            CombatMagicStoneSystem stoneSystem = stoneSystemObject.AddComponent<CombatMagicStoneSystem>();
+            CombatEditModeTestUtil.SetPrivateField(stoneSystem, "_mainStoneMaxHP", 100);
+            MapData map = new MapData(new HeightMap(4, 4, 1f), new GroundStateGrid(4, 4, 1f), seed: 1);
+            map.AddFeature(new PlacedFeature(FeatureType.OwnMainStone, new Vector3(1f, 0f, 1f)));
+            map.AddFeature(new PlacedFeature(FeatureType.EnemyMainStone, new Vector3(3f, 0f, 3f)));
+            stoneSystem.Initialize(map);
+
+            SetPrivateField(hud, "_debugCharacterSystem", characterSystem);
+            SetPrivateField(hud, "_debugMagicStoneSystem", stoneSystem);
+            hud.EnsureBuilt();
+            InvokePrivate(hud, "RefreshDebugUi");
+
+            Image characterFill = hudObject.transform
+                .Find("DebugBattlePanel/DebugAlliesPanel/CharacterList/Viewport/Content/AllyCharacter/HpBar/Fill")
+                .GetComponent<Image>();
+            Image stoneFill = hudObject.transform
+                .Find("DebugBattlePanel/DebugAlliesPanel/StoneStatus/HpBar/Fill")
+                .GetComponent<Image>();
+
+            Assert.That(characterFill.sprite, Is.Not.Null);
+            Assert.That(stoneFill.sprite, Is.Not.Null);
+            Assert.That(characterFill.fillAmount, Is.EqualTo(1f));
+            Assert.That(stoneFill.fillAmount, Is.EqualTo(1f));
+
+            character.Health.TakeDamage(25);
+            stoneSystem.TakeDamage(0, 40);
+            InvokePrivate(hud, "RefreshDebugUi");
+
+            Assert.That(characterFill.fillAmount, Is.EqualTo(0.75f).Within(0.001f));
+            Assert.That(stoneFill.fillAmount, Is.EqualTo(0.6f).Within(0.001f));
+        }
+        finally
+        {
+            if (hudObject != null) Object.DestroyImmediate(hudObject);
+            Object.DestroyImmediate(characterSystemObject);
+            Object.DestroyImmediate(stoneSystemObject);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                if (characters[i] != null) Object.DestroyImmediate(characters[i]);
+            }
         }
     }
 

@@ -393,7 +393,9 @@ public sealed class CombatBattleHudView : MonoBehaviour
             typeof(LayoutElement));
         RectTransform barRect = barObject.GetComponent<RectTransform>();
         barRect.SetParent(parent, false);
-        barObject.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.5f);
+        Image backgroundImage = barObject.GetComponent<Image>();
+        backgroundImage.sprite = CombatWorldHealthBar.GetWhiteSprite();
+        backgroundImage.color = new Color(0f, 0f, 0f, 0.5f);
         barObject.GetComponent<LayoutElement>().preferredHeight = height;
 
         GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
@@ -404,6 +406,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         fillRect.offsetMin = Vector2.zero;
         fillRect.offsetMax = Vector2.zero;
         fill = fillObject.GetComponent<Image>();
+        fill.sprite = CombatWorldHealthBar.GetWhiteSprite();
         fill.type = Image.Type.Filled;
         fill.fillMethod = Image.FillMethod.Horizontal;
         fill.fillOrigin = 0;

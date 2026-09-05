@@ -142,6 +142,57 @@ public sealed class CombatCharacterSystemTests
     }
 
     [Test]
+    public void TickAiDecisionsNow_RefreshesTheCachedParticipantsWhenTheRosterChanges()
+    {
+        GameObject systemObject = new GameObject("CharacterSystem");
+        var characterObjects = new List<GameObject>();
+        var selectedParticipantIds = new List<int>();
+
+        try
+        {
+            CombatCharacterSystem system = systemObject.AddComponent<CombatCharacterSystem>();
+            Character allyA = CreateAiCharacter("AllyA", characterObjects);
+            Character enemy = CreateAiCharacter("Enemy", characterObjects);
+            system.SetParticipants(new[] { allyA }, new[] { enemy });
+            system.ResetCharactersForBattle();
+            system.TickAiDecisionsNow(Time.time);
+
+            allyA.GetComponent<CombatAiBrain>().enabled = false;
+            Character allyB = CreateAiCharacter("AllyB", characterObjects);
+            system.AllyCharacters.Add(allyB);
+            system.AssignTeamsFromLists();
+
+            void Capture(Character owner, CombatAiPlan _, CombatAiPlan __)
+            {
+                selectedParticipantIds.Add(owner.BattleParticipantId);
+            }
+
+            CombatAiDecisionEvents.PlanSelected += Capture;
+            try
+            {
+                int preparedCount = system.TickAiDecisionsNow(Time.time + 0.5f);
+
+                Assert.That(preparedCount, Is.EqualTo(2));
+            }
+            finally
+            {
+                CombatAiDecisionEvents.PlanSelected -= Capture;
+            }
+
+            Assert.That(selectedParticipantIds, Is.EqualTo(new[] { 2, -1 }));
+        }
+        finally
+        {
+            for (int i = characterObjects.Count - 1; i >= 0; i--)
+            {
+                Object.DestroyImmediate(characterObjects[i]);
+            }
+
+            Object.DestroyImmediate(systemObject);
+        }
+    }
+
+    [Test]
     public void SetParticipants_AppliesEachCharactersWeaponAndPersonalitySetup()
     {
         GameObject systemObject = new GameObject("CharacterSystem");

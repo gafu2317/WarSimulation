@@ -147,7 +147,7 @@ public sealed class CombatWorldHealthBar : MonoBehaviour
 
     private static Sprite s_whiteSprite;
 
-    private static Sprite GetWhiteSprite()
+    internal static Sprite GetWhiteSprite()
     {
         if (s_whiteSprite != null) return s_whiteSprite;
 

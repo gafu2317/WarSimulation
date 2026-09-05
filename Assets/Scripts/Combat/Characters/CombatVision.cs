@@ -86,7 +86,7 @@ public sealed class CombatVision : MonoBehaviour
     private readonly Dictionary<Character, CharacterMemory> _memories = new();
     private readonly List<Character> _visibleEnemies = new();
     private readonly List<Character> _rememberedEnemies = new();
-    private readonly List<CharacterMemory> _memoriesToShare = new();
+    private readonly List<CombatVisionShareEntry> _memoriesToShare = new();
     private readonly List<CombatVisionDebugMemorySnapshot> _debugMemorySnapshots = new();
     private readonly List<CombatVisionDebugCommunicationSnapshot> _debugCommunicationSnapshots = new();
     private readonly RaycastHit[] _lineOfSightHits = new RaycastHit[32];
@@ -98,6 +98,8 @@ public sealed class CombatVision : MonoBehaviour
     private float _lastSharedAt = float.NegativeInfinity;
     private float _lastReceivedAt = float.NegativeInfinity;
     private bool _hasPreparedShare;
+    private bool _isReceivingSharedMemoryBatch;
+    private bool _sharedMemoryBatchDirty;
 
     public IReadOnlyList<Character> VisibleEnemies => _visibleEnemies;
     public IReadOnlyList<Character> RememberedEnemies => _rememberedEnemies;
@@ -130,6 +132,8 @@ public sealed class CombatVision : MonoBehaviour
         _lastSharedAt = float.NegativeInfinity;
         _lastReceivedAt = float.NegativeInfinity;
         _hasPreparedShare = false;
+        _isReceivingSharedMemoryBatch = false;
+        _sharedMemoryBatchDirty = false;
 
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
         if (characterSystem == null || _owner == null) return;
@@ -207,15 +211,12 @@ public sealed class CombatVision : MonoBehaviour
         {
             if (memory == null) continue;
 
-            var snapshot = new CharacterMemory(
+            _memoriesToShare.Add(new CombatVisionShareEntry(
                 memory.Target,
                 memory.LastSeenPosition,
-                memory.LastSeenTime)
-            {
-                Source = memory.Source,
-                SharedFrom = memory.SharedFrom,
-            };
-            _memoriesToShare.Add(snapshot);
+                memory.LastSeenTime,
+                memory.Source,
+                memory.SharedFrom));
         }
 
         _hasPreparedShare = true;
@@ -312,6 +313,54 @@ public sealed class CombatVision : MonoBehaviour
         _lastReceivedFrom = sharedFrom;
         _lastReceivedAt = Time.time;
         RebuildRememberedEnemiesFromTracked();
+    }
+
+    internal void BeginSharedMemoryBatch()
+    {
+        _isReceivingSharedMemoryBatch = true;
+        _sharedMemoryBatchDirty = false;
+    }
+
+    internal void CompleteSharedMemoryBatch()
+    {
+        _isReceivingSharedMemoryBatch = false;
+        if (!_sharedMemoryBatchDirty) return;
+
+        _sharedMemoryBatchDirty = false;
+        RebuildRememberedEnemiesFromTracked();
+    }
+
+    internal void ReceivePreparedSharedMemory(
+        Character sharedFrom,
+        IReadOnlyList<CombatVisionShareEntry> sharedMemories)
+    {
+        if (sharedMemories == null) return;
+
+        for (int i = 0; i < sharedMemories.Count; i++)
+        {
+            CombatVisionShareEntry sharedMemory = sharedMemories[i];
+            if (sharedMemory.Target == null || sharedMemory.Target == _owner) continue;
+            if (!sharedMemory.LastSeenPosition.HasValue) continue;
+
+            CharacterMemory myMemory = EnsureTracked(sharedMemory.Target);
+            if (sharedMemory.LastSeenTime <= myMemory.LastSeenTime) continue;
+
+            myMemory.LastSeenPosition = sharedMemory.LastSeenPosition;
+            myMemory.LastSeenTime = sharedMemory.LastSeenTime;
+            myMemory.Source = CombatVisionMemorySource.Shared;
+            myMemory.SharedFrom = sharedFrom;
+        }
+
+        _lastReceivedFrom = sharedFrom;
+        _lastReceivedAt = Time.time;
+        if (_isReceivingSharedMemoryBatch)
+        {
+            _sharedMemoryBatchDirty = true;
+        }
+        else
+        {
+            RebuildRememberedEnemiesFromTracked();
+        }
     }
 
     public IReadOnlyList<CombatVisionDebugMemorySnapshot> GetDebugMemorySnapshots()
@@ -724,9 +773,32 @@ public sealed class CombatVision : MonoBehaviour
             _debugCommunicationSnapshots.Add(new CombatVisionDebugCommunicationSnapshot(ally, canCommunicate));
             if (!canCommunicate) continue;
 
-            ally.Vision?.ReceiveSharedMemory(_owner, _memoriesToShare);
+            ally.Vision?.ReceivePreparedSharedMemory(_owner, _memoriesToShare);
             _lastSharedTo = ally;
             _lastSharedAt = Time.time;
         }
+    }
+}
+
+internal readonly struct CombatVisionShareEntry
+{
+    public Character Target { get; }
+    public Vector3? LastSeenPosition { get; }
+    public float LastSeenTime { get; }
+    public CombatVisionMemorySource Source { get; }
+    public Character SharedFrom { get; }
+
+    public CombatVisionShareEntry(
+        Character target,
+        Vector3? lastSeenPosition,
+        float lastSeenTime,
+        CombatVisionMemorySource source,
+        Character sharedFrom)
+    {
+        Target = target;
+        LastSeenPosition = lastSeenPosition;
+        LastSeenTime = lastSeenTime;
+        Source = source;
+        SharedFrom = sharedFrom;
     }
 }

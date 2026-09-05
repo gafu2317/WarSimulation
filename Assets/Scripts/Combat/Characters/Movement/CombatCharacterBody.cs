@@ -26,6 +26,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
     private bool _hasVisiblePath;
     private bool _hasRiverCrossingDestination;
     private Vector3 _riverCrossingDestination;
+    private readonly CombatAiNavigationQueryCache _aiNavigationQueries = new();
 
     public bool IsMoving =>
         _agent != null &&
@@ -85,11 +86,42 @@ public sealed class CombatCharacterBody : MonoBehaviour
     {
         if (_agent == null || !_agent.isOnNavMesh) return false;
 
+        if (_aiNavigationQueries.TryGet(worldPosition, out CombatAiNavigationQuery cached))
+        {
+            return cached.IsReachable;
+        }
+
         ApplyPersonalityNavigationCosts();
-        return ResolveNavigationSystem().TryResolveDestination(
+        bool reachable = ResolveNavigationSystem().TryResolveDestination(
             _agent,
             worldPosition,
-            out _);
+            out Vector3 destination,
+            out NavMeshPath path);
+        _aiNavigationQueries.Store(
+            worldPosition,
+            new CombatAiNavigationQuery(reachable, destination, path));
+
+        return reachable;
+    }
+
+    internal void BeginAiNavigationDecision()
+    {
+        _aiNavigationQueries.BeginTick();
+    }
+
+    internal void EndAiNavigationDecision()
+    {
+        _aiNavigationQueries.EndTick();
+    }
+
+    internal bool TryGetAiRouteRisk(Vector3 start, Vector3 destination, out float risk)
+    {
+        return _aiNavigationQueries.TryGetRouteRisk(start, destination, out risk);
+    }
+
+    internal void StoreAiRouteRisk(Vector3 start, Vector3 destination, float risk)
+    {
+        _aiNavigationQueries.StoreRouteRisk(start, destination, risk);
     }
 
     private bool TrySetDestination(
@@ -105,13 +137,24 @@ public sealed class CombatCharacterBody : MonoBehaviour
         if (!isRetreat && IsMovementRestricted()) return false;
 
         ApplyPersonalityNavigationCosts();
-        if (!TryResolveMoveDestination(worldPosition, out Vector3 destination, out NavMeshPath path))
+        CombatAiNavigationQuery cachedQuery = default;
+        bool canUseCachedPath = !isRetreat && !IsRecklessEnemyStoneMove(worldPosition) &&
+            _aiNavigationQueries.TryGet(worldPosition, out cachedQuery);
+        Vector3 destination;
+        NavMeshPath path;
+        if (canUseCachedPath)
+        {
+            if (!cachedQuery.IsReachable || cachedQuery.Path == null) return false;
+            destination = cachedQuery.Destination;
+            path = cachedQuery.Path;
+        }
+        else if (!TryResolveMoveDestination(worldPosition, out destination, out path))
         {
             return false;
         }
 
         _agent.isStopped = false;
-        if (!_agent.SetDestination(destination)) return false;
+        if (!_agent.SetPath(path) && !_agent.SetDestination(destination)) return false;
 
         resolvedDestination = destination;
         SetRoute(path.corners);

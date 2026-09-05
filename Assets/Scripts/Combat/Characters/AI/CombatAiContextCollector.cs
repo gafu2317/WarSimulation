@@ -36,6 +36,25 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         Vector3 blockedMoveDestination,
         Character recentAttacker = null)
     {
+        return Collect(
+            owner,
+            reservations,
+            perceptionPrepared,
+            hasBlockedMoveDestination,
+            blockedMoveDestination,
+            recentAttacker,
+            null);
+    }
+
+    internal CombatAiContext Collect(
+        Character owner,
+        CombatAiTeamReservations reservations,
+        bool perceptionPrepared,
+        bool hasBlockedMoveDestination,
+        Vector3 blockedMoveDestination,
+        Character recentAttacker,
+        CombatAiWorldSnapshot worldSnapshot)
+    {
         ClearBuffers();
 
         CombatCharacterSystem characterSystem = ResolveCharacterSystem();
@@ -56,10 +75,21 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             ? characterSystem.GetMarkedStoneAttacker(owner)
             : null;
 
-        BuildIntel(owner, enemies, vision, reservations, markedStoneAttacker, _enemyIntel);
-        BuildIntel(owner, allies, vision, reservations, null, _allyIntel);
-        CollectPendingDamage(allies, owner, _allyPendingDamage);
-        CollectPendingDamage(enemies, null, _enemyPendingDamage);
+        BuildIntel(owner, enemies, vision, reservations, markedStoneAttacker, worldSnapshot, _enemyIntel);
+        BuildIntel(owner, allies, vision, reservations, null, worldSnapshot, _allyIntel);
+        if (worldSnapshot != null && owner != null)
+        {
+            worldSnapshot.AppendPendingDamage(
+                owner.Team,
+                owner,
+                _allyPendingDamage,
+                _enemyPendingDamage);
+        }
+        else
+        {
+            CollectPendingDamage(allies, owner, _allyPendingDamage);
+            CollectPendingDamage(enemies, null, _enemyPendingDamage);
+        }
         if (owner != null && reservations != null)
         {
             reservations.AppendPendingDamage(owner.Team, _allyPendingDamage, _enemyPendingDamage);
@@ -68,16 +98,17 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
         Vector3 ownStonePosition = default;
         Vector3 enemyStonePosition = default;
-        bool hasOwnStonePosition = characterSystem != null &&
-            owner != null &&
+        bool hasOwnStonePosition = worldSnapshot == null &&
+            characterSystem != null && owner != null &&
             characterSystem.TryGetMainStoneHomePosition(owner, out ownStonePosition);
-        bool hasEnemyStonePosition = characterSystem != null &&
-            owner != null &&
+        bool hasEnemyStonePosition = worldSnapshot == null &&
+            characterSystem != null && owner != null &&
             characterSystem.TryGetEnemyHomePosition(owner, out enemyStonePosition);
 
         CollectMapFeatures(
             owner,
             mapSystem,
+            worldSnapshot,
             out bool hasOwnStoneFeaturePosition,
             out Vector3 ownStoneFeaturePosition,
             out bool hasEnemyStoneFeaturePosition,
@@ -94,12 +125,34 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             enemyStonePosition = enemyStoneFeaturePosition;
         }
 
-        CollectTerrainCandidates(mapSystem);
-        CollectAssaultRoutes(owner, mapSystem);
-        bool hasEnemyStoneHealth = TryGetEnemyStoneHealth(
-            owner,
-            out int enemyStoneHP,
-            out int enemyStoneMaxHP);
+        if (worldSnapshot == null)
+        {
+            CollectTerrainCandidates(mapSystem);
+            CollectAssaultRoutes(owner, mapSystem);
+        }
+        bool hasEnemyStoneHealth = worldSnapshot != null && owner != null
+            ? worldSnapshot.TryGetEnemyStoneHealth(
+                owner.Team,
+                out int enemyStoneHP,
+                out int enemyStoneMaxHP)
+            : TryGetEnemyStoneHealth(
+                owner,
+                out enemyStoneHP,
+                out enemyStoneMaxHP);
+        IReadOnlyList<Vector3> highGroundCandidates = worldSnapshot != null
+            ? worldSnapshot.StaticMap.HighGroundCandidates
+            : _highGroundCandidates;
+        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = worldSnapshot != null
+            ? worldSnapshot.StaticMap.HighGroundRegions
+            : _highGroundRegions;
+        IReadOnlyList<Vector3> forestCandidates = worldSnapshot != null
+            ? worldSnapshot.StaticMap.ForestCandidates
+            : _forestCandidates;
+        IReadOnlyList<CombatAiAssaultRoute> assaultRoutes = worldSnapshot != null && owner != null
+            ? owner.Team == CombatTeam.Ally
+                ? worldSnapshot.StaticMap.AllyAssaultRoutes
+                : worldSnapshot.StaticMap.EnemyAssaultRoutes
+            : _assaultRoutes;
 
         return new CombatAiContext(
             owner,
@@ -110,8 +163,8 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             ownStonePosition,
             hasEnemyStonePosition,
             enemyStonePosition,
-            _highGroundCandidates,
-            _forestCandidates,
+            highGroundCandidates,
+            forestCandidates,
             hasEnemyStoneHealth,
             enemyStoneHP,
             enemyStoneMaxHP,
@@ -121,11 +174,12 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             _enemyPendingHealing,
             hasBlockedMoveDestination,
             blockedMoveDestination,
-            _assaultRoutes,
+            assaultRoutes,
             recentAttacker,
             markedStoneAttacker,
             owner != null ? owner.TagalongTarget : null,
-            _highGroundRegions);
+            highGroundRegions,
+            worldSnapshot != null);
     }
 
     private static bool TryGetEnemyStoneHealth(Character owner, out int hp, out int maxHp)
@@ -196,6 +250,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         CombatVision vision,
         CombatAiTeamReservations reservations,
         Character forceKnownCharacter,
+        CombatAiWorldSnapshot worldSnapshot,
         List<CombatCharacterIntel> destination)
     {
         if (characters == null) return;
@@ -204,6 +259,13 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         {
             Character character = characters[i];
             if (character == null || character == owner || ContainsCharacter(destination, character)) continue;
+
+            CombatAiCharacterSnapshot characterSnapshot = default;
+            bool hasSnapshot = worldSnapshot != null &&
+                worldSnapshot.TryGetCharacter(character, out characterSnapshot);
+            Vector3 currentPosition = hasSnapshot
+                ? characterSnapshot.Position
+                : character.transform.position;
 
             Vector3 lastKnownPosition = default;
             bool hasLastKnownPosition = vision != null &&
@@ -215,11 +277,11 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             {
                 hasMemory = true;
                 hasLastKnownPosition = true;
-                lastKnownPosition = character.transform.position;
+                lastKnownPosition = currentPosition;
             }
             bool hasKnownPosition = hasDirectSight || (hasMemory && hasLastKnownPosition);
             Vector3 knownPosition = hasDirectSight
-                ? character.transform.position
+                ? currentPosition
                 : hasKnownPosition
                     ? lastKnownPosition
                     : default;
@@ -228,24 +290,32 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 : vision != null
                     ? vision.GetMemoryAgeSeconds(character)
                     : float.PositiveInfinity;
-            WeaponBase weapon = character.EquippedWeapon ?? WeaponBase.Unarmed;
-            NavMeshAgent agent = character.GetComponent<NavMeshAgent>();
-            CombatHealth health = character.Health;
-            CombatStatusEffects statusEffectsComponent = character.GetComponent<CombatStatusEffects>();
-            CombatVision targetVision = character.Vision;
-            IReadOnlyList<CombatStatusEffectSnapshot> statusEffects = statusEffectsComponent != null
-                ? statusEffectsComponent.GetActiveEffectSnapshots()
-                : Array.Empty<CombatStatusEffectSnapshot>();
-            CombatAiBrain brain = character.GetComponent<CombatAiBrain>();
+            WeaponBase weapon = hasSnapshot ? null : character.EquippedWeapon ?? WeaponBase.Unarmed;
+            NavMeshAgent agent = hasSnapshot ? null : character.GetComponent<NavMeshAgent>();
+            CombatHealth health = hasSnapshot ? null : character.Health;
+            CombatStatusEffects statusEffectsComponent = hasSnapshot
+                ? null
+                : character.GetComponent<CombatStatusEffects>();
+            CombatVision targetVision = hasSnapshot ? characterSnapshot.Vision : character.Vision;
+            IReadOnlyList<CombatStatusEffectSnapshot> statusEffects = hasSnapshot
+                ? characterSnapshot.StatusEffects
+                : statusEffectsComponent != null
+                    ? statusEffectsComponent.GetActiveEffectSnapshots()
+                    : Array.Empty<CombatStatusEffectSnapshot>();
+            CombatAiBrain brain = hasSnapshot ? null : character.GetComponent<CombatAiBrain>();
             CombatAiPlan reservedPlan = CombatAiPlan.None;
             bool hasReservedPlan = reservations != null &&
                 reservations.TryGetPlan(character, out reservedPlan);
-            bool hasObjective = hasReservedPlan || brain != null && brain.LastContext != null;
+            bool hasObjective = hasReservedPlan || (hasSnapshot
+                ? characterSnapshot.HasObjective
+                : brain != null && brain.LastContext != null);
             CombatAiPlan plan = hasReservedPlan
                 ? reservedPlan
-                : hasObjective
-                    ? brain.LastPlan
-                    : CombatAiPlan.None;
+                : hasSnapshot
+                    ? characterSnapshot.Plan
+                    : hasObjective
+                        ? brain.LastPlan
+                        : CombatAiPlan.None;
             CombatObjective objective = plan.Objective;
             Character intendedTarget = plan.SkillTarget != null
                 ? plan.SkillTarget
@@ -255,23 +325,23 @@ public sealed class CombatAiContextCollector : MonoBehaviour
 
             destination.Add(new CombatCharacterIntel(
                 character,
-                character.Team,
-                character.transform.position,
+                hasSnapshot ? characterSnapshot.Team : character.Team,
+                currentPosition,
                 hasDirectSight,
                 hasMemory,
                 hasKnownPosition,
                 knownPosition,
                 memoryAgeSeconds,
                 recognizesOwner,
-                health != null ? health.HP : 0,
-                health != null ? health.MaxHP : 0,
-                health != null && health.CanAct,
-                weapon.Kind,
-                weapon.Range,
-                CopyStatusEffects(statusEffects),
+                hasSnapshot ? characterSnapshot.HP : health != null ? health.HP : 0,
+                hasSnapshot ? characterSnapshot.MaxHP : health != null ? health.MaxHP : 0,
+                hasSnapshot ? characterSnapshot.CanAct : health != null && health.CanAct,
+                hasSnapshot ? characterSnapshot.WeaponKind : weapon.Kind,
+                hasSnapshot ? characterSnapshot.WeaponRange : weapon.Range,
+                hasSnapshot ? statusEffects : CopyStatusEffects(statusEffects),
                 hasObjective,
                 objective,
-                agent != null ? agent.speed : 3.5f,
+                hasSnapshot ? characterSnapshot.MoveSpeed : agent != null ? agent.speed : 3.5f,
                 intendedTarget,
                 hasIntendedDestination,
                 hasIntendedDestination ? plan.MoveTarget.Destination : default));
@@ -305,6 +375,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
     private void CollectMapFeatures(
         Character owner,
         CombatMapSystem mapSystem,
+        CombatAiWorldSnapshot worldSnapshot,
         out bool hasOwnStonePosition,
         out Vector3 ownStonePosition,
         out bool hasEnemyStonePosition,
@@ -314,6 +385,17 @@ public sealed class CombatAiContextCollector : MonoBehaviour
         ownStonePosition = default;
         hasEnemyStonePosition = false;
         enemyStonePosition = default;
+
+        if (worldSnapshot != null)
+        {
+            CombatAiStaticMapSnapshot staticMap = worldSnapshot.StaticMap;
+            bool reversed = owner != null && owner.Team == CombatTeam.Enemy;
+            hasOwnStonePosition = reversed ? staticMap.HasEnemyStonePosition : staticMap.HasOwnStonePosition;
+            ownStonePosition = reversed ? staticMap.EnemyStonePosition : staticMap.OwnStonePosition;
+            hasEnemyStonePosition = reversed ? staticMap.HasOwnStonePosition : staticMap.HasEnemyStonePosition;
+            enemyStonePosition = reversed ? staticMap.OwnStonePosition : staticMap.EnemyStonePosition;
+            return;
+        }
 
         MapData map = mapSystem != null ? mapSystem.CurrentMap : null;
         if (map == null) return;

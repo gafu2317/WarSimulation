@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -71,6 +72,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         float duration = Mathf.Max(0f, Time.time - _battleStartTime);
         FlushVisionDiagnostics();
         FlushPlanRepeats(duration);
+        WriteAiTimingSummary(duration);
         WriteLine(_formatter.FormatBattleAborted(
             duration,
             _applicationQuitting ? "ApplicationQuit" : "ComponentDisabled"));
@@ -189,6 +191,7 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
         float duration = Mathf.Max(0f, Time.time - _battleStartTime);
         FlushVisionDiagnostics();
         FlushPlanRepeats(duration);
+        WriteAiTimingSummary(duration);
         if (aborted)
         {
             WriteLine(_formatter.FormatBattleAborted(duration, outcomeOrReason));
@@ -565,6 +568,50 @@ public sealed class CombatBattleEventLogger : CombatDebugBehaviour
             active.DestinationUpdates,
             active.LastDestination));
         active.SuppressedCount = 0;
+    }
+
+    private void WriteAiTimingSummary(float battleTime)
+    {
+        if (_characterSystem == null || _characterSystem.AiDecisionBatchSampleCount == 0) return;
+
+        WriteLine(string.Format(
+            CultureInfo.InvariantCulture,
+            "[t={0:0.0}s] AI_TIMING samples={1} avgMs={2:0.000} medianMs={3:0.000} stdDevMs={4:0.000} minMs={5:0.000} maxMs={6:0.000} skipped={7}",
+            battleTime,
+            _characterSystem.AiDecisionBatchSampleCount,
+            _characterSystem.AiDecisionBatchAverageDurationMilliseconds,
+            _characterSystem.AiDecisionBatchMedianDurationMilliseconds,
+            _characterSystem.AiDecisionBatchStandardDeviationMilliseconds,
+            _characterSystem.AiDecisionBatchMinimumDurationMilliseconds,
+            _characterSystem.AiDecisionBatchMaximumDurationMilliseconds,
+            _characterSystem.TotalSkippedAiDecisionCount));
+        WriteAiPhaseTiming("participants", _characterSystem.AiParticipantTiming, battleTime);
+        WriteAiPhaseTiming("visionScan", _characterSystem.AiVisionScanTiming, battleTime);
+        WriteAiPhaseTiming("visionShare", _characterSystem.AiVisionShareTiming, battleTime);
+        WriteAiPhaseTiming("worldSnapshot", _characterSystem.AiWorldSnapshotTiming, battleTime);
+        WriteAiPhaseTiming("context", _characterSystem.AiContextTiming, battleTime);
+        WriteAiPhaseTiming("planning", _characterSystem.AiPlanningTiming, battleTime);
+        WriteAiPhaseTiming("execution", _characterSystem.AiExecutionTiming, battleTime);
+    }
+
+    private void WriteAiPhaseTiming(
+        string phase,
+        CombatAiTimingAccumulator timing,
+        float battleTime)
+    {
+        if (timing == null || timing.Count == 0) return;
+
+        WriteLine(string.Format(
+            CultureInfo.InvariantCulture,
+            "[t={0:0.0}s] AI_TIMING_PHASE phase={1} samples={2} avgMs={3:0.000} medianMs={4:0.000} stdDevMs={5:0.000} minMs={6:0.000} maxMs={7:0.000}",
+            battleTime,
+            phase,
+            timing.Count,
+            timing.AverageMilliseconds,
+            timing.MedianMilliseconds,
+            timing.StandardDeviationMilliseconds,
+            timing.MinimumMilliseconds,
+            timing.MaximumMilliseconds));
     }
 
     private static string ResolveDestination(CombatAiPlan plan)

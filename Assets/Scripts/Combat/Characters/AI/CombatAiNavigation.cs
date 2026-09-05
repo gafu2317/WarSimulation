@@ -28,6 +28,14 @@ public static class CombatAiNavigation
     {
         if (context == null || context.EnemyIntel.Count == 0) return 0f;
 
+        CombatCharacterBody body = context.Owner != null
+            ? context.Owner.GetComponent<CombatCharacterBody>()
+            : null;
+        if (body != null && body.TryGetAiRouteRisk(start, destination, out float cachedRisk))
+        {
+            return cachedRisk;
+        }
+
         var path = new NavMeshPath();
         Vector3[] corners = NavMesh.CalculatePath(start, destination, NavMesh.AllAreas, path) && path.corners.Length >= 2
             ? path.corners
@@ -48,7 +56,11 @@ public static class CombatAiNavigation
             }
         }
 
-        return sampleCount > 0 ? Mathf.Clamp(danger / sampleCount * 100f, 0f, 100f) : 0f;
+        float risk = sampleCount > 0
+            ? Mathf.Clamp(danger / sampleCount * 100f, 0f, 100f)
+            : 0f;
+        body?.StoreAiRouteRisk(start, destination, risk);
+        return risk;
     }
 
     private static float EvaluatePointDanger(CombatAiContext context, Vector3 point)
