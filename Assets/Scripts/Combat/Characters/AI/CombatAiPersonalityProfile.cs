@@ -17,7 +17,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         CombatAiPersonalityKind.Tagalong,
         CombatAiPersonalityKind.Avenger,
         CombatAiPersonalityKind.HighGround,
-        CombatAiPersonalityKind.StandoffSiege,
     };
 
     [SerializeField] private string _displayNameJapanese = "性格";
@@ -60,7 +59,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.Tagalong => "便乗屋",
             CombatAiPersonalityKind.Avenger => "復讐鬼",
             CombatAiPersonalityKind.HighGround => "高所好き",
-            CombatAiPersonalityKind.StandoffSiege => "怖がり",
             _ => "標準",
         };
     }
@@ -89,8 +87,6 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 "直近で攻撃した敵が生存し位置を把握できる間は追い続け、見失うと通常の目的へ戻ります。",
             CombatAiPersonalityKind.HighGround =>
                 "高所候補への移動を優先し、到着後は戦況に関わらずその場で通常の技能だけを使います。",
-            CombatAiPersonalityKind.StandoffSiege =>
-                "敵との間合いを保ちながら敵魔石へ進み、進めない時だけ後退して魔石を狙います。",
             _ => "特別な偏りはなく、装備した武器の役割と戦況に応じて通常の目的を選びます。",
         };
     }

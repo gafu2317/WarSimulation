@@ -161,11 +161,12 @@ public sealed class CombatFormationCodeTests
         }
     }
 
-    [Test]
-    public void Decode_RejectsRemovedPersonalitySlot()
+    [TestCase("ヘ")]
+    [TestCase("マ")]
+    public void Decode_RejectsRemovedPersonalitySlots(string code)
     {
         Assert.That(
-            CombatFormationCode.TryDecode("ヘ", 1, out _, out string error),
+            CombatFormationCode.TryDecode(code, 1, out _, out string error),
             Is.False);
         Assert.That(error, Does.Contain("対応していません"));
     }
@@ -206,39 +207,4 @@ public sealed class CombatFormationCodeTests
         }
     }
 
-    [Test]
-    public void EncodeAndDecode_SupportsStandoffSiegeWithoutChangingEntryShape()
-    {
-        var entries = new List<CombatFormationCodeEntry>
-        {
-            new(true, WeaponKind.Wand, CombatAiPersonalityKind.StandoffSiege),
-        };
-
-        string code = CombatFormationCode.Encode(entries);
-
-        Assert.That(code, Is.EqualTo("マ"));
-        Assert.That(
-            CombatFormationCode.TryDecode(code, entries.Count, out CombatFormationCodeData data, out string error),
-            Is.True,
-            error);
-        Assert.That(data.Entries[0].Selected, Is.True);
-        Assert.That(data.Entries[0].Weapon, Is.EqualTo(WeaponKind.Wand));
-        Assert.That(data.Entries[0].Personality, Is.EqualTo(CombatAiPersonalityKind.StandoffSiege));
-    }
-
-    [Test]
-    public void BuiltInProfile_RegistersStandoffSiegeAsScared()
-    {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.StandoffSiege);
-        try
-        {
-            Assert.That(profile.DisplayNameJapanese, Is.EqualTo("怖がり"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("敵魔石"));
-        }
-        finally
-        {
-            Object.DestroyImmediate(profile);
-        }
-    }
 }

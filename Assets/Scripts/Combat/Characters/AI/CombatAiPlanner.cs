@@ -188,14 +188,6 @@ public static partial class CombatAiPlanner
             return CombatObjective.AttackEnemy;
         }
 
-        if (personalityKind == CombatAiPersonalityKind.StandoffSiege &&
-            HasMagicStoneDamageSkill(context) &&
-            HasLivingEnemyStone(context))
-        {
-            reason = CombatAiReasonCode.PersonalityPreference;
-            return CombatObjective.DestroyEnemyStone;
-        }
-
         if (ShouldSupport(context, assessment, personalityKind))
         {
             reason = personalityKind == CombatAiPersonalityKind.Devoted
@@ -588,29 +580,6 @@ public static partial class CombatAiPlanner
         CombatMoveTarget previousMoveTarget,
         out string actionCode)
     {
-        if (personality != null && personality.Kind == CombatAiPersonalityKind.StandoffSiege &&
-            HasMagicStoneDamageSkill(context))
-        {
-            CombatMoveTarget standoff = CreateStandoffStoneTarget(context, previousState, out bool holdsAttackPosition);
-            if (!holdsAttackPosition ||
-                HasUsableMagicStoneSkillContext(
-                    context,
-                    personality,
-                    CombatObjective.DestroyEnemyStone) ||
-                HasCoolingDownMagicStoneSkillInRange(context))
-            {
-                actionCode = CombatAiMoveCode.PersonalitySignature;
-                return standoff;
-            }
-
-            CombatMoveTarget approach = CreateEnemyStoneTarget(context);
-            if (IsUsableMove(context, approach))
-            {
-                actionCode = CombatAiMoveCode.AdvanceEnemyStone;
-                return approach;
-            }
-        }
-
         if (personality != null && personality.Kind == CombatAiPersonalityKind.Cunning)
         {
             if (previousState == CombatObjective.DestroyEnemyStone && IsUsableMove(context, previousMoveTarget))
@@ -712,10 +681,6 @@ public static partial class CombatAiPlanner
         selectedContext = SkillExecutionContext.None;
         int selectedActionPriority = int.MaxValue;
         int selectedTargetPriority = int.MaxValue;
-        bool restrictToMagicStone = personality != null &&
-            personality.Kind == CombatAiPersonalityKind.StandoffSiege &&
-            state == CombatObjective.DestroyEnemyStone &&
-            HasUsableMagicStoneSkillContext(context, personality, state);
         bool restrictToEnemyStoneCenter = personality != null &&
             personality.Kind == CombatAiPersonalityKind.Reckless &&
             state == CombatObjective.DestroyEnemyStone;
@@ -733,7 +698,6 @@ public static partial class CombatAiPlanner
                 CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, contexts[j]);
                 if (!evaluation.CanUse || !IsUsefulSkillContext(context, state, skill, evaluation.Context) ||
                     !ContainsPreferredTarget(evaluation.Context, preferredTarget) ||
-                    (restrictToMagicStone && !HasMagicStoneTarget(evaluation.Context)) ||
                     (restrictToEnemyStoneCenter && !IsEnemyStoneFocusedContext(context, evaluation.Context))) continue;
 
                 int actionPriority = GetSkillActionPriority(state, skill, evaluation.Context);
@@ -750,62 +714,12 @@ public static partial class CombatAiPlanner
         }
     }
 
-    private static bool HasUsableMagicStoneSkillContext(
-        CombatAiContext context,
-        CombatAiPersonalityProfile personality,
-        CombatObjective state)
-    {
-        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            SkillBase skill = skills[i];
-            if (skill == null ||
-                !CanUseSkillInState(context, personality, state, skill)) continue;
-
-            List<SkillExecutionContext> contexts = SkillContextsBuffer;
-            CombatAiSkillContextBuilder.Build(context, context.Owner, skill, contexts);
-            for (int j = 0; j < contexts.Count; j++)
-            {
-                CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, contexts[j]);
-                if (evaluation.CanUse && IsUsefulSkillContext(context, state, skill, evaluation.Context) &&
-                    HasMagicStoneTarget(evaluation.Context)) return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool HasMagicStoneTarget(SkillExecutionContext context)
-    {
-        return context.PrimaryStone != null || context.ResolvedStones.Count > 0;
-    }
-
     private static bool IsEnemyStoneFocusedContext(CombatAiContext context, SkillExecutionContext skillContext)
     {
         if (skillContext.PrimaryStone != null) return true;
         if (context == null || !context.HasEnemyStonePosition || !skillContext.HasTargetPoint) return false;
 
         return HorizontalDistance(context.EnemyStonePosition, skillContext.TargetPoint) <= 0.01f;
-    }
-
-    private static bool HasCoolingDownMagicStoneSkillInRange(CombatAiContext context)
-    {
-        if (context == null || context.Owner == null || !context.HasEnemyStonePosition) return false;
-
-        CombatSkillCooldowns cooldowns = context.Owner.SkillCooldowns;
-        if (cooldowns == null) return false;
-
-        float distance = HorizontalDistance(context.Owner.transform.position, context.EnemyStonePosition);
-        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            SkillBase skill = skills[i];
-            if (skill == null || !CombatAiSkillClassifier.IsDamage(skill) || !skill.CanTargetMagicStone ||
-                cooldowns.IsReady(skill)) continue;
-            if (float.IsPositiveInfinity(skill.MaxRange) || distance <= skill.MaxRange) return true;
-        }
-
-        return false;
     }
 
     private static bool ContainsPreferredTarget(SkillExecutionContext context, Character preferredTarget)
@@ -1102,20 +1016,6 @@ public static partial class CombatAiPlanner
 
     private static bool HasLivingEnemyStone(CombatAiContext context) =>
         context.HasEnemyStonePosition && (!context.HasEnemyStoneHealth || context.EnemyStoneHP > 0);
-
-    private static bool HasMagicStoneDamageSkill(CombatAiContext context)
-    {
-        if (context == null || context.Owner == null) return false;
-
-        IReadOnlyList<SkillBase> skills = context.Owner.AvailableCombatSkills;
-        for (int i = 0; i < skills.Count; i++)
-        {
-            SkillBase skill = skills[i];
-            if (CombatAiSkillClassifier.IsDamage(skill) && skill.CanTargetMagicStone) return true;
-        }
-
-        return false;
-    }
 
     private static bool HasLivingAlly(CombatAiContext context)
     {
