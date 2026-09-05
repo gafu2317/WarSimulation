@@ -574,11 +574,24 @@ public static partial class CombatAiPlanner
     {
         if (personality != null && personality.Kind == CombatAiPersonalityKind.Cunning)
         {
-            if (previousState == CombatObjective.DestroyEnemyStone && IsUsableMove(context, previousMoveTarget))
+            if (previousState == CombatObjective.DestroyEnemyStone &&
+                previousMoveTarget.HasAssaultRouteKey &&
+                TryCreateAssaultRouteAdvanceTarget(
+                    context,
+                    previousMoveTarget.AssaultRouteKey,
+                    out string nextRouteActionCode,
+                    out CombatMoveTarget nextRouteTarget) &&
+                IsUsableMove(context, nextRouteTarget))
             {
-                actionCode = previousMoveTarget.HasAssaultRouteKey
-                    ? CombatAiMoveCode.AdvanceAssaultRoute
-                    : CombatAiMoveCode.AdvanceEnemyStone;
+                actionCode = nextRouteActionCode;
+                return nextRouteTarget;
+            }
+
+            if (previousState == CombatObjective.DestroyEnemyStone &&
+                !previousMoveTarget.HasAssaultRouteKey &&
+                IsUsableMove(context, previousMoveTarget))
+            {
+                actionCode = CombatAiMoveCode.AdvanceEnemyStone;
                 return previousMoveTarget;
             }
 

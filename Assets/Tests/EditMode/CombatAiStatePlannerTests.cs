@@ -1441,6 +1441,32 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_CunningAdvancesToTheNextRouteCornerAfterReachingThePreviousOne()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(5f, 0f, 0f));
+        var route = new CombatAiAssaultRoute(
+            "Covered",
+            "Covered",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext context = Context(
+            owner,
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { route });
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Cunning));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(
+            context,
+            profile,
+            previousObjective: CombatObjective.DestroyEnemyStone,
+            previousMoveTarget: CombatMoveTarget.ForPosition(new Vector3(5f, 0f, 0f), "Covered"));
+
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceAssaultRoute));
+        Assert.That(plan.MoveTarget.AssaultRouteKey, Is.EqualTo("Covered"));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(10f, 0f, 0f)));
+    }
+
+    [Test]
     public void Planner_SearchesTheRememberedPositionInsteadOfTheEnemiesCurrentPosition()
     {
         Character owner = CreateCharacter("Owner", new Grimoire(), Vector3.zero);

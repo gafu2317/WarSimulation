@@ -137,6 +137,28 @@ public static partial class CombatAiPlanner
         target = CreateEnemyStoneTarget(context, hasAssaultRouteKey: true, assaultRouteKey: route.RouteId);
     }
 
+    private static bool TryCreateAssaultRouteAdvanceTarget(
+        CombatAiContext context,
+        string routeKey,
+        out string code,
+        out CombatMoveTarget target)
+    {
+        code = CombatAiMoveCode.HoldPosition;
+        target = CombatMoveTarget.None;
+        if (context == null || string.IsNullOrEmpty(routeKey)) return false;
+
+        for (int i = 0; i < context.AssaultRoutes.Count; i++)
+        {
+            CombatAiAssaultRoute route = context.AssaultRoutes[i];
+            if (route.RouteId != routeKey) continue;
+
+            CreateAssaultRouteAdvanceCandidate(context, route, out code, out _, out target);
+            return target.HasDestination;
+        }
+
+        return false;
+    }
+
     public static bool TryFindNextRouteCorner(
         Vector3 position,
         IReadOnlyList<Vector3> corners,
