@@ -1,0 +1,158 @@
+{
+  "blender": "5.0.0",
+  "models": [
+    {
+      "name": "GroundPlant_GrassShort",
+      "category": "ground_plant",
+      "intended_use": "石畳の目地や道端の短い草",
+      "parts": 27,
+      "triangles": 2808,
+      "minimum": [
+        -0.5261812210083008,
+        -0.535106897354126,
+        0.0
+      ],
+      "maximum": [
+        0.5442293882369995,
+        0.5333648324012756,
+        0.409132719039917
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassTuft",
+      "category": "ground_plant",
+      "intended_use": "建物際や空き地の中くらいの草",
+      "parts": 27,
+      "triangles": 2808,
+      "minimum": [
+        -0.6727776527404785,
+        -0.6858346462249756,
+        0.0
+      ],
+      "maximum": [
+        0.6971274614334106,
+        0.6833255290985107,
+        0.7465630769729614
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassTall",
+      "category": "ground_plant",
+      "intended_use": "未整備地や城壁際の高い草",
+      "parts": 27,
+      "triangles": 2808,
+      "minimum": [
+        -0.7261320352554321,
+        -0.7406782507896423,
+        0.0
+      ],
+      "maximum": [
+        0.7527610659599304,
+        0.7379074692726135,
+        1.0840297937393188
+      ]
+    },
+    {
+      "name": "GroundPlant_FernPatch",
+      "category": "ground_plant",
+      "intended_use": "日陰や建物裏の隙間",
+      "parts": 81,
+      "triangles": 13964,
+      "minimum": [
+        -1.036210298538208,
+        -1.0073134899139404,
+        0.0
+      ],
+      "maximum": [
+        0.8782539367675781,
+        1.194166660308838,
+        0.7550000548362732
+      ]
+    },
+    {
+      "name": "Flower_WildPatch",
+      "category": "flower",
+      "intended_use": "小広場や家の前",
+      "parts": 92,
+      "triangles": 15168,
+      "minimum": [
+        -0.9020806550979614,
+        -0.8433201909065247,
+        0.0
+      ],
+      "maximum": [
+        0.8830135464668274,
+        0.7633201479911804,
+        0.9799999594688416
+      ]
+    },
+    {
+      "name": "Flower_Border",
+      "category": "flower",
+      "intended_use": "壁沿い・道路沿いの帯状空地",
+      "parts": 137,
+      "triangles": 22648,
+      "minimum": [
+        -1.832080602645874,
+        -0.44332021474838257,
+        0.0
+      ],
+      "maximum": [
+        1.7930134534835815,
+        0.44332021474838257,
+        0.8299999833106995
+      ]
+    },
+    {
+      "name": "Tree_AlleyCypress",
+      "category": "tree",
+      "intended_use": "狭い路地や門周辺",
+      "parts": 6,
+      "triangles": 1080,
+      "minimum": [
+        -1.3441119194030762,
+        -1.3441119194030762,
+        0.0
+      ],
+      "maximum": [
+        1.3441119194030762,
+        1.3441119194030762,
+        10.0
+      ]
+    },
+    {
+      "name": "Tree_Street",
+      "category": "tree",
+      "intended_use": "街路・中庭",
+      "parts": 18,
+      "triangles": 2244,
+      "minimum": [
+        -2.554434061050415,
+        -2.100252628326416,
+        0.0
+      ],
+      "maximum": [
+        2.568005084991455,
+        2.3850831985473633,
+        7.82859992980957
+      ]
+    },
+    {
+      "name": "Tree_Shade",
+      "category": "tree",
+      "intended_use": "広場・邸宅・公共施設脇",
+      "parts": 20,
+      "triangles": 2404,
+      "minimum": [
+        -4.089298725128174,
+        -3.6030502319335938,
+        0.0
+      ],
+      "maximum": [
+        4.282607555389404,
+        3.9586246013641357,
+        10.75387954711914
+      ]
+    }
+  ]
+}

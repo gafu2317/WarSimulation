@@ -126,7 +126,9 @@ def bake(obj,name,size):
     packed.save()
     mat=bpy.data.materials.new(name+'_Baked')
     mat.use_nodes=True
-    shader=mat.node_tree.nodes.get('Principled BSDF')
+    shader=next((node for node in mat.node_tree.nodes if node.type=='BSDF_PRINCIPLED'),None)
+    if shader is None:
+        shader=mat.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
     tex=mat.node_tree.nodes.new('ShaderNodeTexImage')
     tex.image=base
     mat.node_tree.links.new(tex.outputs['Color'],shader.inputs['Base Color'])

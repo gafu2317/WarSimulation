@@ -1,0 +1,386 @@
+{
+  "blender": "5.0.0",
+  "models": [
+    {
+      "name": "Church",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasyChurchAndBlacksmith.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Church.fbx",
+      "parts": 199,
+      "triangles": 28132,
+      "minimum": [
+        -9.670000076293945,
+        -14.5,
+        0.0
+      ],
+      "maximum": [
+        9.670000076293945,
+        17.18000030517578,
+        21.75
+      ],
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_Brass",
+        "Fantasy_Church_StainedGlass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_Stone",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "Blacksmith",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasyChurchAndBlacksmith.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Blacksmith.fbx",
+      "parts": 87,
+      "triangles": 9756,
+      "minimum": [
+        -7.987639904022217,
+        -6.200000286102295,
+        0.0
+      ],
+      "maximum": [
+        7.900000095367432,
+        6.375,
+        12.324999809265137
+      ],
+      "materials": [
+        "Fantasy_Blacksmith_Ember",
+        "Fantasy_Blacksmith_Water",
+        "Fantasy_Brass",
+        "Fantasy_ChurchBlacksmith_OchrePlaster",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_Stone",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "WarriorAcademy",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasySchools.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/WarriorAcademy.fbx",
+      "parts": 215,
+      "triangles": 26892,
+      "minimum": [
+        -13.0,
+        -13.0,
+        0.0
+      ],
+      "maximum": [
+        13.0,
+        13.0,
+        20.610000610351562
+      ],
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_Brass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_School_OchrePlaster",
+        "Fantasy_Stone",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Warrior_Academy_Red",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "ArcaneAcademy",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasySchools.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/ArcaneAcademy.fbx",
+      "parts": 190,
+      "triangles": 52040,
+      "minimum": [
+        -13.0,
+        -13.0,
+        0.0
+      ],
+      "maximum": [
+        13.0,
+        13.0,
+        24.914989471435547
+      ],
+      "materials": [
+        "Fantasy_Arcane_Academy_Crystal",
+        "Fantasy_Arcane_Academy_Gold",
+        "Fantasy_Arcane_Academy_Parchment",
+        "Fantasy_Arcane_Academy_Roof",
+        "Fantasy_Arcane_Academy_Runes",
+        "Fantasy_Arcane_Academy_Stone",
+        "Fantasy_Banner",
+        "Fantasy_Brass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_RoofEdge",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "SpiritAcademy",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasySchools.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/SpiritAcademy.fbx",
+      "parts": 172,
+      "triangles": 30324,
+      "minimum": [
+        -13.0,
+        -13.0,
+        0.0
+      ],
+      "maximum": [
+        13.0,
+        13.0,
+        23.251998901367188
+      ],
+      "materials": [
+        "Fantasy_Brass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_RoofEdge",
+        "Fantasy_Spirit_Academy_Cloth",
+        "Fantasy_Spirit_Academy_Foliage",
+        "Fantasy_Spirit_Academy_Roof",
+        "Fantasy_Spirit_Academy_Runes",
+        "Fantasy_Spirit_Academy_Sacred_Bark",
+        "Fantasy_Spirit_Academy_Stone",
+        "Fantasy_Spirit_Academy_Trim",
+        "Fantasy_Spirit_Pupil",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassShort",
+      "asset_type": "ground_plant",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/GroundPlant_GrassShort.fbx",
+      "parts": 27,
+      "triangles": 2808,
+      "minimum": [
+        -0.5261812210083008,
+        -0.535106897354126,
+        0.0
+      ],
+      "maximum": [
+        0.5442293882369995,
+        0.5333648324012756,
+        0.409132719039917
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_DryGrass",
+        "Fantasy_City_Vegetation_Grass"
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassTuft",
+      "asset_type": "ground_plant",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/GroundPlant_GrassTuft.fbx",
+      "parts": 27,
+      "triangles": 2808,
+      "minimum": [
+        -0.6727776527404785,
+        -0.6858346462249756,
+        0.0
+      ],
+      "maximum": [
+        0.6971274614334106,
+        0.6833255290985107,
+        0.7465630769729614
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_DryGrass",
+        "Fantasy_City_Vegetation_Grass"
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassTall",
+      "asset_type": "ground_plant",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/GroundPlant_GrassTall.fbx",
+      "parts": 27,
+      "triangles": 2808,
+      "minimum": [
+        -0.7261320352554321,
+        -0.7406782507896423,
+        0.0
+      ],
+      "maximum": [
+        0.7527610659599304,
+        0.7379074692726135,
+        1.0840297937393188
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_DryGrass",
+        "Fantasy_City_Vegetation_Grass"
+      ]
+    },
+    {
+      "name": "GroundPlant_FernPatch",
+      "asset_type": "ground_plant",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/GroundPlant_FernPatch.fbx",
+      "parts": 81,
+      "triangles": 13964,
+      "minimum": [
+        -1.036210298538208,
+        -1.0073134899139404,
+        0.0
+      ],
+      "maximum": [
+        0.8782539367675781,
+        1.194166660308838,
+        0.7550000548362732
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_Fern",
+        "Fantasy_City_Vegetation_FernLight",
+        "Fantasy_City_Vegetation_FernStem"
+      ]
+    },
+    {
+      "name": "Flower_WildPatch",
+      "asset_type": "flower",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Flower_WildPatch.fbx",
+      "parts": 92,
+      "triangles": 15168,
+      "minimum": [
+        -0.9020806550979614,
+        -0.8433201909065247,
+        0.0
+      ],
+      "maximum": [
+        0.8830135464668274,
+        0.7633201479911804,
+        0.9799999594688416
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_FlowerBlue",
+        "Fantasy_City_Vegetation_FlowerCenter",
+        "Fantasy_City_Vegetation_FlowerLeaf",
+        "Fantasy_City_Vegetation_FlowerRed",
+        "Fantasy_City_Vegetation_FlowerStem",
+        "Fantasy_City_Vegetation_FlowerWhite",
+        "Fantasy_City_Vegetation_FlowerYellow"
+      ]
+    },
+    {
+      "name": "Flower_Border",
+      "asset_type": "flower",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Flower_Border.fbx",
+      "parts": 137,
+      "triangles": 22648,
+      "minimum": [
+        -1.832080602645874,
+        -0.44332021474838257,
+        0.0
+      ],
+      "maximum": [
+        1.7930134534835815,
+        0.44332021474838257,
+        0.8299999833106995
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_FlowerBlue",
+        "Fantasy_City_Vegetation_FlowerCenter",
+        "Fantasy_City_Vegetation_FlowerLeaf",
+        "Fantasy_City_Vegetation_FlowerRed",
+        "Fantasy_City_Vegetation_FlowerStem",
+        "Fantasy_City_Vegetation_FlowerWhite",
+        "Fantasy_City_Vegetation_FlowerYellow"
+      ]
+    },
+    {
+      "name": "Tree_AlleyCypress",
+      "asset_type": "tree",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Tree_AlleyCypress.fbx",
+      "parts": 6,
+      "triangles": 1080,
+      "minimum": [
+        -1.3441119194030762,
+        -1.3441119194030762,
+        0.0
+      ],
+      "maximum": [
+        1.3441119194030762,
+        1.3441119194030762,
+        10.0
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_Bark",
+        "Fantasy_City_Vegetation_Cypress",
+        "Fantasy_City_Vegetation_CypressLight"
+      ]
+    },
+    {
+      "name": "Tree_Street",
+      "asset_type": "tree",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Tree_Street.fbx",
+      "parts": 18,
+      "triangles": 2244,
+      "minimum": [
+        -2.554434061050415,
+        -2.100252628326416,
+        0.0
+      ],
+      "maximum": [
+        2.568005084991455,
+        2.3850831985473633,
+        7.82859992980957
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_Bark",
+        "Fantasy_City_Vegetation_Foliage",
+        "Fantasy_City_Vegetation_FoliageLight"
+      ]
+    },
+    {
+      "name": "Tree_Shade",
+      "asset_type": "tree",
+      "source": "ArtSource/Blender/FantasyCityVegetation.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Tree_Shade.fbx",
+      "parts": 20,
+      "triangles": 2404,
+      "minimum": [
+        -4.089298725128174,
+        -3.6030502319335938,
+        0.0
+      ],
+      "maximum": [
+        4.282607555389404,
+        3.9586246013641357,
+        10.75387954711914
+      ],
+      "materials": [
+        "Fantasy_City_Vegetation_Bark",
+        "Fantasy_City_Vegetation_Foliage",
+        "Fantasy_City_Vegetation_FoliageLight"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "environment": "Blender 5.0.0",
+  "blend_reopen": "PASS",
+  "editable_asset_hierarchy": "PASS",
+  "ground_contact": "PASS",
+  "closed_geometry": "PASS",
+  "non_emissive_materials": "PASS",
+  "grass_height_variants": "PASS",
+  "connected_tree_canopies": "PASS",
+  "external_textures_required": false,
+  "models": [
+    {
+      "name": "GroundPlant_GrassShort",
+      "category": "ground_plant",
+      "status": "PASS",
+      "mesh_parts": 27,
+      "triangles": 2808,
+      "dimensions_m": [
+        1.0678134560585022,
+        1.0673339366912842,
+        0.409132719039917
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassTuft",
+      "category": "ground_plant",
+      "status": "PASS",
+      "mesh_parts": 27,
+      "triangles": 2808,
+      "dimensions_m": [
+        1.3673079013824463,
+        1.368022382259369,
+        0.7465630769729614
+      ]
+    },
+    {
+      "name": "GroundPlant_GrassTall",
+      "category": "ground_plant",
+      "status": "PASS",
+      "mesh_parts": 27,
+      "triangles": 2808,
+      "dimensions_m": [
+        1.4762960076332092,
+        1.4774479269981384,
+        1.0840297937393188
+      ]
+    },
+    {
+      "name": "GroundPlant_FernPatch",
+      "category": "ground_plant",
+      "status": "PASS",
+      "mesh_parts": 81,
+      "triangles": 13964,
+      "dimensions_m": [
+        1.8957907557487488,
+        2.1589380502700806,
+        0.7550000548362732
+      ]
+    },
+    {
+      "name": "Flower_WildPatch",
+      "category": "flower",
+      "status": "PASS",
+      "mesh_parts": 92,
+      "triangles": 15168,
+      "dimensions_m": [
+        1.7584900856018066,
+        1.5325591564178467,
+        0.9799999594688416
+      ]
+    },
+    {
+      "name": "Flower_Border",
+      "category": "flower",
+      "status": "PASS",
+      "mesh_parts": 137,
+      "triangles": 22648,
+      "dimensions_m": [
+        3.598489999771118,
+        0.812559187412262,
+        0.8299999833106995
+      ]
+    },
+    {
+      "name": "Tree_AlleyCypress",
+      "category": "tree",
+      "status": "PASS",
+      "mesh_parts": 6,
+      "triangles": 1080,
+      "dimensions_m": [
+        2.6882238388061523,
+        2.6882238388061523,
+        10.0
+      ]
+    },
+    {
+      "name": "Tree_Street",
+      "category": "tree",
+      "status": "PASS",
+      "mesh_parts": 18,
+      "triangles": 2244,
+      "dimensions_m": [
+        4.439083576202393,
+        4.135702848434448,
+        7.82859992980957
+      ]
+    },
+    {
+      "name": "Tree_Shade",
+      "category": "tree",
+      "status": "PASS",
+      "mesh_parts": 20,
+      "triangles": 2404,
+      "dimensions_m": [
+        7.324094533920288,
+        7.029357433319092,
+        10.75387954711914
+      ]
+    }
+  ]
+}
