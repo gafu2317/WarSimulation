@@ -1,0 +1,302 @@
+{
+  "models": [
+    {
+      "name": "Church",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasyChurchAndBlacksmith.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/Church.fbx",
+      "parts": 195,
+      "triangles": 27700,
+      "minimum": [
+        -9.670000076293945,
+        -14.5,
+        0.0
+      ],
+      "maximum": [
+        9.670000076293945,
+        17.18000030517578,
+        21.75
+      ],
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_Brass",
+        "Fantasy_Church_StainedGlass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_Stone",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "WarriorAcademy",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasySchools.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/WarriorAcademy.fbx",
+      "parts": 200,
+      "triangles": 24288,
+      "minimum": [
+        -13.0,
+        -13.0,
+        0.0
+      ],
+      "maximum": [
+        13.0,
+        13.0,
+        20.610000610351562
+      ],
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_Brass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_School_OchrePlaster",
+        "Fantasy_Stone",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Warrior_Academy_Red",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "ArcaneAcademy",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasySchools.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/ArcaneAcademy.fbx",
+      "parts": 165,
+      "triangles": 47700,
+      "minimum": [
+        -13.0,
+        -13.0,
+        0.0
+      ],
+      "maximum": [
+        13.0,
+        13.0,
+        24.914989471435547
+      ],
+      "materials": [
+        "Fantasy_Arcane_Academy_Crystal",
+        "Fantasy_Arcane_Academy_Gold",
+        "Fantasy_Arcane_Academy_Parchment",
+        "Fantasy_Arcane_Academy_Roof",
+        "Fantasy_Arcane_Academy_Runes",
+        "Fantasy_Arcane_Academy_Stone",
+        "Fantasy_Banner",
+        "Fantasy_Brass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_RoofEdge",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "SpiritAcademy",
+      "asset_type": "building",
+      "source": "ArtSource/Blender/FantasySchools.blend",
+      "fbx": "Assets/Models/Kingdom/NewFantasyAssets/Models/SpiritAcademy.fbx",
+      "parts": 172,
+      "triangles": 30324,
+      "minimum": [
+        -13.0,
+        -13.0,
+        0.0
+      ],
+      "maximum": [
+        13.0,
+        13.0,
+        23.251998901367188
+      ],
+      "materials": [
+        "Fantasy_Brass",
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_RoofEdge",
+        "Fantasy_Spirit_Academy_Cloth",
+        "Fantasy_Spirit_Academy_Foliage",
+        "Fantasy_Spirit_Academy_Roof",
+        "Fantasy_Spirit_Academy_Runes",
+        "Fantasy_Spirit_Academy_Sacred_Bark",
+        "Fantasy_Spirit_Academy_Stone",
+        "Fantasy_Spirit_Academy_Trim",
+        "Fantasy_Spirit_Pupil",
+        "Fantasy_StoneShade",
+        "Fantasy_StoneTrim",
+        "Fantasy_Timber",
+        "Fantasy_Window"
+      ]
+    },
+    {
+      "name": "Royal_Castle",
+      "source": "ArtSource/Blender/KingdomBuildings_RealisticFantasy.blend",
+      "source_sha256": "ad971703bb6f51c64ab6367ec7f9b5b974222bdb485a6f53d59c9c2e0da96020",
+      "minimum": [
+        -15.489999771118164,
+        -14.1899995803833,
+        0.0
+      ],
+      "maximum": [
+        15.489999771118164,
+        14.1899995803833,
+        27.44499969482422
+      ],
+      "triangles": 143832,
+      "atlas_size": 4096,
+      "fbx": "Assets/Models/Kingdom/City/Models/Royal_Castle.fbx"
+    },
+    {
+      "name": "Granite_Corner",
+      "source": "ArtSource/Blender/KingdomBuildings_RealisticFantasy.blend",
+      "source_sha256": "ad971703bb6f51c64ab6367ec7f9b5b974222bdb485a6f53d59c9c2e0da96020",
+      "minimum": [
+        -1.9000000953674316,
+        -1.9000005722045898,
+        -4.470348358154297e-08
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        7.059999942779541
+      ],
+      "triangles": 13152,
+      "atlas_size": 1024,
+      "fbx": "Assets/Models/Kingdom/City/Models/Granite_Corner.fbx"
+    },
+    {
+      "name": "Bakery",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -4.454999923706055,
+        -4.775000095367432,
+        -1.4901161193847656e-08
+      ],
+      "maximum": [
+        4.454999923706055,
+        3.9549999237060547,
+        8.880000114440918
+      ],
+      "triangles": 10764,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/Bakery.fbx"
+    },
+    {
+      "name": "Barracks",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -8.154999732971191,
+        -6.059999942779541,
+        0.0
+      ],
+      "maximum": [
+        8.154999732971191,
+        5.78000020980835,
+        10.110000610351562
+      ],
+      "triangles": 15084,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/Barracks.fbx"
+    },
+    {
+      "name": "Granary",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -5.855000019073486,
+        -5.299999713897705,
+        -1.4901161193847656e-08
+      ],
+      "maximum": [
+        5.855000019073486,
+        4.355000019073486,
+        9.460000038146973
+      ],
+      "triangles": 11088,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/Granary.fbx"
+    },
+    {
+      "name": "Guildhall",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -7.554999828338623,
+        -6.260000228881836,
+        0.0
+      ],
+      "maximum": [
+        7.554999828338623,
+        5.855000019073486,
+        12.360000610351562
+      ],
+      "triangles": 12960,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/Guildhall.fbx"
+    },
+    {
+      "name": "MerchantHouse",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -5.15500020980835,
+        -5.550000190734863,
+        0.0
+      ],
+      "maximum": [
+        5.15500020980835,
+        4.554999828338623,
+        10.660000801086426
+      ],
+      "triangles": 11088,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/MerchantHouse.fbx"
+    },
+    {
+      "name": "Warehouse",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -7.15500020980835,
+        -5.800000190734863,
+        -1.4901161193847656e-08
+      ],
+      "maximum": [
+        7.15500020980835,
+        4.954999923706055,
+        8.5600004196167
+      ],
+      "triangles": 13716,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/Warehouse.fbx"
+    },
+    {
+      "name": "WorkshopHouse",
+      "source": "ArtSource/Blender/FantasyKingdomSupportBuildings.blend",
+      "source_sha256": "74a5fff86c033d570962cab120d31556ad13ec4c338330cb5888af1d58ad8e82",
+      "minimum": [
+        -4.65500020980835,
+        -5.005000114440918,
+        -1.4901161193847656e-08
+      ],
+      "maximum": [
+        4.65500020980835,
+        4.255000114440918,
+        9.079999923706055
+      ],
+      "triangles": 10764,
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/WorkshopHouse.fbx"
+    }
+  ]
+}
