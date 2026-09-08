@@ -14,9 +14,8 @@ namespace WarSimulation.Kingdom.EditorOnly
 {
     public static class KingdomAssetCatalogBuilder
     {
-        const string ScenePath = "Assets/Scenes/Verification/KingdomAssetCatalog.unity";
-        const string CatalogRoot = "Assets/Scenes/Verification/KingdomAssetCatalog";
-        const string MaterialRoot = CatalogRoot + "/Materials";
+        const string ScenePath = "Assets/Scenes/KingdomAssetCatalog.unity";
+        const string MaterialRoot = "Assets/Images/Materials";
         const string ValidationPath = "docs/Art/KingdomAssetCatalog/validation.json";
         const string FontPath = "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset";
 
@@ -39,10 +38,37 @@ namespace WarSimulation.Kingdom.EditorOnly
 
         static readonly HashSet<string> PropNames = new HashSet<string>
         {
-            "Anvil", "Clothesline", "Firewood_Rack", "Handcart", "Hay_Bale", "LanternSpire",
+            "Anvil", "Clothesline", "Firewood_Rack", "Handcart", "Hay_Bale", "Forge",
             "Noticeboard", "Signpost", "Water_Trough", "Well", "Barrel", "Bench", "Cloth_Stall",
             "Crate_Closed", "Produce_Stall", "Streetlamp"
         };
+
+        static readonly string[] DisplayOrder =
+        {
+            "Fantasy_House", "MerchantHouse", "WorkshopHouse", "Bakery", "Tavern",
+            "Blacksmith", "Stable", "Warehouse", "Granary", "Guildhall", "Bathhouse", "Clinic",
+            "Chapel", "Church", "Guardhouse", "Barracks",
+            "WarriorAcademy", "ArcaneAcademy", "SpiritAcademy",
+            "CrimsonRowhouse", "VelvetTerrace", "LanternSpire", "VeiledCourtyard",
+            "Casino", "Museum", "Library", "Observatory", "Arena", "Royal_Castle",
+            "Produce_Stall", "Cloth_Stall", "Barrel", "Crate_Closed", "Handcart",
+            "Forge", "Anvil", "Firewood_Rack", "Hay_Bale", "Water_Trough", "Well",
+            "Bench", "Streetlamp", "Signpost", "Noticeboard", "Clothesline",
+            "Road_Straight", "Road_Corner", "Road_T", "Road_Cross", "Road_End",
+            "Paved_Plot", "Plaza", "Granite_Straight", "Granite_Corner", "Granite_Gate",
+            "GroundPlant_GrassShort", "GroundPlant_GrassTuft", "GroundPlant_GrassTall",
+            "GroundPlant_FernPatch", "Flower_WildPatch", "Flower_Border",
+            "Tree_Street", "Tree_Shade", "Tree_AlleyCypress",
+            "NaturalTree_01", "NaturalTree_02", "NaturalTree_03", "NaturalTree_04", "NaturalTree_05",
+            "NaturalTree_06", "NaturalTree_07", "NaturalTree_08", "NaturalTree_09", "NaturalTree_10",
+            "NaturalRock_02", "NaturalRock_04", "NaturalRock_07", "NaturalRock_08", "NaturalRock_11"
+        };
+
+        static int DisplayIndex(string name)
+        {
+            var index = Array.IndexOf(DisplayOrder, name);
+            return index < 0 ? DisplayOrder.Length : index;
+        }
 
         static readonly List<PlacementRecord> Placements = new List<PlacementRecord>();
         static readonly List<Transform> Labels = new List<Transform>();
@@ -76,6 +102,7 @@ namespace WarSimulation.Kingdom.EditorOnly
             public bool allGrounded;
             public bool allPrefabConnectionsPreserved;
             public bool noDisplayPadOverlap;
+            public bool allModelsInsideDisplayPads;
             public bool mainCameraConfigured;
             public bool notoSansLabels;
             public PlacementRecord[] placements;
@@ -114,6 +141,7 @@ namespace WarSimulation.Kingdom.EditorOnly
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "KingdomAssetCatalog";
+            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
             Placements.Clear();
             Labels.Clear();
             Pads.Clear();
@@ -129,7 +157,7 @@ namespace WarSimulation.Kingdom.EditorOnly
             var cursorZ = 0f;
             foreach (var category in CategoryOrder)
             {
-                var categoryEntries = entries.Where(entry => entry.Category == category).OrderBy(entry => entry.Prefab.name).ToList();
+                var categoryEntries = entries.Where(entry => entry.Category == category).OrderBy(entry => DisplayIndex(entry.Prefab.name)).ThenBy(entry => entry.Prefab.name, StringComparer.Ordinal).ToList();
                 if (categoryEntries.Count == 0) continue;
                 cursorZ = BuildCategory(category, categoryEntries, cursorZ, displayRoot, labelRoot, platformRoot, font);
             }
@@ -231,7 +259,7 @@ namespace WarSimulation.Kingdom.EditorOnly
                 var x = columnCenters[column];
                 var z = rowCenters[row];
                 var before = RendererBounds(entry.Instance);
-                entry.Instance.transform.position = new Vector3(x, -before.min.y, z);
+                entry.Instance.transform.position = new Vector3(x - before.center.x, -before.min.y, z - before.center.z);
                 var after = RendererBounds(entry.Instance);
                 var pad = CreatePad(entry, new Vector3(x, -0.1f, z), platformRoot);
                 Pads.Add(pad.GetComponent<Renderer>().bounds);
@@ -291,6 +319,7 @@ namespace WarSimulation.Kingdom.EditorOnly
             var rect = (RectTransform)labelObject.transform;
             rect.sizeDelta = size;
             var label = labelObject.GetComponent<TextMeshPro>();
+            label.ForceMeshUpdate();
             label.text = value;
             label.font = font;
             label.fontSharedMaterial = font.material;
@@ -406,6 +435,13 @@ namespace WarSimulation.Kingdom.EditorOnly
                     Mathf.Abs(record.groundHeight) <= Mathf.Max(1, record.size.y) * 0.00001f),
                 allPrefabConnectionsPreserved = Placements.All(record => record.prefabConnection),
                 noDisplayPadOverlap = noOverlap,
+                allModelsInsideDisplayPads = entries.All(entry =>
+                {
+                    var model = RendererBounds(entry.Instance);
+                    var pad = GameObject.Find("Kingdom Asset Catalog/Platforms/" + entry.Prefab.name + " Display Pad").GetComponent<Renderer>().bounds;
+                    return model.min.x >= pad.min.x && model.max.x <= pad.max.x
+                        && model.min.z >= pad.min.z && model.max.z <= pad.max.z;
+                }),
                 mainCameraConfigured = camera != null && camera.CompareTag("MainCamera"),
                 notoSansLabels = Labels.All(label => label.GetComponent<TextMeshPro>().font == font),
                 placements = Placements.ToArray()
@@ -416,6 +452,7 @@ namespace WarSimulation.Kingdom.EditorOnly
                 && report.allGrounded
                 && report.allPrefabConnectionsPreserved
                 && report.noDisplayPadOverlap
+                && report.allModelsInsideDisplayPads
                 && report.mainCameraConfigured
                 && report.notoSansLabels ? "PASS" : "FAIL";
             return report;

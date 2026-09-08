@@ -1,5 +1,5 @@
 {
-    "scene": "Assets/Scenes/Verification/KingdomAssetCatalog.unity",
+    "scene": "Assets/Scenes/KingdomAssetCatalog.unity",
     "unityVersion": "6000.4.3f1",
     "sourcePrefabs": 79,
     "placedPrefabs": 79,
@@ -12,39 +12,57 @@
     "allGrounded": true,
     "allPrefabConnectionsPreserved": true,
     "noDisplayPadOverlap": true,
+    "allModelsInsideDisplayPads": true,
     "mainCameraConfigured": true,
     "notoSansLabels": true,
     "placements": [
         {
-            "name": "ArcaneAcademy",
+            "name": "Fantasy_House",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/ArcaneAcademy.prefab",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Fantasy_House.prefab",
             "position": {
-                "x": -71.36382293701172,
+                "x": -71.62750244140625,
                 "y": 0.0,
-                "z": 20.0
+                "z": 13.329999923706055
             },
             "size": {
-                "x": 26.0,
-                "y": 24.914989471435548,
-                "z": 26.0
+                "x": 6.240434646606445,
+                "y": 9.494999885559082,
+                "z": 5.764999866485596
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Arena",
+            "name": "MerchantHouse",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Arena.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/MerchantHouse.prefab",
             "position": {
-                "x": -38.56382369995117,
+                "x": -43.95750427246094,
                 "y": 0.0,
-                "z": 20.0
+                "z": 13.785000801086426
             },
             "size": {
-                "x": 29.600000381469728,
-                "y": 6.269999980926514,
-                "z": 24.56999969482422
+                "x": 10.3100004196167,
+                "y": 10.660000801086426,
+                "z": 10.104999542236329
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "WorkshopHouse",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/WorkshopHouse.prefab",
+            "position": {
+                "x": -23.12000274658203,
+                "y": 0.0,
+                "z": 13.662500381469727
+            },
+            "size": {
+                "x": 9.3100004196167,
+                "y": 9.079999923706055,
+                "z": 9.260000228881836
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -54,9 +72,9 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Bakery.prefab",
             "position": {
-                "x": -3.273822784423828,
+                "x": 2.8474979400634767,
                 "y": 0.0,
-                "z": 20.0
+                "z": 13.697500228881836
             },
             "size": {
                 "x": 8.90999984741211,
@@ -67,35 +85,18 @@
             "prefabConnection": true
         },
         {
-            "name": "Barracks",
+            "name": "Tavern",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Barracks.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Tavern.prefab",
             "position": {
-                "x": 30.216176986694337,
+                "x": 38.4214973449707,
                 "y": 0.0,
-                "z": 20.0
+                "z": 13.805000305175782
             },
             "size": {
-                "x": 16.309999465942384,
-                "y": 10.110000610351563,
-                "z": 11.84000015258789
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Bathhouse",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Bathhouse.prefab",
-            "position": {
-                "x": 55.8461799621582,
-                "y": 0.0,
-                "z": 20.0
-            },
-            "size": {
-                "x": 13.800000190734864,
-                "y": 9.449999809265137,
-                "z": 11.805000305175782
+                "x": 9.288000106811524,
+                "y": 9.879999160766602,
+                "z": 8.295000076293946
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -105,9 +106,9 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Blacksmith.prefab",
             "position": {
-                "x": 76.41999816894531,
+                "x": 71.67132568359375,
                 "y": 0.0,
-                "z": 20.0
+                "z": 13.200000762939454
             },
             "size": {
                 "x": 15.88763427734375,
@@ -118,18 +119,103 @@
             "prefabConnection": true
         },
         {
-            "name": "Casino",
+            "name": "Stable",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Casino.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Stable.prefab",
             "position": {
-                "x": -71.36382293701172,
+                "x": -71.62750244140625,
                 "y": 0.0,
-                "z": 53.84000015258789
+                "z": 31.0049991607666
             },
             "size": {
-                "x": 12.210000038146973,
-                "y": 9.930000305175782,
-                "z": 10.420000076293946
+                "x": 15.260000228881836,
+                "y": 8.360000610351563,
+                "z": 10.204999923706055
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Warehouse",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Warehouse.prefab",
+            "position": {
+                "x": -43.95750427246094,
+                "y": 0.0,
+                "z": 31.05500030517578
+            },
+            "size": {
+                "x": 14.3100004196167,
+                "y": 8.5600004196167,
+                "z": 10.755000114440918
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Granary",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granary.prefab",
+            "position": {
+                "x": -23.12000274658203,
+                "y": 0.0,
+                "z": 31.104999542236329
+            },
+            "size": {
+                "x": 11.710000038146973,
+                "y": 9.460000038146973,
+                "z": 9.654999732971192
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Guildhall",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Guildhall.prefab",
+            "position": {
+                "x": 2.8474979400634767,
+                "y": 0.0,
+                "z": 30.834999084472658
+            },
+            "size": {
+                "x": 15.109999656677246,
+                "y": 12.360000610351563,
+                "z": 12.114999771118164
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Bathhouse",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Bathhouse.prefab",
+            "position": {
+                "x": 38.13749694824219,
+                "y": 0.0,
+                "z": 30.635000228881837
+            },
+            "size": {
+                "x": 13.800000190734864,
+                "y": 9.449999809265137,
+                "z": 11.805000305175782
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Clinic",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Clinic.prefab",
+            "position": {
+                "x": 70.5250015258789,
+                "y": 0.0,
+                "z": 30.899999618530275
+            },
+            "size": {
+                "x": 9.805000305175782,
+                "y": 6.269999980926514,
+                "z": 6.885000228881836
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -139,9 +225,9 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Chapel.prefab",
             "position": {
-                "x": -38.56382369995117,
+                "x": -71.62750244140625,
                 "y": 0.0,
-                "z": 53.84000015258789
+                "z": 57.480003356933597
             },
             "size": {
                 "x": 10.859999656677246,
@@ -156,99 +242,14 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Church.prefab",
             "position": {
-                "x": -3.273822784423828,
+                "x": -43.95750427246094,
                 "y": 0.0,
-                "z": 53.84000015258789
+                "z": 56.19000244140625
             },
             "size": {
-                "x": 19.34000015258789,
+                "x": 19.339996337890626,
                 "y": 21.75,
                 "z": 31.68000030517578
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Clinic",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Clinic.prefab",
-            "position": {
-                "x": 30.216176986694337,
-                "y": 0.0,
-                "z": 53.84000015258789
-            },
-            "size": {
-                "x": 9.805000305175782,
-                "y": 6.269999980926514,
-                "z": 6.885000228881836
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "CrimsonRowhouse",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/CrimsonRowhouse.prefab",
-            "position": {
-                "x": 55.8461799621582,
-                "y": 0.0,
-                "z": 53.84000015258789
-            },
-            "size": {
-                "x": 5.784340858459473,
-                "y": 9.470000267028809,
-                "z": 8.0600004196167
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Fantasy_House",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Fantasy_House.prefab",
-            "position": {
-                "x": 76.41999816894531,
-                "y": 0.0,
-                "z": 53.84000015258789
-            },
-            "size": {
-                "x": 6.240434646606445,
-                "y": 9.494999885559082,
-                "z": 5.764999866485596
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Forge",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Forge.prefab",
-            "position": {
-                "x": -71.36382293701172,
-                "y": 0.0,
-                "z": 80.73750305175781
-            },
-            "size": {
-                "x": 2.059999942779541,
-                "y": 4.130000114440918,
-                "z": 1.690000057220459
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Granary",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granary.prefab",
-            "position": {
-                "x": -38.56382369995117,
-                "y": 0.0,
-                "z": 80.73750305175781
-            },
-            "size": {
-                "x": 11.710000038146973,
-                "y": 9.460000038146973,
-                "z": 9.654999732971192
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -258,9 +259,9 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Guardhouse.prefab",
             "position": {
-                "x": -3.273822784423828,
+                "x": -22.865001678466798,
                 "y": 0.0,
-                "z": 80.73750305175781
+                "z": 57.67000198364258
             },
             "size": {
                 "x": 10.15999984741211,
@@ -271,103 +272,52 @@
             "prefabConnection": true
         },
         {
-            "name": "Guildhall",
+            "name": "Barracks",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Guildhall.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Barracks.prefab",
             "position": {
-                "x": 30.216176986694337,
+                "x": 2.8474979400634767,
                 "y": 0.0,
-                "z": 80.73750305175781
+                "z": 57.67000198364258
             },
             "size": {
-                "x": 15.109999656677246,
-                "y": 12.360000610351563,
-                "z": 12.114999771118164
+                "x": 16.309999465942384,
+                "y": 10.110000610351563,
+                "z": 11.84000015258789
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Library",
+            "name": "WarriorAcademy",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Library.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/WarriorAcademy.prefab",
             "position": {
-                "x": 55.8461799621582,
+                "x": 38.13749694824219,
                 "y": 0.0,
-                "z": 80.73750305175781
+                "z": 57.53000259399414
             },
             "size": {
-                "x": 14.5600004196167,
-                "y": 9.785000801086426,
-                "z": 11.149999618530274
+                "x": 26.0,
+                "y": 20.610000610351564,
+                "z": 25.99999237060547
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "MerchantHouse",
+            "name": "ArcaneAcademy",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/MerchantHouse.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/ArcaneAcademy.prefab",
             "position": {
-                "x": 76.41999816894531,
+                "x": 71.62750244140625,
                 "y": 0.0,
-                "z": 80.73750305175781
+                "z": 57.53000259399414
             },
             "size": {
-                "x": 10.3100004196167,
-                "y": 10.660000801086426,
-                "z": 10.104999542236329
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Museum",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Museum.prefab",
-            "position": {
-                "x": -71.36382293701172,
-                "y": 0.0,
-                "z": 105.98500061035156
-            },
-            "size": {
-                "x": 13.930000305175782,
-                "y": 8.700000762939454,
-                "z": 12.194999694824219
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Observatory",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Observatory.prefab",
-            "position": {
-                "x": -38.56382369995117,
-                "y": 0.0,
-                "z": 105.98500061035156
-            },
-            "size": {
-                "x": 12.335000038146973,
-                "y": 11.619970321655274,
-                "z": 10.920000076293946
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Royal_Castle",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Royal_Castle.prefab",
-            "position": {
-                "x": -3.273822784423828,
-                "y": 0.0,
-                "z": 105.98500061035156
-            },
-            "size": {
-                "x": 30.979999542236329,
-                "y": 27.44499969482422,
-                "z": 28.3799991607666
+                "x": 26.0,
+                "y": 24.914989471435548,
+                "z": 26.0
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -377,12 +327,12 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/SpiritAcademy.prefab",
             "position": {
-                "x": 30.216176986694337,
+                "x": -71.62750244140625,
                 "y": 0.0,
-                "z": 105.98500061035156
+                "z": 91.37000274658203
             },
             "size": {
-                "x": 26.000003814697267,
+                "x": 26.0,
                 "y": 23.251998901367189,
                 "z": 26.0
             },
@@ -390,52 +340,18 @@
             "prefabConnection": true
         },
         {
-            "name": "Stable",
+            "name": "CrimsonRowhouse",
             "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Stable.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/CrimsonRowhouse.prefab",
             "position": {
-                "x": 55.8461799621582,
+                "x": -43.95750427246094,
                 "y": 0.0,
-                "z": 105.98500061035156
+                "z": 91.85000610351563
             },
             "size": {
-                "x": 15.260000228881836,
-                "y": 8.360000610351563,
-                "z": 10.204999923706055
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Tavern",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Tavern.prefab",
-            "position": {
-                "x": 76.41999816894531,
-                "y": 0.0,
-                "z": 105.98500061035156
-            },
-            "size": {
-                "x": 9.288000106811524,
-                "y": 9.879999160766602,
-                "z": 8.295000076293946
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "VeiledCourtyard",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/VeiledCourtyard.prefab",
-            "position": {
-                "x": -71.36382293701172,
-                "y": 0.0,
-                "z": 138.17498779296876
-            },
-            "size": {
-                "x": 11.229999542236329,
-                "y": 7.270000457763672,
-                "z": 10.375
+                "x": 5.784340858459473,
+                "y": 9.470000267028809,
+                "z": 8.0600004196167
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -445,9 +361,9 @@
             "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/VelvetTerrace.prefab",
             "position": {
-                "x": -38.56382369995117,
+                "x": -23.035003662109376,
                 "y": 0.0,
-                "z": 138.17498779296876
+                "z": 91.92500305175781
             },
             "size": {
                 "x": 10.210000038146973,
@@ -458,217 +374,13 @@
             "prefabConnection": true
         },
         {
-            "name": "Warehouse",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Warehouse.prefab",
-            "position": {
-                "x": -3.273822784423828,
-                "y": 0.0,
-                "z": 138.17498779296876
-            },
-            "size": {
-                "x": 14.3100004196167,
-                "y": 8.5600004196167,
-                "z": 10.755000114440918
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "WarriorAcademy",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/WarriorAcademy.prefab",
-            "position": {
-                "x": 30.216176986694337,
-                "y": 0.0,
-                "z": 138.17498779296876
-            },
-            "size": {
-                "x": 26.000003814697267,
-                "y": 20.610000610351564,
-                "z": 26.0
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "WorkshopHouse",
-            "category": "01 Buildings",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/WorkshopHouse.prefab",
-            "position": {
-                "x": 55.8461799621582,
-                "y": 0.0,
-                "z": 138.17498779296876
-            },
-            "size": {
-                "x": 9.3100004196167,
-                "y": 9.079999923706055,
-                "z": 9.260000228881836
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Anvil",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Anvil.prefab",
-            "position": {
-                "x": -13.736948013305664,
-                "y": 0.0,
-                "z": 170.49000549316407
-            },
-            "size": {
-                "x": 1.559999942779541,
-                "y": 1.4200000762939454,
-                "z": 0.9200000166893005
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Barrel",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Barrel.prefab",
-            "position": {
-                "x": -3.6399991512298586,
-                "y": 0.0,
-                "z": 170.49000549316407
-            },
-            "size": {
-                "x": 0.8960000276565552,
-                "y": 1.0679999589920045,
-                "z": 0.8960000276565552
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Bench",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Bench.prefab",
-            "position": {
-                "x": 5.81695032119751,
-                "y": 0.0,
-                "z": 170.49000549316407
-            },
-            "size": {
-                "x": 2.799999952316284,
-                "y": 1.434069275856018,
-                "z": 0.6949999928474426
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Cloth_Stall",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Cloth_Stall.prefab",
-            "position": {
-                "x": 14.146950721740723,
-                "y": 0.0,
-                "z": 170.49000549316407
-            },
-            "size": {
-                "x": 3.559999942779541,
-                "y": 2.9390923976898195,
-                "z": 2.630000114440918
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Clothesline",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Clothesline.prefab",
-            "position": {
-                "x": -13.736948013305664,
-                "y": 0.0,
-                "z": 179.01174926757813
-            },
-            "size": {
-                "x": 4.380000114440918,
-                "y": 2.4799997806549074,
-                "z": 0.2800000011920929
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Crate_Closed",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Crate_Closed.prefab",
-            "position": {
-                "x": -3.6399991512298586,
-                "y": 0.0,
-                "z": 179.01174926757813
-            },
-            "size": {
-                "x": 1.1200000047683716,
-                "y": 1.1949999332427979,
-                "z": 0.971500039100647
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Firewood_Rack",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Firewood_Rack.prefab",
-            "position": {
-                "x": 5.81695032119751,
-                "y": 0.0,
-                "z": 179.01174926757813
-            },
-            "size": {
-                "x": 3.1000003814697267,
-                "y": 1.8676761388778687,
-                "z": 1.350581407546997
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Handcart",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Handcart.prefab",
-            "position": {
-                "x": 14.146950721740723,
-                "y": 0.0,
-                "z": 179.01174926757813
-            },
-            "size": {
-                "x": 2.299999713897705,
-                "y": 1.6299999952316285,
-                "z": 4.413481712341309
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Hay_Bale",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Hay_Bale.prefab",
-            "position": {
-                "x": -13.736948013305664,
-                "y": 0.0,
-                "z": 190.0567626953125
-            },
-            "size": {
-                "x": 1.4800000190734864,
-                "y": 0.8125,
-                "z": 0.9249999523162842
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
             "name": "LanternSpire",
-            "category": "02 Props and Stalls",
+            "category": "01 Buildings",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/LanternSpire.prefab",
             "position": {
-                "x": -3.6399991512298586,
+                "x": 2.9605486392974855,
                 "y": 0.0,
-                "z": 190.0567626953125
+                "z": 91.42826843261719
             },
             "size": {
                 "x": 5.81389856338501,
@@ -679,18 +391,120 @@
             "prefabConnection": true
         },
         {
-            "name": "Noticeboard",
-            "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Noticeboard.prefab",
+            "name": "VeiledCourtyard",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/VeiledCourtyard.prefab",
             "position": {
-                "x": 5.81695032119751,
+                "x": 38.13749694824219,
                 "y": 0.0,
-                "z": 190.0567626953125
+                "z": 90.84249877929688
             },
             "size": {
-                "x": 2.7699999809265138,
-                "y": 2.936530351638794,
-                "z": 0.932732105255127
+                "x": 11.229999542236329,
+                "y": 7.270000457763672,
+                "z": 10.375
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Casino",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Casino.prefab",
+            "position": {
+                "x": 71.62750244140625,
+                "y": 0.0,
+                "z": 91.875
+            },
+            "size": {
+                "x": 12.210000038146973,
+                "y": 9.930000305175782,
+                "z": 10.420000076293946
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Museum",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Museum.prefab",
+            "position": {
+                "x": -71.62750244140625,
+                "y": 0.0,
+                "z": 124.64250183105469
+            },
+            "size": {
+                "x": 13.930000305175782,
+                "y": 8.700000762939454,
+                "z": 12.194999694824219
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Library",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Library.prefab",
+            "position": {
+                "x": -43.95750427246094,
+                "y": 0.0,
+                "z": 124.45500183105469
+            },
+            "size": {
+                "x": 14.5600004196167,
+                "y": 9.785000801086426,
+                "z": 11.149999618530274
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Observatory",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Observatory.prefab",
+            "position": {
+                "x": -21.832502365112306,
+                "y": 0.0,
+                "z": 124.14000701904297
+            },
+            "size": {
+                "x": 12.335000038146973,
+                "y": 11.619970321655274,
+                "z": 10.920000076293946
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Arena",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Arena.prefab",
+            "position": {
+                "x": 2.8474979400634767,
+                "y": 0.0,
+                "z": 124.04500579833985
+            },
+            "size": {
+                "x": 29.600000381469728,
+                "y": 6.269999980926514,
+                "z": 24.56999969482422
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Royal_Castle",
+            "category": "01 Buildings",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Royal_Castle.prefab",
+            "position": {
+                "x": 38.13749694824219,
+                "y": 0.0,
+                "z": 123.56000518798828
+            },
+            "size": {
+                "x": 30.979999542236329,
+                "y": 27.44499969482422,
+                "z": 28.3799991607666
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -700,9 +514,9 @@
             "category": "02 Props and Stalls",
             "prefab": "Assets/Prototypes/TownBlock/Prefabs/Produce_Stall.prefab",
             "position": {
-                "x": 14.146950721740723,
+                "x": -13.162500381469727,
                 "y": 0.0,
-                "z": 190.0567626953125
+                "z": 157.0800018310547
             },
             "size": {
                 "x": 3.559999942779541,
@@ -713,35 +527,137 @@
             "prefabConnection": true
         },
         {
-            "name": "Signpost",
+            "name": "Cloth_Stall",
             "category": "02 Props and Stalls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Signpost.prefab",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Cloth_Stall.prefab",
             "position": {
-                "x": -13.736948013305664,
+                "x": -4.602499961853027,
                 "y": 0.0,
-                "z": 200.28001403808595
+                "z": 157.0800018310547
             },
             "size": {
-                "x": 1.7928216457366944,
-                "y": 2.940000295639038,
-                "z": 0.46000000834465029
+                "x": 3.559999942779541,
+                "y": 2.9390923976898195,
+                "z": 2.630000114440918
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Streetlamp",
+            "name": "Barrel",
             "category": "02 Props and Stalls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Streetlamp.prefab",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Barrel.prefab",
             "position": {
-                "x": -3.6399991512298586,
+                "x": 3.869999885559082,
                 "y": 0.0,
-                "z": 200.28001403808595
+                "z": 157.06500244140626
             },
             "size": {
-                "x": 0.6003453731536865,
-                "y": 4.420000076293945,
-                "z": 0.6003453731536865
+                "x": 0.8960000276565552,
+                "y": 1.0679999589920045,
+                "z": 0.8960000276565552
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Crate_Closed",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Crate_Closed.prefab",
+            "position": {
+                "x": 12.752500534057618,
+                "y": 0.0,
+                "z": 157.09075927734376
+            },
+            "size": {
+                "x": 1.1200000047683716,
+                "y": 1.1949999332427979,
+                "z": 0.971500039100647
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Handcart",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Handcart.prefab",
+            "position": {
+                "x": -13.162500381469727,
+                "y": 0.0,
+                "z": 166.5034942626953
+            },
+            "size": {
+                "x": 2.299999713897705,
+                "y": 1.6299999952316285,
+                "z": 4.413481712341309
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Forge",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Forge.prefab",
+            "position": {
+                "x": -4.602499961853027,
+                "y": 0.0,
+                "z": 165.52674865722657
+            },
+            "size": {
+                "x": 2.059999942779541,
+                "y": 4.130000114440918,
+                "z": 1.690000057220459
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Anvil",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Anvil.prefab",
+            "position": {
+                "x": 3.6499998569488527,
+                "y": 0.0,
+                "z": 165.5867462158203
+            },
+            "size": {
+                "x": 1.559999942779541,
+                "y": 1.4200000762939454,
+                "z": 0.9200000166893005
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Firewood_Rack",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Firewood_Rack.prefab",
+            "position": {
+                "x": 12.752500534057618,
+                "y": 0.0,
+                "z": 165.616455078125
+            },
+            "size": {
+                "x": 3.1000003814697267,
+                "y": 1.8676761388778687,
+                "z": 1.350581407546997
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Hay_Bale",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Hay_Bale.prefab",
+            "position": {
+                "x": -13.162500381469727,
+                "y": 0.0,
+                "z": 174.17848205566407
+            },
+            "size": {
+                "x": 1.4800000190734864,
+                "y": 0.8125,
+                "z": 0.9249999523162842
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -751,9 +667,9 @@
             "category": "02 Props and Stalls",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Water_Trough.prefab",
             "position": {
-                "x": 5.81695032119751,
+                "x": -4.602499961853027,
                 "y": 0.0,
-                "z": 200.28001403808595
+                "z": 174.17848205566407
             },
             "size": {
                 "x": 2.799999952316284,
@@ -768,9 +684,9 @@
             "category": "02 Props and Stalls",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Well.prefab",
             "position": {
-                "x": 14.146950721740723,
+                "x": 3.8224997520446779,
                 "y": 0.0,
-                "z": 200.28001403808595
+                "z": 174.17848205566407
             },
             "size": {
                 "x": 3.384999990463257,
@@ -781,137 +697,86 @@
             "prefabConnection": true
         },
         {
-            "name": "Granite_Corner",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granite_Corner.prefab",
+            "name": "Bench",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Bench.prefab",
             "position": {
-                "x": -19.5,
+                "x": 12.752500534057618,
                 "y": 0.0,
-                "z": 223.66500854492188
+                "z": 174.15098571777345
             },
             "size": {
-                "x": 5.900000095367432,
-                "y": 7.059999942779541,
-                "z": 5.90000057220459
+                "x": 2.799999952316284,
+                "y": 1.434069275856018,
+                "z": 0.6949999928474426
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Granite_Gate",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granite_Gate.prefab",
+            "name": "Streetlamp",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Streetlamp.prefab",
             "position": {
-                "x": -1.789999008178711,
+                "x": -13.162500381469727,
                 "y": 0.0,
-                "z": 223.66500854492188
+                "z": 181.56349182128907
             },
             "size": {
-                "x": 8.0,
-                "y": 5.769999980926514,
-                "z": 1.6399993896484376
+                "x": 0.6003453731536865,
+                "y": 4.420000076293945,
+                "z": 0.6003453731536865
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Granite_Straight",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granite_Straight.prefab",
+            "name": "Signpost",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Signpost.prefab",
             "position": {
-                "x": 11.210000991821289,
+                "x": -4.602499961853027,
                 "y": 0.0,
-                "z": 223.66500854492188
+                "z": 181.56349182128907
             },
             "size": {
-                "x": 8.0,
-                "y": 5.769999980926514,
-                "z": 1.9709997177124024
+                "x": 1.7928216457366944,
+                "y": 2.940000295639038,
+                "z": 0.46000000834465029
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Paved_Plot",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Paved_Plot.prefab",
+            "name": "Noticeboard",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Noticeboard.prefab",
             "position": {
-                "x": 24.21000099182129,
-                "y": 0.18000000715255738,
-                "z": 223.66500854492188
-            },
-            "size": {
-                "x": 8.0,
-                "y": 0.30000001192092898,
-                "z": 8.0
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Plaza",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Plaza.prefab",
-            "position": {
-                "x": -19.5,
+                "x": 3.869999885559082,
                 "y": 0.0,
-                "z": 241.37501525878907
+                "z": 181.59213256835938
             },
             "size": {
-                "x": 17.420001983642579,
-                "y": 4.670000076293945,
-                "z": 17.420001983642579
+                "x": 2.7699999809265138,
+                "y": 2.936530351638794,
+                "z": 0.932732105255127
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Road_Corner",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Road_Corner.prefab",
+            "name": "Clothesline",
+            "category": "02 Props and Stalls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Clothesline.prefab",
             "position": {
-                "x": -1.789999008178711,
-                "y": 0.18000000715255738,
-                "z": 241.37501525878907
+                "x": 12.752500534057618,
+                "y": 0.0,
+                "z": 181.56349182128907
             },
             "size": {
-                "x": 8.0,
-                "y": 0.31950002908706667,
-                "z": 8.0
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Road_Cross",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Road_Cross.prefab",
-            "position": {
-                "x": 11.210000991821289,
-                "y": 0.18000000715255738,
-                "z": 241.37501525878907
-            },
-            "size": {
-                "x": 8.0,
-                "y": 0.31950002908706667,
-                "z": 8.0
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "Road_End",
-            "category": "03 Roads and Walls",
-            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Road_End.prefab",
-            "position": {
-                "x": 24.21000099182129,
-                "y": 0.18000000715255738,
-                "z": 241.37501525878907
-            },
-            "size": {
-                "x": 8.0,
-                "y": 0.31950002908706667,
-                "z": 8.0
+                "x": 4.380000114440918,
+                "y": 2.4799997806549074,
+                "z": 0.2800000011920929
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -921,9 +786,26 @@
             "category": "03 Roads and Walls",
             "prefab": "Assets/Prototypes/TownBlock/Prefabs/Road_Straight.prefab",
             "position": {
-                "x": -19.5,
+                "x": -24.21000099182129,
                 "y": 0.18000000715255738,
-                "z": 259.08502197265627
+                "z": 204.5634765625
+            },
+            "size": {
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Road_Corner",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Road_Corner.prefab",
+            "position": {
+                "x": -11.210000991821289,
+                "y": 0.18000000715255738,
+                "z": 204.5634765625
             },
             "size": {
                 "x": 8.0,
@@ -938,9 +820,9 @@
             "category": "03 Roads and Walls",
             "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Road_T.prefab",
             "position": {
-                "x": -1.789999008178711,
+                "x": 6.5,
                 "y": 0.18000000715255738,
-                "z": 259.08502197265627
+                "z": 204.5634765625
             },
             "size": {
                 "x": 8.0,
@@ -951,52 +833,120 @@
             "prefabConnection": true
         },
         {
-            "name": "Flower_Border",
-            "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Flower_Border.prefab",
+            "name": "Road_Cross",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Road_Cross.prefab",
             "position": {
-                "x": -19.091283798217775,
-                "y": 0.0,
-                "z": 282.1857604980469
+                "x": 24.21000099182129,
+                "y": 0.18000000715255738,
+                "z": 204.5634765625
             },
             "size": {
-                "x": 3.6250953674316408,
-                "y": 0.8299999833106995,
-                "z": 0.88665771484375
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Flower_WildPatch",
-            "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Flower_WildPatch.prefab",
+            "name": "Road_End",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Road_End.prefab",
             "position": {
-                "x": -10.934625625610352,
-                "y": 0.0,
-                "z": 282.1857604980469
+                "x": -24.21000099182129,
+                "y": 0.18000000715255738,
+                "z": 222.2734832763672
             },
             "size": {
-                "x": 1.78509521484375,
-                "y": 0.9799999594688416,
-                "z": 1.6065673828125
+                "x": 8.0,
+                "y": 0.31950002908706667,
+                "z": 8.0
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "GroundPlant_FernPatch",
-            "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/GroundPlant_FernPatch.prefab",
+            "name": "Paved_Plot",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prototypes/TownBlock/Prefabs/Paved_Plot.prefab",
             "position": {
-                "x": -0.4045600891113281,
-                "y": 0.0,
-                "z": 282.1857604980469
+                "x": -11.210000991821289,
+                "y": 0.18000000715255738,
+                "z": 222.2734832763672
             },
             "size": {
-                "x": 1.9144642353057862,
-                "y": 0.7550000548362732,
-                "z": 2.201416015625
+                "x": 8.0,
+                "y": 0.30000001192092898,
+                "z": 8.0
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Plaza",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Plaza.prefab",
+            "position": {
+                "x": 6.499999523162842,
+                "y": 0.0,
+                "z": 222.2734832763672
+            },
+            "size": {
+                "x": 17.420001983642579,
+                "y": 4.670000076293945,
+                "z": 17.420001983642579
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Granite_Straight",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granite_Straight.prefab",
+            "position": {
+                "x": 24.21000099182129,
+                "y": 0.0,
+                "z": 222.4989776611328
+            },
+            "size": {
+                "x": 8.0,
+                "y": 5.769999980926514,
+                "z": 1.9709997177124024
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Granite_Corner",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granite_Corner.prefab",
+            "position": {
+                "x": -25.260000228881837,
+                "y": 0.0,
+                "z": 237.8834686279297
+            },
+            "size": {
+                "x": 5.900000095367432,
+                "y": 7.059999942779541,
+                "z": 5.90000057220459
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Granite_Gate",
+            "category": "03 Roads and Walls",
+            "prefab": "Assets/Prefabs/Kingdom/City/Prefabs/Granite_Gate.prefab",
+            "position": {
+                "x": -11.210000991821289,
+                "y": 0.0,
+                "z": 238.9334716796875
+            },
+            "size": {
+                "x": 8.0,
+                "y": 5.769999980926514,
+                "z": 1.6399993896484376
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -1006,9 +956,9 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/GroundPlant_GrassShort.prefab",
             "position": {
-                "x": 11.342613220214844,
+                "x": -19.10030746459961,
                 "y": 0.0,
-                "z": 282.1857604980469
+                "z": 260.985107421875
             },
             "size": {
                 "x": 1.0704116821289063,
@@ -1019,13 +969,30 @@
             "prefabConnection": true
         },
         {
+            "name": "GroundPlant_GrassTuft",
+            "category": "04 Vegetation and Rocks",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/GroundPlant_GrassTuft.prefab",
+            "position": {
+                "x": -9.729692459106446,
+                "y": 0.0,
+                "z": 260.9854736328125
+            },
+            "size": {
+                "x": 1.3699054718017579,
+                "y": 0.7465630769729614,
+                "z": 1.369140625
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
             "name": "GroundPlant_GrassTall",
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/GroundPlant_GrassTall.prefab",
             "position": {
-                "x": 19.903831481933595,
+                "x": 2.016340970993042,
                 "y": 0.0,
-                "z": 282.1857604980469
+                "z": 260.985595703125
             },
             "size": {
                 "x": 1.4788932800292969,
@@ -1036,103 +1003,103 @@
             "prefabConnection": true
         },
         {
-            "name": "GroundPlant_GrassTuft",
+            "name": "GroundPlant_FernPatch",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/GroundPlant_GrassTuft.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/GroundPlant_FernPatch.prefab",
             "position": {
-                "x": -19.091283798217775,
+                "x": 12.638699531555176,
                 "y": 0.0,
-                "z": 289.2864990234375
+                "z": 260.89080810546877
             },
             "size": {
-                "x": 1.369903564453125,
-                "y": 0.7465630769729614,
-                "z": 1.369140625
+                "x": 1.9144630432128907,
+                "y": 0.7550000548362732,
+                "z": 2.20147705078125
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "NaturalRock_02",
+            "name": "Flower_WildPatch",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_02.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Flower_WildPatch.prefab",
             "position": {
-                "x": -10.934625625610352,
-                "y": 0.017200052738189698,
-                "z": 289.2864990234375
-            },
-            "size": {
-                "x": 1.0,
-                "y": 0.6003701686859131,
-                "z": 0.7616485953330994
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "NaturalRock_04",
-            "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_04.prefab",
-            "position": {
-                "x": -0.4045600891113281,
-                "y": 0.022716790437698365,
-                "z": 289.2864990234375
-            },
-            "size": {
-                "x": 1.0,
-                "y": 0.616195797920227,
-                "z": 0.615203857421875
-            },
-            "groundHeight": 0.0,
-            "prefabConnection": true
-        },
-        {
-            "name": "NaturalRock_07",
-            "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_07.prefab",
-            "position": {
-                "x": 11.342613220214844,
+                "x": 19.91336441040039,
                 "y": 0.0,
-                "z": 289.2864990234375
+                "z": 261.02423095703127
             },
             "size": {
-                "x": 0.6636097431182861,
-                "y": 1.0,
-                "z": 0.5376935005187988
+                "x": 1.78509521484375,
+                "y": 0.9799999594688416,
+                "z": 1.60662841796875
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "NaturalRock_08",
+            "name": "Flower_Border",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_08.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Flower_Border.prefab",
             "position": {
-                "x": 19.903831481933595,
-                "y": 0.01459166407585144,
-                "z": 289.2864990234375
+                "x": -19.07175064086914,
+                "y": 0.0,
+                "z": 270.86578369140627
             },
             "size": {
-                "x": 1.0,
-                "y": 0.44013988971710207,
-                "z": 0.5789794921875
+                "x": 3.625091552734375,
+                "y": 0.8299999833106995,
+                "z": 0.8865966796875
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "NaturalRock_11",
+            "name": "Tree_Street",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_11.prefab",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Tree_Street.prefab",
             "position": {
-                "x": -19.091283798217775,
-                "y": -2.9802322387695315e-8,
-                "z": 296.2864990234375
+                "x": -9.724303245544434,
+                "y": 0.0,
+                "z": 270.7233581542969
             },
             "size": {
-                "x": 1.0,
-                "y": 0.9429799914360046,
-                "z": 0.7406028509140015
+                "x": 5.122440338134766,
+                "y": 7.82859992980957,
+                "z": 4.4853515625
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Tree_Shade",
+            "category": "04 Vegetation and Rocks",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Tree_Shade.prefab",
+            "position": {
+                "x": 1.9330015182495118,
+                "y": 0.0,
+                "z": 270.68798828125
+            },
+            "size": {
+                "x": 8.371906280517579,
+                "y": 10.75387954711914,
+                "z": 7.5616455078125
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "Tree_AlleyCypress",
+            "category": "04 Vegetation and Rocks",
+            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Tree_AlleyCypress.prefab",
+            "position": {
+                "x": 12.559720993041993,
+                "y": 0.0,
+                "z": 270.86578369140627
+            },
+            "size": {
+                "x": 2.6882247924804689,
+                "y": 10.0,
+                "z": 2.688232421875
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -1142,14 +1109,14 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_01.prefab",
             "position": {
-                "x": -10.934625625610352,
+                "x": 19.87778091430664,
                 "y": -1.1920928955078126e-7,
-                "z": 296.2864990234375
+                "z": 270.8439636230469
             },
             "size": {
-                "x": 1.7617168426513672,
+                "x": 1.7617149353027344,
                 "y": 2.3999998569488527,
-                "z": 1.63531494140625
+                "z": 1.6353759765625
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -1159,12 +1126,12 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_02.prefab",
             "position": {
-                "x": -0.4045600891113281,
+                "x": -19.0085506439209,
                 "y": 0.0,
-                "z": 296.2864990234375
+                "z": 280.64532470703127
             },
             "size": {
-                "x": 2.1718175411224367,
+                "x": 2.1718177795410158,
                 "y": 2.3999998569488527,
                 "z": 1.69525146484375
             },
@@ -1176,9 +1143,9 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_03.prefab",
             "position": {
-                "x": 11.342613220214844,
+                "x": -9.766167640686036,
                 "y": 0.0,
-                "z": 296.2864990234375
+                "z": 280.650634765625
             },
             "size": {
                 "x": 1.442962646484375,
@@ -1193,14 +1160,14 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_04.prefab",
             "position": {
-                "x": 19.903831481933595,
+                "x": 1.9559252262115479,
                 "y": -1.1920928955078126e-7,
-                "z": 296.2864990234375
+                "z": 280.6444396972656
             },
             "size": {
-                "x": 1.8543472290039063,
+                "x": 1.854349136352539,
                 "y": 2.4000000953674318,
-                "z": 1.7005615234375
+                "z": 1.70062255859375
             },
             "groundHeight": 0.0,
             "prefabConnection": true
@@ -1210,12 +1177,12 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_05.prefab",
             "position": {
-                "x": -19.091283798217775,
+                "x": 12.650593757629395,
                 "y": 0.0,
-                "z": 303.2864990234375
+                "z": 280.70404052734377
             },
             "size": {
-                "x": 1.8567962646484376,
+                "x": 1.8567981719970704,
                 "y": 2.40000057220459,
                 "z": 1.510833740234375
             },
@@ -1227,9 +1194,9 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_06.prefab",
             "position": {
-                "x": -10.934625625610352,
+                "x": 19.94849395751953,
                 "y": 1.1920928955078126e-7,
-                "z": 303.2864990234375
+                "z": 280.64776611328127
             },
             "size": {
                 "x": 1.6550750732421876,
@@ -1244,12 +1211,12 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_07.prefab",
             "position": {
-                "x": -0.4045600891113281,
+                "x": -19.124608993530275,
                 "y": 0.0,
-                "z": 303.2864990234375
+                "z": 287.6376953125
             },
             "size": {
-                "x": 1.93373441696167,
+                "x": 1.9337348937988282,
                 "y": 2.4000000953674318,
                 "z": 1.6551513671875
             },
@@ -1261,9 +1228,9 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_08.prefab",
             "position": {
-                "x": 11.342613220214844,
+                "x": -9.701000213623047,
                 "y": 0.0,
-                "z": 303.2864990234375
+                "z": 287.62237548828127
             },
             "size": {
                 "x": 1.7934150695800782,
@@ -1278,12 +1245,12 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_09.prefab",
             "position": {
-                "x": 19.903831481933595,
+                "x": 1.9736919403076172,
                 "y": 0.0,
-                "z": 303.2864990234375
+                "z": 287.6186218261719
             },
             "size": {
-                "x": 1.9977874755859376,
+                "x": 1.9977846145629883,
                 "y": 2.4000000953674318,
                 "z": 1.73779296875
             },
@@ -1295,12 +1262,12 @@
             "category": "04 Vegetation and Rocks",
             "prefab": "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_10.prefab",
             "position": {
-                "x": -19.091283798217775,
+                "x": 12.646223068237305,
                 "y": 0.0,
-                "z": 313.06732177734377
+                "z": 287.63519287109377
             },
             "size": {
-                "x": 1.9217987060546876,
+                "x": 1.9218006134033204,
                 "y": 2.3999998569488527,
                 "z": 1.58282470703125
             },
@@ -1308,52 +1275,86 @@
             "prefabConnection": true
         },
         {
-            "name": "Tree_AlleyCypress",
+            "name": "NaturalRock_02",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Tree_AlleyCypress.prefab",
+            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_02.prefab",
             "position": {
-                "x": -10.934625625610352,
-                "y": 0.0,
-                "z": 313.06732177734377
+                "x": 19.903831481933595,
+                "y": 0.017200052738189698,
+                "z": 287.6466369628906
             },
             "size": {
-                "x": 2.6882247924804689,
-                "y": 10.0,
-                "z": 2.688232421875
+                "x": 1.0,
+                "y": 0.6003701686859131,
+                "z": 0.7616485953330994
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Tree_Shade",
+            "name": "NaturalRock_04",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Tree_Shade.prefab",
+            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_04.prefab",
             "position": {
-                "x": -0.4045600891113281,
-                "y": 0.0,
-                "z": 313.06732177734377
+                "x": -19.091283798217775,
+                "y": 0.022716790437698365,
+                "z": 294.6466369628906
             },
             "size": {
-                "x": 8.371906280517579,
-                "y": 10.75387954711914,
-                "z": 7.5616455078125
+                "x": 1.0,
+                "y": 0.616195797920227,
+                "z": 0.615203857421875
             },
             "groundHeight": 0.0,
             "prefabConnection": true
         },
         {
-            "name": "Tree_Street",
+            "name": "NaturalRock_07",
             "category": "04 Vegetation and Rocks",
-            "prefab": "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs/Tree_Street.prefab",
+            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_07.prefab",
             "position": {
-                "x": 11.342613220214844,
+                "x": -9.717517852783204,
                 "y": 0.0,
-                "z": 313.06732177734377
+                "z": 294.6466369628906
             },
             "size": {
-                "x": 5.122438430786133,
-                "y": 7.82859992980957,
-                "z": 4.4853515625
+                "x": 0.6636097431182861,
+                "y": 1.0,
+                "z": 0.5376935005187988
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "NaturalRock_08",
+            "category": "04 Vegetation and Rocks",
+            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_08.prefab",
+            "position": {
+                "x": 2.0296554565429689,
+                "y": 0.01459166407585144,
+                "z": 294.6466369628906
+            },
+            "size": {
+                "x": 1.0,
+                "y": 0.44013988971710207,
+                "z": 0.5789794921875
+            },
+            "groundHeight": 0.0,
+            "prefabConnection": true
+        },
+        {
+            "name": "NaturalRock_11",
+            "category": "04 Vegetation and Rocks",
+            "prefab": "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_11.prefab",
+            "position": {
+                "x": 12.559720993041993,
+                "y": -2.9802322387695315e-8,
+                "z": 294.6466369628906
+            },
+            "size": {
+                "x": 1.0,
+                "y": 0.9429799914360046,
+                "z": 0.7406028509140015
             },
             "groundHeight": 0.0,
             "prefabConnection": true

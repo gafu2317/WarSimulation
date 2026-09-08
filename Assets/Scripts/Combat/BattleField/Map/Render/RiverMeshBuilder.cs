@@ -51,6 +51,25 @@ namespace WarSimulation.Combat.Map
             float maxWz = float.NegativeInfinity;
 
             IReadOnlyList<Vector2Int> cells = river.Cells;
+            var distances = new float[cells.Count];
+            for (int i = 1; i < cells.Count; i++)
+                distances[i] = distances[i - 1] + Vector2.Distance(cells[i - 1], cells[i]) * cs;
+            var flowPath = new Vector2[cells.Count];
+            for (int i = 0; i < cells.Count; i++)
+            {
+                Vector2 sum = Vector2.zero;
+                float weightSum = 0f;
+                for (int j = 0; j < cells.Count; j++)
+                {
+                    float weight = Mathf.Max(0f, 1f - Mathf.Abs(distances[j] - distances[i])
+                        / Mathf.Max(river.WidthMeters, cs));
+                    sum += ((Vector2)cells[j] + Vector2.one * 0.5f) * (cs * weight);
+                    weightSum += weight;
+                }
+                flowPath[i] = sum / weightSum;
+            }
+            for (int i = 1; i < cells.Count; i++)
+                distances[i] = distances[i - 1] + Vector2.Distance(flowPath[i - 1], flowPath[i]);
             for (int i = 0; i < cells.Count; i++)
             {
                 Vector2Int c = cells[i];
@@ -81,6 +100,7 @@ namespace WarSimulation.Combat.Map
 
             var vertices = new List<Vector3>(256);
             var uvs = new List<Vector2>(256);
+            var flowUvs = new List<Vector2>(256);
             var triangles = new List<int>(384);
 
             int CornerLocal(int cx, int cz) => (cx - xMin) + (cz - zMin) * cornerW;
@@ -96,6 +116,7 @@ namespace WarSimulation.Combat.Map
                 cornerIndex[li] = id;
                 vertices.Add(new Vector3(wxCorner, surfaceY, wzCorner));
                 uvs.Add(new Vector2(wxCorner * UvWorldScale, wzCorner * UvWorldScale));
+                flowUvs.Add(GetFlowUv(new Vector2(wxCorner, wzCorner), flowPath, distances));
                 return id;
             }
 
@@ -183,10 +204,34 @@ namespace WarSimulation.Combat.Map
             if (vertices.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             mesh.SetVertices(vertices);
             mesh.SetUVs(0, uvs);
+            mesh.SetUVs(2, flowUvs);
             mesh.triangles = triangles.ToArray();
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private static Vector2 GetFlowUv(Vector2 point, Vector2[] path, float[] distances)
+        {
+            float nearest = float.PositiveInfinity;
+            Vector2 uv = Vector2.zero;
+            for (int i = 0; i < path.Length - 1; i++)
+            {
+                Vector2 a = path[i];
+                Vector2 delta = path[i + 1] - a;
+                float length = delta.magnitude;
+                if (length == 0f) continue;
+                Vector2 direction = delta / length;
+                float along = Vector2.Dot(point - a, direction);
+                if (i > 0) along = Mathf.Max(0f, along);
+                if (i < path.Length - 2) along = Mathf.Min(length, along);
+                Vector2 offset = point - (a + direction * along);
+                if (offset.sqrMagnitude >= nearest) continue;
+                nearest = offset.sqrMagnitude;
+                uv = new Vector2(distances[i] + along,
+                    Vector2.Dot(offset, new Vector2(-direction.y, direction.x)));
+            }
+            return uv;
         }
 
         private static float ComputeFlatWaterY(HeightMap h, RiverPath river, float waterYOffsetRatio)
