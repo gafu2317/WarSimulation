@@ -9,7 +9,7 @@ using WarSimulation.Combat.Map;
 
 public sealed class RockGroundingTests
 {
-    private const float TreeGroundSinkDepth = 0.05f;
+    private const float GroundSinkDepth = 0.05f;
 
     [TestCase(0f, 0f)]
     [TestCase(0f, 3f)]
@@ -30,20 +30,15 @@ public sealed class RockGroundingTests
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     $"Assets/Prefabs/Kingdom/City/Prefabs/NaturalRock_{variant:00}.prefab");
                 SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
-                SetField(renderer, "_enableRockGrounding", false);
                 renderer.Render(map);
                 Transform rock = host.transform.Find("GeneratedFeatures/Rock_0");
-                Vector3 original = rock.localPosition;
+                Vector3 original = map.Features[0].WorldPosition;
                 Quaternion rotation = rock.localRotation;
                 Vector3 scale = rock.localScale;
                 string[] meshes = MeshNames(rock);
                 Physics.SyncTransforms();
                 float[] drops = MeasureTerrainDrops(rock, ground, host.transform, map.Height.CellSize);
-                Vector3[] colliderCenters = rock.GetComponentsInChildren<Collider>().Select(c => c.bounds.center).ToArray();
 
-                SetField(renderer, "_enableRockGrounding", true);
-                renderer.Render(map);
-                rock = host.transform.Find("GeneratedFeatures/Rock_0");
                 Vector3 grounded = rock.localPosition;
                 Assert.That(rock.parent.childCount, Is.EqualTo(1));
                 Assert.That(grounded.x, Is.EqualTo(original.x));
@@ -55,14 +50,13 @@ public sealed class RockGroundingTests
                 Assert.That(map.Features[0].WorldPosition, Is.EqualTo(original));
                 float sink = original.y - grounded.y;
                 if (slope == 0f)
-                    Assert.That(sink, Is.EqualTo(TreeGroundSinkDepth), $"Flat ground: variant {variant}");
+                    Assert.That(sink, Is.EqualTo(GroundSinkDepth).Within(0.001f), $"Flat ground: variant {variant}");
                 else Assert.That(sink, Is.GreaterThan(0f), $"Slope: variant {variant}");
-                Assert.That(sink, Is.EqualTo(Mathf.Max(TreeGroundSinkDepth, drops.Max())).Within(0.001f), $"Variant {variant}");
+                Assert.That(sink, Is.EqualTo(Mathf.Max(GroundSinkDepth, drops.Max())).Within(0.001f), $"Variant {variant}");
                 Assert.That(drops.All(drop => drop - sink <= 0.001f), Is.True, $"Variant {variant}");
                 Collider[] moved = rock.GetComponentsInChildren<Collider>();
                 for (int i = 0; i < moved.Length; i++)
                 {
-                    Assert.That(Vector3.Distance(moved[i].bounds.center, colliderCenters[i] - Vector3.up * sink), Is.LessThan(0.001f));
                     Bounds bounds = moved[i].bounds;
                     var ray = new Ray(new Vector3(bounds.center.x, Mathf.Max(bounds.max.y, ground.bounds.max.y) + map.Height.CellSize, bounds.center.z), Vector3.down);
                     float length = ray.origin.y - Mathf.Min(bounds.min.y, ground.bounds.min.y) + map.Height.CellSize;
@@ -111,7 +105,7 @@ public sealed class RockGroundingTests
 
             Assert.That(tree.localPosition.x, Is.EqualTo(map.Features[0].WorldPosition.x));
             Assert.That(tree.localPosition.z, Is.EqualTo(map.Features[0].WorldPosition.z));
-            Assert.That(sink, Is.EqualTo(Mathf.Max(TreeGroundSinkDepth, drops.Max())).Within(0.001f));
+            Assert.That(sink, Is.EqualTo(Mathf.Max(GroundSinkDepth, drops.Max())).Within(0.001f));
             Assert.That(drops.All(drop => drop - sink <= 0.001f), Is.True);
         }
         finally
@@ -134,7 +128,6 @@ public sealed class RockGroundingTests
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
             "Assets/Prefabs/Kingdom/City/Prefabs/NaturalRock_02.prefab");
         SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
-        SetField(renderer, "_enableRockGrounding", true);
         try
         {
             LogAssert.Expect(LogType.Warning,

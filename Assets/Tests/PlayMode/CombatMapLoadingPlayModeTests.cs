@@ -50,7 +50,6 @@ public sealed class CombatMapLoadingPlayModeTests
         Assert.That(selection, Is.Not.Null);
 
         while (mapSystem.PreparationState == MapPreparationState.Loading) yield return null;
-        // 任意の別マップは補正ONの場合もあるため、ON/OFFの検証対象を固定する。
         List<AuthoredMapDefinition> options = GetMapOptions(selection);
         AuthoredMapDefinition first = options.Find(map => map != null && map.name == "AuthoredMap 1");
         AuthoredMapDefinition second = options.Find(map => map != null && map.name == "AuthoredMap 5");
@@ -64,7 +63,6 @@ public sealed class CombatMapLoadingPlayModeTests
         AssertRendererSettingsMatch(
             FindMapHost(SceneManager.GetSceneByName("GafuTest")),
             FindMapHost(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath)));
-        Assert.That(IsRockGroundingEnabled(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath)), Is.True);
 
         yield return mapSystem.PrepareMapAsync(second);
 
@@ -72,7 +70,6 @@ public sealed class CombatMapLoadingPlayModeTests
         Assert.That(mapSystem.AuthoredMap, Is.SameAs(second));
         Assert.That(SceneManager.GetSceneByPath(second.BakedRuntimeScenePath).isLoaded, Is.True);
         Assert.That(SceneManager.GetSceneByPath(first.BakedRuntimeScenePath).isLoaded, Is.False);
-        Assert.That(IsRockGroundingEnabled(SceneManager.GetSceneByPath(second.BakedRuntimeScenePath)), Is.False);
         stopwatch.Stop();
         long allocatedBytes = System.GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
         TestContext.WriteLine(
@@ -149,10 +146,6 @@ public sealed class CombatMapLoadingPlayModeTests
         for (int i = 0; i < samples.Length; i++) count += samples[i].Count;
         return count;
     }
-
-    private static bool IsRockGroundingEnabled(Scene scene) =>
-        (bool)typeof(FeatureRenderer).GetField("_enableRockGrounding", BindingFlags.Instance | BindingFlags.NonPublic)
-            .GetValue(FindMapHost(scene).GetComponent<FeatureRenderer>());
 
     private static List<AuthoredMapDefinition> GetMapOptions(CombatMapSelectionView selection)
     {

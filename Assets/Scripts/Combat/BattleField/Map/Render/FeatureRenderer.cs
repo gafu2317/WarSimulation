@@ -12,7 +12,7 @@ namespace WarSimulation.Combat.Map
     /// 生成物は全て「GeneratedFeatures」子配下にまとめ、再生成のたびにクリアする。
     /// 見た目は次の構成で生成する：
     ///   - 木  ：設定済みPrefab。未設定時は円柱（幹）＋球（葉冠）の旧方式にフォールバック
-    ///   - 岩  ：設定済みPrefabを1倍または2倍で生成。未設定時は立方体へフォールバック
+    ///   - 岩  ：設定済みPrefabを1.8倍から2.2倍の範囲で生成
     ///   - 魔石：Resources の認定済みモデルPrefabを使い、Coreだけ陣営色で塗り分ける。
     /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
     /// </summary>
@@ -23,10 +23,9 @@ namespace WarSimulation.Combat.Map
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string NotWalkableAreaName = "Not Walkable";
         private const float TreeSizeMultiplier = 1.5f;
-        private const float TreeGroundSinkDepth = 0.05f;
-        private const float RockBaseSizeMultiplier = 1f;
-        private const float RockLargeSizeMultiplier = 2f;
-        private const float RockLargeSizeProbability = 0.5f;
+        private const float FeatureGroundSinkDepth = 0.05f;
+        private const float RockMinimumSizeMultiplier = 1.8f;
+        private const float RockMaximumSizeMultiplier = 2.2f;
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
@@ -59,27 +58,12 @@ namespace WarSimulation.Combat.Map
         [SerializeField] private GameObject[] _treePrefabs;
 
         [Header("Rock Appearance")]
-        [Tooltip("岩 1 個の基準サイズ（メートル）。描画時に1倍または2倍を50:50で決定的に選ぶ。")]
+        [Tooltip("岩 1 個の基準サイズ（メートル）。描画時に1.8倍から2.2倍の範囲で決定的に選ぶ。")]
         [SerializeField, Min(0.1f)] private float _rockSize = 2.6f;
 
-        [Tooltip("岩の縦潰し比の下限。0.8 で高さ 80%、1.0 で立方体。")]
-        [SerializeField, Range(0.3f, 1.0f)] private float _rockHeightScaleMin = 0.7f;
-
-        [Tooltip("岩の縦潰し比の上限。0.95 で高さ 95%、1.0 で立方体。")]
-        [SerializeField, Range(0.3f, 1.0f)] private float _rockHeightScaleMax = 0.95f;
-
-        [Tooltip("岩キューブの全面に貼るテクスチャ。未設定なら灰色。")]
-        [SerializeField] private Texture2D _rockTexture;
-
-        [Tooltip("岩テクスチャのタイリング回数。1 なら各面に画像を1回表示する。")]
-        [SerializeField, Min(0.01f)] private float _rockTextureTiling = 1f;
-
         [Header("Rock Prefabs")]
-        [Tooltip("使用する岩Prefab 5種類（02・04・08・07・11）を割り当てる。未設定時は旧キューブ生成へフォールバックする。")]
+        [Tooltip("使用する岩Prefab 5種類（02・04・08・07・11）を割り当てる。")]
         [SerializeField] private GameObject[] _rockPrefabs;
-
-        [Tooltip("岩の底面をTerrainに埋める試作補正。XZ位置・回転・大きさは変更しない。")]
-        [SerializeField] private bool _enableRockGrounding;
 
         [Header("Magic Stone Appearance")]
         [Tooltip("メイン魔石の高さ（メートル）。拠点扱いなのでかなり目立たせる。")]
@@ -118,12 +102,8 @@ namespace WarSimulation.Combat.Map
                 "AutoTreeTrunk", _trunkTexture, _trunkTextureTiling, new Color(0.36f, 0.22f, 0.11f));
             Material foliageMat = CreateLitTexturedMaterial(
                 "AutoTreeFoliage", _foliageTexture, _foliageTextureTiling, new Color(0.12f, 0.50f, 0.18f));
-            Material rockMat = _rockTexture != null
-                ? CreateLitTexturedMaterial("AutoRock", _rockTexture, _rockTextureTiling, Color.white)
-                : CreateLitMaterial("AutoRock", new Color(0.45f, 0.45f, 0.47f));
             Mesh cylinderMesh = GetSharedPrimitiveMesh(PrimitiveType.Cylinder, ref _cachedCylinder);
             Mesh sphereMesh = GetSharedPrimitiveMesh(PrimitiveType.Sphere, ref _cachedSphere);
-            Mesh cubeMesh = GetSharedPrimitiveMesh(PrimitiveType.Cube, ref _cachedCube);
 
             int treeIdx = 0;
             int rockIdx = 0;
@@ -146,7 +126,8 @@ namespace WarSimulation.Combat.Map
                             i);
                         break;
                     case FeatureType.Rock:
-                        SpawnRock(root.transform, map, f, rockMat, cubeMesh, rockIdx++, i);
+                        if (SpawnRock(root.transform, map, f, rockIdx, i))
+                            rockIdx++;
                         break;
                     case FeatureType.OwnMainStone:
                         SpawnMagicStone(root.transform, f, "OwnMain", stoneIdx++, featureIndex: i);
@@ -157,8 +138,8 @@ namespace WarSimulation.Combat.Map
                 }
             }
 
-            if (treeIdx > 0 || (_enableRockGrounding && rockIdx > 0))
-                GroundFeatures(root.transform, map.Height.CellSize, treeIdx, _enableRockGrounding ? rockIdx : 0);
+            if (treeIdx > 0 || rockIdx > 0)
+                GroundFeatures(root.transform, map.Height.CellSize, treeIdx, rockIdx);
         }
 
         private void GroundFeatures(Transform root, float cellSize, int treeCount, int rockCount)
@@ -177,14 +158,14 @@ namespace WarSimulation.Combat.Map
                 Transform tree = root.Find($"Tree_{i}");
                 Transform trunk = tree.Find("Trunk") ?? tree;
                 if (!RockGrounding.TryGround(
-                        tree, trunk, transform, ground, cellSize, TreeGroundSinkDepth, out string error))
+                        tree, trunk, transform, ground, cellSize, FeatureGroundSinkDepth, out string error))
                     Debug.LogWarning($"[TreeGrounding] {tree.name}: {error}。位置を保持します。", tree);
             }
             for (int i = 0; i < rockCount; i++)
             {
                 Transform rock = root.Find($"Rock_{i}");
                 if (!RockGrounding.TryGround(
-                        rock, rock, transform, ground, cellSize, TreeGroundSinkDepth, out string error))
+                        rock, rock, transform, ground, cellSize, FeatureGroundSinkDepth, out string error))
                     Debug.LogWarning($"[RockGrounding] {rock.name}: {error}。位置を保持します。", rock);
             }
             Physics.SyncTransforms();
@@ -446,22 +427,9 @@ namespace WarSimulation.Combat.Map
         }
 
         /// <summary>
-        /// 岩Prefabを1個生成し、未設定時は旧キューブ生成へフォールバックする。
+        /// 岩Prefabを1個生成する。
         /// </summary>
-        private void SpawnRock(
-            Transform parent,
-            MapData map,
-            PlacedFeature f,
-            Material mat,
-            Mesh cube,
-            int idx,
-            int featureIndex)
-        {
-            if (TrySpawnRockPrefab(parent, map, f, idx, featureIndex)) return;
-            SpawnProceduralRock(parent, f, mat, cube, idx);
-        }
-
-        private bool TrySpawnRockPrefab(
+        private bool SpawnRock(
             Transform parent,
             MapData map,
             PlacedFeature f,
@@ -470,14 +438,13 @@ namespace WarSimulation.Combat.Map
         {
             if (!HasValidRockPrefabSet())
             {
-                if (!_rockPrefabWarningLogged)
+                if (!_rockPrefabErrorLogged)
                 {
                     string message =
                         $"[{nameof(FeatureRenderer)}] Exactly {RockPrefabCount} rock prefabs are required; " +
-                        "falling back to procedural rocks.";
-                    if (Application.isBatchMode) Debug.LogWarning(message, this);
-                    else Debug.LogError(message, this);
-                    _rockPrefabWarningLogged = true;
+                        "rocks will not be rendered.";
+                    Debug.LogError(message, this);
+                    _rockPrefabErrorLogged = true;
                 }
 
                 return false;
@@ -496,36 +463,8 @@ namespace WarSimulation.Combat.Map
             return true;
         }
 
-        private void SpawnProceduralRock(Transform parent, PlacedFeature f, Material mat, Mesh cube, int idx)
-        {
-            var rock = new GameObject($"Rock_{idx}", typeof(MeshFilter), typeof(MeshRenderer), typeof(BoxCollider));
-            rock.transform.SetParent(parent, worldPositionStays: false);
-
-            // 位置ベースで決定的に揺らぎを作る（再生成しても同じ岩が同じ見た目になる）
-            uint seed = unchecked((uint)Mathf.FloorToInt(f.WorldPosition.x * 73.1f + f.WorldPosition.z * 19.7f + 37.3f));
-            if (seed == 0u) seed = 1u;
-            float sx = Mathf.Lerp(0.85f, 1.15f, NextFloat01(ref seed));
-            float sz = Mathf.Lerp(0.85f, 1.15f, NextFloat01(ref seed));
-            float hMin = Mathf.Min(_rockHeightScaleMin, _rockHeightScaleMax);
-            float hMax = Mathf.Max(_rockHeightScaleMin, _rockHeightScaleMax);
-            float sy = Mathf.Lerp(hMin, hMax, NextFloat01(ref seed));
-            float yaw = NextFloat01(ref seed) * 360f;
-            float sizeMultiplier = GetRockSizeMultiplier(ref seed);
-
-            // Cube はローカル ±0.5 の立方体。根本を地面に合わせたいので Y 半分だけ上げる。
-            float rockSize = _rockSize * sizeMultiplier;
-            Vector3 pos = f.WorldPosition + new Vector3(0f, rockSize * sy * 0.5f, 0f);
-            rock.transform.localPosition = pos;
-            rock.transform.localRotation = f.Rotation * Quaternion.Euler(0f, yaw, 0f);
-            rock.transform.localScale = new Vector3(rockSize * sx, rockSize * sy, rockSize * sz);
-            rock.GetComponent<MeshFilter>().sharedMesh = cube;
-            rock.GetComponent<MeshRenderer>().sharedMaterial = mat;
-            rock.GetComponent<BoxCollider>().isTrigger = false;
-            MarkNotWalkable(rock);
-        }
-
         private const int RockPrefabCount = 5;
-        private bool _rockPrefabWarningLogged;
+        private bool _rockPrefabErrorLogged;
 
         private bool HasValidRockPrefabSet()
         {
@@ -553,9 +492,10 @@ namespace WarSimulation.Combat.Map
 
         private static float GetRockSizeMultiplier(ref uint state)
         {
-            return NextFloat01(ref state) < RockLargeSizeProbability
-                ? RockBaseSizeMultiplier
-                : RockLargeSizeMultiplier;
+            return Mathf.Lerp(
+                RockMinimumSizeMultiplier,
+                RockMaximumSizeMultiplier,
+                NextFloat01(ref state));
         }
 
         /// <summary>
@@ -627,16 +567,8 @@ namespace WarSimulation.Combat.Map
             navModifier.ignoreFromBuild = true;
         }
 
-        private static void MarkNotWalkable(GameObject go)
-        {
-            var navModifier = go.AddComponent<NavMeshModifier>();
-            navModifier.overrideArea = true;
-            navModifier.area = NavMesh.GetAreaFromName(NotWalkableAreaName);
-        }
-
         private static Mesh _cachedCylinder;
         private static Mesh _cachedSphere;
-        private static Mesh _cachedCube;
 
         /// <summary>
         /// Unity の既定プリミティブメッシュを取得してキャッシュする。

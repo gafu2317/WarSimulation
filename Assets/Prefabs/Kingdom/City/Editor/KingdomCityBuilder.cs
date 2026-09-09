@@ -47,6 +47,12 @@ namespace WarSimulation.Kingdom.City
             public int coplanarCourtyardPads;
             public bool allBuildingsInsideWalls;
             public bool noBuildingOverlap;
+            public bool noBuildingsOnRoads;
+            public bool uniqueFacilities;
+            public bool allFacilityTypesPlaced;
+            public string[] missingFacilities;
+            public string[] expectedFacilities;
+            public bool allEntrancesFaceRoads;
             public bool southernGateToCastleRoute;
             public bool allFacilityEntrancesConnected;
             public bool noDuplicateRoadTiles;
@@ -57,6 +63,14 @@ namespace WarSimulation.Kingdom.City
             public string[] districts;
             public string[] limitations;
         }
+
+        static readonly string[] FacilityNames =
+        {
+            "Royal_Castle", "Barracks", "Guardhouse", "Guildhall", "Bathhouse", "Library", "Museum",
+            "Chapel", "Observatory", "Arena", "Clinic", "Tavern", "Bakery", "Warehouse", "Stable",
+            "Granary", "Casino", "CrimsonRowhouse", "VelvetTerrace", "LanternSpire", "VeiledCourtyard",
+            "WarriorAcademy", "ArcaneAcademy", "SpiritAcademy", "Church", "Blacksmith"
+        };
 
         static readonly Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
         static readonly List<GameObject> Instances = new List<GameObject>();
@@ -85,10 +99,8 @@ namespace WarSimulation.Kingdom.City
             var manifest = JsonUtility.FromJson<ExportManifest>(File.ReadAllText(ReviewRoot + "/export_manifest.json"));
             Directory.CreateDirectory(PrefabRoot + "/Materials");
             Directory.CreateDirectory(PrefabRoot + "/Prefabs");
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            BuildImportedPrefabs(manifest);
             LoadPrefabs();
-            var previous = GameObject.Find("Kingdom");
+            var previous = scene.GetRootGameObjects().FirstOrDefault(root => root.name == "Kingdom");
             if (previous != null) UnityEngine.Object.DestroyImmediate(previous);
             Prefabs.Clear();
             LoadPrefabs();
@@ -104,6 +116,7 @@ namespace WarSimulation.Kingdom.City
             BuildCivicDistrict();
             BuildMarketAndCraftDistrict();
             BuildNightlifeDistrict();
+            BuildExpandedDistricts();
             BuildOpenSpaces();
             BuildResidentialDistricts();
             BuildInfillDetails();
@@ -273,14 +286,14 @@ namespace WarSimulation.Kingdom.City
             land.name = "Kingdom Ground";
             land.transform.SetParent(root, false);
             land.transform.position = new Vector3(0, -0.55f, 0);
-            land.transform.localScale = new Vector3(240, 1, 200);
+            land.transform.localScale = new Vector3(336, 1, 200);
             land.GetComponent<Renderer>().sharedMaterial = groundMaterial;
         }
 
         static void BuildWalls()
         {
             var root = District("01 Fortifications");
-            int[] horizontal = Enumerable.Range(-12, 25).Select(i => i * 8).ToArray();
+            int[] horizontal = Enumerable.Range(-18, 37).Select(i => i * 8).ToArray();
             foreach (float x in horizontal)
             {
                 Place(x == 0 ? "Granite_Gate" : "Granite_Straight", "Fortifications", new Vector3(x, 0, -84), 0, root);
@@ -289,13 +302,13 @@ namespace WarSimulation.Kingdom.City
             foreach (float z in Enumerable.Range(0, 20).Select(i => -76 + i * 8))
             {
                 bool gate = z == -28;
-                Place(gate ? "Granite_Gate" : "Granite_Straight", "Fortifications", new Vector3(-104, 0, z), 90, root);
-                Place(gate ? "Granite_Gate" : "Granite_Straight", "Fortifications", new Vector3(104, 0, z), 270, root);
+                Place(gate ? "Granite_Gate" : "Granite_Straight", "Fortifications", new Vector3(-152, 0, z), 90, root);
+                Place(gate ? "Granite_Gate" : "Granite_Straight", "Fortifications", new Vector3(152, 0, z), 270, root);
             }
-            Place("Granite_Corner", "Fortifications", new Vector3(-104, 0, -84), 0, root);
-            Place("Granite_Corner", "Fortifications", new Vector3(104, 0, -84), 90, root);
-            Place("Granite_Corner", "Fortifications", new Vector3(104, 0, 84), 180, root);
-            Place("Granite_Corner", "Fortifications", new Vector3(-104, 0, 84), 270, root);
+            Place("Granite_Corner", "Fortifications", new Vector3(-152, 0, -84), 0, root);
+            Place("Granite_Corner", "Fortifications", new Vector3(152, 0, -84), 90, root);
+            Place("Granite_Corner", "Fortifications", new Vector3(152, 0, 84), 180, root);
+            Place("Granite_Corner", "Fortifications", new Vector3(-152, 0, 84), 270, root);
         }
 
         static readonly Vector2Int[] RoadDirections = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
@@ -323,12 +336,15 @@ namespace WarSimulation.Kingdom.City
             Func<int, int, Vector2Int> cell = (x, z) => new Vector2Int(x / 8, (z - 4) / 8);
             for (int z = -92; z <= 28; z += 8) if (z != -12 && z != -4 && z != 4) cells.Add(cell(0, z));
             for (int x = -24; x <= 24; x += 8) cells.Add(cell(x, -76));
-            foreach (int z in new[] { -28, 12, 28 })
-                for (int x = z == -28 ? -112 : -88; x <= (z == -28 ? 112 : 88); x += 8) cells.Add(cell(x, z));
+            foreach (int z in new[] { -28, 12 })
+                for (int x = z == -28 ? -160 : -144; x <= (z == -28 ? 160 : 144); x += 8) cells.Add(cell(x, z));
             foreach (int start in new[] { -88, 32 })
-                for (int x = start; x <= (start < 0 ? -32 : 88); x += 8) cells.Add(cell(x, 44));
+                for (int x = start; x <= (start < 0 ? -32 : 56); x += 8) cells.Add(cell(x, 44));
             foreach (int x in new[] { -72, -40, 40, 72 })
-                for (int z = -76; z <= 60; z += 8) cells.Add(cell(x, z));
+                for (int z = -76; z <= (x == 72 ? 28 : 60); z += 8) cells.Add(cell(x, z));
+            for (int x = -32; x <= 32; x += 8) cells.Add(cell(x, 36));
+            foreach (int x in new[] { -104, 104 })
+                for (int z = -76; z <= 76; z += 8) cells.Add(cell(x, z));
             var basePorts = new Dictionary<string, bool[]>();
             foreach (string name in new[] { "Road_Straight", "Road_Corner", "Road_T", "Road_Cross", "Road_End" })
             {
@@ -354,6 +370,11 @@ namespace WarSimulation.Kingdom.City
                 }
                 if (!placed) throw new InvalidOperationException("No road module fits " + current);
             }
+        }
+
+        static bool OverlapsXZ(Bounds a, Bounds b)
+        {
+            return a.min.x < b.max.x && a.max.x > b.min.x && a.min.z < b.max.z && a.max.z > b.min.z;
         }
 
         static Bounds Expanded(Bounds bounds, float amount)
@@ -403,10 +424,9 @@ namespace WarSimulation.Kingdom.City
         static void BuildRoyalDistrict()
         {
             var root = District("04 Royal and Military");
-            Facility("Royal_Castle", "Royal District", new Vector3(0, 0, 58), Vector3.back, new Vector3(0, 0, 32), root, 1.35f, true);
-            Facility("Barracks", "Military Quarter", new Vector3(52, 0, 58), Vector3.back, new Vector3(52, 0, 48), root, 1.18f, true);
-            Facility("Guardhouse", "South Gate", new Vector3(15, 0, -74), Vector3.back, new Vector3(15, 0, -80), root, 1.08f);
-            Facility("Guardhouse", "South Gate", new Vector3(-15, 0, -74), Vector3.back, new Vector3(-15, 0, -80), root, 1.08f);
+            Facility("Royal_Castle", "Royal District", new Vector3(0, 0, 60), Vector3.back, new Vector3(0, 0, 36), root, 1.35f, true);
+            Facility("Barracks", "Military Quarter", new Vector3(54, 0, 58), Vector3.back, new Vector3(54, 0, 48), root, 1.18f, true);
+            Facility("Guardhouse", "South Gate", new Vector3(16, 0, -67), Vector3.back, new Vector3(16, 0, -72), root, 1.08f);
         }
 
         static void BuildCivicDistrict()
@@ -417,14 +437,25 @@ namespace WarSimulation.Kingdom.City
             ReservedAreas.Add(Expanded(plazaBounds, 0.8f));
             PathSegment(new Vector3(0, 0, -16), new Vector3(0, 0, plazaBounds.min.z), 4);
             PathSegment(new Vector3(0, 0, plazaBounds.max.z), new Vector3(0, 0, 8), 4);
-            Facility("Guildhall", "Civic Centre", new Vector3(-24, 0, 20), Vector3.back, new Vector3(-24, 0, 16), root, 1.2f, true);
-            Facility("Bathhouse", "Civic Centre", new Vector3(24, 0, 20), Vector3.back, new Vector3(24, 0, 16), root, 1.2f, true);
-            Facility("Library", "Civic and Culture", new Vector3(-32, 0, 39), Vector3.back, new Vector3(-32, 0, 32), root, 1.25f, true);
-            Facility("Museum", "Civic and Culture", new Vector3(32, 0, 39), Vector3.back, new Vector3(32, 0, 32), root, 1.25f, true);
+            Facility("Guildhall", "Civic Centre", new Vector3(-22, 0, 24), Vector3.back, new Vector3(-22, 0, 16), root, 1.2f, true);
+            Facility("Bathhouse", "Civic Centre", new Vector3(22, 0, 24), Vector3.back, new Vector3(22, 0, 16), root, 1.2f, true);
+            Facility("Library", "Civic and Culture", new Vector3(-56, 0, 28), Vector3.back, new Vector3(-56, 0, 16), root, 1.25f, true);
+            Facility("Museum", "Civic and Culture", new Vector3(56, 0, 28), Vector3.back, new Vector3(56, 0, 16), root, 1.25f, true);
             Facility("Chapel", "Faith Quarter", new Vector3(-56, 0, 58), Vector3.back, new Vector3(-56, 0, 48), root, 1.15f, true);
             Facility("Observatory", "Scholars Quarter", new Vector3(-88, 0, 61), Vector3.right, new Vector3(-76, 0, 61), root, 1.25f, true);
-            Facility("Arena", "Arena Quarter", new Vector3(82, 0, 58), Vector3.left, new Vector3(76, 0, 58), root, 1.3f, true);
+            Facility("Arena", "Arena Quarter", new Vector3(82, 0, 60), Vector3.back, new Vector3(82, 0, 16), root, 1.2f, true);
             Facility("Clinic", "East Residential", new Vector3(56, 0, -16), Vector3.left, new Vector3(44, 0, -16), root, 1.12f);
+        }
+
+        static void BuildExpandedDistricts()
+        {
+            var east = District("13 Schools");
+            Facility("WarriorAcademy", "Schools", new Vector3(128, 0, -56), Vector3.left, new Vector3(108, 0, -56), east);
+            Facility("ArcaneAcademy", "Schools", new Vector3(128, 0, -8), Vector3.left, new Vector3(108, 0, -8), east);
+            Facility("SpiritAcademy", "Schools", new Vector3(128, 0, 40), Vector3.left, new Vector3(108, 0, 40), east);
+            var west = District("14 Church and Blacksmith");
+            Facility("Church", "West Faith Quarter", new Vector3(-128, 0, 42), Vector3.right, new Vector3(-108, 0, 42), west);
+            Facility("Blacksmith", "West Craft Quarter", new Vector3(-128, 0, -52), Vector3.right, new Vector3(-108, 0, -52), west);
         }
 
         static void BuildResidentialDistricts()
@@ -433,26 +464,24 @@ namespace WarSimulation.Kingdom.City
             var east = District("07 Dense Residential East");
             string[] homes = { "Fantasy_House", "MerchantHouse", "WorkshopHouse" };
             int index = 0;
-            foreach (float street in new[] { -72f, -40f, 0f, 40f, 72f })
-                foreach (float z in new[] { -68f, -56f, -44f, -16f, 0f, 20f, 38f })
+            foreach (var road in Roads)
+                foreach (var outward in new[] { Vector3.left, Vector3.right, Vector3.back, Vector3.forward })
                 {
-                    Transform leftRoot = street <= 0 ? west : east;
-                    Transform rightRoot = street < 0 ? west : east;
-                    TryResidence(homes[index++ % homes.Length], new Vector3(street - 10, 0, z), Vector3.right, new Vector3(street - 4, 0, z), leftRoot, street <= 0 ? "West Residential" : "East Residential");
-                    TryResidence(homes[index++ % homes.Length], new Vector3(street + 10, 0, z), Vector3.left, new Vector3(street + 4, 0, z), rightRoot, street < 0 ? "West Residential" : "East Residential");
+                    Vector3 edge = road.transform.position + outward * 4;
+                    foreach (string home in homes.Skip(index % homes.Length).Concat(homes.Take(index % homes.Length)))
+                    {
+                        var probe = PlaceFacing(home, "Probe", Vector3.zero, -outward, kingdom);
+                        var bounds = BoundsOf(probe);
+                        float front = outward.x != 0 ? bounds.size.x * 0.5f : bounds.size.z * 0.5f;
+                        Vector3 position = edge + outward * (front + 1.25f) - new Vector3(bounds.center.x, 0, bounds.center.z);
+                        Buildings.Remove(probe); Instances.Remove(probe); Records.RemoveAt(Records.Count - 1);
+                        UnityEngine.Object.DestroyImmediate(probe);
+                        if (!TryResidence(home, position, -outward, edge, position.x < 0 ? west : east,
+                            position.x < 0 ? "West Residential" : "East Residential")) continue;
+                        index++;
+                        break;
+                    }
                 }
-            foreach (float x in new[] { -88f, -56f, -24f, 24f, 56f, 88f })
-            {
-                TryResidence(homes[index++ % homes.Length], new Vector3(x, 0, -18), Vector3.back, new Vector3(x, 0, -24), x < 0 ? west : east, x < 0 ? "West Residential" : "East Residential");
-                TryResidence(homes[index++ % homes.Length], new Vector3(x, 0, 2), Vector3.forward, new Vector3(x, 0, 8), x < 0 ? west : east, x < 0 ? "West Residential" : "East Residential");
-                TryResidence(homes[index++ % homes.Length], new Vector3(x, 0, 38), Vector3.back, new Vector3(x, 0, 32), x < 0 ? west : east, x < 0 ? "West Residential" : "East Residential");
-            }
-            foreach (float x in new[] { -76f, -44f, -12f, 12f, 44f, 76f })
-            {
-                TryResidence(homes[index++ % homes.Length], new Vector3(x, 0, -18), Vector3.back, new Vector3(x, 0, -24), x < 0 ? west : east, x < 0 ? "West Residential" : "East Residential");
-                TryResidence(homes[index++ % homes.Length], new Vector3(x, 0, 2), Vector3.forward, new Vector3(x, 0, 8), x < 0 ? west : east, x < 0 ? "West Residential" : "East Residential");
-                TryResidence(homes[index++ % homes.Length], new Vector3(x, 0, 38), Vector3.back, new Vector3(x, 0, 32), x < 0 ? west : east, x < 0 ? "West Residential" : "East Residential");
-            }
         }
 
         static bool TryResidence(string name, Vector3 position, Vector3 entrance, Vector3 roadEdge, Transform parent, string district)
@@ -460,8 +489,10 @@ namespace WarSimulation.Kingdom.City
             int recordIndex = Records.Count;
             var house = PlaceFacing(name, district, position, entrance, parent, true);
             var bounds = Expanded(BoundsOf(house), 0.6f);
-            bool invalid = bounds.min.x <= -101 || bounds.max.x >= 101 || bounds.min.z <= -81 || bounds.max.z >= 81 ||
+            bool invalid = bounds.min.x <= -149 || bounds.max.x >= 149 || bounds.min.z <= -81 || bounds.max.z >= 81 ||
                            Buildings.Take(Buildings.Count - 1).Any(other => Expanded(BoundsOf(other), 0.6f).Intersects(bounds)) ||
+                           Roads.Any(road => OverlapsXZ(bounds, BoundsOf(road))) ||
+                           Walkways.Any(path => OverlapsXZ(bounds, BoundsOf(path))) ||
                            ReservedAreas.Any(area => area.Intersects(bounds));
             if (invalid)
             {
@@ -485,7 +516,7 @@ namespace WarSimulation.Kingdom.City
             Facility("Warehouse", "East Logistics", new Vector3(88, 0, -16), Vector3.left, new Vector3(76, 0, -16), market, 1.08f);
             Facility("Stable", "South Logistics", new Vector3(88, 0, -48), Vector3.left, new Vector3(76, 0, -48), market, 1.05f);
             Facility("Granary", "South Logistics", new Vector3(60, 0, -60), Vector3.right, new Vector3(68, 0, -60), market, 1.08f);
-            Facility("Forge", "Craft Quarter", new Vector3(56, 0, -44), Vector3.left, new Vector3(44, 0, -44), market);
+            Place("Forge", "Craft Quarter", new Vector3(56, 0, -44), 90, market);
             Place("Anvil", "Craft Quarter", new Vector3(52, 0.14f, -42), 0, market);
             Place("Firewood_Rack", "Craft Quarter", new Vector3(59, 0.14f, -40), 90, market);
             Place("Water_Trough", "South Logistics", new Vector3(76, 0.14f, -56), 90, market);
@@ -495,7 +526,7 @@ namespace WarSimulation.Kingdom.City
         static void BuildNightlifeDistrict()
         {
             var root = District("09 West Gate and Nightlife");
-            Facility("Casino", "Nightlife", new Vector3(-88, 0, 34), Vector3.right, new Vector3(-76, 0, 34), root, 1.12f, true);
+            Facility("Casino", "Nightlife", new Vector3(-88, 0, 28), Vector3.right, new Vector3(-76, 0, 28), root, 1.12f, true);
             Facility("CrimsonRowhouse", "Nightlife", new Vector3(-86, 0, -60), Vector3.right, new Vector3(-76, 0, -60), root);
             Facility("VelvetTerrace", "Nightlife", new Vector3(-86, 0, -45), Vector3.right, new Vector3(-76, 0, -45), root);
             Facility("LanternSpire", "Nightlife", new Vector3(-86, 0, -14), Vector3.right, new Vector3(-76, 0, -14), root);
@@ -610,20 +641,25 @@ namespace WarSimulation.Kingdom.City
             RenderSettings.ambientSkyColor = new Color(0.54f, 0.60f, 0.68f);
             RenderSettings.ambientEquatorColor = new Color(0.39f, 0.42f, 0.46f);
             RenderSettings.ambientGroundColor = new Color(0.25f, 0.24f, 0.22f);
-            var light = GameObject.Find("Directional Light").GetComponent<Light>();
+            var scene = SceneManager.GetActiveScene();
+            var light = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Light>()).FirstOrDefault(l => l.type == LightType.Directional);
+            if (light == null) light = new GameObject("Directional Light").AddComponent<Light>();
+            light.type = LightType.Directional;
             light.transform.rotation = Quaternion.Euler(52, -32, 0);
             light.color = new Color(1, 0.94f, 0.84f);
             light.intensity = 1.45f;
             light.shadows = LightShadows.Soft;
-            var camera = GameObject.Find("Main Camera").GetComponent<Camera>();
+            var camera = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Camera>()).FirstOrDefault();
+            if (camera == null) camera = new GameObject("Main Camera").AddComponent<Camera>();
+            camera.tag = "MainCamera";
             camera.orthographic = true;
-            camera.orthographicSize = 116;
+            camera.orthographicSize = 146;
             camera.nearClipPlane = 0.1f;
-            camera.farClipPlane = 400;
+            camera.farClipPlane = 600;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.27f, 0.33f, 0.37f);
-            camera.transform.position = new Vector3(78, 90, -108);
-            camera.transform.LookAt(new Vector3(0, 7, 0));
+            camera.transform.position = new Vector3(150, 220, -210);
+            camera.transform.LookAt(new Vector3(0, 0, 0));
             var data = camera.GetUniversalAdditionalCameraData();
             data.renderPostProcessing = true;
             data.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
@@ -631,7 +667,7 @@ namespace WarSimulation.Kingdom.City
 
         static void ValidateAndWriteReport(ExportManifest manifest)
         {
-            bool inside = Buildings.All(b => { var bounds = BoundsOf(b); return bounds.min.x > -101 && bounds.max.x < 101 && bounds.min.z > -81 && bounds.max.z < 81; });
+            bool inside = Buildings.All(b => { var bounds = BoundsOf(b); return bounds.min.x > -149 && bounds.max.x < 149 && bounds.min.z > -81 && bounds.max.z < 81; });
             float minimumGap = float.MaxValue;
             bool overlap = false;
             float footprint = 0;
@@ -657,6 +693,15 @@ namespace WarSimulation.Kingdom.City
                 return point.x >= bounds.min.x - 0.05f && point.x <= bounds.max.x + 0.05f && point.z >= bounds.min.z - 0.05f && point.z <= bounds.max.z + 0.05f;
             }));
             bool entranceRoutes = EntranceRoadTargets.Count == Buildings.Count && targetsMeetRoads && ImportantFacilities.All(f => f.transform.localScale.x > 1);
+            bool buildingsOffRoads = Buildings.All(b => Roads.All(r => !OverlapsXZ(BoundsOf(b), BoundsOf(r))));
+            var missingFacilities = FacilityNames.Where(name => Buildings.All(b => b.name != name)).ToArray();
+            bool allFacilityTypesPlaced = missingFacilities.Length == 0 && Buildings.Where(b => !b.transform.parent.name.Contains("Residential")).All(b => FacilityNames.Contains(b.name));
+            bool uniqueFacilities = Buildings.Where(b => !b.transform.parent.name.Contains("Residential")).GroupBy(b => b.name).All(group => group.Count() == 1);
+            bool entrancesFaceRoads = Buildings.Select((b, i) => {
+                Vector3 towardRoad = EntranceRoadTargets[i] - BoundsOf(b).center;
+                towardRoad.y = 0;
+                return Vector3.Dot(-b.transform.forward, towardRoad) > 0;
+            }).All(facing => facing);
             bool uniqueRoads = Roads.Select(road => road.transform.position.x.ToString("F3") + "|" + road.transform.position.z.ToString("F3")).Distinct().Count() == Roads.Count;
             float groundTop = GameObject.Find("Kingdom/00 Land/Kingdom Ground").GetComponent<Renderer>().bounds.max.y;
             float minimumRoadClearance = float.MaxValue;
@@ -675,8 +720,8 @@ namespace WarSimulation.Kingdom.City
                 importedPrefabTypes = manifest.models.Length,
                 prefabInstances = Instances.Count,
                 wallModules = Records.Count(r => r.district == "Fortifications"),
-                houses = Records.Count(r => r.district.Contains("Residential")),
-                facilities = Buildings.Count - Records.Count(r => r.district.Contains("Residential")),
+                houses = Buildings.Count(b => b.transform.parent.name.Contains("Residential")),
+                facilities = Buildings.Count - Buildings.Count(b => b.transform.parent.name.Contains("Residential")),
                 roads = Roads.Count,
                 props = Instances.Count - Roads.Count - Buildings.Count - Records.Count(r => r.district == "Fortifications"),
                 entranceConnections = Walkways.Count,
@@ -688,14 +733,20 @@ namespace WarSimulation.Kingdom.City
                 importantFacilityCount = ImportantFacilities.Count,
                 enlargedImportantFacilityCount = ImportantFacilities.Count(f => f.transform.localScale.x > 1),
                 buildingCount = Buildings.Count,
-                walledArea = 208 * 168,
+                walledArea = 304 * 168,
                 buildingFootprintArea = footprint,
-                occupiedFootprintRatio = footprint / (208 * 168),
+                occupiedFootprintRatio = footprint / (304 * 168),
                 managedOpenSpaceArea = managedOpenSpaceArea,
-                developedAreaRatio = (footprint + Roads.Count * 64 + managedOpenSpaceArea) / (208 * 168),
+                developedAreaRatio = (footprint + Roads.Count * 64 + managedOpenSpaceArea) / (304 * 168),
                 coplanarCourtyardPads = courtyardPads,
                 allBuildingsInsideWalls = inside,
                 noBuildingOverlap = !overlap,
+                noBuildingsOnRoads = buildingsOffRoads,
+                uniqueFacilities = uniqueFacilities,
+                allFacilityTypesPlaced = allFacilityTypesPlaced,
+                missingFacilities = missingFacilities,
+                expectedFacilities = FacilityNames,
+                allEntrancesFaceRoads = entrancesFaceRoads,
                 southernGateToCastleRoute = route,
                 allFacilityEntrancesConnected = entranceRoutes,
                 noDuplicateRoadTiles = uniqueRoads,
@@ -707,7 +758,7 @@ namespace WarSimulation.Kingdom.City
                 limitations = new[] { "Exterior city layout only", "No NavMesh or inhabitants", "No target-device performance validation" }
             };
             File.WriteAllText(ReviewRoot + "/unity_validation.json", JsonUtility.ToJson(report, true));
-            if (!inside || overlap || !route || !entranceRoutes || !uniqueRoads || !separatedRoadSurface || courtyardPads != 0) throw new InvalidOperationException("Kingdom layout validation failed; inspect unity_validation.json.");
+            if (!allFacilityTypesPlaced || !buildingsOffRoads || !uniqueFacilities || !entrancesFaceRoads || !inside || overlap || !route || !entranceRoutes || !uniqueRoads || !separatedRoadSurface || courtyardPads != 0) throw new InvalidOperationException("Kingdom layout validation failed; inspect unity_validation.json.");
         }
     }
 }
