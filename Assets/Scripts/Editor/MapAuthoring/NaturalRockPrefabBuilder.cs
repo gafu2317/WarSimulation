@@ -10,8 +10,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
 {
     public static class NaturalRockPrefabBuilder
     {
-        private const string SourceDirectory = "Assets/Models/Environment/NaturalRockVariants";
-        private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalRocks";
+        private const string SourceDirectory = "Assets/Models/Kingdom/City/Models";
+        private const string PrefabDirectory = "Assets/Prefabs/Kingdom/City/Prefabs";
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string NotWalkableAreaName = "Not Walkable";
         private static readonly string[] SelectedModels =

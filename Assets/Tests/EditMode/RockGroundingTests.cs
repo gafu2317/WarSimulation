@@ -28,7 +28,7 @@ public sealed class RockGroundingTests
             foreach (int variant in new[] { 2, 4, 8, 7, 11 })
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    $"Assets/Prefabs/Environment/NaturalRocks/NaturalRock_{variant:00}.prefab");
+                    $"Assets/Prefabs/Kingdom/City/Prefabs/NaturalRock_{variant:00}.prefab");
                 SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
                 SetField(renderer, "_enableRockGrounding", false);
                 renderer.Render(map);
@@ -100,7 +100,7 @@ public sealed class RockGroundingTests
         terrainRenderer.Render(map);
         TerrainCollider ground = terrainRenderer.Terrain.GetComponent<TerrainCollider>();
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-            "Assets/Prefabs/Environment/NaturalTrees/NaturalTree_01.prefab");
+            "Assets/Prefabs/Kingdom/City/Prefabs/NaturalTree_01.prefab");
         SetField(renderer, "_treePrefabs", Enumerable.Repeat(prefab, 10).ToArray());
         try
         {
@@ -132,7 +132,7 @@ public sealed class RockGroundingTests
         map.AddFeature(new PlacedFeature(FeatureType.Rock, new Vector3(0f, 0f, 6f)));
         terrainRenderer.Render(map);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-            "Assets/Prefabs/Environment/NaturalRocks/NaturalRock_02.prefab");
+            "Assets/Prefabs/Kingdom/City/Prefabs/NaturalRock_02.prefab");
         SetField(renderer, "_rockPrefabs", Enumerable.Repeat(prefab, 5).ToArray());
         SetField(renderer, "_enableRockGrounding", true);
         try

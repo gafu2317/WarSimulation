@@ -6,7 +6,7 @@ from mathutils import Vector
 
 
 PROJECT_ROOT = "/Users/fukutomi/Unity/WarSimulation"
-MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets/Models/Kingdom/NewFantasyAssets/Models")
+MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets/Models/Kingdom/City/Models")
 REPORT_ROOT = os.path.join(PROJECT_ROOT, "docs/Art/NewFantasyAssets")
 
 SOURCES = (

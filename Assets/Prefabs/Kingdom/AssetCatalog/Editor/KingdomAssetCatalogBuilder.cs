@@ -21,11 +21,7 @@ namespace WarSimulation.Kingdom.EditorOnly
 
         static readonly string[] PrefabRoots =
         {
-            "Assets/Prefabs/Kingdom/City/Prefabs",
-            "Assets/Prefabs/Kingdom/NewFantasyAssets/Prefabs",
-            "Assets/Prototypes/TownBlock/Prefabs",
-            "Assets/Prefabs/Environment/NaturalRocks",
-            "Assets/Prefabs/Environment/NaturalTrees"
+            "Assets/Prefabs/Kingdom/City/Prefabs"
         };
 
         static readonly string[] CategoryOrder =
@@ -196,6 +192,8 @@ namespace WarSimulation.Kingdom.EditorOnly
         static string CategoryFor(string path, string name)
         {
             if (path.Contains("/Environment/")
+                || name.StartsWith("NaturalRock_", StringComparison.Ordinal)
+                || name.StartsWith("NaturalTree_", StringComparison.Ordinal)
                 || name.StartsWith("Tree_", StringComparison.Ordinal)
                 || name.StartsWith("GroundPlant_", StringComparison.Ordinal)
                 || name.StartsWith("Flower_", StringComparison.Ordinal))

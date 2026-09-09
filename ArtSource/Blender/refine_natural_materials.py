@@ -206,7 +206,7 @@ def generate_tree_texture(name, base_color, bark=False):
     image.pixels.foreach_set(np.asarray(pixels, dtype=np.float32))
     image.update()
     repository = os.path.dirname(os.path.dirname(os.path.dirname(bpy.data.filepath)))
-    directory = os.path.join(repository, "Assets/Models/Environment/NaturalTreeVariants/Textures")
+    directory = os.path.join(repository, "Assets/Models/Kingdom/City/Textures")
     os.makedirs(directory, exist_ok=True)
     image.filepath_raw = os.path.join(directory, f"{image_name}.png")
     image.file_format = "PNG"
@@ -383,7 +383,7 @@ def export_trees_to_unity():
         key=lambda c: c.name,
     )
     for collection in collections:
-        export_collection(collection, "Assets/Models/Environment/NaturalTreeVariants")
+        export_collection(collection, "Assets/Models/Kingdom/City/Models")
 
 
 def main():

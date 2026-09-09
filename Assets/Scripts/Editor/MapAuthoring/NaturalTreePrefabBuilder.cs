@@ -10,8 +10,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
 {
     public static class NaturalTreePrefabBuilder
     {
-        private const string SourceDirectory = "Assets/Models/Environment/NaturalTreeVariants";
-        private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalTrees";
+        private const string SourceDirectory = "Assets/Models/Kingdom/City/Models";
+        private const string PrefabDirectory = "Assets/Prefabs/Kingdom/City/Prefabs";
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string IgnoreRaycastLayerName = "Ignore Raycast";
         private const float TargetHeight = 2.4f;
@@ -25,7 +25,10 @@ namespace WarSimulation.Combat.Map.EditorOnly
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                if (path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)) sourcePaths.Add(path);
+                string name = Path.GetFileNameWithoutExtension(path);
+                if (path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)
+                    && name.StartsWith("NaturalTree_", StringComparison.Ordinal))
+                    sourcePaths.Add(path);
             }
 
             sourcePaths.Sort(StringComparer.Ordinal);

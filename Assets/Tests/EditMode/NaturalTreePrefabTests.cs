@@ -11,7 +11,7 @@ using WarSimulation.Combat.Map;
 
 public sealed class NaturalTreePrefabTests
 {
-    private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalTrees";
+    private const string PrefabDirectory = "Assets/Prefabs/Kingdom/City/Prefabs";
     private const string VisionObstacleLayerName = "VisionObstacle";
     private const string IgnoreRaycastLayerName = "Ignore Raycast";
 

@@ -9,8 +9,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
     public static class NaturalEnvironmentMaterialLibrary
     {
         private const string MaterialDirectory = "Assets/Materials/Environment/Natural";
-        private const string TreeTextureDirectory = "Assets/Models/Environment/NaturalTreeVariants/Textures";
-        private const string RockTextureDirectory = "Assets/Models/Environment/NaturalRockVariants/Textures";
+        private const string TreeTextureDirectory = "Assets/Models/Kingdom/City/Textures";
+        private const string RockTextureDirectory = "Assets/Models/Kingdom/City/Textures";
         private static readonly string[] LeafNames = { "Deep", "Forest", "Fresh", "Olive" };
         private static readonly int[] LeafOrder = { 1, 1, 2, 1, 0, 2, 1, 3, 1, 0 };
 

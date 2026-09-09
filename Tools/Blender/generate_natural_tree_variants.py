@@ -7,7 +7,7 @@ from mathutils import Vector
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE_PATH = os.path.join(PROJECT_ROOT, "ArtSource", "Blender", "NaturalTreeVariants.blend")
-MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets", "Models", "Environment", "NaturalTreeVariants")
+MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets", "Models", "Kingdom", "City", "Models")
 PREVIEW_PATH = os.path.join(PROJECT_ROOT, "docs", "Art", "EnvironmentModels", "NaturalTreeVariants_Preview.png")
 TOP_PREVIEW_PATH = os.path.join(
     PROJECT_ROOT,

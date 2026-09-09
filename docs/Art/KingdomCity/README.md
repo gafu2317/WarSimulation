@@ -17,7 +17,7 @@
 
 - Blender原本から40種類をFBX化し、BaseColor、Normal、MetallicSmoothnessをベイクした。UnityではURP/Litマテリアルと配置用Prefabを生成している。
 - 不足していた穀物庫、倉庫、パン工房、厩舎、兵舎、ギルド会館、公衆浴場、礼拝堂、商人邸、工房付き住宅の10種類を `ArtSource/Blender/FantasyKingdomSupportBuildings.blend` に追加した。
-- 既存の道路、民家、露店、街灯、樽、木箱などは `Assets/Prototypes/TownBlock/Prefabs/` から再利用した。生活樹は既存のNaturalTreesから、建物・道路との干渉がない候補だけを配置した。
+- 既存の道路、民家、露店、街灯、樽、木箱などは `Assets/Prefabs/Kingdom/City/Prefabs/` から再利用した。生活樹は既存のNaturalTreesから、建物・道路との干渉がない候補だけを配置した。
 - Unity側の再生成処理は `Assets/Prefabs/Kingdom/City/Editor/KingdomCityBuilder.cs`。既存シーン全体ではなく `Kingdom` ルートのみを作り直す。
 
 ## 最終検証

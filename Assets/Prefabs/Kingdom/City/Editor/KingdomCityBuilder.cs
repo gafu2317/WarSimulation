@@ -17,8 +17,6 @@ namespace WarSimulation.Kingdom.City
         const string ScenePath = "Assets/Scenes/Country.unity";
         const string ModelRoot = "Assets/Models/Kingdom/City";
         const string PrefabRoot = "Assets/Prefabs/Kingdom/City";
-        const string TownBlockRoot = "Assets/Prototypes/TownBlock";
-        const string EnvironmentPrefabRoot = "Assets/Prefabs/Environment/NaturalTrees";
         const string ReviewRoot = "docs/Art/KingdomCity";
 
         [Serializable] class ExportModel { public string name; public string fbx; public float[] minimum; public float[] maximum; public int triangles; public int atlas_size; }
@@ -29,7 +27,6 @@ namespace WarSimulation.Kingdom.City
             public string scene;
             public string unityVersion;
             public int importedPrefabTypes;
-            public int townBlockPrefabTypes;
             public int prefabInstances;
             public int wallModules;
             public int houses;
@@ -201,7 +198,7 @@ namespace WarSimulation.Kingdom.City
 
         static void LoadPrefabs()
         {
-            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { PrefabRoot + "/Prefabs", TownBlockRoot + "/Prefabs", EnvironmentPrefabRoot }))
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { PrefabRoot + "/Prefabs" }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -676,7 +673,6 @@ namespace WarSimulation.Kingdom.City
                 scene = ScenePath,
                 unityVersion = Application.unityVersion,
                 importedPrefabTypes = manifest.models.Length,
-                townBlockPrefabTypes = Prefabs.Keys.Count(k => AssetDatabase.GetAssetPath(Prefabs[k]).StartsWith(TownBlockRoot)),
                 prefabInstances = Instances.Count,
                 wallModules = Records.Count(r => r.district == "Fortifications"),
                 houses = Records.Count(r => r.district.Contains("Residential")),

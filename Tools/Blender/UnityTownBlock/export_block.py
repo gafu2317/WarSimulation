@@ -9,7 +9,7 @@ from mathutils import Matrix, Vector
 import numpy as np
 
 ROOT=Path(__file__).resolve().parents[3]
-OUTPUT=ROOT/'Assets/Prototypes/TownBlock'
+OUTPUT=ROOT/'Assets/Models/Kingdom/City'
 REVIEW=ROOT/'docs/Art/UnityTownBlock'
 SOURCES={
     'KingdomBuildings_RealisticFantasy':['Fantasy_House'],
@@ -160,7 +160,7 @@ def main():
                 mesh_smooth_type='FACE',add_leaf_bones=False,bake_anim=False,path_mode='STRIP')
             records.append({'name':name,'source':str(source.relative_to(ROOT)),'source_sha256':digest,
                 'minimum':minimum,'maximum':maximum,'triangles':len(obj.data.polygons),'atlas_size':size,
-                'fbx':f'Assets/Prototypes/TownBlock/Models/{name}.fbx'})
+                'fbx':f'Assets/Models/Kingdom/City/Models/{name}.fbx'})
             print('EXPORTED',name,flush=True)
         assert hashlib.sha256(source.read_bytes()).hexdigest()==digest
     (REVIEW/'export_manifest.json').write_text(json.dumps({'models':records,'blender':bpy.app.version_string,

@@ -11,7 +11,7 @@ using WarSimulation.Combat.Map;
 
 public sealed class NaturalRockPrefabTests
 {
-    private const string PrefabDirectory = "Assets/Prefabs/Environment/NaturalRocks";
+    private const string PrefabDirectory = "Assets/Prefabs/Kingdom/City/Prefabs";
     private const float RockBaseSize = 2.6f;
     private const float RockSizeTolerance = 0.001f;
     private static readonly int[] VariantIds = { 2, 4, 8, 7, 11 };
