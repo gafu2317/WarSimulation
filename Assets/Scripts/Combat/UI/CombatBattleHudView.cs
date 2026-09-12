@@ -302,15 +302,15 @@ public sealed class CombatBattleHudView : MonoBehaviour
             ? new Vector2(0f, DebugSidePanelBottomMargin)
             : new Vector2(-DebugSidePanelWidth, DebugSidePanelTopMargin);
         root.offsetMax = team == CombatTeam.Ally
-            ? new Vector2(DebugSidePanelWidth, -DebugSidePanelTopMargin)
-            : new Vector2(0f, -DebugSidePanelTopMargin);
+            ? new Vector2(DebugSidePanelWidth, 0f)
+            : new Vector2(0f, 0f);
 
         Image rootImage = rootObject.GetComponent<Image>();
         rootImage.color = Color.clear;
         rootImage.raycastTarget = false;
 
         VerticalLayoutGroup layout = rootObject.GetComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(0, 0, 10, 10);
+        layout.padding = new RectOffset(0, 0, 0, 10);
         layout.spacing = 8f;
         layout.childAlignment = TextAnchor.UpperCenter;
         layout.childControlWidth = true;
@@ -320,15 +320,19 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
         DebugTeamUi teamUi = new DebugTeamUi();
         GameObject stoneObject = new GameObject(
-            "StoneStatus",
+            team == CombatTeam.Ally ? "AllyStoneStatus" : "EnemyStoneStatus",
             typeof(RectTransform),
             typeof(Image),
-            typeof(VerticalLayoutGroup),
-            typeof(LayoutElement));
+            typeof(VerticalLayoutGroup));
         RectTransform stoneRect = stoneObject.GetComponent<RectTransform>();
-        stoneRect.SetParent(root, false);
+        stoneRect.SetParent(_debugPanel.transform, false);
+        stoneRect.anchorMin = stoneRect.anchorMax = new Vector2(0.5f, 1f);
+        stoneRect.pivot = new Vector2(team == CombatTeam.Ally ? 1f : 0f, 1f);
+        float stoneOffset = DebugControlsWidth / 2f + DebugSidePanelTopMargin;
+        stoneRect.anchoredPosition = new Vector2(
+            team == CombatTeam.Ally ? -stoneOffset : stoneOffset, -DebugSidePanelTopMargin);
+        stoneRect.sizeDelta = new Vector2(DebugSidePanelWidth, 56f);
         stoneObject.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.32f);
-        stoneObject.GetComponent<LayoutElement>().preferredHeight = 56f;
 
         VerticalLayoutGroup stoneLayout = stoneObject.GetComponent<VerticalLayoutGroup>();
         stoneLayout.padding = new RectOffset(10, 10, 6, 6);
@@ -358,7 +362,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             "Title",
             stoneLabel,
             font,
-            18f,
+            15f,
             TextAlignmentOptions.Left,
             28f);
         teamUi.StoneHp = CreateDebugText(
@@ -366,7 +370,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             "Hp",
             "HP -/-",
             font,
-            16f,
+            13f,
             TextAlignmentOptions.Right,
             28f);
         CreateDebugBar(stoneRect, "HpBar", 10f, out Image stoneFill);
@@ -494,14 +498,14 @@ public sealed class CombatBattleHudView : MonoBehaviour
         button.targetGraphic = background;
 
         VerticalLayoutGroup layout = cardObject.GetComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(8, 8, 6, 6);
+        layout.padding = new RectOffset(8, 8, 3, 3);
         layout.spacing = 2f;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        const float statusIconSize = 28.6652f;
+        const float statusIconSize = 40f;
         DebugCharacterUi card = new DebugCharacterUi
         {
             Root = cardObject,
@@ -525,8 +529,8 @@ public sealed class CombatBattleHudView : MonoBehaviour
         weaponHpLayout.childForceExpandWidth = true;
         weaponHpLayout.childForceExpandHeight = false;
 
-        card.Weapon = CreateDebugText(weaponHpRect, "Weapon", string.Empty, font, 30f, TextAlignmentOptions.Left, 48f);
-        card.Hp = CreateDebugText(weaponHpRect, "Hp", string.Empty, font, 30f, TextAlignmentOptions.Right, 48f);
+        card.Weapon = CreateDebugText(weaponHpRect, "Weapon", string.Empty, font, 27f, TextAlignmentOptions.Left, 48f);
+        card.Hp = CreateDebugText(weaponHpRect, "Hp", string.Empty, font, 27f, TextAlignmentOptions.Right, 48f);
 
         CreateDebugBar(cardRect, "HpBar", 8f, out Image hpFill);
         hpFill.color = new Color(0.35f, 0.95f, 0.4f, 1f);
@@ -547,7 +551,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             "Objective",
             string.Empty,
             font,
-            28f,
+            25f,
             TextAlignmentOptions.Left,
             44f);
         card.Objective.textWrappingMode = TextWrappingModes.NoWrap;
@@ -557,7 +561,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             "Skills",
             string.Empty,
             font,
-            28f,
+            25f,
             TextAlignmentOptions.Left,
             44f);
         card.Skills.textWrappingMode = TextWrappingModes.Normal;
@@ -676,7 +680,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         TMP_Text[] labels = _temporaryControls.GetComponentsInChildren<TMP_Text>(includeInactive: true);
         for (int i = 0; i < labels.Length; i++)
         {
-            labels[i].fontSize = debug ? 20f : 28f;
+            labels[i].fontSize = debug ? 17f : 28f;
         }
     }
 

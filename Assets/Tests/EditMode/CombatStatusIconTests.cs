@@ -5,6 +5,31 @@ using UnityEngine.UI;
 
 public sealed class CombatStatusIconTests
 {
+    [Test]
+    public void DebugHud_StoneHealthFlanksControlsOutsideCharacterColumns()
+    {
+        var go = new GameObject("Debug HUD", typeof(RectTransform));
+        try
+        {
+            go.AddComponent<CombatBattleHudView>();
+            var controls = (RectTransform)go.transform.Find("TemporaryBattleControls");
+            Transform panel = go.transform.Find("DebugBattlePanel");
+            var ally = (RectTransform)panel.Find("AllyStoneStatus");
+            var enemy = (RectTransform)panel.Find("EnemyStoneStatus");
+            Assert.That(ally.anchorMin, Is.EqualTo(controls.anchorMin));
+            Assert.That(enemy.anchorMin, Is.EqualTo(controls.anchorMin));
+            Assert.That(ally.anchoredPosition.y, Is.EqualTo(controls.anchoredPosition.y));
+            Assert.That(enemy.anchoredPosition.y, Is.EqualTo(controls.anchoredPosition.y));
+            Assert.That(ally.anchoredPosition.x + ally.rect.xMax,
+                Is.LessThan(controls.anchoredPosition.x + controls.rect.xMin));
+            Assert.That(enemy.anchoredPosition.x + enemy.rect.xMin,
+                Is.GreaterThan(controls.anchoredPosition.x + controls.rect.xMax));
+            Assert.That(panel.Find("DebugAlliesPanel/CharacterList"), Is.Not.Null);
+            Assert.That(panel.Find("DebugEnemiesPanel/CharacterList"), Is.Not.Null);
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
     [TestCase(-1)]
     [TestCase(16)]
     public void Catalog_ReturnsNullForOutOfRangeKind(int kind)
