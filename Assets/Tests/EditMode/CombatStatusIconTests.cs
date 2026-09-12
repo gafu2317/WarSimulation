@@ -45,6 +45,17 @@ public sealed class CombatStatusIconTests
             }
             CollectionAssert.AreEquivalent(new[] { "Poison", "Bind" }, names);
 
+            var weaponText = root.transform.Find("WeaponHpRow/Weapon").GetComponent<TMPro.TMP_Text>();
+            character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.2f, 5f);
+            refresh.Invoke(hud, arguments);
+            Assert.That(weaponText.color, Is.EqualTo(Color.white));
+            character.StatusEffects.Apply(CombatStatusEffects.StatKind.INT, 0.8f, 5f);
+            refresh.Invoke(hud, arguments);
+            Assert.That(weaponText.color, Is.EqualTo(Color.white));
+            character.StatusEffects.ClearAll();
+            character.StatusEffects.Apply(CombatStatusEffects.StatKind.INT, 0.8f, 5f);
+            refresh.Invoke(hud, arguments);
+            Assert.That(weaponText.color, Is.EqualTo(Color.white));
             character.StatusEffects.ClearAll();
             refresh.Invoke(hud, arguments);
             Assert.That(row.gameObject.activeSelf, Is.True);

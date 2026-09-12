@@ -16,8 +16,6 @@ public sealed class CombatBattleHudView : MonoBehaviour
     private const float DebugControlsWidth = 460f;
     private const float DebugControlsHeight = 60f;
     private const float DebugSkillDisplaySeconds = 2.2f;
-    private static readonly Color BuffWeaponTextColor = new(1f, 0.58f, 0.12f, 1f);
-    private static readonly Color DebuffWeaponTextColor = new(0.8f, 0.4f, 1f, 1f);
 
     private sealed class DebugTeamUi
     {
@@ -775,7 +773,6 @@ public sealed class CombatBattleHudView : MonoBehaviour
             int maxHp = Mathf.Max(1, character.MaxHP);
             card.Weapon.text =
                 $"{CombatAiDebugLabels.WeaponShort(character.EquippedWeapon)} {CombatAiDebugLabels.PersonalityShort(character.PersonalityProfile)}";
-            card.Weapon.color = ResolveWeaponTextColor(character);
             card.Hp.text = character.HP.ToString();
             card.HpFill.fillAmount = Mathf.Clamp01(character.HP / (float)maxHp);
             card.StatusIcons.Refresh(character);
@@ -822,57 +819,6 @@ public sealed class CombatBattleHudView : MonoBehaviour
     {
         card.Skills.text = string.Empty;
         card.SkillHideAt = float.NegativeInfinity;
-    }
-
-    private static Color ResolveWeaponTextColor(Character character)
-    {
-        if (character?.StatusEffects == null)
-        {
-            return Color.white;
-        }
-
-        IReadOnlyList<CombatStatusEffectSnapshot> effects = character.StatusEffects.GetActiveEffectSnapshots();
-        int buffCount = 0;
-        int debuffCount = 0;
-        for (int i = 0; i < effects.Count; i++)
-        {
-            if (effects[i].IsBuff)
-            {
-                buffCount++;
-            }
-
-            if (effects[i].IsDebuff)
-            {
-                debuffCount++;
-            }
-        }
-
-        if (buffCount == 0 && debuffCount == 0)
-        {
-            return Color.white;
-        }
-
-        Color color;
-        if (buffCount > 0 && debuffCount > 0)
-        {
-            color = Color.Lerp(
-                BuffWeaponTextColor,
-                DebuffWeaponTextColor,
-                debuffCount / (float)(buffCount + debuffCount));
-        }
-        else
-        {
-            color = buffCount > 0 ? BuffWeaponTextColor : DebuffWeaponTextColor;
-        }
-
-        int effectCount = buffCount + debuffCount;
-        if (effectCount > 1)
-        {
-            float brightenRatio = (effectCount - 1f) / (effectCount + 1f);
-            color = Color.Lerp(color, Color.white, brightenRatio);
-        }
-
-        return color;
     }
 
     private void OnDebugCharacterClicked(DebugCharacterUi card)
