@@ -686,6 +686,10 @@ public static partial class CombatAiPlanner
         selectedContext = SkillExecutionContext.None;
         int selectedActionPriority = int.MaxValue;
         int selectedTargetPriority = int.MaxValue;
+        SkillBase normalTargetSkill = null;
+        SkillExecutionContext normalTargetContext = SkillExecutionContext.None;
+        int normalActionPriority = int.MaxValue;
+        int normalTargetPriority = int.MaxValue;
         bool restrictToEnemyStoneCenter = personality != null &&
             personality.Kind == CombatAiPersonalityKind.Reckless &&
             state == CombatObjective.DestroyEnemyStone;
@@ -707,6 +711,16 @@ public static partial class CombatAiPlanner
 
                 int actionPriority = GetSkillActionPriority(state, skill, evaluation.Context);
                 int targetPriority = GetSkillTargetPriority(context, skill, evaluation.Context);
+                if (IsSingleEnemySkill(skill, evaluation.Context) &&
+                    !HasLowPresence(evaluation.Context.PrimaryTarget) &&
+                    (actionPriority < normalActionPriority ||
+                     actionPriority == normalActionPriority && targetPriority < normalTargetPriority))
+                {
+                    normalTargetSkill = skill;
+                    normalTargetContext = evaluation.Context;
+                    normalActionPriority = actionPriority;
+                    normalTargetPriority = targetPriority;
+                }
                 if (actionPriority > selectedActionPriority ||
                     actionPriority == selectedActionPriority && targetPriority >= selectedTargetPriority) continue;
 
@@ -717,7 +731,25 @@ public static partial class CombatAiPlanner
                 selectedContext = evaluation.Context;
             }
         }
+
+        // 範囲技との比較に補正を入れると、巻き込みの選択まで変わるため単体選択後に適用する。
+        if (IsSingleEnemySkill(selectedSkill, selectedContext) &&
+            HasLowPresence(selectedContext.PrimaryTarget) &&
+            normalTargetSkill != null && normalActionPriority == selectedActionPriority)
+        {
+            selectedSkill = normalTargetSkill;
+            selectedContext = normalTargetContext;
+        }
     }
+
+    private static bool HasLowPresence(Character character) =>
+        character != null && character.PersonalityProfile != null &&
+        character.PersonalityProfile.Kind == CombatAiPersonalityKind.LowPresence;
+
+    private static bool IsSingleEnemySkill(SkillBase skill, SkillExecutionContext context) =>
+        skill != null && skill.TargetKind == SkillTargetKind.Enemy && skill.AreaRadius == 0f &&
+        context.PrimaryTarget != null &&
+        (CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill));
 
     private static bool IsEnemyStoneFocusedContext(CombatAiContext context, SkillExecutionContext skillContext)
     {

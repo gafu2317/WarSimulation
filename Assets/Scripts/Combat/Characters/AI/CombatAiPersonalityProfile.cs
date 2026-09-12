@@ -17,6 +17,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         CombatAiPersonalityKind.Tagalong,
         CombatAiPersonalityKind.Avenger,
         CombatAiPersonalityKind.HighGround,
+        CombatAiPersonalityKind.LowPresence,
     };
 
     [SerializeField] private string _displayNameJapanese = "性格";
@@ -59,6 +60,7 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
             CombatAiPersonalityKind.Tagalong => "便乗屋",
             CombatAiPersonalityKind.Avenger => "復讐鬼",
             CombatAiPersonalityKind.HighGround => "高所好き",
+            CombatAiPersonalityKind.LowPresence => "影薄い",
             _ => "標準",
         };
     }
@@ -87,6 +89,8 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
                 "直近で攻撃した敵が生存し位置を把握できる間は追い続け、見失うと通常の目的へ戻ります。",
             CombatAiPersonalityKind.HighGround =>
                 "山スタンプのExtentの70%以内を高所領域として維持し、技能が使えない場合は高所内から敵・味方・敵魔石を探します。",
+            CombatAiPersonalityKind.LowPresence =>
+                "敵の通常の追跡・単体攻撃・弱体対象として後回しにされます。他に有効な対象がいなければ狙われ、対象指定・維持や範囲攻撃には影響しません。自身は武器の役割どおりに行動します。",
             _ => "特別な偏りはなく、装備した武器の役割と戦況に応じて通常の目的を選びます。",
         };
     }

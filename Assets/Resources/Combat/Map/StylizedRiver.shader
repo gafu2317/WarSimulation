@@ -55,17 +55,34 @@ Shader "WarSimulation/Stylized River"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 p = input.flow / max(abs(_PatternScale), 0.001);
-                p.x -= _Time.y * _FlowSpeed / max(abs(_PatternScale), 0.001);
-                float2 rippleUv = p * float2(3.0, 7.0);
-                rippleUv += float2(Noise(p * 2.0), Noise(p * 2.0 + 13.7)) * 1.2;
-                float broad = Noise(p * float2(1.2, 2.5));
-                float ripples = Noise(rippleUv) * 0.75 + Noise(rippleUv * 2.0 + 7.3) * 0.25;
+                float travel = _Time.y * _FlowSpeed / max(abs(_PatternScale), 0.001);
+                p.x -= travel;
+                float phase = _Time.y * 0.65;
+                float2 rippleUv = p * float2(4.5, 6.0);
+                rippleUv += float2(
+                    Noise(p * 2.0 + float2(phase * 0.23, -phase * 0.31)),
+                    Noise(p * 2.0 + float2(-phase * 0.19, phase * 0.27) + 13.7)) * 0.8;
+                float2 surfaceWarp = float2(
+                    Noise(p * 1.3 + float2(phase * 0.21, -phase * 0.17)),
+                    Noise(p * 1.3 + float2(-phase * 0.16, phase * 0.24) + 23.1)) - 0.5;
+                float broad = Noise(p * float2(1.2, 2.5) + surfaceWarp * 1.4);
+                float waveA = Noise(rippleUv + float2(phase * 0.18, phase * 0.35));
+                float waveB = Noise(float2(rippleUv.x + rippleUv.y * 0.55,
+                    rippleUv.y - rippleUv.x * 0.4) * 1.35 + float2(-phase * 0.24, -phase * 0.3) + 7.3);
+                float ripples = waveA * 0.55 + waveB * 0.45;
                 float edge = abs(ripples - 0.5);
                 float aa = fwidth(edge);
-                float ridge = 1.0 - smoothstep(0.015, 0.045 + aa, edge);
-                float flecks = Noise(p * float2(9.0, 18.0) + 31.0);
+                float ridge = 1.0 - smoothstep(0.01, 0.035 + aa, edge);
+                float breaks = smoothstep(0.65, 0.85,
+                    Noise(p * float2(5.0, 6.0) + float2(-phase * 0.3, phase * 0.4) + 53.0));
+                ridge *= breaks;
+                float2 fleckUv = p * float2(9.0, 12.0) + float2(phase * 0.35, -phase * 0.6) + 31.0;
+                fleckUv += surfaceWarp * 2.0 + float2(
+                    Noise(p * 5.0 + float2(-phase * 0.4, phase * 0.3)),
+                    Noise(p * 5.0 + float2(phase * 0.3, phase * 0.45) + 41.7)) * 0.8;
+                float flecks = Noise(fleckUv);
                 float smallRipples = smoothstep(0.65, 0.82 + fwidth(flecks), flecks);
-                float highlights = smoothstep(0.4, 0.8, Noise(p * float2(4.0, 8.0) + 53.0));
+                float highlights = smoothstep(0.4, 0.8, waveB);
                 half3 color = lerp(_BaseColor.rgb * 0.9, _RippleColor.rgb,
                     broad * 0.25 + ripples * 0.2);
                 color = lerp(color, _RippleColor.rgb, ridge * 0.55);

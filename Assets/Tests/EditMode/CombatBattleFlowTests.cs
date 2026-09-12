@@ -710,6 +710,55 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void CharacterSelection_LowPresenceShowsNameAndEffectAndBuildsBattleSetup()
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+        try
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
+            selectionObject = Object.Instantiate(prefab);
+            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            selection.Initialize(CreateCharacters("Ally", CombatTeam.Ally, 1, characters),
+                CreateCharacters("Enemy", CombatTeam.Enemy, 1, characters), null);
+            var options = GetPrivateField<List<CombatAiPersonalityProfile>>(selection, "_personalityOptions");
+            int index = options.FindIndex(profile => profile.Kind == CombatAiPersonalityKind.LowPresence);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0));
+            CombatAiPersonalityProfile profile = options[index];
+            Assert.That(profile.DisplayNameJapanese, Is.EqualTo("影薄い"));
+            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("単体攻撃"));
+
+            IList rows = GetPrivateField<IList>(selection, "_allyRows");
+            Button rowButton = GetPrivateField<Button>(rows[0], "PersonalityButton");
+            rowButton.onClick.Invoke();
+            Transform picker = GetPrivateField<Transform>(selection, "_pickerContent");
+            Assert.That(picker.GetChild(index).GetComponentInChildren<TMP_Text>().text, Is.EqualTo("影薄い"));
+            Transform details = GetPrivateField<Transform>(selection, "_pickerDetailsContent");
+            TMP_Text[] labels = details.GetChild(index).GetComponentsInChildren<TMP_Text>();
+            Assert.That(System.Array.Exists(labels, label => label.text == "影薄い"), Is.True);
+            Assert.That(System.Array.Exists(labels, label => label.text == profile.BehaviorDescriptionJapanese), Is.True);
+
+            picker.GetChild(index).GetComponent<Button>().onClick.Invoke();
+            Assert.That(rowButton.GetComponentInChildren<TMP_Text>().text, Does.Contain("影薄い"));
+            SetPrivateField(rows[0], "Selected", true);
+            MethodInfo buildSetups = typeof(CombatCharacterSelection).GetMethod("BuildSetups",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var setups = (List<CombatParticipantSetup>)buildSetups.Invoke(selection, new object[] { rows });
+            Assert.That(setups, Has.Count.EqualTo(1));
+            Assert.That(setups[0].Personality.Kind, Is.EqualTo(CombatAiPersonalityKind.LowPresence));
+            setups[0].Character.ConfigureForBattle(setups[0].Weapon, setups[0].Personality);
+            Assert.That(setups[0].Character.PersonalityProfile, Is.SameAs(profile));
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            foreach (GameObject character in characters)
+                if (character != null) Object.DestroyImmediate(character);
+        }
+    }
+
+    [Test]
     public void CharacterSelection_BuildsTagalongTargetsFromPreviousSelectedRow()
     {
         GameObject selectionObject = null;

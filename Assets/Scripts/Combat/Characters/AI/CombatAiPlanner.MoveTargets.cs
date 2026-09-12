@@ -840,8 +840,17 @@ public static partial class CombatAiPlanner
                 !enemy.HasDirectSight && !allowRemembered) continue;
             int projectedHp = enemy.HP - context.GetAllyPendingDamage(enemy.Character);
             if (projectedHp <= 0) continue;
-            if (best != null && enemy.HasDirectSight == bestVisible && projectedHp >= bestProjectedHp) continue;
-            if (best != null && !enemy.HasDirectSight && bestVisible) continue;
+            if (best != null)
+            {
+                bool lowPresence = HasLowPresence(enemy.Character);
+                bool bestLowPresence = HasLowPresence(best);
+                if (lowPresence && !bestLowPresence) continue;
+                if (lowPresence == bestLowPresence)
+                {
+                    if (enemy.HasDirectSight == bestVisible && projectedHp >= bestProjectedHp) continue;
+                    if (!enemy.HasDirectSight && bestVisible) continue;
+                }
+            }
             bestProjectedHp = projectedHp;
             bestVisible = enemy.HasDirectSight;
             best = enemy.Character;

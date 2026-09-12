@@ -11,4 +11,5 @@ public enum CombatAiPersonalityKind
     Tagalong = 21,
     Avenger = 22,
     HighGround = 24,
+    LowPresence = 25,
 }

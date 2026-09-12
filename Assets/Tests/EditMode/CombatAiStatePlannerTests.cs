@@ -412,12 +412,14 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.MoveTarget.Destination, Is.EqualTo(new Vector3(14f, 0f, 0f)));
     }
 
-    [Test]
-    public void Planner_TagalongUsesTheAssignedAllyTargetForSkillSelection()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Planner_TagalongUsesTheAssignedAllyTargetForSkillSelection(bool lowPresence)
     {
         Character owner = CreateCharacter("Tagalong", new Sword(), Vector3.zero);
         Character leader = CreateCharacter("Leader", new Sword(), new Vector3(4f, 0f, 0f));
         Character focusedEnemy = CreateCharacter("Focused", new Sword(), new Vector3(2f, 0f, 0f), team: CombatTeam.Enemy);
+        if (lowPresence) SetLowPresence(focusedEnemy);
         Character temptingEnemy = CreateCharacter("Tempting", new Sword(), new Vector3(2f, 0f, 2f), 30, 1, CombatTeam.Enemy);
         var attack = new CombatEditModeTestUtil.AiPlannerBasicAttackSkill();
         CombatEditModeTestUtil.SetAvailableCombatSkills(owner, attack);
@@ -522,11 +524,13 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(attacker));
     }
 
-    [Test]
-    public void Planner_AvengerUsesTheRecentAttackerForSkillSelection()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Planner_AvengerUsesTheRecentAttackerForSkillSelection(bool lowPresence)
     {
         Character owner = CreateCharacter("Avenger", new Sword(), Vector3.zero);
         Character attacker = CreateCharacter("Attacker", new Sword(), new Vector3(2f, 0f, 0f), team: CombatTeam.Enemy);
+        if (lowPresence) SetLowPresence(attacker);
         Character decoy = CreateCharacter("Decoy", new Sword(), new Vector3(2f, 0f, 2f), 30, 1, CombatTeam.Enemy);
         var attack = new CombatEditModeTestUtil.AiPlannerBasicAttackSkill();
         CombatEditModeTestUtil.SetAvailableCombatSkills(owner, attack);
@@ -1297,11 +1301,13 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.MoveTarget.Destination, Is.EqualTo(highGround));
     }
 
-    [Test]
-    public void Planner_BattleJunkieKeepsItsFocusedEnemyWhileTheFocusIsValid()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Planner_BattleJunkieKeepsItsFocusedEnemyWhileTheFocusIsValid(bool lowPresence)
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
         Character focused = CreateCharacter("Focused", new Sword(), new Vector3(8f, 0f, 0f), team: CombatTeam.Enemy);
+        if (lowPresence) SetLowPresence(focused);
         Character weaker = CreateCharacter("Weaker", new Sword(), new Vector3(2f, 0f, 0f), 30, 5, CombatTeam.Enemy);
         CombatAiContext context = Context(owner, enemies: new[] { Intel(focused), Intel(weaker) });
         CombatAiPersonalityProfile profile = Track(
@@ -1557,6 +1563,185 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(snapshot.SelectedState, Is.EqualTo(CombatObjective.DestroyEnemyStone));
         Assert.That(snapshot.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyStoneKnown));
         Assert.That(snapshot.ActionCode, Is.Not.Empty);
+    }
+
+    [TestCase(false, false)]
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    [TestCase(true, true)]
+    public void Planner_LowPresenceDefersChaseAndSingleEnemySkills(bool reverseCandidates, bool debuff)
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character quiet = CreateCharacter("Quiet", new Sword(), new Vector3(2f, 0f, 0f), 30, 1, CombatTeam.Enemy);
+        Character normal = CreateCharacter("Normal", new Sword(), new Vector3(2f, 0f, 1f), team: CombatTeam.Enemy);
+        SetLowPresence(quiet);
+        SkillBase skill = debuff ? new LowPresenceDebuffSkill() : new CombatEditModeTestUtil.AiPlannerBasicAttackSkill();
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, skill);
+        CombatAiContext context = Context(owner, enemies: reverseCandidates
+            ? new[] { Intel(normal), Intel(quiet) }
+            : new[] { Intel(quiet), Intel(normal) });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(normal));
+        Assert.That(plan.Skill, Is.SameAs(skill));
+        Assert.That(plan.SkillTarget, Is.SameAs(normal));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Planner_LowPresenceRemainsTargetableWhenAllCandidatesHaveLowPresence(bool includeSecond)
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character quiet = CreateCharacter("Quiet", new Sword(), new Vector3(2f, 0f, 0f), 30, 5, CombatTeam.Enemy);
+        Character other = CreateCharacter("Other", new Sword(), new Vector3(2f, 0f, 1f), team: CombatTeam.Enemy);
+        SetLowPresence(quiet);
+        SetLowPresence(other);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new CombatEditModeTestUtil.AiPlannerBasicAttackSkill());
+        CombatAiContext context = Context(owner, enemies: includeSecond
+            ? new[] { Intel(other), Intel(quiet) }
+            : new[] { Intel(quiet) });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(quiet));
+        Assert.That(plan.SkillTarget, Is.SameAs(quiet));
+    }
+
+    [TestCase("dead")]
+    [TestCase("unknown")]
+    [TestCase("pending")]
+    public void Planner_LowPresenceIsChosenWhenNormalEnemyIsIneligible(string reason)
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character quiet = CreateCharacter("Quiet", new Sword(), new Vector3(2f, 0f, 0f), team: CombatTeam.Enemy);
+        Character normal = CreateCharacter("Normal", new Sword(), new Vector3(2f, 0f, 1f), 30, reason == "dead" ? 0 : 5, CombatTeam.Enemy);
+        SetLowPresence(quiet);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new CombatEditModeTestUtil.AiPlannerBasicAttackSkill());
+        CombatCharacterIntel normalIntel = reason == "unknown"
+            ? CombatEditModeTestUtil.CreateIntel(normal, false, default, hasDirectSight: false)
+            : Intel(normal);
+        CombatAiContext context = Context(owner,
+            enemies: new[] { normalIntel, Intel(quiet) },
+            pendingDamage: reason == "pending" ? new[] { new CombatAiPendingDamage(normal, 5) } : null);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(quiet));
+        Assert.That(plan.SkillTarget, Is.SameAs(quiet));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Planner_LowPresenceCanBeHitWhenNormalEnemyIsOutsideSkillRange(bool debuff)
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character quiet = CreateCharacter("Quiet", new Sword(), new Vector3(2f, 0f, 0f), team: CombatTeam.Enemy);
+        Character normal = CreateCharacter("Normal", new Sword(), new Vector3(8f, 0f, 0f), team: CombatTeam.Enemy);
+        SetLowPresence(quiet);
+        SkillBase skill = debuff ? new LowPresenceDebuffSkill() : new CombatEditModeTestUtil.AiPlannerBasicAttackSkill();
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, skill);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(Context(owner, enemies: new[] { Intel(normal), Intel(quiet) }), null);
+
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(normal));
+        Assert.That(plan.SkillTarget, Is.SameAs(quiet));
+    }
+
+    [Test]
+    public void Planner_LowPresenceDoesNotChangeSkillCategoryPriority()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character quiet = CreateCharacter("Quiet", new Sword(), new Vector3(2f, 0f, 0f), team: CombatTeam.Enemy);
+        Character normal = CreateCharacter("Normal", new Sword(), new Vector3(8f, 0f, 0f), team: CombatTeam.Enemy);
+        SetLowPresence(quiet);
+        var debuff = new LowPresenceDebuffSkill();
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new CombatEditModeTestUtil.AiPlannerLongCastBoltSkill(), debuff);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(Context(owner, enemies: new[] { Intel(normal), Intel(quiet) }), null);
+
+        Assert.That(plan.Skill, Is.SameAs(debuff));
+        Assert.That(plan.SkillTarget, Is.SameAs(quiet));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Planner_LowPresenceDoesNotChangeAreaSelectionOrVictims(bool areaFirst)
+    {
+        Character owner = CreateCharacter("Owner", new Wand(), Vector3.zero);
+        Character first = CreateCharacter("First", new Sword(), new Vector3(2f, 0f, 0f), 30, 5, CombatTeam.Enemy);
+        Character second = CreateCharacter("Second", new Sword(), new Vector3(2f, 0f, 1f), team: CombatTeam.Enemy);
+        var area = new CombatEditModeTestUtil.AiPlannerAreaBlastSkill();
+        var single = new CombatEditModeTestUtil.AiPlannerBasicAttackSkill();
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, areaFirst ? new SkillBase[] { area, single } : new SkillBase[] { single, area });
+        CombatAiContext context = Context(owner, enemies: new[] { Intel(first), Intel(second) });
+        CombatAiPlan baseline = CombatAiPlanner.BuildPlan(context, null);
+        SetLowPresence(first);
+        SetLowPresence(second);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(baseline.Skill, Is.SameAs(area));
+        Assert.That(baseline.SkillContext.ResolvedTargets, Does.Contain(first));
+        Assert.That(baseline.SkillContext.ResolvedTargets, Does.Contain(second));
+        Assert.That(plan.Skill, Is.SameAs(baseline.Skill));
+        Assert.That(plan.SkillContext.TargetPoint, Is.EqualTo(baseline.SkillContext.TargetPoint));
+        Assert.That(plan.SkillContext.ResolvedTargets, Is.EquivalentTo(baseline.SkillContext.ResolvedTargets));
+        Assert.That(plan.Skill.EstimateDamage(owner, plan.SkillContext, first),
+            Is.EqualTo(baseline.Skill.EstimateDamage(owner, baseline.SkillContext, first)));
+    }
+
+    [Test]
+    public void Planner_LowPresenceDoesNotChangeAllyHealing()
+    {
+        Character owner = CreateCharacter("Owner", new Rosary(), Vector3.zero);
+        Character injured = CreateCharacter("Injured", new Sword(), new Vector3(2f, 0f, 0f), 30, 5);
+        Character other = CreateCharacter("Other", new Sword(), new Vector3(3f, 0f, 0f), 30, 20);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(owner, new CombatEditModeTestUtil.AiPlannerHealSkill());
+        CombatAiContext context = Context(owner, allies: new[] { Intel(other), Intel(injured) });
+        CombatAiPlan baseline = CombatAiPlanner.BuildPlan(context, null);
+        SetLowPresence(injured);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(baseline.SkillTarget, Is.SameAs(injured));
+        Assert.That(plan.Skill, Is.SameAs(baseline.Skill));
+        Assert.That(plan.SkillTarget, Is.SameAs(injured));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(baseline.MoveTarget.TargetCharacter));
+    }
+
+    [TestCase(WeaponKind.Sword)]
+    [TestCase(WeaponKind.Shield)]
+    [TestCase(WeaponKind.Wand)]
+    [TestCase(WeaponKind.Grimoire)]
+    [TestCase(WeaponKind.Bible)]
+    [TestCase(WeaponKind.Rosary)]
+    public void Planner_LowPresenceOwnerKeepsStandardWeaponBehavior(WeaponKind weapon)
+    {
+        Character owner = CreateCharacter("Owner", CreateWeapon(weapon), Vector3.zero);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(2f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatAiContext context = Context(owner, enemies: new[] { Intel(enemy) }, enemyStone: new Vector3(20f, 0f, 0f));
+        CombatAiPlan baseline = CombatAiPlanner.BuildPlan(context, null);
+        SetLowPresence(owner);
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, owner.PersonalityProfile);
+
+        Assert.That(plan.Objective, Is.EqualTo(baseline.Objective));
+        Assert.That(plan.ActionCode, Is.EqualTo(baseline.ActionCode));
+        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(baseline.MoveTarget.Destination));
+        Assert.That(plan.Skill, Is.SameAs(baseline.Skill));
+        Assert.That(plan.SkillTarget, Is.SameAs(baseline.SkillTarget));
+    }
+
+    private void SetLowPresence(Character character) => character.ConfigureForBattle(null,
+        Track(CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.LowPresence)));
+
+    private sealed class LowPresenceDebuffSkill : SkillBase
+    {
+        public override SkillId Id => SkillId.Grimoire_StrDebuff;
+        public override string Name => "単体弱体";
+        public override float MaxRange => 3f;
+        public override void Execute(Character self, SkillExecutionContext context) { }
     }
 
     private CombatAiContext Context(
