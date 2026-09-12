@@ -141,7 +141,7 @@ public sealed class CombatPartyStatusPanelTests
     }
 
     [Test]
-    public void CombatPartyMemberView_ShowsFirstThreeStatusEffectsAsColoredBlankIcons()
+    public void CombatPartyMemberView_ShowsAllStatusSpritesWithoutTintAndClearsRemovedEffects()
     {
         Character character = CreateCharacter("Target", CombatTeam.Ally);
         character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.25f, 5f);
@@ -154,11 +154,19 @@ public sealed class CombatPartyStatusPanelTests
         view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
 
         Transform icons = viewObject.transform.Find("BuffDebuffRoot");
-        Assert.That(view.ActiveStatusIconCount, Is.EqualTo(3));
-        Assert.That(icons.GetChild(0).GetComponent<Image>().sprite, Is.Null);
-        Assert.That(icons.GetChild(0).GetComponent<Image>().color, Is.EqualTo(Color.cyan));
-        Assert.That(icons.GetChild(1).GetComponent<Image>().color, Is.EqualTo(Color.red));
-        Assert.That(icons.GetChild(2).GetComponent<Image>().color, Is.EqualTo(Color.cyan));
+        Assert.That(view.ActiveStatusIconCount, Is.EqualTo(4));
+        var names = new System.Collections.Generic.List<string>();
+        foreach (Image icon in icons.GetComponentsInChildren<Image>())
+        {
+            Assert.That(icon.sprite, Is.Not.Null);
+            Assert.That(icon.color, Is.EqualTo(Color.white));
+            names.Add(icon.sprite.name);
+        }
+        CollectionAssert.AreEquivalent(new[] { "STRBuff", "Poison", "Invulnerable", "Root" }, names);
+        character.StatusEffects.ClearAll();
+        view.Tick(0f);
+        Assert.That(view.ActiveStatusIconCount, Is.Zero);
+        Assert.That(icons.gameObject.activeSelf, Is.False);
 
         Object.DestroyImmediate(viewObject);
         Object.DestroyImmediate(character.gameObject);
@@ -375,6 +383,7 @@ public sealed class CombatPartyStatusPanelTests
         CreateChild(weaponMask.transform, "BibleIcon", typeof(RectTransform), typeof(Image));
         CreateChild(weaponMask.transform, "RosaryIcon", typeof(RectTransform), typeof(Image));
         GameObject buffDebuffRoot = CreateChild(root.transform, "BuffDebuffRoot", typeof(RectTransform));
+        buffDebuffRoot.GetComponent<RectTransform>().sizeDelta = new Vector2(168.3551f, 28.6652f);
         CreateChild(buffDebuffRoot.transform, "Image", typeof(RectTransform), typeof(Image));
         CreateChild(buffDebuffRoot.transform, "Image (1)", typeof(RectTransform), typeof(Image));
         CreateChild(buffDebuffRoot.transform, "Image (2)", typeof(RectTransform), typeof(Image));

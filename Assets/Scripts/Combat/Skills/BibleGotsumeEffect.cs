@@ -7,6 +7,9 @@ public sealed class BibleGotsumeEffect : MonoBehaviour
     private float _expiresAt;
     private CombatEffectSource _source;
 
+    public bool IsActive => isActiveAndEnabled && Time.time < _expiresAt &&
+        _wearer != null && _wearer.Health != null && _wearer.Health.IsAlive;
+
     public void Initialize(
         Character wearer,
         int reflectDamage,

@@ -23,7 +23,8 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     private Transform _weaponIconRoot;
     private Transform _buffDebuffIconRoot;
     private readonly GameObject[] _weaponIcons = new GameObject[7];
-    private readonly List<Image> _statusEffectIcons = new();
+    private readonly List<CombatStatusIconKind> _displayedEffects = new();
+    private CombatStatusIconRow _statusIconRow;
     private Character _character;
     private CombatHealth _health;
     private CombatAiBrain _aiBrain;
@@ -41,7 +42,7 @@ public sealed class CombatPartyMemberView : MonoBehaviour
     public string CurrentSkillText => _skillText != null ? _skillText.text : string.Empty;
     public string CurrentPersonalityText => _personalityText != null ? _personalityText.text : string.Empty;
     public float CurrentHpRatio => _hpFillImage != null ? _hpFillImage.fillAmount : 0f;
-    public int ActiveStatusIconCount => CountActiveStatusIcons();
+    public int ActiveStatusIconCount => _statusIconRow != null ? _statusIconRow.ActiveCount : 0;
 
     private void Awake()
     {
@@ -198,25 +199,17 @@ public sealed class CombatPartyMemberView : MonoBehaviour
 
     public void RefreshBuffDebuff()
     {
-        ResolveStatusEffectIcons();
-
-        if (_character == null || _character.StatusEffects == null)
+        _buffDebuffIconRoot ??= transform.Find("BuffDebuffRoot");
+        if (_buffDebuffIconRoot is RectTransform root)
         {
-            if (_buffDebuffText != null) _buffDebuffText.text = string.Empty;
-            RefreshStatusEffectIcons(null);
-            return;
+            _statusIconRow ??= new CombatStatusIconRow(root, root.rect.height, 3f, TextAnchor.MiddleRight);
+            _statusIconRow.Refresh(_character);
         }
-
-        var effects = _character.StatusEffects.GetActiveEffectSnapshots();
-        if (effects == null || effects.Count == 0)
+        if (_buffDebuffText != null)
         {
-            if (_buffDebuffText != null) _buffDebuffText.text = string.Empty;
-            RefreshStatusEffectIcons(effects);
-            return;
+            CombatStatusIconSource.Collect(_character, _displayedEffects);
+            _buffDebuffText.text = string.Join(" ", _displayedEffects.ConvertAll(CombatStatusIconSource.GetLabel));
         }
-
-        if (_buffDebuffText != null) _buffDebuffText.text = FormatEffects(effects);
-        RefreshStatusEffectIcons(effects);
     }
 
     public void RefreshHealth()
@@ -472,88 +465,6 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         }
     }
 
-    private void ResolveStatusEffectIcons()
-    {
-        if (_statusEffectIcons.Count > 0)
-        {
-            return;
-        }
-
-        _buffDebuffIconRoot ??= transform.Find("BuffDebuffRoot");
-        if (_buffDebuffIconRoot == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < _buffDebuffIconRoot.childCount; i++)
-        {
-            Image image = _buffDebuffIconRoot.GetChild(i).GetComponent<Image>();
-            if (image == null)
-            {
-                continue;
-            }
-
-            image.raycastTarget = false;
-            _statusEffectIcons.Add(image);
-        }
-    }
-
-    private void RefreshStatusEffectIcons(IReadOnlyList<CombatStatusEffectSnapshot> effects)
-    {
-        int effectCount = effects != null ? effects.Count : 0;
-        for (int i = 0; i < _statusEffectIcons.Count; i++)
-        {
-            Image icon = _statusEffectIcons[i];
-            bool visible = i < effectCount;
-            icon.gameObject.SetActive(visible);
-            if (visible)
-            {
-                icon.sprite = null;
-                icon.color = GetStatusEffectColor(effects[i]);
-            }
-        }
-
-        if (_buffDebuffIconRoot != null)
-        {
-            _buffDebuffIconRoot.gameObject.SetActive(effectCount > 0);
-        }
-    }
-
-    private int CountActiveStatusIcons()
-    {
-        int count = 0;
-        for (int i = 0; i < _statusEffectIcons.Count; i++)
-        {
-            if (_statusEffectIcons[i] != null && _statusEffectIcons[i].gameObject.activeSelf)
-            {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    private static Color GetStatusEffectColor(CombatStatusEffectSnapshot effect)
-    {
-        if (effect.IsBuff ||
-            effect.Type == CombatStatusEffects.EffectType.Invulnerable ||
-            effect.Type == CombatStatusEffects.EffectType.HealOverTime ||
-            effect.Type == CombatStatusEffects.EffectType.Stealth)
-        {
-            return Color.cyan;
-        }
-
-        if (effect.IsDebuff ||
-            effect.Type == CombatStatusEffects.EffectType.Root ||
-            effect.Type == CombatStatusEffects.EffectType.Bind ||
-            effect.Type == CombatStatusEffects.EffectType.Poison)
-        {
-            return Color.red;
-        }
-
-        return Color.gray;
-    }
-
     private static Transform FindDescendant(Transform root, string targetName)
     {
         if (root == null || string.IsNullOrEmpty(targetName))
@@ -579,37 +490,6 @@ public sealed class CombatPartyMemberView : MonoBehaviour
         return null;
     }
 
-    private static string FormatEffects(System.Collections.Generic.IReadOnlyList<CombatStatusEffectSnapshot> effects)
-    {
-        System.Text.StringBuilder builder = new();
-        for (int i = 0; i < effects.Count; i++)
-        {
-            if (i > 0)
-            {
-                builder.Append(' ');
-            }
-
-            builder.Append(FormatEffectLabel(effects[i]));
-        }
-
-        return builder.ToString();
-    }
-
-    private static string FormatEffectLabel(CombatStatusEffectSnapshot effect)
-    {
-        return effect.Type switch
-        {
-            CombatStatusEffects.EffectType.StatModifier => FormatStatModifierLabel(effect),
-            CombatStatusEffects.EffectType.Invulnerable => "無敵",
-            CombatStatusEffects.EffectType.Root => "移動不能",
-            CombatStatusEffects.EffectType.Bind => "金縛り",
-            CombatStatusEffects.EffectType.Poison => "毒",
-            CombatStatusEffects.EffectType.HealOverTime => "継続回復",
-            CombatStatusEffects.EffectType.Stealth => "不可視",
-            _ => effect.Type.ToString(),
-        };
-    }
-
     private static string GetWeaponIconName(WeaponKind kind)
     {
         return kind switch
@@ -622,22 +502,6 @@ public sealed class CombatPartyMemberView : MonoBehaviour
             WeaponKind.Rosary => "RosaryIcon",
             _ => string.Empty,
         };
-    }
-
-    private static string FormatStatModifierLabel(CombatStatusEffectSnapshot effect)
-    {
-        string statName = effect.Stat switch
-        {
-            CombatStatusEffects.StatKind.STR => "STR",
-            CombatStatusEffects.StatKind.INT => "INT",
-            CombatStatusEffects.StatKind.FAI => "FAI",
-            CombatStatusEffects.StatKind.AGI => "AGI",
-            _ => effect.Stat.ToString(),
-        };
-
-        if (effect.IsBuff) return statName + "バフ";
-        if (effect.IsDebuff) return statName + "デバフ";
-        return statName + "補正";
     }
 
 }

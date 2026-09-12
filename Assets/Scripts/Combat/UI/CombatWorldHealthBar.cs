@@ -23,6 +23,8 @@ public sealed class CombatWorldHealthBar : MonoBehaviour
     private Transform _barRoot;
     private Image _fillImage;
     private Transform _cameraTransform;
+    private Character _character;
+    private CombatStatusIconRow _statusIcons;
 
     public void Configure(ICombatHealthSource source, Vector3? localOffset = null, float? barWidth = null)
     {
@@ -36,6 +38,18 @@ public sealed class CombatWorldHealthBar : MonoBehaviour
         if (barWidth.HasValue) _barWidth = barWidth.Value;
 
         EnsureBuilt();
+        _character = GetComponent<Character>();
+        if (_character != null && _statusIcons == null)
+        {
+            var icons = new GameObject("StatusEffects", typeof(RectTransform));
+            RectTransform rect = icons.GetComponent<RectTransform>();
+            rect.SetParent(_barRoot, false);
+            float size = 28.6652f;
+            rect.sizeDelta = new Vector2(_barWidth * 100f, size);
+            rect.anchoredPosition = new Vector2(0f, _barHeight * 50f + size / 2f + 3f);
+            _statusIcons = new CombatStatusIconRow(rect, size, 3f, TextAnchor.MiddleCenter);
+        }
+        _statusIcons?.Refresh(_character);
         Refresh();
 
         if (_source != null)
@@ -55,6 +69,8 @@ public sealed class CombatWorldHealthBar : MonoBehaviour
     private void LateUpdate()
     {
         if (_barRoot == null) return;
+
+        _statusIcons?.Refresh(_character);
 
         _barRoot.position = transform.position + _localOffset;
 

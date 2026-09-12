@@ -8,6 +8,11 @@ public sealed class ShieldShoulderGuardEffect : MonoBehaviour
     private float _expiresAt;
     private CombatEffectSource _source;
 
+    public bool IsActive => isActiveAndEnabled && Time.time < _expiresAt &&
+        _guardian != null && _protectedTarget != null &&
+        _guardian.Health != null && _guardian.Health.IsAlive &&
+        _protectedTarget.Health != null && _protectedTarget.Health.IsAlive;
+
     public void Initialize(Character guardian, Character protectedTarget, float damageMultiplier, float durationSeconds)
     {
         CleanupSubscription();

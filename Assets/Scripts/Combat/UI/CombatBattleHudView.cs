@@ -35,6 +35,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         public TMP_Text Weapon;
         public TMP_Text Hp;
         public Image HpFill;
+        public CombatStatusIconRow StatusIcons;
         public TMP_Text Objective;
         public TMP_Text Skills;
         public Character Character;
@@ -484,8 +485,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             typeof(RectTransform),
             typeof(Image),
             typeof(Button),
-            typeof(VerticalLayoutGroup),
-            typeof(LayoutElement));
+            typeof(VerticalLayoutGroup));
         RectTransform cardRect = cardObject.GetComponent<RectTransform>();
         cardRect.SetParent(parent, false);
 
@@ -503,7 +503,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        cardObject.GetComponent<LayoutElement>().preferredHeight = 168f;
+        const float statusIconSize = 28.6652f;
         DebugCharacterUi card = new DebugCharacterUi
         {
             Root = cardObject,
@@ -533,6 +533,17 @@ public sealed class CombatBattleHudView : MonoBehaviour
         CreateDebugBar(cardRect, "HpBar", 8f, out Image hpFill);
         hpFill.color = new Color(0.35f, 0.95f, 0.4f, 1f);
         card.HpFill = hpFill;
+        var statusRow = new GameObject("StatusEffectsRow", typeof(RectTransform), typeof(LayoutElement));
+        statusRow.transform.SetParent(cardRect, false);
+        LayoutElement statusLayout = statusRow.GetComponent<LayoutElement>();
+        statusLayout.minHeight = statusLayout.preferredHeight = statusIconSize;
+        var statusIcons = new GameObject("StatusEffects", typeof(RectTransform));
+        RectTransform statusRect = statusIcons.GetComponent<RectTransform>();
+        statusRect.SetParent(statusRow.transform, false);
+        statusRect.anchorMin = Vector2.zero;
+        statusRect.anchorMax = Vector2.one;
+        statusRect.offsetMin = statusRect.offsetMax = Vector2.zero;
+        card.StatusIcons = new CombatStatusIconRow(statusRect, statusIconSize, 3f, TextAnchor.MiddleLeft);
         card.Objective = CreateDebugText(
             cardRect,
             "Objective",
@@ -767,6 +778,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             card.Weapon.color = ResolveWeaponTextColor(character);
             card.Hp.text = character.HP.ToString();
             card.HpFill.fillAmount = Mathf.Clamp01(character.HP / (float)maxHp);
+            card.StatusIcons.Refresh(character);
             CombatAiBrain aiBrain = character.GetComponent<CombatAiBrain>();
             CombatObjective objective = aiBrain != null
                 ? aiBrain.LastPlan.Objective

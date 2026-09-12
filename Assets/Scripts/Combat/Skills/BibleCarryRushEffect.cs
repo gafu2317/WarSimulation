@@ -17,6 +17,12 @@ public sealed class BibleCarryRushEffect : MonoBehaviour
     private bool _passengerAgentWasEnabled;
     private bool _hasAttachedPassenger;
 
+    public bool Affects(Character character) => isActiveAndEnabled && _hasAppliedSpeedBoost &&
+        Time.time < _expiresAt && _carrier != null && _passenger != null &&
+        _carrier.Health != null && _carrier.Health.IsAlive &&
+        _passenger.Health != null && _passenger.Health.IsAlive &&
+        (character == _carrier || character == _passenger);
+
     public void Initialize(
         Character carrier,
         Character passenger,
