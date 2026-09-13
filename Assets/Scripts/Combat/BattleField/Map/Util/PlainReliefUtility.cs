@@ -71,9 +71,6 @@ namespace WarSimulation.Combat.Map
             for (int i = 0; i < map.Mountains.Count; i++)
                 MarkMountain(height, map.Mountains[i], protectedCells);
 
-            for (int i = 0; i < map.ForestRegions.Count; i++)
-                MarkForest(height, map.ForestRegions[i], protectedCells);
-
             for (int i = 0; i < map.Features.Count; i++)
             {
                 PlacedFeature feature = map.Features[i];
@@ -145,19 +142,6 @@ namespace WarSimulation.Combat.Map
                 radius,
                 protectedCells,
                 position => (position - mountain.Center).sqrMagnitude <= radius * radius);
-        }
-
-        private static void MarkForest(
-            HeightMap height,
-            ForestRegion forest,
-            bool[,] protectedCells)
-        {
-            MarkCircleRegion(
-                height,
-                forest.Center,
-                forest.OuterRadius,
-                protectedCells,
-                forest.Contains);
         }
 
         private static void MarkBridge(

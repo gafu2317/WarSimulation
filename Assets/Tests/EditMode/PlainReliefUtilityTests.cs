@@ -80,7 +80,6 @@ public sealed class PlainReliefUtilityTests
             Vector2.one,
             0f,
             null));
-        map.AddForestRegion(new ForestRegion(new Vector2(5.5f, 5.5f), 1.5f, 0f, 0.1f));
         map.AddFeature(new PlacedFeature(
             FeatureType.Bridge,
             new Vector3(12.5f, 0f, 12.5f),
@@ -90,7 +89,7 @@ public sealed class PlainReliefUtilityTests
         Vector2Int[] protectedCells =
         {
             new(1, 1), new(2, 1), new(3, 1), new(4, 1),
-            new(10, 14), new(18, 18), new(6, 18), new(5, 5), new(12, 11),
+            new(10, 14), new(18, 18), new(6, 18), new(12, 11),
         };
         float[] before = new float[protectedCells.Length];
         for (int i = 0; i < protectedCells.Length; i++)
@@ -106,6 +105,18 @@ public sealed class PlainReliefUtilityTests
             Vector2Int cell = protectedCells[i];
             Assert.That(map.Height.GetHeight(cell.x, cell.y), Is.EqualTo(before[i]).Within(0.000001f));
         }
+    }
+
+    [Test]
+    public void Apply_RelievesForestTerrain()
+    {
+        MapData map = CreateMap(24, 24, 1f);
+        map.AddForestRegion(new ForestRegion(new Vector2(5.5f, 5.5f), 1.5f, 0f, 0.1f));
+
+        float before = map.Height.GetHeight(5, 5);
+        PlainReliefUtility.Apply(map, 0.05f, 0.08f, 17);
+
+        Assert.That(map.Height.GetHeight(5, 5), Is.Not.EqualTo(before).Within(0.000001f));
     }
 
     [Test]
