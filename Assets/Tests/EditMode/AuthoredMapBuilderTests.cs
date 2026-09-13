@@ -196,7 +196,9 @@ public sealed class AuthoredMapBuilderTests
         {
             MapData map = AuthoredMapBuilder.Build(definition);
 
-            Assert.That(map.Height.GetHeight(0, 0), Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(map.Height.GetHeight(0, 0), Is.InRange(
+                definition.SharedConfig.BaseHeight - definition.SharedConfig.PlainReliefAmplitude,
+                definition.SharedConfig.BaseHeight + definition.SharedConfig.PlainReliefAmplitude));
             Assert.That(map.Mountains.Count, Is.EqualTo(1));
             Assert.That(map.Mountains[0].Kind, Is.EqualTo(MountainKind.Large));
             Assert.That(map.Rivers.Count, Is.EqualTo(1));
@@ -211,6 +213,49 @@ public sealed class AuthoredMapBuilderTests
             Assert.That(CountFeatures(map, FeatureType.Rock), Is.GreaterThan(0));
             Assert.That(CountFeatures(map, FeatureType.OwnMainStone), Is.EqualTo(1));
             Assert.That(CountFeatures(map, FeatureType.EnemyMainStone), Is.EqualTo(1));
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void Build_SamplesPointFeaturesFromRelievedHeight()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            MapData map = AuthoredMapBuilder.Build(definition);
+
+            foreach (PlacedFeature feature in map.Features)
+            {
+                if (feature.Type == FeatureType.Bridge) continue;
+                Assert.That(
+                    feature.WorldPosition.y,
+                    Is.EqualTo(map.Height.SampleAt(feature.WorldPosition)).Within(0.0001f));
+            }
+        }
+        finally
+        {
+            DestroyDefinition(definition);
+        }
+    }
+
+    [Test]
+    public void GeometryFingerprint_ChangesWhenPlainReliefSettingsChange()
+    {
+        AuthoredMapDefinition definition = CreateDefinition();
+        try
+        {
+            int before = definition.ComputeGeometryFingerprint();
+
+            SetPrivateField(
+                definition.SharedConfig,
+                "_plainReliefAmplitude",
+                definition.SharedConfig.PlainReliefAmplitude + 0.01f);
+
+            Assert.That(definition.ComputeGeometryFingerprint(), Is.Not.EqualTo(before));
         }
         finally
         {

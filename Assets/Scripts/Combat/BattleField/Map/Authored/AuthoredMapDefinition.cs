@@ -281,6 +281,8 @@ namespace WarSimulation.Combat.Map
             hash = Mix(hash, config.WorldSize);
             hash = Mix(hash, config.HeightMapResolution);
             hash = Mix(hash, config.BaseHeight);
+            hash = Mix(hash, config.PlainReliefAmplitude);
+            hash = Mix(hash, config.PlainReliefFrequency);
             hash = Mix(hash, StableStringHash(config.RiverShape != null ? config.RiverShape.name : null));
             hash = MixRiverShape(hash, config.RiverShape);
             hash = Mix(hash, config.FlatRiverMeanderAmplitude);

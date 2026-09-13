@@ -68,6 +68,27 @@ namespace WarSimulation.Tests.EditMode
         }
 
         [Test]
+        public void PlainReliefConfigChangeMakesDependentBakeStagesStale()
+        {
+            using var fixture = new BakeFixture();
+            fixture.BakeAll();
+
+            SetPrivateField(
+                fixture.Config,
+                "_plainReliefFrequency",
+                fixture.Config.PlainReliefFrequency + 0.01f);
+            AuthoredMapBakeStatus status = AuthoredMapBakeStatus.Evaluate(
+                fixture.Definition,
+                fixture.Host);
+
+            Assert.That(status.MapData, Is.EqualTo(AuthoredMapBakeStageState.Stale));
+            Assert.That(status.NavMesh, Is.EqualTo(AuthoredMapBakeStageState.Stale));
+            Assert.That(status.AssaultRoutes, Is.EqualTo(AuthoredMapBakeStageState.Stale));
+            Assert.That(status.Preview, Is.EqualTo(AuthoredMapBakeStageState.Stale));
+            Assert.That(status.Scene3D, Is.EqualTo(AuthoredMapBakeStageState.Deferred));
+        }
+
+        [Test]
         public void Scene3DDistinguishesUnappliedAndMissingGeneratedData()
         {
             using var fixture = new BakeFixture();
@@ -167,6 +188,7 @@ namespace WarSimulation.Tests.EditMode
         {
             public AuthoredMapDefinition Definition { get; } =
                 ScriptableObject.CreateInstance<AuthoredMapDefinition>();
+            public MapConfig Config { get; } = ScriptableObject.CreateInstance<MapConfig>();
             public BakedMapData BakedMap { get; } = ScriptableObject.CreateInstance<BakedMapData>();
             public NavMeshData NavMesh { get; } = new();
             public MapSceneHost Host { get; }
@@ -175,6 +197,7 @@ namespace WarSimulation.Tests.EditMode
 
             public BakeFixture()
             {
+                Definition.SharedConfig = Config;
                 Host = new GameObject("MapSceneHost-Test").AddComponent<MapSceneHost>();
             }
 
@@ -214,6 +237,7 @@ namespace WarSimulation.Tests.EditMode
                 Object.DestroyImmediate(_preview);
                 Object.DestroyImmediate(NavMesh);
                 Object.DestroyImmediate(BakedMap);
+                Object.DestroyImmediate(Config);
                 Object.DestroyImmediate(Definition);
             }
 
@@ -223,6 +247,15 @@ namespace WarSimulation.Tests.EditMode
                 var ground = new GroundStateGrid(2, 2, 1f);
                 return new MapData(height, ground, 1);
             }
+        }
+
+        private static void SetPrivateField<T>(Object target, string fieldName, T value)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Missing field {fieldName}");
+            field.SetValue(target, value);
         }
     }
 }

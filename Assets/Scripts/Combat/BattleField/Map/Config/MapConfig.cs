@@ -20,6 +20,13 @@ namespace WarSimulation.Combat.Map
         [Tooltip("ベースとなる初期高度。すべてのセルがこの値で初期化される。")]
         [SerializeField] private float _baseHeight = 0f;
 
+        [Header("平地の微細起伏")]
+        [Tooltip("特殊地形を除く平地へ加える高度の振幅（メートル）。0 で無効。")]
+        [SerializeField, Min(0f)] private float _plainReliefAmplitude = 0.5f;
+
+        [Tooltip("平地の微細起伏の空間周波数（1/メートル）。")]
+        [SerializeField, Min(0.001f)] private float _plainReliefFrequency = 0.08f;
+
         [Header("川の既定")]
         [Tooltip("川の断面形状を定義する SO。未設定の場合は川の幅・深さフォールバックを使う。")]
         [SerializeField] private RiverShape _riverShape;
@@ -97,6 +104,8 @@ namespace WarSimulation.Combat.Map
         /// </summary>
         public int GroundStateGridResolution => ResolvedCellsPerSide;
         public float BaseHeight => _baseHeight;
+        public float PlainReliefAmplitude => _plainReliefAmplitude;
+        public float PlainReliefFrequency => _plainReliefFrequency;
 
         public RiverShape RiverShape => _riverShape;
         public float FlatRiverMeanderAmplitude => _flatRiverMeanderAmplitude;

@@ -5,7 +5,7 @@ namespace WarSimulation.Combat.Map
 {
     /// <summary>
     /// 手作りマップ資産を決定的に <see cref="MapData"/> へ展開する。
-    /// 地形→橋・魔石→岩→森・散布木の順に構築する。
+    /// 地形→保護領域→平地起伏→橋・魔石→岩→森・散布木の順に構築する。
     /// </summary>
     public static class AuthoredMapBuilder
     {
@@ -81,9 +81,14 @@ namespace WarSimulation.Combat.Map
             ApplyLakes(map, definition.Lakes);
             ApplyGroundPatches(map, definition.GroundPatches);
             ApplyBridges(map, definition.Bridges, config);
+            RegisterForests(map, definition.Forests);
+            PlainReliefUtility.Apply(
+                map,
+                config.PlainReliefAmplitude,
+                config.PlainReliefFrequency,
+                definition.BuildSeed);
             // 固定物を後置きすると、先に散布した木・岩が予約位置を塞いでしまう。
             ApplyMagicStones(map, definition.MagicStones);
-            RegisterForests(map, definition.Forests);
             IRandom rng = new SystemRandom(definition.BuildSeed);
             bool useGenerated = generateAll || !definition.HasFixedFeaturePlacements;
             if (useGenerated)

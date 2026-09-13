@@ -10,6 +10,7 @@ namespace WarSimulation.Tests.EditMode
         public void CaptureAndCreateRuntimeMapPreservesMapData()
         {
             MapData source = CreateMap();
+            PlainReliefUtility.Apply(source, 0.05f, 0.08f, source.Seed);
             BakedMapData baked = ScriptableObject.CreateInstance<BakedMapData>();
 
             try

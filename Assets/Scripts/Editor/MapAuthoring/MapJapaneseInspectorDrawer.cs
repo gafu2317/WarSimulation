@@ -19,6 +19,8 @@ namespace WarSimulation.Combat.Map.EditorOnly
             ["_worldSize"] = "マップ一辺（m）",
             ["_cellsPerSide"] = "一辺のセル数",
             ["_baseHeight"] = "基準高度",
+            ["_plainReliefAmplitude"] = "平地起伏の振幅（m）",
+            ["_plainReliefFrequency"] = "平地起伏の周波数",
             ["_riverShape"] = "既定の川断面",
             ["_flatRiverMeanderAmplitude"] = "川の蛇行幅（m）",
             ["_flatRiverMeanderFrequency"] = "川の蛇行周波数",
