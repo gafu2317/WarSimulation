@@ -16,6 +16,28 @@ namespace WarSimulation.Combat.Map
         private int _count;
 
         public PlacementCandidates(MapData map, FeatureType type, Rect area, float minimumDistance, IRandom rng)
+            : this(map, type, area, minimumDistance, rng, useExplicitRadius: false, explicitRadius: 0f)
+        {
+        }
+
+        public PlacementCandidates(
+            MapData map,
+            Rect area,
+            float minimumDistance,
+            float placementRadius,
+            IRandom rng)
+            : this(map, FeatureType.Tree, area, minimumDistance, rng, useExplicitRadius: true, explicitRadius: placementRadius)
+        {
+        }
+
+        private PlacementCandidates(
+            MapData map,
+            FeatureType type,
+            Rect area,
+            float minimumDistance,
+            IRandom rng,
+            bool useExplicitRadius,
+            float explicitRadius)
         {
             _area = area;
             // 地形より細かい候補や、新しい密度設定を増やさず既存の配置間隔を使う。
@@ -30,7 +52,7 @@ namespace WarSimulation.Combat.Map
             _active = new int[_count];
             _slots = new int[_count];
             var radii = map.PlacementRadii;
-            float selfRadius = radii.Radius(type, type);
+            float selfRadius = useExplicitRadius ? Mathf.Max(0f, explicitRadius) : radii.Radius(type, type);
             _spacing = Mathf.Max(minimumDistance, selfRadius > 0f ? selfRadius * 2f + radii.Clearance : 0f);
 
             for (int z = 0; z < _depth; z++)
@@ -51,16 +73,33 @@ namespace WarSimulation.Combat.Map
                 var center = new Vector2(feature.WorldPosition.x, feature.WorldPosition.z);
                 if (feature.Type == FeatureType.Bridge)
                 {
-                    float margin = map.BridgeFeatureExclusionMargin + radii.Radius(type, feature.Type) + radii.Clearance;
+                    float ownRadius = useExplicitRadius ? Mathf.Max(0f, explicitRadius) : radii.Radius(type, feature.Type);
+                    float margin = map.BridgeFeatureExclusionMargin + ownRadius + radii.Clearance;
                     float reach = new Vector2(feature.Scale.x * 0.5f + margin, feature.Scale.z * 0.5f + margin).magnitude;
                     ExcludeNear(center, reach, p => BridgePlacementUtility.IsInsideExpandedFootprint(feature, p, margin));
                     continue;
                 }
-                float own = radii.Radius(type, feature.Type);
-                float other = radii.Radius(feature.Type, type);
+                float own = useExplicitRadius ? Mathf.Max(0f, explicitRadius) : radii.Radius(type, feature.Type);
+                float other = useExplicitRadius ? GetFeatureRadius(radii, feature.Type) : radii.Radius(feature.Type, type);
                 float distance = own > 0f && other > 0f ? own + other + radii.Clearance : 0f;
                 if (feature.Type == type) distance = Mathf.Max(distance, minimumDistance);
                 ExcludeCircle(center, distance);
+            }
+        }
+
+        private static float GetFeatureRadius(FeaturePlacementRadii radii, FeatureType type)
+        {
+            switch (type)
+            {
+                case FeatureType.Rock:
+                    return radii.Rock;
+                case FeatureType.Tree:
+                    return Mathf.Max(radii.Tree, radii.TreeCanopy);
+                case FeatureType.OwnMainStone:
+                case FeatureType.EnemyMainStone:
+                    return radii.MagicStone;
+                default:
+                    return 0f;
             }
         }
 

@@ -109,6 +109,7 @@ namespace WarSimulation.Combat.Map
             SetGeneratedRootVisible("GeneratedLakes", visible);
             SetGeneratedRootVisible("GeneratedBridges", visible);
             SetGeneratedRootVisible("GeneratedFeatures", visible);
+            SetGeneratedRootVisible("GeneratedGrass", visible);
         }
 
         public void ClearLoadedNavMesh()

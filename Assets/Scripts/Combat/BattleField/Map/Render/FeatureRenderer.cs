@@ -6,26 +6,29 @@ using UnityEngine.AI;
 namespace WarSimulation.Combat.Map
 {
     /// <summary>
-    /// MapData.Features から「木・岩・魔石」を拾い、3D 可視化するコンポーネント。
+    /// MapData.Features から「木・岩・魔石」を拾い、草と一緒に3D 可視化するコンポーネント。
     /// 橋は別レンダラー（<see cref="BridgeRenderer"/>）側が担当するのでここでは扱わない。
     ///
-    /// 生成物は全て「GeneratedFeatures」子配下にまとめ、再生成のたびにクリアする。
+    /// 木・岩・魔石は「GeneratedFeatures」、草は「GeneratedGrass」子配下にまとめ、再生成のたびにクリアする。
     /// 見た目は次の構成で生成する：
     ///   - 木  ：設定済みPrefab。未設定時は円柱（幹）＋球（葉冠）の旧方式にフォールバック
     ///   - 岩  ：設定済みPrefabを1.8倍から2.2倍の範囲で生成
     ///   - 魔石：Resources の認定済みモデルPrefabを使い、Coreだけ陣営色で塗り分ける。
+    ///   - 草  ：設定済みPrefabを水域以外の候補から決定的に抽選する。
     /// 各パーツのテクスチャは Inspector から指定し、描画用 Lit マテリアルを自動生成する。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class FeatureRenderer : MonoBehaviour
     {
         private const string RootName = "GeneratedFeatures";
+        private const string GrassRootName = "GeneratedGrass";
         private const string VisionObstacleLayerName = "VisionObstacle";
         private const string NotWalkableAreaName = "Not Walkable";
         private const float TreeSizeMultiplier = 1.5f;
         private const float FeatureGroundSinkDepth = 0.05f;
         private const float RockMinimumSizeMultiplier = 1.8f;
         private const float RockMaximumSizeMultiplier = 2.2f;
+        private const uint GrassSeedSalt = 0x6D2B79F5u;
 
         [Header("Tree Appearance")]
         [Tooltip("木全体の高さ（メートル）。幹 + 葉冠 の合計の目安。")]
@@ -65,6 +68,28 @@ namespace WarSimulation.Combat.Map
         [Tooltip("使用する岩Prefab 5種類（02・04・08・07・11）を割り当てる。")]
         [SerializeField] private GameObject[] _rockPrefabs;
 
+        [Header("Grass Appearance")]
+        [Tooltip("水域以外へランダム配置する草Prefab。短・中・高・シダを割り当てる。")]
+        [SerializeField] private GameObject[] _grassPrefabs;
+
+        [Tooltip("水域以外へ配置する草の個数。0 でスキップする。")]
+        [SerializeField, Min(0)] private int _grassCount;
+
+        [Tooltip("草同士の最小間隔（メートル）。")]
+        [SerializeField, Min(0f)] private float _grassMinDistance = 1.8f;
+
+        [Tooltip("草の配置マージン。マップ端からこの距離より内側だけに置く。")]
+        [SerializeField, Min(0f)] private float _grassPlacementMargin = 1f;
+
+        [Tooltip("草の占有半径（メートル）。既存の橋や他の配置物との重なり除外に使う。")]
+        [SerializeField, Min(0f)] private float _grassPlacementRadius = 0.6f;
+
+        [Tooltip("草Prefabのランダム縮尺の下限。")]
+        [SerializeField, Range(0.3f, 2f)] private float _grassScaleMin = 0.8f;
+
+        [Tooltip("草Prefabのランダム縮尺の上限。")]
+        [SerializeField, Range(0.3f, 2f)] private float _grassScaleMax = 1.15f;
+
         [Header("Magic Stone Appearance")]
         [Tooltip("メイン魔石の高さ（メートル）。拠点扱いなのでかなり目立たせる。")]
         [SerializeField, Min(0.2f)] private float _mainStoneHeight = 3.2f;
@@ -79,11 +104,15 @@ namespace WarSimulation.Combat.Map
         private const string OwnMagicStoneMaterialResourcePath = "Combat/Map/MagicStoneCoreBlue";
         private const string EnemyMagicStoneMaterialResourcePath = "Combat/Map/MagicStoneCoreRed";
         private Transform _generatedRoot;
+        private Transform _generatedGrassRoot;
 
         public void Render(MapData map)
         {
             Clear();
             if (map == null) return;
+
+            SpawnGrass(map);
+
             var features = map.Features;
             if (features.Count == 0) return;
 
@@ -253,8 +282,99 @@ namespace WarSimulation.Combat.Map
 
         public void Clear()
         {
-            Transform existing = _generatedRoot != null ? _generatedRoot : transform.Find(RootName);
-            _generatedRoot = null;
+            ClearGeneratedRoot(RootName, ref _generatedRoot);
+            ClearGeneratedRoot(GrassRootName, ref _generatedGrassRoot);
+        }
+
+        private void SpawnGrass(MapData map)
+        {
+            if (_grassCount <= 0 || !HasValidGrassPrefabSet()) return;
+
+            Vector2 worldSize = map.Height.WorldSize;
+            float margin = Mathf.Max(0f, _grassPlacementMargin);
+            float minX = margin;
+            float minZ = margin;
+            float maxX = worldSize.x - margin;
+            float maxZ = worldSize.y - margin;
+            if (maxX <= minX || maxZ <= minZ) return;
+
+            var rng = new SystemRandom(GetGrassSeed(map.Seed));
+            var candidates = new PlacementCandidates(
+                map,
+                Rect.MinMaxRect(minX, minZ, maxX, maxZ),
+                _grassMinDistance,
+                _grassPlacementRadius,
+                rng);
+            candidates.KeepWhere(position => IsValidGrassSite(map, position));
+
+            int placed = 0;
+            while (placed < _grassCount && candidates.TryTake(rng, out Vector2 position))
+            {
+                if (_generatedGrassRoot == null)
+                {
+                    var root = new GameObject(GrassRootName);
+                    root.transform.SetParent(transform, worldPositionStays: false);
+                    _generatedGrassRoot = root.transform;
+                    var modifier = root.AddComponent<NavMeshModifier>();
+                    modifier.ignoreFromBuild = true;
+                    modifier.applyToChildren = true;
+                }
+
+                GameObject grass = Instantiate(
+                    _grassPrefabs[rng.NextInt(0, _grassPrefabs.Length)],
+                    _generatedGrassRoot,
+                    worldPositionStays: false);
+                grass.name = $"Grass_{placed}";
+                grass.transform.localPosition = new Vector3(
+                    position.x,
+                    map.Height.SampleAt(new Vector3(position.x, 0f, position.y)),
+                    position.y);
+                grass.transform.localRotation = Quaternion.Euler(0f, rng.NextFloat() * 360f, 0f);
+                float scaleMin = Mathf.Min(_grassScaleMin, _grassScaleMax);
+                float scaleMax = Mathf.Max(_grassScaleMin, _grassScaleMax);
+                grass.transform.localScale = Vector3.one * Mathf.Lerp(
+                    scaleMin,
+                    scaleMax,
+                    rng.NextFloat());
+                placed++;
+            }
+        }
+
+        private static bool IsValidGrassSite(MapData map, Vector2 position)
+        {
+            if (!TreePlacementUtility.IsValidTreeSite(map, position, false, 0f)) return false;
+
+            for (int i = 0; i < map.Lakes.Count; i++)
+            {
+                if (map.Lakes[i].ContainsCarve(position)) return false;
+            }
+
+            return true;
+        }
+
+        private static int GetGrassSeed(int mapSeed)
+        {
+            unchecked
+            {
+                return (int)((uint)mapSeed ^ GrassSeedSalt);
+            }
+        }
+
+        private bool HasValidGrassPrefabSet()
+        {
+            if (_grassPrefabs == null || _grassPrefabs.Length == 0) return false;
+            for (int i = 0; i < _grassPrefabs.Length; i++)
+            {
+                if (_grassPrefabs[i] == null) return false;
+            }
+
+            return true;
+        }
+
+        private void ClearGeneratedRoot(string rootName, ref Transform generatedRoot)
+        {
+            Transform existing = generatedRoot != null ? generatedRoot : transform.Find(rootName);
+            generatedRoot = null;
             if (existing == null) return;
 
             GameObject existingGameObject = existing.gameObject;
