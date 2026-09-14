@@ -10,6 +10,9 @@ public sealed class RosaryHealingAreaZone : MonoBehaviour
     private float _tickIntervalSeconds;
     private float _nextTickTime;
 
+    public Character Owner => _owner;
+    public bool IsActive => isActiveAndEnabled && _owner != null && Time.time < _expiresAt;
+
     public void Initialize(
         Character owner,
         float radius,

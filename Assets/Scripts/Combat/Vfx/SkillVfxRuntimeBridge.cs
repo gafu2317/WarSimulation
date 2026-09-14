@@ -1,18 +1,19 @@
 using UnityEngine;
 
 /// <summary>
-/// 戦闘中のスキル完了イベントを購読し、プロシージャル / Catalog VFX を再生する。
+/// 戦闘中の詠唱・完了・キャンセルをVFXへ接続する。
 /// EffectTest のシーン内 Player とは別に、DontDestroyOnLoad の専用ホストを使う。
 /// </summary>
 public static class SkillVfxRuntimeBridge
 {
-    private const string CatalogResourcePath = "Combat/Vfx/SkillVfxCatalog";
     private const string RuntimeHostName = "SkillVfxRuntime";
     private static SkillVfxPlayer _player;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Reset()
     {
+        CombatSkillActionEvents.Started -= OnSkillStarted;
+        CombatSkillActionEvents.Cancelled -= OnSkillCancelled;
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
         _player = null;
     }
@@ -22,10 +23,22 @@ public static class SkillVfxRuntimeBridge
     {
         if (!Application.isPlaying) return;
 
+        CombatSkillActionEvents.Started -= OnSkillStarted;
+        CombatSkillActionEvents.Cancelled -= OnSkillCancelled;
         CombatSkillActionEvents.Completed -= OnSkillCompleted;
+        CombatSkillActionEvents.Started += OnSkillStarted;
+        CombatSkillActionEvents.Cancelled += OnSkillCancelled;
         CombatSkillActionEvents.Completed += OnSkillCompleted;
         EnsurePlayer();
     }
+
+    private static void OnSkillStarted(CombatSkillActionInfo action)
+    {
+        EnsurePlayer();
+        _player?.PlayCast(action);
+    }
+
+    private static void OnSkillCancelled(CombatSkillActionResult result) => _player?.CancelCast(result);
 
     private static void OnSkillCompleted(CombatSkillActionResult result)
     {
@@ -59,6 +72,5 @@ public static class SkillVfxRuntimeBridge
             _player = host.AddComponent<SkillVfxPlayer>();
         }
 
-        _player.SetCatalog(Resources.Load<SkillVfxCatalog>(CatalogResourcePath));
     }
 }

@@ -1,348 +1,174 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Profiling;
+using UnityEngine.SceneManagement;
 
 public sealed class SkillVfxPlayer : MonoBehaviour
 {
-    [SerializeField] private SkillVfxCatalog _catalog;
     [SerializeField] private Transform _spawnRoot;
-    [SerializeField, Min(0.1f)] private float _defaultLifetimeSeconds = 2f;
-
-    private readonly List<GameObject> _alive = new();
+    private const int Capacity = 96;
+    private static readonly ProfilerMarker UpdateMarker = new("SkillVfx.Update");
+    private readonly List<SkillVfxEffect> _active = new(Capacity);
+    private readonly Stack<SkillVfxEffect> _pool = new(Capacity);
     private bool _wasCombatRunning;
-    private GameObject _lastPlayed;
+    public int ActiveCount => _active.Count;
+    public int PooledCount => _pool.Count;
+    public int PeakActiveCount { get; private set; }
+    public int DroppedCount { get; private set; }
 
-    internal void SetCatalog(SkillVfxCatalog catalog)
+    private void OnEnable() => SceneManager.activeSceneChanged += OnSceneChanged;
+    private void OnDisable()
     {
-        _catalog = catalog;
+        SceneManager.activeSceneChanged -= OnSceneChanged;
+        ClearAll();
+    }
+    private void OnSceneChanged(Scene before, Scene after) => ClearAll();
+
+    public bool TryPlay(SkillId skillId, Vector3 selfPosition, Vector3? targetPosition,
+        Vector3? pointPosition, out string message)
+    {
+        if (skillId == SkillId.None) { message = "未定義のスキル"; return false; }
+        SkillBase skill = CombatSkillFactory.Create(skillId);
+        if (skill == null) { message = "未定義のスキル"; return false; }
+        var effect = Play(skillId, selfPosition, targetPosition ?? selfPosition,
+            pointPosition ?? targetPosition ?? selfPosition, SkillVfxEffect.Phase.Preview, 0, skill.AreaRadius);
+        message = effect != null ? $"{skillId} / Stylized mesh" : "VFX同時表示上限";
+        return effect != null;
     }
 
-    public bool TryPlay(
-        SkillId skillId,
-        Vector3 selfPosition,
-        Vector3? targetPosition,
-        Vector3? pointPosition,
-        out string message)
+    public void PlayCast(CombatSkillActionInfo action)
     {
-        _lastPlayed = null;
-        ClearFinished();
+        if (action.Actor == null || action.Skill == null || action.Skill.CastTimeSeconds <= 0) return;
+        Vector3 self = SkillVfxEffect.FootPosition(action.Actor.transform);
+        var context = action.Context;
+        var effect = Play(action.SkillId, self, TargetPosition(context, self),
+            context.HasTargetPoint ? context.TargetPoint : TargetPosition(context, self),
+            SkillVfxEffect.Phase.Cast, action.Skill.CastTimeSeconds, action.Skill.AreaRadius);
+        if (effect == null) return;
+        effect.ActionId = action.ActionId;
+        effect.BindCast(action.Actor, TargetTransform(context));
+    }
 
-        Transform parent = _spawnRoot != null ? _spawnRoot : transform;
-        if (_catalog != null &&
-            _catalog.TryGetEntry(skillId, out SkillVfxCatalog.Entry entry) &&
-            entry.Prefab != null &&
-            !entry.Prefab.name.StartsWith("Placeholder"))
-        {
-            return TryPlayPrefab(
-                entry,
-                skillId,
-                selfPosition,
-                targetPosition,
-                pointPosition,
-                parent,
-                out message);
-        }
-
-        if (!SkillVfxProceduralFactory.TryCreate(
-                skillId,
-                selfPosition,
-                targetPosition,
-                pointPosition,
-                parent,
-                out GameObject procedural,
-                out float proceduralLifetime))
-        {
-            message = $"{skillId} のエフェクト定義がありません。";
-            return false;
-        }
-
-        _alive.Add(procedural);
-        _lastPlayed = procedural;
-        Destroy(procedural, proceduralLifetime);
-        message = $"{skillId} → Procedural ({proceduralLifetime:0.##}s)";
-        return true;
+    public void CancelCast(CombatSkillActionResult result) => RemoveCast(result.Action.ActionId);
+    private void RemoveCast(long actionId)
+    {
+        for (int i = _active.Count - 1; i >= 0; i--)
+            if (_active[i].ActionId == actionId && actionId != 0) Release(i);
     }
 
     public void PlayAction(CombatSkillActionResult result)
     {
-        if (result == null ||
-            result.Outcome == CombatSkillActionOutcome.Failed ||
-            result.Outcome == CombatSkillActionOutcome.Cancelled ||
-            result.Outcome == CombatSkillActionOutcome.NoEffect ||
-            result.Action.Actor == null)
+        if (result == null) return;
+        RemoveCast(result.Action.ActionId);
+        if (result.Outcome != CombatSkillActionOutcome.Completed || result.Action.Actor == null) return;
+        var actor = result.Action.Actor;
+        var context = result.Action.Context;
+        var id = result.Action.SkillId;
+        Vector3 self = SkillVfxEffect.FootPosition(actor.transform);
+        Vector3 target = TargetPosition(context, self);
+        Vector3 point = context.HasTargetPoint ? context.TargetPoint : target;
+        if (id == SkillId.Rosary_SacrificeThunder)
         {
-            return;
-        }
-
-        Character actor = result.Action.Actor;
-        SkillExecutionContext context = result.Action.Context;
-        Vector3 self = actor.transform.position;
-        Vector3? target = ResolveTargetPosition(context);
-        Vector3? point = context.HasTargetPoint ? context.TargetPoint : null;
-
-        if (result.Action.SkillId == SkillId.Rosary_SacrificeThunder &&
-            (context.ResolvedTargets.Count > 0 || context.ResolvedStones.Count > 0))
-        {
-            Transform parent = _spawnRoot != null ? _spawnRoot : transform;
-            var hitCharacters = new HashSet<Character>();
-            var hitStoneIndices = new HashSet<int>();
-            bool paidSelfCost = false;
             for (int i = 0; i < result.Effects.Count; i++)
             {
-                CombatActionEffect effect = result.Effects[i];
-                if (effect.Kind == CombatActionEffectKind.Damage && effect.Target == actor)
-                {
-                    paidSelfCost = true;
-                }
-                else if (effect.Kind == CombatActionEffectKind.Damage &&
-                    effect.Target != null &&
-                    effect.Target != actor)
-                {
-                    hitCharacters.Add(effect.Target);
-                }
-                else if (effect.Kind == CombatActionEffectKind.MagicStoneDamage)
-                {
-                    hitStoneIndices.Add(effect.MagicStoneFeatureIndex);
-                }
-            }
-
-            bool customPrefab = HasCustomPrefab(result.Action.SkillId);
-            if (paidSelfCost && !customPrefab)
-            {
-                Track(SkillVfxProceduralFactory.CreateSacrificeSelf(self, parent, out float lifetime), lifetime);
-            }
-
-            foreach (Character hit in hitCharacters)
-            {
-                PlaySacrificeHit(hit.transform.position, self, point, parent, customPrefab);
-            }
-
-            for (int i = 0; i < context.ResolvedStones.Count; i++)
-            {
-                MagicStone resolved = context.ResolvedStones[i];
-                if (resolved == null || !hitStoneIndices.Contains(resolved.FeatureIndex)) continue;
-                PlaySacrificeHit(resolved.transform.position, self, point, parent, customPrefab);
+                var hit = result.Effects[i];
+                if (hit.Kind == CombatActionEffectKind.Damage && hit.Target != null)
+                    Play(id, self, SkillVfxEffect.FootPosition(hit.Target.transform), point, SkillVfxEffect.Phase.Impact);
+                if (hit.Kind == CombatActionEffectKind.MagicStoneDamage)
+                    for (int j = 0; j < context.ResolvedStones.Count; j++)
+                    {
+                        var stone = context.ResolvedStones[j];
+                        if (stone != null && stone.FeatureIndex == hit.MagicStoneFeatureIndex)
+                            Play(id, self, SkillVfxEffect.FootPosition(stone.transform), point, SkillVfxEffect.Phase.Impact);
+                    }
             }
             return;
         }
-
-        TryPlay(result.Action.SkillId, self, target, point, out _);
-        if (_lastPlayed == null || !ShouldFollowCharacter(result.Action.SkillId)) return;
-
-        Transform follow = ResolveFollowTarget(result.Action.SkillId, actor, context);
-        if (follow != null)
+        if (SkillVfxEffect.IsPersistent(id))
         {
-            _lastPlayed.transform.SetParent(follow, true);
-        }
-    }
-
-    private bool TryPlayPrefab(
-        SkillVfxCatalog.Entry entry,
-        SkillId skillId,
-        Vector3 selfPosition,
-        Vector3? targetPosition,
-        Vector3? pointPosition,
-        Transform parent,
-        out string message)
-    {
-        if (!TryResolvePosition(
-                entry.Anchor,
-                selfPosition,
-                targetPosition,
-                pointPosition,
-                out Vector3 position,
-                out string resolveError))
-        {
-            message = resolveError;
-            return false;
-        }
-
-        GameObject instance = Instantiate(entry.Prefab, position + entry.WorldOffset, Quaternion.identity, parent);
-        instance.name = $"Vfx_{skillId}_{entry.Prefab.name}";
-        _alive.Add(instance);
-        _lastPlayed = instance;
-
-        float lifetime = entry.LifetimeSeconds > 0f
-            ? entry.LifetimeSeconds
-            : ResolveLifetime(instance, _defaultLifetimeSeconds);
-        Destroy(instance, lifetime);
-
-        message = $"{skillId} → {entry.Prefab.name} @ {entry.Anchor} ({lifetime:0.##}s)";
-        return true;
-    }
-
-    private static Vector3? ResolveTargetPosition(SkillExecutionContext context)
-    {
-        if (context.PrimaryTarget != null) return context.PrimaryTarget.transform.position;
-        if (context.PrimaryStone != null) return context.PrimaryStone.transform.position;
-        if (context.ResolvedTargets.Count > 0 && context.ResolvedTargets[0] != null)
-        {
-            return context.ResolvedTargets[0].transform.position;
-        }
-        if (context.ResolvedStones.Count > 0 && context.ResolvedStones[0] != null)
-        {
-            return context.ResolvedStones[0].transform.position;
-        }
-        return null;
-    }
-
-    private static bool ShouldFollowCharacter(SkillId skillId)
-    {
-        return skillId == SkillId.Grimoire_StrDebuff ||
-            skillId == SkillId.StatDebuff_INT ||
-            skillId == SkillId.StatDebuff_FAI ||
-            skillId == SkillId.StatDebuff_AGI ||
-            skillId == SkillId.Grimoire_Bind ||
-            skillId == SkillId.Grimoire_Poison ||
-            skillId == SkillId.Grimoire_Stealth ||
-            skillId == SkillId.Bible_Invulnerable ||
-            skillId == SkillId.Bible_Gotsume ||
-            skillId == SkillId.Bible_CarryRush ||
-            skillId == SkillId.Rosary_Regeneration ||
-            skillId == SkillId.Shield_ShoulderGuard;
-    }
-
-    private static Transform ResolveFollowTarget(
-        SkillId skillId,
-        Character actor,
-        SkillExecutionContext context)
-    {
-        if (skillId == SkillId.Grimoire_Stealth ||
-            skillId == SkillId.Bible_Invulnerable ||
-            skillId == SkillId.Bible_CarryRush)
-        {
-            return actor.transform;
-        }
-
-        return context.PrimaryTarget != null ? context.PrimaryTarget.transform : null;
-    }
-
-    private bool HasCustomPrefab(SkillId skillId)
-    {
-        return _catalog != null &&
-            _catalog.TryGetEntry(skillId, out SkillVfxCatalog.Entry entry) &&
-            entry.Prefab != null &&
-            !entry.Prefab.name.StartsWith("Placeholder");
-    }
-
-    private void PlaySacrificeHit(
-        Vector3 hitPosition,
-        Vector3 self,
-        Vector3? point,
-        Transform parent,
-        bool customPrefab)
-    {
-        if (customPrefab)
-        {
-            TryPlay(SkillId.Rosary_SacrificeThunder, self, hitPosition, point, out _);
+            if (id == SkillId.Rosary_HealingArea)
+            {
+                var zones = FindObjectsByType<RosaryHealingAreaZone>();
+                RosaryHealingAreaZone zone = null;
+                for (int i = zones.Length - 1; i >= 0; i--)
+                {
+                    if (zones[i].Owner != actor || (zones[i].transform.position - point).sqrMagnitude >= .001f) continue;
+                    bool claimed = false;
+                    for (int j = 0; j < _active.Count; j++) if (_active[j].BoundZone == zones[i]) { claimed = true; break; }
+                    if (!claimed) { zone = zones[i]; break; }
+                }
+                var area = Play(id, self, target, point, SkillVfxEffect.Phase.Impact, 0, result.Action.Skill.AreaRadius);
+                area?.Bind(actor, null, null, zone);
+                return;
+            }
+            for (int i = 0; i < result.Effects.Count; i++)
+            {
+                var hit = result.Effects[i];
+                if (hit.Kind != CombatActionEffectKind.StatusApplied && hit.Kind != CombatActionEffectKind.StatusRefreshed &&
+                    hit.Kind != CombatActionEffectKind.PersistentEffectStarted) continue;
+                Character recipient = id == SkillId.Bible_CarryRush ? actor : hit.Target;
+                if (recipient == null) continue;
+                for (int j = _active.Count - 1; j >= 0; j--)
+                    if (_active[j].Skill == id && _active[j].FollowCharacter == recipient) Release(j);
+                var persistent = Play(id, self, SkillVfxEffect.FootPosition(recipient.transform), point, SkillVfxEffect.Phase.Impact);
+                persistent?.Bind(actor, recipient, hit.StatusKey);
+            }
             return;
         }
-
-        Track(
-            SkillVfxProceduralFactory.CreateSacrificeBolt(self, hitPosition, parent, out float lifetime),
-            lifetime);
+        var effect = Play(id, self, target, point, SkillVfxEffect.Phase.Impact, 0, result.Action.Skill.AreaRadius);
+        effect?.Bind(actor, context.PrimaryTarget, null);
     }
 
-    private void Track(GameObject instance, float lifetime)
+    private SkillVfxEffect Play(SkillId id, Vector3 self, Vector3 target, Vector3 point,
+        SkillVfxEffect.Phase phase, float castTime = 0, float radius = 3)
     {
-        _alive.Add(instance);
-        Destroy(instance, lifetime);
+        if (_active.Count >= Capacity) { DroppedCount++; return null; }
+        SkillVfxEffect effect;
+        if (_pool.Count > 0) effect = _pool.Pop();
+        else
+        {
+            var go = new GameObject("Pooled skill VFX");
+            go.transform.SetParent(_spawnRoot != null ? _spawnRoot : transform, false);
+            effect = go.AddComponent<SkillVfxEffect>();
+        }
+        effect.Prepare(id, self, target, point, phase, castTime, radius);
+        _active.Add(effect);
+        PeakActiveCount = Mathf.Max(PeakActiveCount, _active.Count);
+        return effect;
     }
 
     public void ClearAll()
     {
-        for (int i = _alive.Count - 1; i >= 0; i--)
-        {
-            if (_alive[i] != null)
-            {
-                Destroy(_alive[i]);
-            }
-        }
-
-        _alive.Clear();
-        _lastPlayed = null;
+        for (int i = _active.Count - 1; i >= 0; i--) Release(i);
     }
-
+    private void Release(int i)
+    {
+        var effect = _active[i];
+        _active.RemoveAt(i);
+        if (effect == null) return;
+        effect.gameObject.SetActive(false);
+        _pool.Push(effect);
+    }
     private void Update()
     {
-        bool combatRunning = CombatBattleFlow.IsRunning;
-        if (!_wasCombatRunning && combatRunning)
-        {
-            ClearAll();
-        }
-        _wasCombatRunning = combatRunning;
-        ClearFinished();
+        using var sample = UpdateMarker.Auto();
+        bool running = CombatBattleFlow.IsRunning;
+        if (_wasCombatRunning && !running) ClearAll();
+        _wasCombatRunning = running;
+        for (int i = _active.Count - 1; i >= 0; i--)
+            if (_active[i] == null || !_active[i].Tick(Time.deltaTime)) Release(i);
     }
-
-    private void ClearFinished()
+    private static Transform TargetTransform(SkillExecutionContext context)
     {
-        for (int i = _alive.Count - 1; i >= 0; i--)
-        {
-            if (_alive[i] == null)
-            {
-                _alive.RemoveAt(i);
-            }
-        }
+        if (context.PrimaryTarget != null) return context.PrimaryTarget.transform;
+        if (context.PrimaryStone != null) return context.PrimaryStone.transform;
+        if (context.ResolvedTargets.Count > 0 && context.ResolvedTargets[0] != null) return context.ResolvedTargets[0].transform;
+        if (context.ResolvedStones.Count > 0 && context.ResolvedStones[0] != null) return context.ResolvedStones[0].transform;
+        return null;
     }
-
-    private static bool TryResolvePosition(
-        SkillVfxSpawnAnchor anchor,
-        Vector3 selfPosition,
-        Vector3? targetPosition,
-        Vector3? pointPosition,
-        out Vector3 position,
-        out string error)
+    private static Vector3 TargetPosition(SkillExecutionContext context, Vector3 fallback)
     {
-        switch (anchor)
-        {
-            case SkillVfxSpawnAnchor.Self:
-                position = selfPosition;
-                error = null;
-                return true;
-            case SkillVfxSpawnAnchor.Target:
-                if (!targetPosition.HasValue)
-                {
-                    position = default;
-                    error = "Target アンカーだが対象位置がありません。";
-                    return false;
-                }
-
-                position = targetPosition.Value;
-                error = null;
-                return true;
-            case SkillVfxSpawnAnchor.Point:
-                if (!pointPosition.HasValue)
-                {
-                    position = default;
-                    error = "Point アンカーだが地点がありません。";
-                    return false;
-                }
-
-                position = pointPosition.Value;
-                error = null;
-                return true;
-            default:
-                position = default;
-                error = $"未対応のアンカー: {anchor}";
-                return false;
-        }
-    }
-
-    private static float ResolveLifetime(GameObject instance, float fallbackSeconds)
-    {
-        float max = 0f;
-        ParticleSystem[] particles = instance.GetComponentsInChildren<ParticleSystem>(true);
-        for (int i = 0; i < particles.Length; i++)
-        {
-            ParticleSystem.MainModule main = particles[i].main;
-            float duration = main.duration;
-            if (main.loop)
-            {
-                return fallbackSeconds;
-            }
-
-            max = Mathf.Max(max, duration + main.startLifetime.constantMax);
-        }
-
-        return max > 0.05f ? max : fallbackSeconds;
+        Transform target = TargetTransform(context);
+        return target != null ? SkillVfxEffect.FootPosition(target) : context.HasTargetPoint ? context.TargetPoint : fallback;
     }
 }

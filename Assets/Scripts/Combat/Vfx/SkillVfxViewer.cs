@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// EffectTest 専用。全 SkillId の Prefab またはプロシージャル VFX を手動再生する。
+/// EffectTest 専用。全 SkillId のVFXを手動再生する。
 /// </summary>
 public sealed class SkillVfxViewer : MonoBehaviour
 {
@@ -21,7 +21,6 @@ public sealed class SkillVfxViewer : MonoBehaviour
     };
 
     [SerializeField] private SkillVfxPlayer _player;
-    [SerializeField] private SkillVfxCatalog _catalog;
     [SerializeField] private Transform _caster;
     [SerializeField] private Transform _target;
     [SerializeField] private Transform _point;
@@ -247,11 +246,20 @@ public sealed class SkillVfxViewer : MonoBehaviour
         }
 
         SkillId skillId = _skillIds[_index];
-        Vector3 selfPos = _caster != null ? _caster.position : Vector3.zero;
-        Vector3? targetPos = _target != null ? _target.position : null;
+        Vector3 selfPos = Feet(_caster);
+        Vector3? targetPos = _target != null ? Feet(_target) : null;
         Vector3? pointPos = _point != null ? _point.position : null;
         bool ok = _player.TryPlay(skillId, selfPos, targetPos, pointPos, out string message);
         RefreshLabels(ok ? message : "失敗: " + message);
+    }
+
+    private static Vector3 Feet(Transform anchor)
+    {
+        if (anchor == null) return Vector3.zero;
+        Vector3 p = anchor.position;
+        Renderer renderer = anchor.GetComponent<Renderer>();
+        if (renderer != null) p.y = renderer.bounds.min.y;
+        return p;
     }
 
     private void ClearEffects()
@@ -280,14 +288,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
                 SkillBase skill = CombatSkillFactory.Create(id);
                 string skillName = skill != null ? skill.Name : id.ToString();
                 string weaponName = WeaponDisplayName(ResolveWeaponKind(id));
-                string source = "Procedural";
-                if (_catalog != null &&
-                    _catalog.TryGetEntry(id, out SkillVfxCatalog.Entry entry) &&
-                    entry.Prefab != null &&
-                    !entry.Prefab.name.StartsWith("Placeholder"))
-                {
-                    source = entry.Prefab.name;
-                }
+                string source = "Stylized mesh";
 
                 _skillText.text =
                     $"武器: {weaponName}\nスキル: {skillName}  [{_index + 1}/{_skillIds.Length}]\nVFX: {source}";
