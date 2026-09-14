@@ -10,7 +10,7 @@ import numpy as np
 
 ROOT=Path(__file__).resolve().parents[3]
 OUTPUT=ROOT/'Assets/Models/Kingdom/City'
-REVIEW=ROOT/'docs/Art/UnityTownBlock'
+REVIEW=ROOT/'docs/Art/KingdomCity/BlockExports'
 SOURCES={
     'KingdomBuildings_RealisticFantasy':['Fantasy_House'],
     'FantasyTownProps':['Road_Straight','Road_Corner','Paved_Plot','Produce_Stall','Cloth_Stall','Streetlamp','Bench','Crate_Closed','Barrel']}
