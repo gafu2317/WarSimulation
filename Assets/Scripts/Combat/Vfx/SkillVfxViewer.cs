@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// EffectTest 専用。全 SkillId のVFXを手動再生する。
+/// EffectTest 専用。全 SkillId のVFXを手動・自動再生する。
 /// </summary>
 public sealed class SkillVfxViewer : MonoBehaviour
 {
@@ -29,6 +29,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
     [SerializeField] private Button _prevButton;
     [SerializeField] private Button _nextButton;
     [SerializeField] private Button _playButton;
+    [SerializeField] private Button _autoButton;
     [SerializeField] private Button _clearButton;
     [SerializeField] private Button _slowButton;
     [SerializeField] private Button _normalButton;
@@ -36,6 +37,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
     private SkillId[] _skillIds = Array.Empty<SkillId>();
     private readonly Dictionary<SkillId, WeaponKind> _weaponBySkill = new();
     private int _index;
+    private bool _autoPlaying;
 
     private void OnEnable()
     {
@@ -48,11 +50,13 @@ public sealed class SkillVfxViewer : MonoBehaviour
     private void OnDisable()
     {
         BindButtons(false);
+        StopAutoPlay();
         Time.timeScale = 1f;
     }
 
     private void Update()
     {
+        AdvanceAutoPlay();
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null) return;
 
@@ -66,7 +70,12 @@ public sealed class SkillVfxViewer : MonoBehaviour
         }
         else if (keyboard.spaceKey.wasPressedThisFrame)
         {
+            StopAutoPlay();
             PlayCurrent();
+        }
+        else if (keyboard.pKey.wasPressedThisFrame)
+        {
+            ToggleAutoPlay();
         }
         else if (keyboard.cKey.wasPressedThisFrame)
         {
@@ -87,6 +96,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
         Bind(_prevButton, OnPrev, bind);
         Bind(_nextButton, OnNext, bind);
         Bind(_playButton, OnPlay, bind);
+        Bind(_autoButton, ToggleAutoPlay, bind);
         Bind(_clearButton, OnClear, bind);
         Bind(_slowButton, OnSlow, bind);
         Bind(_normalButton, OnNormal, bind);
@@ -159,7 +169,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
     private void OnPrev() => Step(-1);
     private void OnNext() => Step(1);
-    private void OnPlay() => PlayCurrent();
+    private void OnPlay() { StopAutoPlay(); PlayCurrent(); }
     private void OnClear() => ClearEffects();
     private void OnSlow() => SetTimeScale(0.25f);
     private void OnNormal() => SetTimeScale(1f);
@@ -213,6 +223,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
     private void Step(int delta)
     {
+        StopAutoPlay();
         if (_skillIds.Length == 0)
         {
             RebuildSkillList();
@@ -227,12 +238,12 @@ public sealed class SkillVfxViewer : MonoBehaviour
         RefreshLabels("Selected");
     }
 
-    private void PlayCurrent()
+    private bool PlayCurrent()
     {
         if (_player == null)
         {
             RefreshLabels("SkillVfxPlayer が未設定です。");
-            return;
+            return false;
         }
 
         if (_skillIds.Length == 0)
@@ -241,7 +252,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
             if (_skillIds.Length == 0)
             {
                 RefreshLabels("再生できる SkillId がありません。");
-                return;
+                return false;
             }
         }
 
@@ -251,6 +262,43 @@ public sealed class SkillVfxViewer : MonoBehaviour
         Vector3? pointPos = _point != null ? _point.position : null;
         bool ok = _player.TryPlay(skillId, selfPos, targetPos, pointPos, out string message);
         RefreshLabels(ok ? message : "失敗: " + message);
+        return ok;
+    }
+
+    public void ToggleAutoPlay()
+    {
+        if (_autoPlaying)
+        {
+            StopAutoPlay();
+            RefreshLabels("自動再生停止");
+            return;
+        }
+        _player?.ClearAll();
+        _index = 0;
+        _autoPlaying = true;
+        if (!PlayCurrent()) StopAutoPlay();
+    }
+
+    private void AdvanceAutoPlay()
+    {
+        if (!_autoPlaying) return;
+        if (_player == null) { StopAutoPlay(); return; }
+        if (_player.ActiveCount > 0) return;
+        _index = (_index + 1) % _skillIds.Length;
+        if (!PlayCurrent()) StopAutoPlay();
+    }
+
+    private void StopAutoPlay()
+    {
+        _autoPlaying = false;
+        UpdateAutoButton();
+    }
+
+    private void UpdateAutoButton()
+    {
+        if (_autoButton == null) return;
+        var label = _autoButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = _autoPlaying ? "自動停止" : "全自動";
     }
 
     private static Vector3 Feet(Transform anchor)
@@ -264,6 +312,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
     private void ClearEffects()
     {
+        StopAutoPlay();
         _player?.ClearAll();
         RefreshLabels("Cleared");
     }
@@ -276,6 +325,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
     private void RefreshLabels(string status)
     {
+        UpdateAutoButton();
         if (_skillText != null)
         {
             if (_skillIds.Length == 0)
@@ -288,7 +338,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
                 SkillBase skill = CombatSkillFactory.Create(id);
                 string skillName = skill != null ? skill.Name : id.ToString();
                 string weaponName = WeaponDisplayName(ResolveWeaponKind(id));
-                string source = "Stylized mesh";
+                string source = "画像併用";
 
                 _skillText.text =
                     $"武器: {weaponName}\nスキル: {skillName}  [{_index + 1}/{_skillIds.Length}]\nVFX: {source}";
@@ -297,7 +347,8 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
         if (_statusText != null)
         {
-            _statusText.text = status + "\n←/→ or A/D: 選択  Space: 再生  C: 消去  1:×0.25  2:×1";
+            _statusText.text = (_autoPlaying ? "全スキル自動再生中（繰り返し） / " : "") + status +
+                "\n←/→: 選択  Space: 再生  P: 全自動/停止  C: 消去  1:×0.25  2:×1";
         }
     }
 

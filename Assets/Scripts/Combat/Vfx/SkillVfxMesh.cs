@@ -6,8 +6,9 @@ public sealed class SkillVfxMesh
 {
     private readonly List<Vector3> _vertices = new(4096);
     private readonly List<Color32> _colors = new(4096);
+    private readonly List<Vector4> _uvs = new(4096);
     private readonly List<int> _indices = new(6144);
-    public readonly Mesh Mesh = new() { name = "Skill strokes" };
+    public readonly Mesh Mesh = new() { name = "Skill strokes", hideFlags = HideFlags.DontSave };
     public Vector3 Right = Vector3.right;
     public Vector3 Up = Vector3.up;
     public float Opacity = 1f;
@@ -43,20 +44,22 @@ public sealed class SkillVfxMesh
     }
 
     public SkillVfxMesh() => Mesh.MarkDynamic();
-    public void Clear() { _vertices.Clear(); _colors.Clear(); _indices.Clear(); }
+    public void Clear() { _vertices.Clear(); _colors.Clear(); _uvs.Clear(); _indices.Clear(); }
     public void Upload()
     {
         Mesh.Clear(false);
         Mesh.SetVertices(_vertices);
         Mesh.SetColors(_colors);
+        Mesh.SetUVs(0, _uvs);
         Mesh.SetTriangles(_indices, 0, true);
     }
 
-    private void Vertex(Vector3 p, Color c)
+    private void Vertex(Vector3 p, Color c, Vector4 uv = default)
     {
         c.a *= Opacity;
         _vertices.Add(p);
         _colors.Add(c);
+        _uvs.Add(uv);
         _indices.Add(_indices.Count);
     }
 
@@ -68,6 +71,25 @@ public sealed class SkillVfxMesh
     public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color color)
     {
         Triangle(a, b, c, color); Triangle(a, c, d, color);
+    }
+
+    public void TextureQuad(Vector3 center, Vector3 right, Vector3 up, Color color, float dissolve = 0)
+        => TextureQuad(center, right, up, color, dissolve, new Rect(0, 0, 1, 1), .06f);
+
+    public void TextureQuad(Vector3 center, Vector3 right, Vector3 up, Color color,
+        float dissolve, Rect region, float alphaFloor)
+        => TextureQuad(center - right - up, center + right - up, center + right + up,
+            center - right + up, color, dissolve, region, alphaFloor);
+
+    public void TextureQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Color color,
+        float dissolve, Rect region, float alphaFloor)
+    {
+        Vector4 a = new(region.xMin, region.yMin, 1 + alphaFloor, dissolve);
+        Vector4 b = new(region.xMax, region.yMin, 1 + alphaFloor, dissolve);
+        Vector4 c = new(region.xMax, region.yMax, 1 + alphaFloor, dissolve);
+        Vector4 d = new(region.xMin, region.yMax, 1 + alphaFloor, dissolve);
+        Vertex(p0, color, a); Vertex(p1, color, b); Vertex(p2, color, c);
+        Vertex(p0, color, a); Vertex(p2, color, c); Vertex(p3, color, d);
     }
 
     public void Stroke(Vector3 a, Vector3 b, float width, Color color, float end = 1f)

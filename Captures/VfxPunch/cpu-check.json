@@ -1,0 +1,19 @@
+{
+  "unity": "6000.4.3f1",
+  "platform": "OSXEditor",
+  "scope": "Editor CPU RenderAt only; not camera rendering or gameplay; AreaBlast radius 3",
+  "samples": [
+    {
+      "count": 1,
+      "medianMs": 0.05,
+      "p95Ms": 0.0545
+    },
+    {
+      "count": 12,
+      "medianMs": 0.59710000000000008,
+      "p95Ms": 0.6242
+    }
+  ],
+  "peakSampledVertices": 1536,
+  "peakSkill": "Rosary_HealingArea"
+}

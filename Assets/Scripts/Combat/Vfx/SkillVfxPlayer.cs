@@ -32,7 +32,7 @@ public sealed class SkillVfxPlayer : MonoBehaviour
         if (skill == null) { message = "未定義のスキル"; return false; }
         var effect = Play(skillId, selfPosition, targetPosition ?? selfPosition,
             pointPosition ?? targetPosition ?? selfPosition, SkillVfxEffect.Phase.Preview, 0, skill.AreaRadius);
-        message = effect != null ? $"{skillId} / Stylized mesh" : "VFX同時表示上限";
+        message = effect != null ? $"{skillId} / 画像併用" : "VFX同時表示上限";
         return effect != null;
     }
 

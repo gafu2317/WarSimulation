@@ -5,12 +5,87 @@ using UnityEngine;
 public sealed class SkillVfxProceduralFactoryTests
 {
     [Test]
-    public void AllSkills_HaveFiniteAnimatedGeometryAndOneSharedMaterial()
+    public void SupportColors_AreSharedWithinEachCategory()
+    {
+        foreach (var id in new[] { SkillId.Shield_ShoulderGuard, SkillId.Bible_StrBuff, SkillId.Bible_IntBuff,
+            SkillId.Bible_FaiBuff, SkillId.Bible_AgiBuff, SkillId.Bible_Invulnerable, SkillId.Bible_Gotsume,
+            SkillId.Bible_CarryRush, SkillId.Grimoire_Stealth })
+            Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Bible_StrBuff)), id.ToString());
+        foreach (var id in new[] { SkillId.Grimoire_StrDebuff, SkillId.StatDebuff_INT, SkillId.StatDebuff_FAI,
+            SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison })
+            Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Grimoire_Poison)), id.ToString());
+        foreach (var id in new[] { SkillId.Rosary_DistantHeal, SkillId.Rosary_CloseHeal,
+            SkillId.Rosary_Regeneration, SkillId.Rosary_HealingArea })
+            Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Rosary_CloseHeal)), id.ToString());
+    }
+
+    [Test]
+    public void AutoPlay_VisitsEverySkillWithoutWaitingAfterVisualEnd()
+    {
+        var host = new GameObject("Auto playback test");
+        try
+        {
+            var player = host.AddComponent<SkillVfxPlayer>();
+            var viewer = host.AddComponent<SkillVfxViewer>();
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            typeof(SkillVfxViewer).GetField("_player", flags).SetValue(viewer, player);
+            var advance = typeof(SkillVfxViewer).GetMethod("AdvanceAutoPlay", flags);
+            viewer.ToggleAutoPlay();
+            var seen = new System.Collections.Generic.HashSet<SkillId>();
+            SkillId first = host.GetComponentInChildren<SkillVfxEffect>().Skill;
+            for (int i = 0; i < Enum.GetValues(typeof(SkillId)).Length - 1; i++)
+            {
+                var effect = host.GetComponentInChildren<SkillVfxEffect>();
+                SkillId current = effect.Skill;
+                Assert.That(seen.Add(current), Is.True);
+                Assert.That(effect.Lifetime, Is.EqualTo(SkillVfxArt.Duration(current) + SkillVfxArt.PreviewLead(current)).Within(.001f));
+                advance.Invoke(viewer, null);
+                Assert.That(host.GetComponentInChildren<SkillVfxEffect>().Skill, Is.EqualTo(current));
+                Assert.That(effect.Tick(effect.Lifetime + .1f), Is.False);
+                player.ClearAll();
+                advance.Invoke(viewer, null);
+                Assert.That(player.ActiveCount, Is.EqualTo(1));
+            }
+            Assert.That(host.GetComponentInChildren<SkillVfxEffect>().Skill, Is.EqualTo(first));
+            viewer.ToggleAutoPlay();
+            player.ClearAll();
+            advance.Invoke(viewer, null);
+            Assert.That(player.ActiveCount, Is.Zero);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void AtlasFrames_StayFiniteThroughOpeningAndDisappearance()
+    {
+        var root = new GameObject("Prototype test");
+        try
+        {
+            var fx = root.AddComponent<SkillVfxEffect>();
+            foreach (SkillId id in Enum.GetValues(typeof(SkillId)))
+            {
+                if (id == SkillId.None) continue;
+                fx.Prepare(id, Vector3.zero, Vector3.right * 2, Vector3.right * 2);
+                foreach (float time in new[] { 0f, .025f, .13f, .42f, 1.1f, 1.8f })
+                {
+                    fx.RenderAt(time);
+                    var mesh = root.GetComponentInChildren<MeshFilter>().sharedMesh;
+                    foreach (Vector3 v in mesh.vertices)
+                        Assert.That(float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z), Is.True, $"{id}: {time}");
+                    Assert.That(mesh.uv.Length, Is.EqualTo(mesh.vertexCount));
+                }
+            }
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [Test]
+    public void AllSkills_HaveFiniteAnimatedVisualsAndSharedMaterials()
     {
         var parent = new GameObject("Vfx test");
         try
         {
-            var material = Resources.Load<Material>("Combat/Vfx/StylizedSkill");
+            var material = SkillVfxAtlas.Shared.Material;
             Assert.That(material, Is.Not.Null);
             foreach (SkillId id in Enum.GetValues(typeof(SkillId)))
             {
@@ -23,12 +98,20 @@ public sealed class SkillVfxProceduralFactoryTests
                 Assert.That(mesh.vertexCount, Is.GreaterThan(0), id.ToString());
                 Assert.That(mesh.vertexCount, Is.LessThan(4096), id.ToString());
                 Vector3[] before = mesh.vertices;
+                Color32[] beforeColors = mesh.colors32;
+                var beforeUv = new System.Collections.Generic.List<Vector4>();
+                mesh.GetUVs(0, beforeUv);
                 fx.RenderAt(.4f);
-                Assert.That(System.Linq.Enumerable.SequenceEqual(mesh.vertices, before), Is.False, id.ToString());
+                var afterUv = new System.Collections.Generic.List<Vector4>();
+                mesh.GetUVs(0, afterUv);
+                bool unchanged = System.Linq.Enumerable.SequenceEqual(mesh.vertices, before) &&
+                    System.Linq.Enumerable.SequenceEqual(mesh.colors32, beforeColors) &&
+                    System.Linq.Enumerable.SequenceEqual(beforeUv, afterUv);
+                Assert.That(unchanged, Is.False, id.ToString());
                 foreach (var v in mesh.vertices)
                     Assert.That(float.IsFinite(v.x) && float.IsFinite(v.y) && float.IsFinite(v.z), Is.True, id.ToString());
                 Assert.That(root.GetComponentsInChildren<Renderer>().Length, Is.EqualTo(1));
-                Assert.That(root.GetComponentInChildren<Renderer>().sharedMaterial, Is.SameAs(material));
+                Assert.That(root.GetComponentInChildren<Renderer>().sharedMaterial == material, Is.True, id.ToString());
                 Assert.That(lifetime, Is.GreaterThan(0));
                 UnityEngine.Object.DestroyImmediate(root);
             }
