@@ -47,7 +47,7 @@ public sealed class SkillVfxMesh
     public void Clear() { _vertices.Clear(); _colors.Clear(); _uvs.Clear(); _indices.Clear(); }
     public void Upload()
     {
-        Mesh.Clear(false);
+        Mesh.Clear();
         Mesh.SetVertices(_vertices);
         Mesh.SetColors(_colors);
         Mesh.SetUVs(0, _uvs);
@@ -60,17 +60,26 @@ public sealed class SkillVfxMesh
         _vertices.Add(p);
         _colors.Add(c);
         _uvs.Add(uv);
-        _indices.Add(_indices.Count);
     }
 
     public void Triangle(Vector3 a, Vector3 b, Vector3 c, Color color)
     {
+        int start = _vertices.Count;
         Vertex(a, color); Vertex(b, color); Vertex(c, color);
+        _indices.Add(start); _indices.Add(start + 1); _indices.Add(start + 2);
     }
 
     public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color color)
     {
-        Triangle(a, b, c, color); Triangle(a, c, d, color);
+        int start = _vertices.Count;
+        Vertex(a, color); Vertex(b, color); Vertex(c, color); Vertex(d, color);
+        QuadIndices(start);
+    }
+
+    private void QuadIndices(int start)
+    {
+        _indices.Add(start); _indices.Add(start + 1); _indices.Add(start + 2);
+        _indices.Add(start); _indices.Add(start + 2); _indices.Add(start + 3);
     }
 
     public void TextureQuad(Vector3 center, Vector3 right, Vector3 up, Color color, float dissolve = 0)
@@ -88,8 +97,9 @@ public sealed class SkillVfxMesh
         Vector4 b = new(region.xMax, region.yMin, 1 + alphaFloor, dissolve);
         Vector4 c = new(region.xMax, region.yMax, 1 + alphaFloor, dissolve);
         Vector4 d = new(region.xMin, region.yMax, 1 + alphaFloor, dissolve);
-        Vertex(p0, color, a); Vertex(p1, color, b); Vertex(p2, color, c);
-        Vertex(p0, color, a); Vertex(p2, color, c); Vertex(p3, color, d);
+        int start = _vertices.Count;
+        Vertex(p0, color, a); Vertex(p1, color, b); Vertex(p2, color, c); Vertex(p3, color, d);
+        QuadIndices(start);
     }
 
     public void Stroke(Vector3 a, Vector3 b, float width, Color color, float end = 1f)
@@ -116,32 +126,34 @@ public sealed class SkillVfxMesh
         width = Mathf.Clamp(Mathf.Max(width, MinimumStroke * Mathf.Clamp01(width / .04f)), 0, Mathf.Max(0, radius));
         Vector3 x = ground ? Vector3.right : Right;
         Vector3 y = ground ? Vector3.forward : Up;
+        float a = angle * Mathf.Deg2Rad;
+        Vector3 u = x * Mathf.Cos(a) + y * Mathf.Sin(a);
         for (int i = 0; i < segments; i++)
         {
-            float a = (angle + span * i / segments) * Mathf.Deg2Rad;
             float b = (angle + span * (i + 1) / segments) * Mathf.Deg2Rad;
-            Vector3 u = x * Mathf.Cos(a) + y * Mathf.Sin(a);
             Vector3 v = x * Mathf.Cos(b) + y * Mathf.Sin(b);
             Vector3 a0 = p + u * radius, b0 = p + v * radius, c0 = p + v * (radius - width), d0 = p + u * (radius - width);
             if (terrain) { a0 = Surface(a0); b0 = Surface(b0); c0 = Surface(c0); d0 = Surface(d0); }
             Quad(a0, b0, c0, d0, color);
+            u = v;
         }
     }
 
     public void Crescent(Vector3 p, Vector3 x, Vector3 y, float radius, float width, float angle, float span, Color color)
     {
         const int count = 24;
+        float a = angle * Mathf.Deg2Rad;
+        Vector3 da = x * Mathf.Cos(a) + y * Mathf.Sin(a);
+        float wa = 0;
         for (int i = 0; i < count; i++)
         {
-            float u = i / (float)count;
             float v = (i + 1) / (float)count;
-            float a = (angle + span * u) * Mathf.Deg2Rad;
             float b = (angle + span * v) * Mathf.Deg2Rad;
-            Vector3 da = x * Mathf.Cos(a) + y * Mathf.Sin(a);
             Vector3 db = x * Mathf.Cos(b) + y * Mathf.Sin(b);
-            float wa = width * Mathf.Sin(u * Mathf.PI);
             float wb = width * Mathf.Sin(v * Mathf.PI);
             Quad(p + da * radius, p + db * radius, p + db * (radius - wb), p + da * (radius - wa), color);
+            da = db;
+            wa = wb;
         }
     }
 

@@ -217,6 +217,13 @@ namespace WarSimulation.Kingdom.City
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (prefab != null) Prefabs[prefab.name] = prefab;
             }
+
+            // Country keeps the facility names stable while the catalog exposes every level.
+            foreach (var school in new[] { "WarriorAcademy", "ArcaneAcademy", "SpiritAcademy" })
+            {
+                GameObject maxLevel;
+                if (Prefabs.TryGetValue(school + "_Lv5", out maxLevel)) Prefabs[school] = maxLevel;
+            }
         }
 
         static void BuildMaterials()

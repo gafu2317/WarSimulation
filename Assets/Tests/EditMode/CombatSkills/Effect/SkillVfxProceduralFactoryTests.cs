@@ -5,6 +5,46 @@ using UnityEngine;
 public sealed class SkillVfxProceduralFactoryTests
 {
     [Test]
+    public void Mesh_ReusedTexturedQuadsPreserveTrianglesUvAndOpacity()
+    {
+        var builder = new SkillVfxMesh { Opacity = .5f };
+        try
+        {
+            for (int frame = 0; frame < 2; frame++)
+            {
+                builder.Clear();
+                if (frame == 0) builder.Triangle(Vector3.zero, Vector3.up, Vector3.right, Color.white);
+                builder.TextureQuad(Vector3.zero, Vector3.right, Vector3.one, Vector3.up,
+                    Color.white, .3f, new Rect(.2f, .4f, .5f, .25f), .09f);
+                builder.Upload();
+                var mesh = builder.Mesh;
+                int start = frame == 0 ? 3 : 0;
+                Assert.That(mesh.vertexCount, Is.EqualTo(start + 4));
+                var indices = mesh.triangles;
+                var vertices = mesh.vertices;
+                var colors = mesh.colors32;
+                var uv = new System.Collections.Generic.List<Vector4>();
+                mesh.GetUVs(0, uv);
+                var expectedPositions = new[] { Vector3.zero, Vector3.right, Vector3.one,
+                    Vector3.zero, Vector3.one, Vector3.up };
+                var expectedUv = new[] { new Vector2(.2f, .4f), new Vector2(.7f, .4f), new Vector2(.7f, .65f),
+                    new Vector2(.2f, .4f), new Vector2(.7f, .65f), new Vector2(.2f, .65f) };
+                Assert.That(indices.Length, Is.EqualTo(start + 6));
+                for (int corner = 0; corner < 6; corner++)
+                {
+                    int index = indices[start + corner];
+                    Assert.That(vertices[index], Is.EqualTo(expectedPositions[corner]));
+                    Assert.That(Vector2.Distance(new Vector2(uv[index].x, uv[index].y), expectedUv[corner]), Is.LessThan(.000001f));
+                    Assert.That(uv[index].z, Is.EqualTo(1.09f).Within(.000001f));
+                    Assert.That(uv[index].w, Is.EqualTo(.3f));
+                    Assert.That(colors[index], Is.EqualTo((Color32)new Color(1, 1, 1, .5f)));
+                }
+            }
+        }
+        finally { UnityEngine.Object.DestroyImmediate(builder.Mesh); }
+    }
+
+    [Test]
     public void SupportColors_AreSharedWithinEachCategory()
     {
         foreach (var id in new[] { SkillId.Shield_ShoulderGuard, SkillId.Bible_StrBuff, SkillId.Bible_IntBuff,
