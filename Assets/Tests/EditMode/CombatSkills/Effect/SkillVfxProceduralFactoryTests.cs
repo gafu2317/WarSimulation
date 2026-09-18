@@ -49,14 +49,24 @@ public sealed class SkillVfxProceduralFactoryTests
     {
         foreach (var id in new[] { SkillId.Shield_ShoulderGuard, SkillId.Bible_StrBuff, SkillId.Bible_IntBuff,
             SkillId.Bible_FaiBuff, SkillId.Bible_AgiBuff, SkillId.Bible_Invulnerable, SkillId.Bible_Gotsume,
-            SkillId.Grimoire_Stealth })
+            SkillId.Grimoire_Stealth, SkillId.Shield_IronWall })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Bible_StrBuff)), id.ToString());
         foreach (var id in new[] { SkillId.Grimoire_StrDebuff, SkillId.StatDebuff_INT, SkillId.StatDebuff_FAI,
-            SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison })
+            SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison, SkillId.Shield_Taunt })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Grimoire_Poison)), id.ToString());
         foreach (var id in new[] { SkillId.Rosary_DistantHeal, SkillId.Rosary_CloseHeal,
             SkillId.Rosary_Regeneration, SkillId.Rosary_HealingArea })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Rosary_CloseHeal)), id.ToString());
+    }
+
+    [Test]
+    public void SwordTechniques_UseDistinctColors()
+    {
+        var colors = new[] { SkillVfxArt.ColorFor(SkillId.Sword_Slash),
+            SkillVfxArt.ColorFor(SkillId.Sword_QuickSlash), SkillVfxArt.ColorFor(SkillId.Sword_StrongSlash) };
+        Assert.That(colors[0], Is.Not.EqualTo(colors[1]));
+        Assert.That(colors[0], Is.Not.EqualTo(colors[2]));
+        Assert.That(colors[1], Is.Not.EqualTo(colors[2]));
     }
 
     [Test]

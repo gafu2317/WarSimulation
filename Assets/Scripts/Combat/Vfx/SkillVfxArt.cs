@@ -5,6 +5,10 @@ public static partial class SkillVfxArt
     private static readonly Color White = new(1, .98f, .86f);
     private static readonly Color Dark = new(.18f, .06f, .27f);
     private static readonly Color Gold = new(1, .74f, .24f);
+    private static readonly Color DebuffPurple = new(.7f, .32f, .9f);
+    private static readonly Color HealGreen = new(.22f, .91f, .59f);
+    private static readonly Color SwordQuickCyan = new(.15f, .85f, 1f);
+    private static readonly Color SwordStrongRed = new(1f, .28f, .12f);
 
     public static float PreviewLead(SkillId id) => id == SkillId.Wand_GodsHand
         ? CombatSkillFactory.Create(id).CastTimeSeconds : SkillVfxEffect.IsProjectile(id) ? .45f : 0;
@@ -23,26 +27,27 @@ public static partial class SkillVfxArt
 
     public static Color ColorFor(SkillId id) => id switch
     {
-        SkillId.Sword_Slash or SkillId.Sword_QuickSlash => new(.78f, .88f, 1),
-        SkillId.Sword_StrongSlash => new(1f, .78f, .28f),
+        SkillId.Sword_Slash => new(.78f, .88f, 1),
+        SkillId.Sword_QuickSlash => SwordQuickCyan,
+        SkillId.Sword_StrongSlash => SwordStrongRed,
         SkillId.Shield_Slash => new(.35f, .57f, .78f),
         SkillId.Shield_ShoulderGuard => Gold,
-        SkillId.Shield_IronWall => new(.3f, .62f, .95f),
-        SkillId.Shield_Taunt => new(1f, .28f, .08f),
+        SkillId.Shield_IronWall => Gold,
+        SkillId.Shield_Taunt => DebuffPurple,
         SkillId.Wand_Bolt => new(.25f, .8f, 1),
         SkillId.Wand_ArcaneBlast => new(.58f, .3f, 1),
         SkillId.Wand_AreaBlast => new(1, .34f, .08f),
         SkillId.Wand_GodsHand => new(1, .83f, .42f),
         SkillId.Grimoire_Bolt => new(.65f, .22f, .85f),
         SkillId.Grimoire_StrDebuff or SkillId.StatDebuff_INT or SkillId.StatDebuff_FAI or
-        SkillId.StatDebuff_AGI or SkillId.Grimoire_Bind or SkillId.Grimoire_Poison => new(.7f, .32f, .9f),
+        SkillId.StatDebuff_AGI or SkillId.Grimoire_Bind or SkillId.Grimoire_Poison => DebuffPurple,
         SkillId.Grimoire_Stealth => Gold,
         SkillId.Bible_StrBuff or SkillId.Bible_IntBuff or SkillId.Bible_FaiBuff or
         SkillId.Bible_AgiBuff or SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume or
         SkillId.Bible_Smite => Gold,
         SkillId.Rosary_Strike => new(.93f, .87f, .7f),
         SkillId.Rosary_DistantHeal or SkillId.Rosary_CloseHeal or SkillId.Rosary_Regeneration or
-        SkillId.Rosary_HealingArea => new(.22f, .91f, .59f),
+        SkillId.Rosary_HealingArea => HealGreen,
         SkillId.Rosary_SacrificeThunder => new(.77f, .61f, 1),
         _ => White
     };
