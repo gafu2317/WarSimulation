@@ -32,129 +32,229 @@ def hip(b,x,y,w,d,z,h):
         for sign in [-1,1]:b.beam('Slate courses',(x+sign*a,y-d2,zz),(x+sign*a,y+d2,zz),.035,'iron')
 
 
-def crenels(b,x,y,w,d,z,role='Battlements'):
-    # Each edge uses one regular pitch; corner blocks belong only to the front/back edges.
-    for yy in [-d/2,d/2]:
-        b.box(role+' parapet',(x,y+yy,z+.38),(w,.45,.75),'stone')
-    for xx in [-w/2,w/2]:
-        b.box(role+' parapet',(x+xx,y,z+.38),(.45,d,.75),'stone')
-    nx=max(2,round(w/1.25));ny=max(2,round(d/1.25))
-    for i in range(nx+1):
-        for yy in [-d/2,d/2]:
-            b.box(role+' merlon',(x-w/2+i*w/nx,y+yy,z+1.04),(.6,.6,.62),'stone')
-    for i in range(1,ny):
-        for xx in [-w/2,w/2]:
-            b.box(role+' merlon',(x+xx,y-d/2+i*d/ny,z+1.04),(.6,.6,.62),'stone')
+CUTOUTS=[]
+def clip(poly,axis,bound,positive):
+    result=[]
+    for a,c in zip(poly,poly[1:]+poly[:1]):
+        da=(a[axis]-bound)*(1 if positive else -1);dc=(c[axis]-bound)*(1 if positive else -1)
+        if da>=-1e-8:result.append(a)
+        if (da>0 and dc<0) or (da<0 and dc>0):
+            t=da/(da-dc);result.append(tuple(a[i]+t*(c[i]-a[i]) for i in range(3)))
+    return result
 
-def opening(b,x,y,z,w=.5,h=1.45,angle=0):
-    place(b,lambda:s.aperture(b,0,0,z,w,h,style='military'),x,y,angle=angle)
+def cut_rectangle(poly,box):
+    remaining=poly;outside=[]
+    for axis,value,inside_positive in [(0,box[0],True),(0,box[1],False),(1,box[2],True),(1,box[3],False)]:
+        piece=clip(remaining,axis,value,not inside_positive)
+        if len(piece)>2:outside.append(piece)
+        remaining=clip(remaining,axis,value,inside_positive)
+        if len(remaining)<3:break
+    return outside
 
-def shaft(b,name,x,y,w,d,h):
-    b.box(name+' masonry',(x,y,.4+h/2),(w,d,h),'stone')
-    b.box(name+' plinth',(x,y,.7),(w+.24,d+.24,.6),'shade')
-    for z in [1.2,h*.5,h+.2]:
-        b.box(name+' belt',(x,y,z),(w+.16,d+.16,.18),'trim')
-    for xx in [-w/2+.16,w/2-.16]:
-        for yy in [-d/2+.16,d/2-.16]:
-            b.box(name+' quoin',(x+xx,y+yy,.4+h/2),(.38,.38,h),'trim')
+def cut_circle(poly,circle):
+    x,y,r=circle
+    remaining=poly;outside=[]
+    for i in range(32):
+        a=(i+.5)*math.tau/32;nx=math.cos(a);ny=math.sin(a);limit=r*math.cos(math.pi/32)
+        def split(points,keep_inside):
+            result=[]
+            for u,v in zip(points,points[1:]+points[:1]):
+                du=(u[0]-x)*nx+(u[1]-y)*ny-limit
+                dv=(v[0]-x)*nx+(v[1]-y)*ny-limit
+                if (du<=1e-8 if keep_inside else du>=-1e-8):result.append(u)
+                if du*dv<0:
+                    t=du/(du-dv);result.append(tuple(u[j]+t*(v[j]-u[j]) for j in range(3)))
+            return result
+        part=split(remaining,False)
+        if len(part)>2:outside.append(part)
+        remaining=split(remaining,True)
+        if len(remaining)<3:break
+    return outside
 
-def tower(b,name,x,y,w,d,h,front=True,rear=True,left=True,right=True,crown_roof=False):
-    shaft(b,name,x,y,w,d,h)
-    b.box(name+' corbelled crown',(x,y,h+.42),(w+.55,d+.55,.32),'trim')
-    crenels(b,x,y,w+.3,d+.3,h+.6,name)
-    # Narrow defensive openings below; larger chambers only near the top.
-    for z in [2.5,6,9.5,13,16.5,20,23.5]:
-        if z+1.8>h:continue
-        if name=='Royal keep' and z<4:continue
-        ww=.22 if z<h-5 else .65
-        for yy,enabled,a in [(y-d/2-.09,front,0),(y+d/2+.09,rear,math.pi)]:
-            if enabled or (name=='Rear corner tower' and yy<y and z>=16.5):opening(b,x,yy,z,ww,1.55,a)
-        for xx,enabled,a in [(x-w/2-.09,left,-math.pi/2),(x+w/2+.09,right,math.pi/2)]:
-            if enabled or (name=='Rear corner tower' and z>=20):opening(b,xx,y,z,ww,1.55,a)
-    for xx in [-w*.3,0,w*.3]:
-        for yy in [y-d/2-.12,y+d/2+.12]:
-            b.box(name+' crown corbel',(x+xx,yy,h-.12),(.32,.5,.75),'trim')
-    if crown_roof:hip(b,x,y,w-1.5,d-1.5,h+.6,4.8)
+def roof(b,x,y,w,d,z,h,holes=()):
+    vs=[(x-w/2,y-d/2,z),(x+w/2,y-d/2,z),(x+w/2,y+d/2,z),(x-w/2,y+d/2,z),(x,y-d*.2,z+h),(x,y+d*.2,z+h)]
+    faces=[(0,1,4),(1,2,5,4),(2,3,5),(3,0,4,5)]
+    for f in faces:
+        polys=[[vs[i] for i in f]]
+        for hole in holes:polys=[p for poly in polys for p in (cut_circle(poly,hole) if len(hole)==3 else cut_rectangle(poly,hole))]
+        for poly in polys:b.mesh('Slate roofs',poly,[tuple(range(len(poly)))],'roof')
+    # Courses are clipped against the same holes as the roof surfaces.
+    for t in [.16,.32,.48,.64,.8]:
+        a=w/2*(1-t);dd=d/2*(1-t)+d*.2*t;zz=z+h*t+.025
+        segments=[((x-a,y-dd,zz),(x+a,y-dd,zz)),((x-a,y+dd,zz),(x+a,y+dd,zz)),((x-a,y-dd,zz),(x-a,y+dd,zz)),((x+a,y-dd,zz),(x+a,y+dd,zz))]
+        for start,end in segments:
+            pieces=[(start,end)]
+            for hole in holes:
+                xmin,xmax,ymin,ymax=(hole[0]-hole[2],hole[0]+hole[2],hole[1]-hole[2],hole[1]+hole[2]) if len(hole)==3 else hole
+                next_parts=[]
+                for a1,a2 in pieces:
+                    axis=0 if abs(a2[0]-a1[0])>.001 else 1;other=1-axis
+                    low,high=(xmin,xmax) if axis==0 else (ymin,ymax)
+                    ol,oh=(ymin,ymax) if other==1 else (xmin,xmax)
+                    if not ol<=a1[other]<=oh:next_parts.append((a1,a2));continue
+                    mn,mx=sorted([a1[axis],a2[axis]])
+                    for lo,hi in [(mn,min(mx,low)),(max(mn,high),mx)]:
+                        if hi-lo>.01:
+                            p=list(a1);q=list(a2);p[axis]=lo;q[axis]=hi;next_parts.append((tuple(p),tuple(q)))
+                pieces=next_parts
+            for a1,a2 in pieces:b.beam('Slate courses',a1,a2,.022,'iron',4)
 
-def gallery(b,x):
-    # An inhabited curtain joins the front and rear towers at flat end faces.
-    w=8;d=26;y=-1;h=10
-    shaft(b,'Residential curtain',x,y,w,d,h)
-    hip(b,x,y,6.3,25.8,h+.4,3.2)
-    for outer in [-1,1]:
-        xx=x+outer*4
-        b.box('Side wall parapet',(xx,y,h+.75),(.45,d,.7),'stone')
-        for i in range(21):b.box('Side wall merlon',(xx,y-d/2+(i+.5)*d/21,h+1.35),(.6,.6,.55),'stone')
-    inward=-1 if x>0 else 1
-    for yy in [-10,-5,0,5,10]:
-        for z in [2.2,5.6,8]:
-            opening(b,x+inward*4.1,yy,z,.65,1.5,inward*math.pi/2)
-        for z in [3.2,7]:
-            opening(b,x-inward*4.1,yy,z,.2,1.3,-inward*math.pi/2)
-    # Roof does not continue through the corner towers.
+def blocks(b,x,y,w,h,z=.45,side=False):
+    def draw():
+        for row in range(int(h/.65)):
+            zz=z+row*.65
+            b.beam('Stone horizontal joints',(x-w/2,y,zz),(x+w/2,y,zz),.012,'mortar',4)
+            for i in range(int(w/1.3)):
+                xx=x-w/2+(i+.5*(row%2))*1.3
+                if xx>x-w/2+.1:b.beam('Stone vertical joints',(xx,y,zz),(xx,y,min(zz+.65,z+h)),.011,'mortar',4)
+    if side:
+        place(b,draw,0,0,angle=math.pi/2)
+    else:draw()
 
-def rear_hall(b,x):
-    shaft(b,'Great hall',x,16,11,10,15)
-    hip(b,x,16,10.8,10.4,15.4,4)
-    for xx in [-3.6,0,3.6]:
-        for z in [2,5.3,8.6,11.9]:
-            opening(b,x+xx,10.9,z,.7,1.7)
-        for z in [3,7,11]:
-            opening(b,x+xx,21.1,z,.3,1.5,math.pi)
+def masonry(b,name,x,y,w,d,h):
+    b.box(name,(x,y,.4+h/2),(w,d,h),'stone')
+    b.box('Foundation courses',(x,y,.65),(w+.18,d+.18,.5),'shade')
+    for z in [1,h*.5,h+.25]:b.box('Building stringcourses',(x,y,z),(w+.12,d+.12,.16),'trim')
+    for yy in [y-d/2-.012,y+d/2+.012]:blocks(b,x,yy,w,h)
+    for xx in [x-w/2-.012,x+w/2+.012]:
+        for row in range(int(h/.65)):
+            z=.45+row*.65
+            b.beam('Stone side joints',(xx,y-d/2,z),(xx,y+d/2,z),.012,'mortar',4)
 
-def front_wall(b,x):
-    shaft(b,'Front curtain',x,-19,11,2.4,8)
-    crenels(b,x,-19,10.9,2.3,8.4,'Front curtain')
-    for xx in [-3,0,3]:opening(b,x+xx,-20.3,4,.2,1.2)
+def window(b,x,y,z,w=.6,h=1.65,a=0):
+    place(b,lambda:s.aperture(b,0,0,z,w,h,style='arcane'),x,y,angle=a)
 
-def gatehouse(b):
-    # A real open passage, surrounded by two substantial gatehouse towers.
-    for side in [-1,1]:
-        tower(b,'Gatehouse tower',side*5,-19,4,6,15,front=True,rear=True,left=side<0,right=side>0)
-        b.box('Gate passage pier',(side*2.5,-19,4.2),(1,6,7.6),'stone')
-        s.crest(b,side*6.2,-22.16,13.8,.8,2.6)
-    profile=[(-2,8),(2,8)]+[(2*math.cos(i*math.pi/20),3+2*math.sin(i*math.pi/20)) for i in range(21)]
-    b.prism('Open entrance vault',profile,-19,6,'stone')
-    for y in [-22.09,-15.91]:
-        b.curve('Entrance arch stones',[(2*math.cos(i*math.pi/20),y,3+2*math.sin(i*math.pi/20)) for i in range(21)],.2,'trim')
-        for side in [-1,1]:b.box('Entrance jamb',(side*2,y,1.7),(.4,.3,2.6),'trim')
-    b.box('Gate upper chamber',(0,-19,9.7),(6,6,3.4),'stone')
-    for xx in [-1.7,0,1.7]:opening(b,xx,-22.1,8.8,.5,1.5)
-    hip(b,0,-19,5.8,5.8,11.4,2.6)
-    for xx in [-1.5,-1,-.5,0,.5,1,1.5]:
-        b.box('Raised portcullis',(xx,-21.4,5.5),(.07,.09,1.2),'iron')
-    for y in [-24,-22.5]:b.box('Gate approach paving',(0,y,.43),(4,1.4,.06),'trim')
+def round_tower(b,name,x,y,r,h,spire,angles=(0,math.pi/2,math.pi,3*math.pi/2),windows_start=2.3):
+    b.cylinder(name,x,y,.4,r,h,'stone',32)
+    b.cylinder('Tower splayed footing',x,y,.4,r+.18,.7,'shade',32,r)
+    for row in range(1,int(h/.65)):
+        z=.4+row*.65
+        pts=[(x+(r+.012)*math.cos(i*math.tau/32),y+(r+.012)*math.sin(i*math.tau/32),z) for i in range(33)]
+        b.curve('Tower masonry courses',pts,.012,'mortar')
+    for z in [1,h*.5,h+.15]:b.cylinder('Tower carved belts',x,y,z,r+.1,.18,'trim',32)
+    for z in [windows_start+i*3.5 for i in range(9)]:
+        if z+1.8>=h:break
+        for a in angles:
+            place(b,lambda:window(b,0,-r-.07,z,.4,1.5),x,y,angle=a)
+    b.cylinder('Tower corbel cornice',x,y,h+.35,r+.36,.45,'trim',32)
+    for i in range(12):
+        a=i*math.tau/12
+        place(b,lambda:b.box('Tower corbels',(0,0,h-.05),(.3,.5,.75),'trim'),x+r*math.cos(a),y+r*math.sin(a),angle=a)
+    # Open circular parapet, with its roof set inside the wall-walk.
+    n=32;rr=r+.25;inner=r-.15;z=h+.57
+    for i in range(n):
+        a=i*math.tau/n;c=(i+1)*math.tau/n
+        pts=[(x+rad*math.cos(t),y+rad*math.sin(t),zz) for zz in [z,z+.65] for rad,t in [(inner,a),(rr,a),(rr,c),(inner,c)]]
+        b.mesh('Circular parapets',pts,[(0,1,2,3),(4,7,6,5),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)],'stone')
+    for i in range(12):
+        a=i*math.tau/12
+        place(b,lambda:b.box('Circular merlons',(0,0,z+.95),(.55,.55,.65),'stone'),x+(r+.04)*math.cos(a),y+(r+.04)*math.sin(a),angle=a)
+    b.cylinder('Conical slate spire',x,y,h+.6,r-.2,spire,'roof',32,.04)
+    for frac in [.2,.4,.6,.8]:
+        b.cylinder('Spire slate bands',x,y,h+.6+spire*frac,(r-.2)*(1-frac)+.018,.045,'iron',32)
+    b.beam('Gilt finials',(x,y,h+.6+spire),(x,y,h+spire+1.4),.06,'gold')
+
+def parapet(b,x,y,length,z):
+    b.box('Curtain parapet',(x,y,z+.35),(length,.45,.7),'stone')
+    count=round(length/1.3)
+    for i in range(count):b.box('Curtain merlons',(x-length/2+(i+.5)*length/count,y,z+.95),(.62,.55,.6),'stone')
+
+def wall(b,length):
+    masonry(b,'Outer curtain masonry',0,0,length,1.7,7)
+    for y in [-.7,.7]:parapet(b,0,y,length,7.4)
+    for xx in [-length*.3,0,length*.3]:window(b,xx,-.95,3.7,.2,1.2)
+
+def gate(b):
+    for sign in [-1,1]:
+        b.box('Gateway jamb masonry',(sign*2.8,-22,3.8),(1.6,3.8,6.8),'stone')
+    profile=[(-2,7.2),(2,7.2)]+[(2*math.cos(i*math.pi/20),3+2*math.sin(i*math.pi/20)) for i in range(21)]
+    b.prism('Open gateway vault',profile,-22,3.8,'stone')
+    for y in [-24.02,-19.98]:
+        b.curve('Gate arch stone ring',[(2*math.cos(i*math.pi/20),y,3+2*math.sin(i*math.pi/20)) for i in range(21)],.22,'trim')
+        for sign in [-1,1]:b.box('Gate jamb cut stones',(sign*2,y,1.65),(.4,.3,2.6),'trim')
+    b.box('Gate upper room',(0,-22,8.1),(7.2,3.8,1.8),'stone')
+    parapet(b,0,-23.85,7.2,9)
+    for xx in [-1.2,1.2]:window(b,xx,-24,7.45,.4,1.1)
+    for sign in [-1,1]:
+        round_tower(b,'Gate round tower',sign*4.5,-22,1.8,10.5,4.8,angles=(0,math.pi),windows_start=2.2)
+        s.crest(b,sign*4.5,-23.98,9.8,.75,2.3)
+    for xx in [-1.5,-1,-.5,0,.5,1,1.5]:b.box('Raised portcullis bars',(xx,-23,5.6),(.055,.07,.9),'iron')
 
 def grounds(b):
     b.box('Castle stone terrace',(0,0,.2),(60,54,.4),'paving')
-    # The inhabited wings ARE the defensive perimeter: there is no second enclosure.
     for sign in [-1,1]:
-        tower(b,'Front corner tower',sign*22,-18,8,8,15,front=True,rear=False,left=sign<0,right=sign>0)
-        tower(b,'Rear corner tower',sign*22,17,8,10,22,front=False,rear=True,left=sign<0,right=sign>0,crown_roof=True)
-        gallery(b,sign*22)
-        rear_hall(b,sign*12.5)
-        front_wall(b,sign*12.5)
-    # Keep and halls meet at vertical planes; roofs terminate before those planes.
-    tower(b,'Royal keep',0,16,14,12,26,front=True,rear=True,left=False,right=False,crown_roof=True)
-    s.aperture(b,0,9.86,.65,2,3,'door')
-    for i in range(3):b.box('Keep entry steps',(0,9.5-i*.3,.55-i*.06),(3.4,.4,.16),'trim')
-    for x in [-4,4]:
-        for z in [5,9,13,17,21]:
-            opening(b,x,9.9,z,.75,1.9)
-        s.crest(b,math.copysign(5.4,x),9.8,24.5,1,2.3)
-    b.beam('Royal standard pole',(0,16,31.4),(0,16,34),.065,'gold')
-    b.prism('Royal banner',[(.1,33.9),(2.4,33.7),(2,32.6),(.1,32.75)],16,.05,'red')
-    gatehouse(b)
-    b.box('Courtyard central paving',(0,-2.5,.425),(4,24,.05),'trim')
+        place(b,lambda:wall(b,38.7),sign*26,0,angle=sign*math.pi/2)
+        for yy in [-22,22]:round_tower(b,'Outer corner tower',sign*26,yy,2.7,11.2,5.6)
+    place(b,lambda:wall(b,46.8),0,22,angle=math.pi)
+    for sign in [-1,1]:place(b,lambda:wall(b,17.2),sign*14.85,-22)
+    gate(b)
+    # Castle body: broad central hall with attached wings, not a ring of separate buildings.
+    masonry(b,'Central great hall masonry',0,6.5,18,19,18)
+    masonry(b,'Upper keep masonry',0,8,8,8,27)
+    holes=[(-4.08,4.08,3.92,12.08)]
+    for sign in [-1,1]:
+        masonry(b,'Attached wing masonry',sign*13,2,8,28,10.6)
+        for yy,hh in [(-3,21),(16,23.5)]:
+            round_tower(b,'Body round tower',sign*9,yy,2,hh,6,angles=(0 if yy<0 else math.pi,),windows_start=2.2)
+            holes.append((sign*9,yy,2.015))
+        roof(b,sign*13,2,8.4,28.4,11,3.8,holes)
+        for xx in [sign*12.5,sign*15.5]:
+            for z in [2,5.5,8.5]:window(b,xx,-12.1,z,.6,1.5)
+        for yy in [-9,-5,-1,3,7,11,14]:
+            for z in [2,5.5,8.5]:window(b,sign*17.1,yy,z,.6,1.5,sign*math.pi/2)
+    for sign in [-1,1]:
+        for z in [2,5.5,8.5]:
+            for xx in [sign*12.5,sign*15.5]:window(b,xx,16.1,z,.6,1.5,math.pi)
+        for z in [3,7,11,15]:window(b,sign*6,16.1,z,.55,1.55,math.pi)
+        for z in [13.5,16.5]:
+            for yy in [1,6]:window(b,sign*9.1,yy,z,.55,1.5,sign*math.pi/2)
+        for z in [3,7,11,15]:window(b,sign*1.8,16.1,z,.55,1.55,math.pi)
+        for yy in [-9,-5]:
+            for z in [2,5.5,8.5]:window(b,sign*8.9,yy,z,.6,1.5,-sign*math.pi/2)
+    roof(b,0,6.5,18.4,19.4,18.4,5.6,holes)
+    roof(b,0,8,8.6,8.6,27.4,7)
+    for z in [5,8.5,12,15.5]:
+        for xx in [-4,0,4]:window(b,xx,-3.1,z,.85,2.05)
+    s.aperture(b,0,-3.14,.7,2,3,'door')
+    for i in range(3):b.box('Main entry steps',(0,-3.5-i*.3,.58-i*.07),(3.4,.4,.16),'trim')
+    for sign in [-1,1]:s.crest(b,sign*6,-3.17,16.7,1.2,4.5)
+    for a in [0,math.pi/2,math.pi,3*math.pi/2]:
+        for z in [25]:
+            place(b,lambda:window(b,0,-4.1,z,.75,1.55),0,8,angle=a)
+    for yy in [3.95,12.05]:parapet(b,0,yy,8.2,27.25)
+    for xx in [-4.05,4.05]:place(b,lambda:parapet(b,0,0,8.2,27.25),xx,8,angle=math.pi/2)
+    # Front-facing corbelled battlement below the principal roof.
+    parapet(b,0,-3.16,14,18.5)
+    for xx in range(-6,7):
+        b.box('Great hall corbels',(xx,-3.16,18.2),(.35,.55,.7),'trim')
+    b.beam('Royal flag pole',(0,8,34.4),(0,8,36.5),.065,'gold')
+    b.prism('Royal red flag',[(.1,36.4),(2.4,36.15),(2,35.25),(.1,35.4)],8,.045,'red')
+    b.box('Central approach',(0,-14,.425),(4,21,.05),'trim')
+    # Shallow planting beds sit outside the circulation route.
+    for sign in [-1,1]:
+        b.box('Side garden stone rim',(sign*20,2,.62),(1.6,5,.35),'trim')
+        b.box('Side garden soil',(sign*20,2,.82),(1.3,4.7,.08),'shade')
+        for yy in [.4,1.2,2,2.8,3.6]:
+            b.cylinder('Low garden shrubs',sign*20,yy,.85,.48,.55,'ground',8,.35)
+    for x in [-21,-20]:
+        b.box('Rear service crate',(x,12,.85),(.8,.8,.9),'wood')
+        for z in [.55,1.15]:b.box('Crate iron band',(x,12,z),(.83,.83,.06),'iron')
+
+
 
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene=bpy.context.scene
-    for key,color in dict(s.PALETTE,glass='26383D',stone='ABA18C',trim='C4B89C',roof='34414D',paving='7C7B70').items():
+    for key,color in dict(s.PALETTE,glass='26383D',stone='ABA18C',trim='C4B89C',roof='34414D',paving='7C7B70',mortar='8D8677').items():
         mapping={'stone':'Stone','trim':'StoneTrim','shade':'StoneShade','roof':'Roof','iron':'Iron','gold':'Brass','door':'Door','glass':'Window','paving':'Paving','wood':'Timber'}
         m=bpy.data.materials.get('Fantasy_'+mapping.get(key,''))
         if m is None:
             m=bpy.data.materials.new(key);m.diffuse_color=(*(int(color[i:i+2],16)/255 for i in [0,2,4]),1)
+        m.use_nodes=True
+        shader=next(n for n in m.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
+        shader.inputs['Base Color'].default_value=m.diffuse_color
+        shader.inputs['Roughness'].default_value=.85
+        shader.inputs['Emission Strength'].default_value=0
         s.MATS[key]=m
     b=s.Builder('Grand_Royal_Castle_Grounds');grounds(b);col,root=b.finish((0,0,0))
     root['plot_size_m']='60 x 54';root['plot_area_multiplier']=4;root['storey_height_m']=3.2
@@ -172,6 +272,6 @@ def main():
     scene.render.filepath=str(REVIEW/'GrandRoyalCastle_Top.png');bpy.ops.render.render(write_still=True)
     target=Vector((0,0,11));cam.location=target+Vector((-70,105,70));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.ortho_scale=88
     scene.render.filepath=str(REVIEW/'GrandRoyalCastle_Rear.png');bpy.ops.render.render(write_still=True)
-    (REVIEW/'validation.json').write_text(json.dumps(dict(design='integrated fortified royal castle',plot_m=[60,54],area_ratio=4,storey_height_m=3.2,independent_annexes=0,perimeter_wall_rings=1,source_sha256=hashlib.sha256(SOURCE.read_bytes()).hexdigest(),unity_updated=False),indent=2))
+    (REVIEW/'validation.json').write_text(json.dumps(dict(design='user reference: round spires, central castle, separate single curtain',plot_m=[60,54],area_ratio=4,storey_height_m=3.2,independent_annexes=0,perimeter_wall_rings=1,source_sha256=hashlib.sha256(SOURCE.read_bytes()).hexdigest(),unity_updated=False),indent=2))
 
 if __name__=='__main__':main()

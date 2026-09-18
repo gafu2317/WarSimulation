@@ -184,6 +184,53 @@ public sealed class CombatStatusIconTests
     }
 
     [Test]
+    public void Catalog_TrimsDebuffSpritesToVisibleBounds()
+    {
+        var catalog = CombatStatusEffectIconCatalog.Default;
+        Assert.That(catalog.GetSprite(CombatStatusIconKind.STRDebuff).rect,
+            Is.EqualTo(new Rect(361f, 314f, 248f, 309f)));
+        Assert.That(catalog.GetSprite(CombatStatusIconKind.INTDebuff).rect,
+            Is.EqualTo(new Rect(657f, 314f, 260f, 304f)));
+        Assert.That(catalog.GetSprite(CombatStatusIconKind.FAIDebuff).rect,
+            Is.EqualTo(new Rect(964f, 317f, 264f, 294f)));
+        Assert.That(catalog.GetSprite(CombatStatusIconKind.AGIDebuff).rect,
+            Is.EqualTo(new Rect(43f, 44f, 264f, 265f)));
+    }
+
+    [Test]
+    public void Row_UsesTrimmedSpriteAspectWithoutTransparentLayoutPadding()
+    {
+        var characterObject = new GameObject("Status test");
+        var rootObject = new GameObject("Status icons", typeof(RectTransform));
+        try
+        {
+            Character character = characterObject.AddComponent<Character>();
+            character.Health.Initialize(10);
+            character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 0.7f, 5f);
+
+            RectTransform root = rootObject.GetComponent<RectTransform>();
+            root.sizeDelta = new Vector2(168.3551f, 28.6652f);
+            var imageObject = new GameObject("StatusIcon", typeof(RectTransform), typeof(Image));
+            imageObject.transform.SetParent(root, false);
+            const float size = 28.6652f;
+            var row = new CombatStatusIconRow(root, size, 3f, TextAnchor.MiddleRight);
+            row.Refresh(character);
+
+            Image image = imageObject.GetComponent<Image>();
+            Sprite sprite = image.sprite;
+            float scale = size / Mathf.Max(sprite.rect.width, sprite.rect.height);
+            Assert.That(image.preserveAspect, Is.False);
+            Assert.That(image.rectTransform.sizeDelta.x, Is.EqualTo(sprite.rect.width * scale).Within(0.001f));
+            Assert.That(image.rectTransform.sizeDelta.y, Is.EqualTo(sprite.rect.height * scale).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(rootObject);
+            Object.DestroyImmediate(characterObject);
+        }
+    }
+
+    [Test]
     public void WorldBar_ShowsSameEffectsAsCardSourceAndHidesAtDeath()
     {
         var go = new GameObject("World status test");

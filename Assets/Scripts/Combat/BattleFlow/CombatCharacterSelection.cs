@@ -395,7 +395,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             DestroyGeneratedObject(_characterList.GetChild(i).gameObject);
         }
 
-        _characterList.sizeDelta = new Vector2(CharacterListWidth, 700f);
+        _characterList.sizeDelta = new Vector2(CharacterListWidth, 716f);
         CreateHeaderControls(_characterList);
 
         GameObject teamsObject = new GameObject(
@@ -603,7 +603,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         ConfigureToolbarLabel(_enemyPresetDefaultButton, 24f);
         ConfigureToolbarLabel(_enemyPresetNeutralButton, 24f);
         ConfigureToolbarLabel(_enemyPresetTopButton, 24f);
-        _enemyPresetRowRoot.SetActive(false);
+        _enemyPresetRowRoot.SetActive(true);
 
         RectTransform debugRow = CreateHorizontalRow(_headerRoot, "DebugRow", 92f, spacing: 10f);
         _debugRowRoot = debugRow.gameObject;
@@ -894,7 +894,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _detailSettingsOpen = open;
         if (_allyColumnRoot != null) _allyColumnRoot.SetActive(!open);
         if (_enemyColumnRoot != null) _enemyColumnRoot.SetActive(open);
-        if (_enemyPresetRowRoot != null) _enemyPresetRowRoot.SetActive(open);
+        if (_enemyPresetRowRoot != null) _enemyPresetRowRoot.SetActive(true);
         if (_debugRowRoot != null) _debugRowRoot.SetActive(!open);
         RefreshFormationPanelHeights();
         RefreshEnemyFormationButton();
@@ -918,13 +918,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             LayoutElement headerLayout = _headerRoot.GetComponent<LayoutElement>();
             if (headerLayout != null)
             {
-                headerLayout.preferredHeight = _detailSettingsOpen ? 160f : 204f;
+                headerLayout.preferredHeight = _detailSettingsOpen ? 160f : 260f;
             }
         }
 
         if (_teamSelectionsLayout != null)
         {
-            _teamSelectionsLayout.preferredHeight = _detailSettingsOpen ? 532f : 488f;
+            _teamSelectionsLayout.preferredHeight = _detailSettingsOpen ? 548f : 448f;
         }
     }
 
@@ -968,7 +968,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void ApplyEnemyPresetDefault()
     {
         ClosePicker();
-        ApplyDefaultParty(_enemyRows, useEnemyPersonalities: true, useEnemyWeapons: true);
+        ApplyDefaultParty(GetVisibleRows(), useEnemyPersonalities: true, useEnemyWeapons: true);
         Refresh();
     }
 
@@ -1002,9 +1002,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private void ApplyEnemyPreset(EnemyPresetDefinition preset)
     {
         ClosePicker();
-        for (int i = 0; i < _enemyRows.Count; i++)
+        List<SelectionRow> rows = GetVisibleRows();
+        for (int i = 0; i < rows.Count; i++)
         {
-            SelectionRow row = _enemyRows[i];
+            SelectionRow row = rows[i];
             bool selected = i < preset.Weapons.Length;
             row.Selected = selected;
             if (!selected) continue;
@@ -2168,27 +2169,32 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = true;
-        row.GetComponent<LayoutElement>().preferredHeight = 56f;
+        layout.childForceExpandHeight = false;
+        LayoutElement rowLayout = row.GetComponent<LayoutElement>();
+        rowLayout.minHeight = 56f;
+        rowLayout.preferredHeight = -1f;
 
         TMP_Text name = AddPickerDetailText(
             personality.DisplayNameJapanese,
             24f,
-            TextAlignmentOptions.Left,
+            TextAlignmentOptions.TopLeft,
             52f,
             row.transform);
         LayoutElement nameLayout = name.gameObject.GetComponent<LayoutElement>();
+        nameLayout.minWidth = 220f;
         nameLayout.preferredWidth = 220f;
         nameLayout.flexibleWidth = 0f;
 
         TMP_Text description = AddPickerDetailText(
             personality.BehaviorDescriptionJapanese,
             20f,
-            TextAlignmentOptions.Left,
-            52f,
+            TextAlignmentOptions.TopLeft,
+            0f,
             row.transform);
         LayoutElement descriptionLayout = description.gameObject.GetComponent<LayoutElement>();
         descriptionLayout.minWidth = 0f;
+        descriptionLayout.minHeight = 0f;
+        descriptionLayout.preferredHeight = -1f;
         descriptionLayout.flexibleWidth = 1f;
     }
 

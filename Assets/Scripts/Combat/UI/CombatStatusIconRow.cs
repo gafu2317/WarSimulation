@@ -7,6 +7,7 @@ public sealed class CombatStatusIconRow
     private readonly RectTransform _root;
     private readonly List<Image> _images = new();
     private readonly List<CombatStatusIconKind> _kinds = new();
+    private readonly List<Vector2> _sizes = new();
     private readonly float _size;
     private readonly float _gap;
     private readonly TextAnchor _alignment;
@@ -38,15 +39,26 @@ public sealed class CombatStatusIconRow
             _images.Add(child.GetComponent<Image>());
         }
 
-        float step = GetStep(_root.rect.width, _size, _gap, _kinds.Count);
-        float width = _kinds.Count == 0 ? 0f : _size + step * (_kinds.Count - 1);
+        CombatStatusEffectIconCatalog catalog = CombatStatusEffectIconCatalog.Default;
+        _sizes.Clear();
+        float iconWidth = 0f;
+        for (int i = 0; i < _kinds.Count; i++)
+        {
+            Sprite sprite = catalog != null ? catalog.GetSprite(_kinds[i]) : null;
+            Vector2 size = GetIconSize(sprite);
+            _sizes.Add(size);
+            iconWidth += size.x;
+        }
+
+        float gap = GetGap(_root.rect.width, iconWidth, _gap, _kinds.Count);
+        float width = _kinds.Count == 0 ? 0f : iconWidth + gap * (_kinds.Count - 1);
         float start = _alignment switch
         {
             TextAnchor.MiddleLeft => _root.rect.xMin,
             TextAnchor.MiddleRight => _root.rect.xMax - width,
             _ => -width / 2f,
         };
-        CombatStatusEffectIconCatalog catalog = CombatStatusEffectIconCatalog.Default;
+        float cursor = start;
         for (int i = 0; i < _images.Count; i++)
         {
             Image image = _images[i];
@@ -55,13 +67,15 @@ public sealed class CombatStatusIconRow
             image.sprite = catalog != null ? catalog.GetSprite(_kinds[i]) : null;
             image.enabled = image.sprite != null;
             image.color = Color.white;
-            image.preserveAspect = true;
+            image.preserveAspect = false;
             image.raycastTarget = false;
             RectTransform rect = image.rectTransform;
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = Vector2.one * _size;
-            rect.anchoredPosition = new Vector2(start + _size / 2f + i * step, 0f);
+            Vector2 iconSize = _sizes[i];
+            rect.sizeDelta = iconSize;
+            rect.anchoredPosition = new Vector2(cursor + iconSize.x / 2f, 0f);
+            cursor += iconSize.x + gap;
             // 左側を前面にすることで、右端に描かれた上下矢印を隠さない。
             rect.SetAsFirstSibling();
         }
@@ -71,5 +85,19 @@ public sealed class CombatStatusIconRow
     public static float GetStep(float width, float size, float gap, int count)
     {
         return count <= 1 ? 0f : Mathf.Max(0f, Mathf.Min(size + gap, (width - size) / (count - 1)));
+    }
+
+    private Vector2 GetIconSize(Sprite sprite)
+    {
+        if (sprite == null || sprite.rect.width <= 0f || sprite.rect.height <= 0f)
+            return Vector2.one * _size;
+
+        float scale = _size / Mathf.Max(sprite.rect.width, sprite.rect.height);
+        return sprite.rect.size * scale;
+    }
+
+    private static float GetGap(float width, float iconWidth, float gap, int count)
+    {
+        return count <= 1 ? 0f : Mathf.Min(gap, (width - iconWidth) / (count - 1));
     }
 }

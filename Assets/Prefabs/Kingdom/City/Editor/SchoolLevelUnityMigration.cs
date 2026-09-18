@@ -45,6 +45,8 @@ namespace WarSimulation.Kingdom.Schools
                 "Assets/Prefabs/Kingdom/City/Prefabs/SpiritAcademy.prefab"
             })
             {
+                if (AssetDatabase.LoadMainAssetAtPath(path) == null)
+                    continue;
                 if (!AssetDatabase.DeleteAsset(path))
                     throw new InvalidOperationException("Could not delete old school asset: " + path);
             }

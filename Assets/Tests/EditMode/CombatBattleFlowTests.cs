@@ -759,6 +759,43 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
+    public void CharacterSelection_PersonalityDetailsUseConsistentLeftAlignedColumns()
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+        try
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
+            selectionObject = Object.Instantiate(prefab);
+            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            selection.Initialize(CreateCharacters("Ally", CombatTeam.Ally, 1, characters),
+                CreateCharacters("Enemy", CombatTeam.Enemy, 1, characters), null);
+
+            IList rows = GetPrivateField<IList>(selection, "_allyRows");
+            GetPrivateField<Button>(rows[0], "PersonalityButton").onClick.Invoke();
+
+            IList options = GetPrivateField<IList>(selection, "_personalityOptions");
+            Transform details = GetPrivateField<Transform>(selection, "_pickerDetailsContent");
+            Assert.That(details.childCount, Is.EqualTo(options.Count));
+            for (int i = 0; i < details.childCount; i++)
+            {
+                TMP_Text[] labels = details.GetChild(i).GetComponentsInChildren<TMP_Text>();
+                Assert.That(labels, Has.Length.EqualTo(2));
+                Assert.That(labels[0].alignment, Is.EqualTo(TextAlignmentOptions.TopLeft));
+                Assert.That(labels[1].alignment, Is.EqualTo(TextAlignmentOptions.TopLeft));
+                Assert.That(labels[1].horizontalAlignment, Is.EqualTo(HorizontalAlignmentOptions.Left));
+            }
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            foreach (GameObject character in characters)
+                if (character != null) Object.DestroyImmediate(character);
+        }
+    }
+
+    [Test]
     public void CharacterSelection_BuildsTagalongTargetsFromPreviousSelectedRow()
     {
         GameObject selectionObject = null;
@@ -972,6 +1009,41 @@ public sealed class CombatBattleFlowTests
                 GetPrivateField<int>(allyRows[1], "WeaponIndex"),
                 Is.EqualTo(selection.WeaponOptions.Count - 1));
 
+            Button presetButton = GetPrivateField<Button>(selection, "_enemyPresetNeutralButton");
+            Assert.That(presetButton.gameObject.activeSelf, Is.True);
+            presetButton.onClick.Invoke();
+            WeaponKind[] expectedWeapons =
+            {
+                WeaponKind.Wand,
+                WeaponKind.Wand,
+                WeaponKind.Bible,
+                WeaponKind.Rosary,
+                WeaponKind.Grimoire,
+            };
+            CombatAiPersonalityKind[] expectedPersonalities =
+            {
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.BattleJunkie,
+            };
+            IList allyPersonalityOptions = GetPrivateField<IList>(selection, "_personalityOptions");
+            for (int i = 0; i < allyRows.Count; i++)
+            {
+                bool selected = i < expectedWeapons.Length;
+                Assert.That(GetPrivateField<bool>(allyRows[i], "Selected"), Is.EqualTo(selected));
+                if (!selected) continue;
+
+                int weaponIndex = GetPrivateField<int>(allyRows[i], "WeaponIndex");
+                Assert.That(selection.WeaponOptions[weaponIndex].Kind, Is.EqualTo(expectedWeapons[i]));
+
+                int personalityIndex = GetPrivateField<int>(allyRows[i], "PersonalityIndex");
+                Assert.That(
+                    ((CombatAiPersonalityProfile)allyPersonalityOptions[personalityIndex]).Kind,
+                    Is.EqualTo(expectedPersonalities[i]));
+            }
+
             GetPrivateField<Button>(selection, "_enemyFormationButton").onClick.Invoke();
             Button bulkPersonalityButton = GetPrivateField<Button>(selection, "_bulkPersonalityButton");
             bulkPersonalityButton.onClick.Invoke();
@@ -1001,23 +1073,7 @@ public sealed class CombatBattleFlowTests
                 GetPrivateField<int>(enemyRows[1], "PersonalityIndex"),
                 Is.EqualTo(personalityOptions.Count - 1));
 
-            GetPrivateField<Button>(selection, "_enemyPresetNeutralButton").onClick.Invoke();
-            WeaponKind[] expectedWeapons =
-            {
-                WeaponKind.Wand,
-                WeaponKind.Wand,
-                WeaponKind.Bible,
-                WeaponKind.Rosary,
-                WeaponKind.Grimoire,
-            };
-            CombatAiPersonalityKind[] expectedPersonalities =
-            {
-                CombatAiPersonalityKind.Neutral,
-                CombatAiPersonalityKind.Neutral,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.BattleJunkie,
-            };
+            presetButton.onClick.Invoke();
             for (int i = 0; i < enemyRows.Count; i++)
             {
                 bool selected = i < expectedWeapons.Length;

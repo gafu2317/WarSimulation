@@ -24,7 +24,8 @@ validation.jsonには座標の有限性、敷地内への収まり、接地、�
 壁と窓枠などの意図した重なりがある。全メッシュの交差を網羅的に検証したものではない。
 屋根は外観用の面で、内部・背面からの使用を想定していない。
 
-既存のFantasySchools.blendとUnity内のアセット・シーンは変更していない。
+旧いFantasySchools.blendは保持している。Unity側は最新のFantasySchoolLevels.blendから15種のFBX・Prefabを差し替え、
+アセットカタログも再構築した。旧い単体名の学校FBX・Prefabは残っていない。
 
 ## 装飾の再点検・整理
 3校×5レベルを正面右斜め・背面左斜めの計30視点で確認。
@@ -35,4 +36,6 @@ validation.jsonには座標の有限性、敷地内への収まり、接地、�
 - 屋上ブロックの均等配置、建物本体、同一敷地、発光なしを維持。
 *_Comparison.jpgが正面、*_Rear_Comparison.jpgが反対側の比較画像。
 意図した壁・枠の接合は残している。全ポリゴン交差ゼロを保証する検査ではない。
-Unity内のモデル・シーンは未更新。
+Unity側の取り込み結果は `docs/Art/SchoolLevelUnity/unity_validation.json`、
+FBXの寸法・部品数は `docs/Art/SchoolLevelUnity/export_manifest.json` に保存している。
+15種すべてがURP Lit、接地、寸法一致の検査に合格している。
