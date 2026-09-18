@@ -171,6 +171,7 @@ internal static partial class CombatEditModeTestUtil
         Assert.That(snapshot, Is.Not.Null);
         Assert.That(plan.Objective, Is.EqualTo(snapshot.Plan.Objective));
         Assert.That(plan.ActionCode, Is.EqualTo(snapshot.Plan.ActionCode));
+        Assert.That(plan.MovementRole, Is.EqualTo(snapshot.Plan.MovementRole));
         Assert.That(plan.MoveTarget.Kind, Is.EqualTo(snapshot.Plan.MoveTarget.Kind));
         Assert.That(plan.MoveTarget.Destination, Is.EqualTo(snapshot.Plan.MoveTarget.Destination));
         Assert.That(plan.MoveTarget.TargetCharacter, Is.EqualTo(snapshot.Plan.MoveTarget.TargetCharacter));
@@ -192,7 +193,10 @@ internal static partial class CombatEditModeTestUtil
         Character intendedTarget = null,
         bool hasIntendedDestination = false,
         Vector3 intendedDestination = default,
-        float moveSpeed = 3.5f)
+        float moveSpeed = 3.5f,
+        CombatAiMovementRole movementRole = CombatAiMovementRole.Unknown,
+        bool hasAssaultRouteKey = false,
+        string assaultRouteKey = null)
     {
         CombatHealth health = character != null ? character.Health : null;
         WeaponBase weapon = character != null ? character.EquippedWeapon ?? WeaponBase.Unarmed : WeaponBase.Unarmed;
@@ -217,7 +221,10 @@ internal static partial class CombatEditModeTestUtil
             moveSpeed: moveSpeed,
             intendedTarget: intendedTarget,
             hasIntendedDestination: hasIntendedDestination,
-            intendedDestination: intendedDestination);
+            intendedDestination: intendedDestination,
+            movementRole: movementRole,
+            hasAssaultRouteKey: hasAssaultRouteKey,
+            assaultRouteKey: assaultRouteKey);
     }
 
     internal sealed class AiPlannerBasicAttackSkill : SkillBase

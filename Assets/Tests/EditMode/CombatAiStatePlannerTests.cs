@@ -19,7 +19,7 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_SelectsEmergencyRetreatAtOrBelowFifteenPercentBeforePersonality()
+    public void Planner_SelectsRegroupAtOrBelowFifteenPercentBeforePersonality()
     {
         Character owner = CreateCharacter("Owner", new Shield(), new Vector3(30f, 0f, 0f), 100, 15);
         CombatAiContext context = Context(
@@ -31,14 +31,14 @@ public sealed class CombatAiStatePlannerTests
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
-        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EmergencyRetreat));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.ReturnOwnStone));
-        Assert.That(plan.MoveTarget.Destination, Is.EqualTo(Vector3.zero));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.Regroup));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.HoldPosition));
+        Assert.That(plan.MoveTarget.HasDestination, Is.False);
     }
 
     [Test]
-    public void Planner_DoesNotEmergencyRetreatAboveFifteenPercentWhenEnemyApproaches()
+    public void Planner_DoesNotRegroupAboveFifteenPercentWhenEnemyApproaches()
     {
         Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 16);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(31f, 0f, 0f), team: CombatTeam.Enemy);
@@ -51,11 +51,11 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
-        Assert.That(plan.Objective, Is.Not.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.Objective, Is.Not.EqualTo(CombatObjective.Regroup));
     }
 
     [Test]
-    public void Planner_ReleasesEmergencyRetreatInsideOwnStoneArea()
+    public void Planner_KeepsRegroupBelowFiftyPercentRegardlessOfOwnStoneDistance()
     {
         Character owner = CreateCharacter("Owner", new Sword(), new Vector3(17f, 0f, 0f), 100, 15);
         CombatAiContext context = Context(
@@ -66,15 +66,15 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(
             context,
             null,
-            previousObjective: CombatObjective.EmergencyRetreat,
+            previousObjective: CombatObjective.Regroup,
             previousMoveTarget: CombatMoveTarget.ForPosition(Vector3.zero));
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
-        Assert.That(plan.Objective, Is.Not.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.MoveTarget.HasDestination, Is.False);
     }
 
     [Test]
-    public void Planner_ReentersEmergencyRetreatAfterLeavingOwnStoneArea()
+    public void Planner_RegroupsRegardlessOfOwnStoneDistance()
     {
         Character owner = CreateCharacter("Owner", new Sword(), new Vector3(19f, 0f, 0f), 100, 15);
         CombatAiContext context = Context(
@@ -87,14 +87,14 @@ public sealed class CombatAiStatePlannerTests
             null,
             previousObjective: CombatObjective.AttackEnemy);
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
-        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.ReturnOwnStone));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.HoldPosition));
     }
 
     [Test]
-    public void Planner_RetainsRosaryEmergencyRetreatUntilHpReachesFiftyPercent()
+    public void Planner_RetainsRosaryRegroupUntilHpReachesFiftyPercent()
     {
-        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 49);
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
         Character rosary = CreateCharacter("Rosary", new Rosary(), new Vector3(25f, 0f, 0f));
         CombatAiContext context = Context(
             owner,
@@ -107,26 +107,26 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan waitingPlan = CombatAiPlanner.BuildPlan(
             context,
             null,
-            previousObjective: CombatObjective.EmergencyRetreat,
+            previousObjective: CombatObjective.Regroup,
             previousMoveTarget: initialPlan.MoveTarget);
 
-        Assert.That(initialPlan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(initialPlan.Objective, Is.EqualTo(CombatObjective.Regroup));
         Assert.That(initialPlan.MoveTarget.TargetCharacter, Is.SameAs(rosary));
-        Assert.That(waitingPlan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(waitingPlan.Objective, Is.EqualTo(CombatObjective.Regroup));
         Assert.That(waitingPlan.MoveTarget.TargetCharacter, Is.SameAs(rosary));
 
         owner.Health.Initialize(100, 50);
         CombatAiPlan recoveredPlan = CombatAiPlanner.BuildPlan(
             context,
             null,
-            previousObjective: CombatObjective.EmergencyRetreat,
+            previousObjective: CombatObjective.Regroup,
             previousMoveTarget: waitingPlan.MoveTarget);
 
-        Assert.That(recoveredPlan.Objective, Is.Not.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(recoveredPlan.Objective, Is.Not.EqualTo(CombatObjective.Regroup));
     }
 
     [Test]
-    public void Planner_ReusesEmergencyRetreatDestinationUntilItBecomesInvalid()
+    public void Planner_ReusesRegroupDestinationUntilItBecomesInvalid()
     {
         Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
         Character firstRosary = CreateCharacter("FirstRosary", new Rosary(), new Vector3(25f, 0f, 0f));
@@ -145,7 +145,7 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan retainedPlan = CombatAiPlanner.BuildPlan(
             closerAlternativeContext,
             null,
-            previousObjective: CombatObjective.EmergencyRetreat,
+            previousObjective: CombatObjective.Regroup,
             previousMoveTarget: initialPlan.MoveTarget);
 
         Assert.That(initialPlan.MoveTarget.TargetCharacter, Is.SameAs(firstRosary));
@@ -159,28 +159,222 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan fallbackPlan = CombatAiPlanner.BuildPlan(
             invalidTargetContext,
             null,
-            previousObjective: CombatObjective.EmergencyRetreat,
+            previousObjective: CombatObjective.Regroup,
             previousMoveTarget: retainedPlan.MoveTarget);
 
-        Assert.That(fallbackPlan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(fallbackPlan.Objective, Is.EqualTo(CombatObjective.Regroup));
         Assert.That(fallbackPlan.MoveTarget.TargetCharacter, Is.SameAs(secondRosary));
     }
 
     [Test]
-    public void Planner_HoldsEmergencyRetreatWhenNoDestinationIsAvailable()
+    public void Planner_RegroupChoosesTheRouteWithTheMostGatherableAllies()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 100, 15);
+        Character assaultAlly = CreateCharacter("AssaultAlly", new Sword(), new Vector3(1f, 0f, 0f));
+        Character combatAlly = CreateCharacter("CombatAlly", new Sword(), new Vector3(2f, 0f, 0f));
+        Character fixedAlly = CreateCharacter("FixedAlly", new Wand(), new Vector3(3f, 0f, 0f));
+        var routeA = new CombatAiAssaultRoute(
+            "A",
+            "A",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        var routeB = new CombatAiAssaultRoute(
+            "B",
+            "B",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 5f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext context = Context(
+            owner,
+            allies: new[]
+            {
+                RouteIntel(assaultAlly, CombatAiMovementRole.AssaultAdvance, CombatObjective.DestroyEnemyStone, "A"),
+                RouteIntel(combatAlly, CombatAiMovementRole.MobileCombat, CombatObjective.AttackEnemy, "A"),
+                RouteIntel(fixedAlly, CombatAiMovementRole.PositionSupport, CombatObjective.SupportAlly, "B"),
+            },
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { routeA, routeB });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.MovementRole, Is.EqualTo(CombatAiMovementRole.Regroup));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceAssaultRoute));
+        Assert.That(plan.MoveTarget.AssaultRouteKey, Is.EqualTo("A"));
+    }
+
+    [Test]
+    public void Planner_RegroupUsesAnAvailableRouteEvenWhenNoAllyIsGatherable()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 100, 15);
+        var route = new CombatAiAssaultRoute(
+            "OnlyRoute",
+            "OnlyRoute",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext context = Context(
+            owner,
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { route });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.AdvanceAssaultRoute));
+        Assert.That(plan.MoveTarget.HasAssaultRouteKey, Is.True);
+        Assert.That(plan.MoveTarget.AssaultRouteKey, Is.EqualTo("OnlyRoute"));
+    }
+
+    [Test]
+    public void Planner_RegroupPrefersACloserValidRosaryToTheSelectedRoute()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 100, 15);
+        Character rosary = CreateCharacter("Rosary", new Rosary(), new Vector3(2f, 0f, 0f));
+        var route = new CombatAiAssaultRoute(
+            "Route",
+            "Route",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext context = Context(
+            owner,
+            allies: new[] { Intel(rosary) },
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { route });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.SupportAlly));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(rosary));
+        Assert.That(plan.MoveTarget.HasAssaultRouteKey, Is.False);
+    }
+
+    [Test]
+    public void Planner_RegroupKeepsItsPreviousRouteWhileTheTargetRemainsValid()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 100, 15);
+        Character firstAlly = CreateCharacter("FirstAlly", new Sword(), new Vector3(1f, 0f, 0f));
+        Character secondAlly = CreateCharacter("SecondAlly", new Sword(), new Vector3(2f, 0f, 0f));
+        Character thirdAlly = CreateCharacter("ThirdAlly", new Sword(), new Vector3(3f, 0f, 0f));
+        var routeA = new CombatAiAssaultRoute(
+            "A",
+            "A",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        var routeB = new CombatAiAssaultRoute(
+            "B",
+            "B",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 5f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext initialContext = Context(
+            owner,
+            allies: new[]
+            {
+                RouteIntel(firstAlly, CombatAiMovementRole.AssaultAdvance, CombatObjective.DestroyEnemyStone, "A"),
+            },
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { routeA, routeB });
+        CombatAiPlan initialPlan = CombatAiPlanner.BuildPlan(initialContext, null);
+
+        CombatAiContext changedContext = Context(
+            owner,
+            allies: new[]
+            {
+                RouteIntel(firstAlly, CombatAiMovementRole.AssaultAdvance, CombatObjective.DestroyEnemyStone, "A"),
+                RouteIntel(secondAlly, CombatAiMovementRole.MobileCombat, CombatObjective.AttackEnemy, "B"),
+                RouteIntel(thirdAlly, CombatAiMovementRole.MobileSupport, CombatObjective.SupportAlly, "B"),
+            },
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { routeA, routeB });
+        CombatAiPlan retainedPlan = CombatAiPlanner.BuildPlan(
+            changedContext,
+            null,
+            previousObjective: CombatObjective.Regroup,
+            previousMoveTarget: initialPlan.MoveTarget);
+
+        Assert.That(initialPlan.MoveTarget.AssaultRouteKey, Is.EqualTo("A"));
+        Assert.That(retainedPlan.MoveTarget.AssaultRouteKey, Is.EqualTo("A"));
+    }
+
+    [Test]
+    public void Planner_UsesPlanRolesForRouteCongestionAndIncludesMobileCombat()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character fixedAlly = CreateCharacter("FixedAlly", new Wand(), new Vector3(1f, 0f, 0f));
+        Character regroupingAlly = CreateCharacter("RegroupingAlly", new Sword(), new Vector3(2f, 0f, 0f));
+        Character defendingAlly = CreateCharacter("DefendingAlly", new Shield(), new Vector3(3f, 0f, 0f));
+        Character unknownAlly = CreateCharacter("UnknownAlly", new Sword(), new Vector3(4f, 0f, 0f));
+        Character mobileAlly = CreateCharacter("MobileAlly", new Sword(), new Vector3(5f, 0f, 0f));
+        var routeA = new CombatAiAssaultRoute(
+            "A",
+            "A",
+            new[] { Vector3.zero, new Vector3(5f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        var routeB = new CombatAiAssaultRoute(
+            "B",
+            "B",
+            new[] { Vector3.zero, new Vector3(2f, 0f, 0f), new Vector3(10f, 0f, 0f) });
+        CombatAiContext context = Context(
+            owner,
+            allies: new[]
+            {
+                RouteIntel(fixedAlly, CombatAiMovementRole.PositionSupport, CombatObjective.SupportAlly, "A"),
+                RouteIntel(regroupingAlly, CombatAiMovementRole.Regroup, CombatObjective.Regroup, "A"),
+                RouteIntel(defendingAlly, CombatAiMovementRole.Independent, CombatObjective.DefendOwnStone, "A"),
+                RouteIntel(unknownAlly, CombatAiMovementRole.Unknown, CombatObjective.Search, "A"),
+                RouteIntel(mobileAlly, CombatAiMovementRole.MobileCombat, CombatObjective.AttackEnemy, "B"),
+            },
+            enemyStone: new Vector3(10f, 0f, 0f),
+            routes: new[] { routeA, routeB });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.MovementRole, Is.EqualTo(CombatAiMovementRole.AssaultAdvance));
+        Assert.That(plan.MoveTarget.AssaultRouteKey, Is.EqualTo("A"));
+    }
+
+    [Test]
+    public void Planner_AssignsRoutelessMobileCombatToTheNearestProjectedRoute()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character ally = CreateCharacter("MobileAlly", new Sword(), new Vector3(5f, 0f, 0f));
+        var routeA = new CombatAiAssaultRoute(
+            "A",
+            "A",
+            new[] { Vector3.zero, new Vector3(10f, 0f, 0f), new Vector3(20f, 0f, 0f) });
+        var routeB = new CombatAiAssaultRoute(
+            "B",
+            "B",
+            new[] { new Vector3(0f, 0f, 4f), new Vector3(10f, 0f, 4f), new Vector3(20f, 0f, 0f) });
+        CombatCharacterIntel allyIntel = CombatEditModeTestUtil.CreateIntel(
+            ally,
+            true,
+            ally.transform.position,
+            hasObjective: true,
+            objective: CombatObjective.AttackEnemy,
+            hasIntendedDestination: true,
+            intendedDestination: new Vector3(5f, 0f, 0.5f),
+            movementRole: CombatAiMovementRole.MobileCombat);
+        CombatAiContext context = Context(
+            owner,
+            allies: new[] { allyIntel },
+            enemyStone: new Vector3(20f, 0f, 0f),
+            routes: new[] { routeA, routeB });
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.MoveTarget.AssaultRouteKey, Is.EqualTo("B"));
+    }
+
+    [Test]
+    public void Planner_HoldsRegroupWhenNoDestinationIsAvailable()
     {
         Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
         CombatAiContext context = Context(owner);
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.HoldPosition));
         Assert.That(plan.MoveTarget.HasDestination, Is.False);
     }
 
     [Test]
-    public void Planner_DoesNotSelectAnAttackSkillDuringEmergencyRetreat()
+    public void Planner_DoesNotSelectAnAttackSkillDuringRegroup()
     {
         Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f), 100, 15);
         Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(31f, 0f, 0f), team: CombatTeam.Enemy);
@@ -193,12 +387,12 @@ public sealed class CombatAiStatePlannerTests
 
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
 
-        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.EmergencyRetreat));
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
         Assert.That(plan.Skill, Is.Null);
     }
 
     [Test]
-    public void Planner_DoesNotEmergencyRetreatFromEnemiesRememberedWithoutDirectSight()
+    public void Planner_DoesNotRegroupFromEnemiesRememberedWithoutDirectSight()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
         var memories = new List<CombatCharacterIntel>();
@@ -229,7 +423,7 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
-    public void Planner_DoesNotEmergencyRetreatAboveFifteenPercentWithoutActiveThreat()
+    public void Planner_DoesNotRegroupAboveFifteenPercentWithoutActiveThreat()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero, 30, 5);
         CombatAiContext context = Context(
@@ -665,6 +859,7 @@ public sealed class CombatAiStatePlannerTests
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
         Assert.That(plan.ActionCode, Is.EqualTo(CombatAiMoveCode.PersonalitySignature));
+        Assert.That(plan.MovementRole, Is.EqualTo(CombatAiMovementRole.PositionSupport));
         Assert.That(plan.MoveTarget.Destination, Is.EqualTo(highGround));
     }
 
@@ -999,6 +1194,7 @@ public sealed class CombatAiStatePlannerTests
         CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
 
         Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.MovementRole, Is.EqualTo(CombatAiMovementRole.MobileCombat));
         Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(enemy));
     }
 
@@ -1383,7 +1579,8 @@ public sealed class CombatAiStatePlannerTests
             hasObjective: true,
             objective: CombatObjective.DestroyEnemyStone,
             hasIntendedDestination: true,
-            intendedDestination: new Vector3(5f, 0f, 0f));
+            intendedDestination: new Vector3(5f, 0f, 0f),
+            movementRole: CombatAiMovementRole.AssaultAdvance);
         CombatAiContext context = Context(
             owner,
             allies: new[] { allyIntel },
@@ -1798,6 +1995,25 @@ public sealed class CombatAiStatePlannerTests
 
     private static CombatCharacterIntel Intel(Character character) =>
         CombatEditModeTestUtil.CreateIntel(character, true, character.transform.position);
+
+    private static CombatCharacterIntel RouteIntel(
+        Character character,
+        CombatAiMovementRole movementRole,
+        CombatObjective objective,
+        string routeId)
+    {
+        return CombatEditModeTestUtil.CreateIntel(
+            character,
+            true,
+            character.transform.position,
+            hasObjective: true,
+            objective: objective,
+            hasIntendedDestination: true,
+            intendedDestination: character.transform.position,
+            movementRole: movementRole,
+            hasAssaultRouteKey: true,
+            assaultRouteKey: routeId);
+    }
 
     private static WeaponBase CreateWeapon(WeaponKind kind)
     {

@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
@@ -31,7 +32,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
     [SerializeField] private Color _supportColor = new Color(0.45f, 1f, 0.55f, 1f);
     [SerializeField] private Color _searchColor = new Color(0.55f, 0.9f, 1f, 1f);
     [SerializeField] private Color _defendColor = new Color(0.65f, 0.8f, 1f, 1f);
-    [SerializeField] private Color _retreatColor = new Color(1f, 0.7f, 0.35f, 1f);
+    [SerializeField, FormerlySerializedAs("_retreatColor")] private Color _regroupColor = new Color(1f, 0.7f, 0.35f, 1f);
     [SerializeField] private Color _stoneColor = new Color(1f, 0.55f, 0.95f, 1f);
 
     private static Canvas s_overlayCanvas;
@@ -491,7 +492,7 @@ public sealed class CombatAiWorldLabel : MonoBehaviour
             CombatObjective.AttackEnemy => _attackColor,
             CombatObjective.SupportAlly => _supportColor,
             CombatObjective.Search => _searchColor,
-            CombatObjective.EmergencyRetreat => _retreatColor,
+            CombatObjective.Regroup => _regroupColor,
             _ => _defaultTextColor,
         };
     }

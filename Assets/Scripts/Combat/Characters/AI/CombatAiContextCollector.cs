@@ -344,7 +344,10 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 hasSnapshot ? characterSnapshot.MoveSpeed : agent != null ? agent.speed : 3.5f,
                 intendedTarget,
                 hasIntendedDestination,
-                hasIntendedDestination ? plan.MoveTarget.Destination : default));
+                hasIntendedDestination ? plan.MoveTarget.Destination : default,
+                plan.MovementRole,
+                plan.MoveTarget.HasAssaultRouteKey,
+                plan.MoveTarget.AssaultRouteKey));
         }
     }
 

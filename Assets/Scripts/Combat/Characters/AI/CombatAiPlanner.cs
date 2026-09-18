@@ -4,8 +4,8 @@ using UnityEngine;
 
 public static partial class CombatAiPlanner
 {
-    internal const float EmergencyRetreatTriggerHpRatio = 0.15f;
-    internal const float EmergencyRetreatReleaseHpRatio = 0.5f;
+    internal const float RegroupTriggerHpRatio = 0.15f;
+    internal const float RegroupReleaseHpRatio = 0.5f;
     private const float RosaryPreferredSupportDistance = 5.5f;
     private const float RosaryCloseHealDistance = 2.5f;
     private const float RosaryEnemyClearanceDistance = 6.5f;
@@ -41,7 +41,6 @@ public static partial class CombatAiPlanner
             assessment,
             personalityProfile,
             previousObjective,
-            previousMoveTarget,
             out reason);
 
         selectedStateReasons?.Clear();
@@ -109,17 +108,16 @@ public static partial class CombatAiPlanner
         CombatAiAssessment assessment,
         CombatAiPersonalityProfile personality,
         CombatObjective previousObjective,
-        CombatMoveTarget previousMoveTarget,
         out CombatAiReasonCode reason)
     {
         CombatAiPersonalityKind personalityKind = personality != null
             ? personality.Kind
             : CombatAiPersonalityKind.Neutral;
 
-        if (ShouldSelectEmergencyRetreat(context, previousObjective, previousMoveTarget))
+        if (ShouldSelectRegroup(context, previousObjective))
         {
-            reason = CombatAiReasonCode.EmergencyRetreat;
-            return CombatObjective.EmergencyRetreat;
+            reason = CombatAiReasonCode.Regroup;
+            return CombatObjective.Regroup;
         }
 
         if (personalityKind == CombatAiPersonalityKind.Gatekeeper && context.HasOwnStonePosition)
@@ -221,21 +219,13 @@ public static partial class CombatAiPlanner
         return CombatObjective.Search;
     }
 
-    private static bool ShouldSelectEmergencyRetreat(
+    private static bool ShouldSelectRegroup(
         CombatAiContext context,
-        CombatObjective previousObjective,
-        CombatMoveTarget previousMoveTarget)
+        CombatObjective previousObjective)
     {
         float hpRatio = GetHealthRatio(context.Owner);
-        if (hpRatio >= EmergencyRetreatReleaseHpRatio) return false;
-
-        if (previousObjective == CombatObjective.EmergencyRetreat)
-        {
-            if (IsEmergencyRetreatRosaryTarget(context, previousMoveTarget)) return true;
-            return !IsAtOwnStoneSafetyArea(context);
-        }
-
-        return hpRatio <= EmergencyRetreatTriggerHpRatio && !IsAtOwnStoneSafetyArea(context);
+        if (hpRatio >= RegroupReleaseHpRatio) return false;
+        return previousObjective == CombatObjective.Regroup || hpRatio <= RegroupTriggerHpRatio;
     }
 
     private static float GetHealthRatio(Character owner)
@@ -244,14 +234,7 @@ public static partial class CombatAiPlanner
         return owner.Health.HP / (float)owner.Health.MaxHP;
     }
 
-    private static bool IsAtOwnStoneSafetyArea(CombatAiContext context)
-    {
-        return context.HasOwnStonePosition &&
-            HorizontalDistance(context.Owner.transform.position, context.OwnStonePosition) <=
-            CombatAiAssessmentBuilder.OwnStoneAreaRadius;
-    }
-
-    private static bool IsEmergencyRetreatRosaryTarget(
+    private static bool IsRegroupRosaryTarget(
         CombatAiContext context,
         CombatMoveTarget moveTarget)
     {
@@ -301,9 +284,9 @@ public static partial class CombatAiPlanner
 
             hasHighGroundMove = IsUsableMove(context, highGroundTarget);
         }
-        if (state == CombatObjective.EmergencyRetreat)
+        if (state == CombatObjective.Regroup)
         {
-            moveTarget = BuildEmergencyRetreatMove(context, previousState, previousMoveTarget, out actionCode);
+            moveTarget = BuildRegroupMove(context, previousState, previousMoveTarget, out actionCode);
         }
         else if (usesRevengeTarget)
         {
@@ -372,40 +355,110 @@ public static partial class CombatAiPlanner
             preferredTarget,
             out SkillBase skill,
             out SkillExecutionContext skillContext);
-        if (usesHighGround && isAtHighGround && state != CombatObjective.EmergencyRetreat)
+        if (usesHighGround && isAtHighGround && state != CombatObjective.Regroup)
         {
             actionCode = CombatAiMoveCode.PersonalitySignature;
             moveTarget = skill != null
                 ? CombatMoveTarget.None
                 : CreateHighGroundActionTarget(context, state);
         }
-        return new CombatAiPlan(state, moveTarget, skill, skillContext, actionCode, reason);
+        CombatAiMovementRole movementRole = DetermineMovementRole(
+            state,
+            actionCode,
+            usesHighGround,
+            isAtHighGround,
+            hasHighGroundMove,
+            usesTagalongTarget,
+            usesRevengeTarget,
+            tagalongLeader);
+        return new CombatAiPlan(state, moveTarget, skill, skillContext, actionCode, reason, movementRole);
     }
 
-    private static CombatMoveTarget BuildEmergencyRetreatMove(
+    private static CombatAiMovementRole DetermineMovementRole(
+        CombatObjective state,
+        string actionCode,
+        bool usesHighGround,
+        bool isAtHighGround,
+        bool hasHighGroundMove,
+        bool usesTagalongTarget,
+        bool usesRevengeTarget,
+        CombatCharacterIntel tagalongLeader)
+    {
+        if (state == CombatObjective.Regroup) return CombatAiMovementRole.Regroup;
+
+        bool isPositionSupport = usesHighGround &&
+            (isAtHighGround || hasHighGroundMove || actionCode == CombatAiMoveCode.PersonalitySignature);
+        if (isPositionSupport || actionCode == CombatAiMoveCode.TakeHighGround)
+        {
+            return CombatAiMovementRole.PositionSupport;
+        }
+
+        if (usesRevengeTarget) return CombatAiMovementRole.Independent;
+
+        if (usesTagalongTarget)
+        {
+            return IsGatherableMovementRole(tagalongLeader.MovementRole)
+                ? CombatAiMovementRole.MobileSupport
+                : CombatAiMovementRole.Independent;
+        }
+
+        return state switch
+        {
+            CombatObjective.DestroyEnemyStone => CombatAiMovementRole.AssaultAdvance,
+            CombatObjective.AttackEnemy => CombatAiMovementRole.MobileCombat,
+            CombatObjective.SupportAlly => CombatAiMovementRole.MobileSupport,
+            _ => CombatAiMovementRole.Independent,
+        };
+    }
+
+    private static bool IsGatherableMovementRole(CombatAiMovementRole role)
+    {
+        return role == CombatAiMovementRole.AssaultAdvance ||
+            role == CombatAiMovementRole.MobileCombat ||
+            role == CombatAiMovementRole.MobileSupport;
+    }
+
+    private static CombatMoveTarget BuildRegroupMove(
         CombatAiContext context,
         CombatObjective previousState,
         CombatMoveTarget previousMoveTarget,
         out string actionCode)
     {
-        if (previousState == CombatObjective.EmergencyRetreat &&
-            TryReuseEmergencyRetreatTarget(context, previousMoveTarget, out CombatMoveTarget retainedTarget, out actionCode))
+        if (previousState == CombatObjective.Regroup &&
+            TryReuseRegroupTarget(context, previousMoveTarget, out CombatMoveTarget retainedTarget, out actionCode))
         {
             return retainedTarget;
         }
 
-        CombatMoveTarget selected = CombatMoveTarget.None;
-        float selectedDistance = float.PositiveInfinity;
-        string selectedActionCode = CombatAiMoveCode.HoldPosition;
-
-        CombatMoveTarget ownStone = CreateOwnStoneTarget(context);
-        if (IsUsableMove(context, ownStone))
+        CombatMoveTarget route = CreateMostPopulatedAssaultTarget(context, out string routeActionCode);
+        if (!route.HasDestination)
         {
-            selected = ownStone;
-            selectedDistance = HorizontalDistance(context.Owner.transform.position, ownStone.Destination);
-            selectedActionCode = CombatAiMoveCode.ReturnOwnStone;
+            route = CreateNearestAssaultTarget(context, out routeActionCode);
         }
 
+        CombatMoveTarget rosary = CreateNearestRegroupRosaryTarget(context, route);
+        if (rosary.HasDestination)
+        {
+            actionCode = CombatAiMoveCode.SupportAlly;
+            return rosary;
+        }
+
+        if (route.HasDestination)
+        {
+            actionCode = routeActionCode;
+            return route;
+        }
+
+        actionCode = CombatAiMoveCode.HoldPosition;
+        return CombatMoveTarget.None;
+    }
+
+    private static CombatMoveTarget CreateNearestRegroupRosaryTarget(
+        CombatAiContext context,
+        CombatMoveTarget routeTarget)
+    {
+        CombatMoveTarget best = CombatMoveTarget.None;
+        float bestDistance = float.PositiveInfinity;
         for (int i = 0; i < context.AllyIntel.Count; i++)
         {
             CombatCharacterIntel ally = context.AllyIntel[i];
@@ -415,18 +468,18 @@ public static partial class CombatAiPlanner
             if (!IsUsableMove(context, rosary)) continue;
 
             float distance = HorizontalDistance(context.Owner.transform.position, ally.CurrentPosition);
-            if (distance >= selectedDistance) continue;
-
-            selected = rosary;
-            selectedDistance = distance;
-            selectedActionCode = CombatAiMoveCode.SupportAlly;
+            if (distance >= bestDistance) continue;
+            best = rosary;
+            bestDistance = distance;
         }
 
-        actionCode = selectedActionCode;
-        return selected;
+        if (!best.HasDestination || !routeTarget.HasDestination) return best;
+        return bestDistance < HorizontalDistance(context.Owner.transform.position, routeTarget.Destination)
+            ? best
+            : CombatMoveTarget.None;
     }
 
-    private static bool TryReuseEmergencyRetreatTarget(
+    private static bool TryReuseRegroupTarget(
         CombatAiContext context,
         CombatMoveTarget previousMoveTarget,
         out CombatMoveTarget retainedTarget,
@@ -435,18 +488,20 @@ public static partial class CombatAiPlanner
         retainedTarget = CombatMoveTarget.None;
         actionCode = CombatAiMoveCode.HoldPosition;
 
-        if (previousMoveTarget.Kind == CombatMoveTargetKind.Position && context.HasOwnStonePosition &&
-            HorizontalDistance(previousMoveTarget.Destination, context.OwnStonePosition) <= 0.01f)
+        if (previousMoveTarget.HasAssaultRouteKey &&
+            TryCreateAssaultRouteAdvanceTarget(
+                context,
+                previousMoveTarget.AssaultRouteKey,
+                out string routeActionCode,
+                out CombatMoveTarget routeTarget) &&
+            IsUsableMove(context, routeTarget))
         {
-            CombatMoveTarget ownStone = CreateOwnStoneTarget(context);
-            if (!IsUsableMove(context, ownStone)) return false;
-
-            retainedTarget = ownStone;
-            actionCode = CombatAiMoveCode.ReturnOwnStone;
+            retainedTarget = routeTarget;
+            actionCode = routeActionCode;
             return true;
         }
 
-        if (!IsEmergencyRetreatRosaryTarget(context, previousMoveTarget)) return false;
+        if (!IsRegroupRosaryTarget(context, previousMoveTarget)) return false;
 
         CombatMoveTarget rosary = CombatMoveTarget.ForCharacter(previousMoveTarget.TargetCharacter);
         if (!IsUsableMove(context, rosary)) return false;
@@ -777,7 +832,7 @@ public static partial class CombatAiPlanner
         CombatObjective state,
         SkillBase skill)
     {
-        if (state == CombatObjective.EmergencyRetreat)
+        if (state == CombatObjective.Regroup)
         {
             return CombatAiSkillClassifier.IsHeal(skill) ||
                 CombatAiSkillClassifier.IsProtect(skill) ||
@@ -792,7 +847,7 @@ public static partial class CombatAiPlanner
 
         return state switch
         {
-            CombatObjective.EmergencyRetreat => CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill),
+            CombatObjective.Regroup => CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill),
             CombatObjective.SupportAlly => CombatAiSkillClassifier.IsSupport(skill),
             CombatObjective.Search => CombatAiSkillClassifier.IsMobility(skill) || CombatAiSkillClassifier.IsStealth(skill),
             CombatObjective.DestroyEnemyStone => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsBuff(skill),
@@ -888,9 +943,9 @@ public static partial class CombatAiPlanner
     {
         return state switch
         {
-            CombatObjective.EmergencyRetreat when CombatAiSkillClassifier.IsProtect(skill) => 0,
-            CombatObjective.EmergencyRetreat when CombatAiSkillClassifier.IsHeal(skill) => 1,
-            CombatObjective.EmergencyRetreat => 2,
+            CombatObjective.Regroup when CombatAiSkillClassifier.IsProtect(skill) => 0,
+            CombatObjective.Regroup when CombatAiSkillClassifier.IsHeal(skill) => 1,
+            CombatObjective.Regroup => 2,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsHeal(skill) => 0,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsProtect(skill) => 1,
             CombatObjective.SupportAlly => 2,
@@ -1400,42 +1455,33 @@ public static partial class CombatAiPlanner
 
     private static CombatMoveTarget CreateLeastCongestedAssaultTarget(CombatAiContext context, out string actionCode)
     {
-        CombatMoveTarget best = CombatMoveTarget.None;
-        int lowestCongestion = int.MaxValue;
-        float shortestDistance = float.PositiveInfinity;
-        for (int i = 0; i < context.AssaultRoutes.Count; i++)
-        {
-            CombatAiAssaultRoute route = context.AssaultRoutes[i];
-            CreateAssaultRouteAdvanceCandidate(context, route, out _, out _, out CombatMoveTarget target);
-            if (!IsUsableMove(context, target)) continue;
-            int congestion = CountAlliesUsingRoute(context, route);
-            float distance = HorizontalDistance(context.Owner.transform.position, target.Destination);
-            if (congestion > lowestCongestion || congestion == lowestCongestion && distance >= shortestDistance) continue;
-            lowestCongestion = congestion;
-            shortestDistance = distance;
-            best = target;
-        }
-
-        actionCode = best.HasAssaultRouteKey ? CombatAiMoveCode.AdvanceAssaultRoute : CombatAiMoveCode.AdvanceEnemyStone;
-        return best;
+        return SelectAssaultRouteTarget(
+            context,
+            AssaultRouteSelectionMode.LeastParticipants,
+            requireParticipants: false,
+            out actionCode);
     }
 
-    private static int CountAlliesUsingRoute(CombatAiContext context, CombatAiAssaultRoute route)
+    private static CombatMoveTarget CreateMostPopulatedAssaultTarget(
+        CombatAiContext context,
+        out string actionCode)
     {
-        int count = 0;
-        for (int i = 0; i < context.AllyIntel.Count; i++)
-        {
-            CombatCharacterIntel ally = context.AllyIntel[i];
-            if (!ally.CanAct || !ally.HasIntendedDestination) continue;
-            for (int j = 0; j < route.Corners.Count; j++)
-            {
-                if (HorizontalDistance(ally.IntendedDestination, route.Corners[j]) > 4f) continue;
-                count++;
-                break;
-            }
-        }
+        return SelectAssaultRouteTarget(
+            context,
+            AssaultRouteSelectionMode.MostParticipants,
+            requireParticipants: true,
+            out actionCode);
+    }
 
-        return count;
+    private static CombatMoveTarget CreateNearestAssaultTarget(
+        CombatAiContext context,
+        out string actionCode)
+    {
+        return SelectAssaultRouteTarget(
+            context,
+            AssaultRouteSelectionMode.Nearest,
+            requireParticipants: false,
+            out actionCode);
     }
 
     private static bool IsUsableMove(CombatAiContext context, CombatMoveTarget target)

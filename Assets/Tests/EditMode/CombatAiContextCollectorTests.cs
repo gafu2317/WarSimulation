@@ -94,6 +94,98 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Collect_PropagatesReservedPlanMovementRoleAndAssaultRoute()
+    {
+        AiContextFixture fixture = CreateFixture();
+        try
+        {
+            var reservations = new CombatAiTeamReservations();
+            CombatAiPlan reservedPlan = new CombatAiPlan(
+                CombatObjective.DestroyEnemyStone,
+                CombatMoveTarget.ForPosition(new Vector3(6f, 0f, 6f), "RouteA"),
+                null,
+                SkillExecutionContext.None,
+                CombatAiMoveCode.AdvanceAssaultRoute,
+                CombatAiReasonCode.EnemyStoneKnown,
+                CombatAiMovementRole.MobileSupport);
+            reservations.Reserve(fixture.Owner, reservedPlan);
+
+            CombatAiContext context = fixture.Collector.Collect(
+                fixture.Observer,
+                reservations,
+                perceptionPrepared: false,
+                hasBlockedMoveDestination: false,
+                blockedMoveDestination: default);
+            CombatCharacterIntel ally = FindIntel(context.AllyIntel, fixture.Owner);
+
+            Assert.That(ally.HasObjective, Is.True);
+            Assert.That(ally.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+            Assert.That(ally.MovementRole, Is.EqualTo(CombatAiMovementRole.MobileSupport));
+            Assert.That(ally.HasAssaultRouteKey, Is.True);
+            Assert.That(ally.AssaultRouteKey, Is.EqualTo("RouteA"));
+            Assert.That(ally.HasIntendedDestination, Is.True);
+            Assert.That(ally.IntendedDestination, Is.EqualTo(new Vector3(6f, 0f, 6f)));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
+    public void Collect_PropagatesPreviousAndSnapshotPlanMovementRoleAndAssaultRoute()
+    {
+        AiContextFixture fixture = CreateFixture();
+        try
+        {
+            CombatAiPlan previousPlan = new CombatAiPlan(
+                CombatObjective.AttackEnemy,
+                CombatMoveTarget.ForPosition(new Vector3(7f, 0f, 7f), "RouteB"),
+                null,
+                SkillExecutionContext.None,
+                CombatAiMoveCode.AdvanceAssaultRoute,
+                CombatAiReasonCode.EnemyInRange,
+                CombatAiMovementRole.MobileCombat);
+            CombatAiBrain brain = fixture.OwnerGo.AddComponent<CombatAiBrain>();
+            CombatEditModeTestUtil.SetPrivateField(
+                brain,
+                "<LastPlan>k__BackingField",
+                previousPlan);
+            CombatEditModeTestUtil.SetPrivateField(
+                brain,
+                "<LastContext>k__BackingField",
+                fixture.Collector.Collect(fixture.Owner));
+
+            CombatAiContext previousContext = fixture.Collector.Collect(fixture.Observer);
+            CombatCharacterIntel previousIntel = FindIntel(previousContext.AllyIntel, fixture.Owner);
+            Assert.That(previousIntel.MovementRole, Is.EqualTo(CombatAiMovementRole.MobileCombat));
+            Assert.That(previousIntel.AssaultRouteKey, Is.EqualTo("RouteB"));
+
+            CombatAiWorldSnapshot snapshot = CombatAiWorldSnapshot.Capture(
+                new[] { fixture.Observer, fixture.Owner },
+                System.Array.Empty<Character>(),
+                fixture.MapSystem);
+            CombatAiContext snapshotContext = fixture.Collector.Collect(
+                fixture.Observer,
+                reservations: null,
+                perceptionPrepared: false,
+                hasBlockedMoveDestination: false,
+                blockedMoveDestination: default,
+                recentAttacker: null,
+                worldSnapshot: snapshot);
+            CombatCharacterIntel snapshotIntel = FindIntel(snapshotContext.AllyIntel, fixture.Owner);
+
+            Assert.That(snapshotIntel.MovementRole, Is.EqualTo(CombatAiMovementRole.MobileCombat));
+            Assert.That(snapshotIntel.HasAssaultRouteKey, Is.True);
+            Assert.That(snapshotIntel.AssaultRouteKey, Is.EqualTo("RouteB"));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
     public void Collect_UsesSeventyPercentOfMountainExtentForHighGround()
     {
         AiContextFixture fixture = CreateFixture();

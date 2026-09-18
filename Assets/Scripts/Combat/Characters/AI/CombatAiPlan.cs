@@ -6,7 +6,8 @@ public readonly struct CombatAiPlan
         null,
         SkillExecutionContext.None,
         CombatAiMoveCode.HoldPosition,
-        CombatAiReasonCode.None);
+        CombatAiReasonCode.None,
+        CombatAiMovementRole.Unknown);
 
     public CombatObjective Objective { get; }
     public CombatMoveTarget MoveTarget { get; }
@@ -15,6 +16,7 @@ public readonly struct CombatAiPlan
     public SkillExecutionContext SkillContext { get; }
     public string ActionCode { get; }
     public CombatAiReasonCode TransitionReason { get; }
+    public CombatAiMovementRole MovementRole { get; }
 
     public CombatAiPlan(
         CombatObjective objective,
@@ -53,6 +55,25 @@ public readonly struct CombatAiPlan
         SkillExecutionContext skillContext,
         string actionCode,
         CombatAiReasonCode transitionReason)
+        : this(
+            objective,
+            moveTarget,
+            skill,
+            skillContext,
+            actionCode,
+            transitionReason,
+            CombatAiMovementRole.Unknown)
+    {
+    }
+
+    public CombatAiPlan(
+        CombatObjective objective,
+        CombatMoveTarget moveTarget,
+        SkillBase skill,
+        SkillExecutionContext skillContext,
+        string actionCode,
+        CombatAiReasonCode transitionReason,
+        CombatAiMovementRole movementRole)
     {
         Objective = objective;
         MoveTarget = moveTarget;
@@ -61,5 +82,6 @@ public readonly struct CombatAiPlan
         SkillTarget = skillContext.PrimaryTarget;
         ActionCode = string.IsNullOrEmpty(actionCode) ? CombatAiMoveCode.HoldPosition : actionCode;
         TransitionReason = transitionReason;
+        MovementRole = movementRole;
     }
 }

@@ -296,9 +296,12 @@ public readonly struct CombatCharacterIntel
     public IReadOnlyList<CombatStatusEffectSnapshot> StatusEffects { get; }
     public bool HasObjective { get; }
     public CombatObjective Objective { get; }
+    public CombatAiMovementRole MovementRole { get; }
     public Character IntendedTarget { get; }
     public bool HasIntendedDestination { get; }
     public Vector3 IntendedDestination { get; }
+    public bool HasAssaultRouteKey { get; }
+    public string AssaultRouteKey { get; }
 
     public CombatCharacterIntel(
         Character character,
@@ -321,7 +324,10 @@ public readonly struct CombatCharacterIntel
         float moveSpeed = 3.5f,
         Character intendedTarget = null,
         bool hasIntendedDestination = false,
-        Vector3 intendedDestination = default)
+        Vector3 intendedDestination = default,
+        CombatAiMovementRole movementRole = CombatAiMovementRole.Unknown,
+        bool hasAssaultRouteKey = false,
+        string assaultRouteKey = null)
     {
         Character = character;
         Team = team;
@@ -341,8 +347,11 @@ public readonly struct CombatCharacterIntel
         StatusEffects = statusEffects ?? Array.Empty<CombatStatusEffectSnapshot>();
         HasObjective = hasObjective;
         Objective = objective;
+        MovementRole = movementRole;
         IntendedTarget = intendedTarget;
         HasIntendedDestination = hasIntendedDestination;
         IntendedDestination = intendedDestination;
+        HasAssaultRouteKey = hasAssaultRouteKey;
+        AssaultRouteKey = assaultRouteKey;
     }
 }
