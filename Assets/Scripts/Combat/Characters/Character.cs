@@ -238,19 +238,23 @@ public class Character : MonoBehaviour
     public void SetTeam(CombatTeam team)
     {
         _team = team;
-        ApplyTeamColor();
+        ApplyTeamOutline();
     }
 
-    private void ApplyTeamColor()
+    private void ApplyTeamOutline()
     {
         Color teamColor = _team == CombatTeam.Enemy
             ? EnemyCharacterColor
             : AllyCharacterColor;
         SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+        var properties = new MaterialPropertyBlock();
 
         for (int i = 0; i < renderers.Length; i++)
         {
-            renderers[i].color = teamColor;
+            renderers[i].renderingLayerMask |= CombatCharacterOutlineFeature.RenderingLayer;
+            renderers[i].GetPropertyBlock(properties);
+            properties.SetColor("_CombatOutlineColor", teamColor);
+            renderers[i].SetPropertyBlock(properties);
         }
     }
 
