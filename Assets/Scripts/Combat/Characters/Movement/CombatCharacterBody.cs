@@ -415,7 +415,7 @@ public sealed class CombatCharacterBody : MonoBehaviour
 
         return owner != null &&
             owner.StatusEffects != null &&
-            (owner.StatusEffects.IsRooted || owner.StatusEffects.IsBound);
+            owner.StatusEffects.IsBound;
     }
 
     private static float HorizontalDistance(Vector3 a, Vector3 b)

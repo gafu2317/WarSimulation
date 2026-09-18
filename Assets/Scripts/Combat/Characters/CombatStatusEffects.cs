@@ -50,7 +50,6 @@ public sealed class CombatStatusEffects : MonoBehaviour
     {
         StatModifier,
         Invulnerable,
-        Root,
         Bind,
         Poison,
         HealOverTime,
@@ -209,15 +208,6 @@ public sealed class CombatStatusEffects : MonoBehaviour
             CombatEffectSource.Capture(source));
     }
 
-    public void ApplyRoot(float durationSeconds, string key = null, Character source = null)
-    {
-        ApplySimpleEffect(
-            EffectType.Root,
-            durationSeconds,
-            ResolveEffectKey(EffectType.Root, key),
-            CombatEffectSource.Capture(source));
-    }
-
     public void ApplyBind(float durationSeconds, string key = null, Character source = null)
     {
         ApplySimpleEffect(
@@ -264,7 +254,6 @@ public sealed class CombatStatusEffects : MonoBehaviour
     }
 
     public bool IsInvulnerable => HasActiveEffect(EffectType.Invulnerable);
-    public bool IsRooted => HasActiveEffect(EffectType.Root);
     public bool IsBound => HasActiveEffect(EffectType.Bind);
     public bool IsStealthed => HasActiveEffect(EffectType.Stealth);
 

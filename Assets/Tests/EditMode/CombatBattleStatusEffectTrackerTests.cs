@@ -164,7 +164,7 @@ public sealed class CombatBattleStatusEffectTrackerTests
             var tracker = CreateTracker(source, target);
 
             tracker.Record(CreateChange(target, source, "Neutral", CombatStatusEffectChangeKind.Applied, 1f, 5f), 0f);
-            tracker.Record(CreateChange(target, source, "Root", CombatStatusEffectChangeKind.Applied, 1.25f, 5f, CombatStatusEffects.EffectType.Root), 0f);
+            tracker.Record(CreateChange(target, source, "Bind", CombatStatusEffectChangeKind.Applied, 1.25f, 5f, CombatStatusEffects.EffectType.Bind), 0f);
             tracker.Record(CreateChange(target, unknownSource, "Unknown", CombatStatusEffectChangeKind.Applied, 1.25f, 5f), 0f);
             tracker.Complete(5f);
 

@@ -13,7 +13,6 @@ public enum CombatStatusIconKind
     INTDebuff,
     FAIDebuff,
     AGIDebuff,
-    Root,
     Poison,
     Bind,
 }

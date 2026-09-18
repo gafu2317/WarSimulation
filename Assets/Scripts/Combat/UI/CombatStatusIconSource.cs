@@ -17,9 +17,8 @@ public static class CombatStatusIconSource
         CombatStatusIconKind.Reflection => "ゴツメ",
         CombatStatusIconKind.ShoulderGuard => "肩代わり",
         CombatStatusIconKind.CarryRush => "高速移動",
-        CombatStatusIconKind.Root => "移動不能",
         CombatStatusIconKind.Poison => "毒",
-        CombatStatusIconKind.Bind => "行動不能",
+        CombatStatusIconKind.Bind => "金縛り",
         _ => kind.ToString(),
     };
 
@@ -57,7 +56,6 @@ public static class CombatStatusIconSource
                 return true;
             case CombatStatusEffects.EffectType.Invulnerable: kind = CombatStatusIconKind.Invulnerable; return true;
             case CombatStatusEffects.EffectType.Stealth: kind = CombatStatusIconKind.Stealth; return true;
-            case CombatStatusEffects.EffectType.Root: kind = CombatStatusIconKind.Root; return true;
             case CombatStatusEffects.EffectType.Bind: kind = CombatStatusIconKind.Bind; return true;
             case CombatStatusEffects.EffectType.Poison: kind = CombatStatusIconKind.Poison; return true;
             default: return false;

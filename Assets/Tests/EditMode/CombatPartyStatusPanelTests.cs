@@ -127,6 +127,7 @@ public sealed class CombatPartyStatusPanelTests
         Character character = CreateCharacter("Target", CombatTeam.Ally);
         character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.25f, 5f);
         character.StatusEffects.ApplyPoison(2, 5f, 1f);
+        character.StatusEffects.ApplyBind(5f);
         var viewObject = CreateMemberViewObject("MemberView");
         var view = viewObject.GetComponent<CombatPartyMemberView>();
 
@@ -135,6 +136,7 @@ public sealed class CombatPartyStatusPanelTests
 
         Assert.That(view.CurrentBuffDebuffText, Does.Contain("STRバフ"));
         Assert.That(view.CurrentBuffDebuffText, Does.Contain("毒"));
+        Assert.That(view.CurrentBuffDebuffText, Does.Contain("金縛り"));
 
         Object.DestroyImmediate(viewObject);
         Object.DestroyImmediate(character.gameObject);
@@ -147,7 +149,7 @@ public sealed class CombatPartyStatusPanelTests
         character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.25f, 5f);
         character.StatusEffects.ApplyPoison(2, 5f, 1f);
         character.StatusEffects.ApplyInvulnerable(5f);
-        character.StatusEffects.ApplyRoot(5f);
+        character.StatusEffects.ApplyBind(5f);
         var viewObject = CreateMemberViewObject("MemberView");
         var view = viewObject.GetComponent<CombatPartyMemberView>();
 
@@ -162,7 +164,7 @@ public sealed class CombatPartyStatusPanelTests
             Assert.That(icon.color, Is.EqualTo(Color.white));
             names.Add(icon.sprite.name);
         }
-        CollectionAssert.AreEquivalent(new[] { "STRBuff", "Poison", "Invulnerable", "Root" }, names);
+        CollectionAssert.AreEquivalent(new[] { "STRBuff", "Poison", "Invulnerable", "Bind" }, names);
         character.StatusEffects.ClearAll();
         view.Tick(0f);
         Assert.That(view.ActiveStatusIconCount, Is.Zero);

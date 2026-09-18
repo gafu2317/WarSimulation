@@ -203,7 +203,7 @@ public sealed class CombatStatusEffectsTests
     }
 
     [Test]
-    public void CombatStatusEffects_InvulnerableAndRootAreTracked()
+    public void CombatStatusEffects_InvulnerableAndBindAreTracked()
     {
         GameObject characterGo = new GameObject("Character");
         try
@@ -211,12 +211,12 @@ public sealed class CombatStatusEffectsTests
             CombatStatusEffects statusEffects = characterGo.AddComponent<Character>().StatusEffects;
 
             statusEffects.ApplyInvulnerable(4f);
-            statusEffects.ApplyRoot(3f);
+            statusEffects.ApplyBind(3f);
 
             Assert.That(statusEffects.IsInvulnerable, Is.True);
-            Assert.That(statusEffects.IsRooted, Is.True);
+            Assert.That(statusEffects.IsBound, Is.True);
             Assert.That(statusEffects.HasActiveEffect(CombatStatusEffects.EffectType.Invulnerable), Is.True);
-            Assert.That(statusEffects.HasActiveEffect(CombatStatusEffects.EffectType.Root), Is.True);
+            Assert.That(statusEffects.HasActiveEffect(CombatStatusEffects.EffectType.Bind), Is.True);
         }
         finally
         {
