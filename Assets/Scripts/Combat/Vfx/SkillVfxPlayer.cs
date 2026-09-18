@@ -106,7 +106,7 @@ public sealed class SkillVfxPlayer : MonoBehaviour
                 var hit = result.Effects[i];
                 if (hit.Kind != CombatActionEffectKind.StatusApplied && hit.Kind != CombatActionEffectKind.StatusRefreshed &&
                     hit.Kind != CombatActionEffectKind.PersistentEffectStarted) continue;
-                Character recipient = id == SkillId.Bible_CarryRush ? actor : hit.Target;
+                Character recipient = hit.Target;
                 if (recipient == null) continue;
                 for (int j = _active.Count - 1; j >= 0; j--)
                     if (_active[j].Skill == id && _active[j].FollowCharacter == recipient) Release(j);

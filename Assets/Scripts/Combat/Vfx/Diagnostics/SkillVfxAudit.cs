@@ -21,6 +21,7 @@ public sealed class SkillVfxAudit : MonoBehaviour
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
     private string _folder;
     private CombatSkillActionResult _lastAction;
+    private static readonly int SkillCount = Enum.GetValues(typeof(SkillId)).Length - 1;
 
     public void BeginPreview()
     {
@@ -91,7 +92,6 @@ public sealed class SkillVfxAudit : MonoBehaviour
             }
             foreach(var effect in FindObjectsByType<ShieldShoulderGuardEffect>()) effect.CancelImmediate();
             foreach(var effect in FindObjectsByType<BibleGotsumeEffect>()) effect.CancelImmediate();
-            foreach(var effect in FindObjectsByType<BibleCarryRushEffect>()) effect.CancelImmediate();
             foreach(var zone in FindObjectsByType<RosaryHealingAreaZone>()) zone.CancelImmediate();
             player.ClearAll();
             yield return null;
@@ -123,7 +123,7 @@ public sealed class SkillVfxAudit : MonoBehaviour
         float start=Time.time,next=0; int frame=0;
         while(Time.time-start<duration)
         {
-            Status=$"{Completed+1}/29 {id}: {Time.time-start:0.0}s";
+            Status=$"{Completed+1}/{SkillCount} {id}: {Time.time-start:0.0}s";
             if(Time.time-start>=next)
             {
                 Capture(folder+"/"+frame.ToString("D4")+".png"); frame++; next+=.1f;

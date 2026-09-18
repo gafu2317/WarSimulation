@@ -244,6 +244,55 @@ public sealed class CombatStatusEffectsTests
     }
 
     [Test]
+    public void CombatStatusEffects_DamageReductionUpdatesByKeyAndAppliesMinimumDamage()
+    {
+        GameObject targetGo = new GameObject("Target");
+        GameObject attackerGo = new GameObject("Attacker");
+        try
+        {
+            Character target = targetGo.AddComponent<Character>();
+            Character attacker = attackerGo.AddComponent<Character>();
+            target.Health.Initialize(30);
+
+            target.StatusEffects.ApplyDamageReduction(.4f, 5f, "ShieldIronWall", target);
+            Assert.That(target.Health.TakeDamage(10, attacker), Is.EqualTo(6));
+            Assert.That(target.Health.HP, Is.EqualTo(24));
+
+            target.StatusEffects.ApplyDamageReduction(.4f, 5f, "ShieldIronWall", target);
+            Assert.That(target.StatusEffects.GetActiveEffectSnapshots(), Has.Count.EqualTo(1));
+            Assert.That(target.Health.TakeDamage(1, attacker), Is.EqualTo(1));
+
+            ExpireAllEffects(target.StatusEffects);
+            Assert.That(target.Health.TakeDamage(5, attacker), Is.EqualTo(5));
+            Assert.That(target.StatusEffects.HasActiveEffect("ShieldIronWall"), Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(attackerGo);
+        }
+    }
+
+    [Test]
+    public void CombatStatusEffects_TauntIsTrackedAsSelfOnly()
+    {
+        GameObject characterGo = new GameObject("Character");
+        try
+        {
+            Character character = characterGo.AddComponent<Character>();
+            character.Health.Initialize(30);
+            character.StatusEffects.ApplyTaunt(4f, ShieldTauntSkill.EffectKey, character);
+
+            Assert.That(character.StatusEffects.IsTaunted, Is.True);
+            Assert.That(character.StatusEffects.HasActiveEffect(CombatStatusEffects.EffectType.Taunt), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(characterGo);
+        }
+    }
+
+    [Test]
     public void CombatStatusEffects_PoisonTicksDamage()
     {
         GameObject characterGo = new GameObject("Character");

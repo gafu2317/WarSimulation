@@ -287,6 +287,50 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
+    public void Health_IronWallReducesRedirectedDamageAtTheActualVictim()
+    {
+        GameObject systemGo = new GameObject("CombatCharacterSystem");
+        GameObject guardianGo = new GameObject("Guardian");
+        GameObject allyGo = new GameObject("Ally");
+        GameObject enemyGo = new GameObject("Enemy");
+        try
+        {
+            CombatCharacterSystem system = systemGo.AddComponent<CombatCharacterSystem>();
+            Character guardian = guardianGo.AddComponent<Character>();
+            Character ally = allyGo.AddComponent<Character>();
+            Character enemy = enemyGo.AddComponent<Character>();
+            guardian.SetTeam(CombatTeam.Ally);
+            ally.SetTeam(CombatTeam.Ally);
+            enemy.SetTeam(CombatTeam.Enemy);
+            guardian.Health.Initialize(30);
+            ally.Health.Initialize(30);
+            enemy.Health.Initialize(30);
+            allyGo.transform.position = guardianGo.transform.position + Vector3.forward * 2f;
+            enemyGo.transform.position = guardianGo.transform.position + Vector3.forward * 4f;
+
+            system.AllyCharacters.Add(guardian);
+            system.AllyCharacters.Add(ally);
+            system.EnemyCharacters.Add(enemy);
+            system.AssignTeamsFromLists();
+            guardian.Vision.UpdateVision();
+            new ShieldShoulderGuardSkill().Execute(guardian, SkillExecutionContext.ForTarget(ally));
+            guardian.StatusEffects.ApplyDamageReduction(.4f, 5f, ShieldIronWallSkill.EffectKey, guardian);
+
+            ally.Health.TakeDamage(10, enemy);
+
+            Assert.That(ally.Health.HP, Is.EqualTo(30));
+            Assert.That(guardian.Health.HP, Is.EqualTo(26));
+        }
+        finally
+        {
+            Object.DestroyImmediate(enemyGo);
+            Object.DestroyImmediate(allyGo);
+            Object.DestroyImmediate(guardianGo);
+            Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
     public void Health_DoesNotMarkRetreatDestinationWhenReturnMoveCannotStart()
     {
         GameObject mapGo = new GameObject("CombatMapSystem");
@@ -460,7 +504,7 @@ public sealed class CombatHealthAttackTests
             bibleCharacter.EquipWeapon(new Bible());
             rosaryCharacter.EquipWeapon(new Rosary());
 
-            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(8));
+            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(7));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Smite));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
@@ -475,8 +519,6 @@ public sealed class CombatHealthAttackTests
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Invulnerable));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Gotsume));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_CarryRush));
             Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(6));
             Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_Strike));

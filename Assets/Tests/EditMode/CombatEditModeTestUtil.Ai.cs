@@ -132,7 +132,8 @@ internal static partial class CombatEditModeTestUtil
         Character recentAttacker = null,
         Character markedStoneAttacker = null,
         Character tagalongTarget = null,
-        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null)
+        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null,
+        Character tauntedBy = null)
     {
         return new CombatAiContext(
             owner,
@@ -158,7 +159,8 @@ internal static partial class CombatEditModeTestUtil
             recentAttacker,
             markedStoneAttacker,
             tagalongTarget,
-            highGroundRegions);
+            highGroundRegions,
+            tauntedBy: tauntedBy);
     }
 
     internal static void AssertPlanMatchesDebugSnapshot(

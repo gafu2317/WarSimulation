@@ -7,6 +7,16 @@ public static class CombatSkillFactory
             SkillId.Sword_Slash => new SwordSlashSkill(
                 maxRange: ResolveRange(weapon, WeaponKind.Sword, 2f),
                 cooldownSeconds: ResolveCooldown(weapon, WeaponKind.Sword, 0.9f)),
+            SkillId.Sword_QuickSlash => new SwordSlashSkill(
+                strScale: 0.455f,
+                maxRange: ResolveRange(weapon, WeaponKind.Sword, 2f),
+                cooldownSeconds: ResolveCooldown(weapon, WeaponKind.Sword, 0.9f) * 0.5f,
+                name: "速斬"),
+            SkillId.Sword_StrongSlash => new SwordSlashSkill(
+                strScale: 1.17f,
+                maxRange: ResolveRange(weapon, WeaponKind.Sword, 2f),
+                cooldownSeconds: ResolveCooldown(weapon, WeaponKind.Sword, 0.9f) * 2f,
+                name: "強斬撃"),
             SkillId.Bible_StrBuff => CreateStatBuff(
                 CombatStatusEffects.StatKind.STR,
                 buffMultiplier: 1.25f,
@@ -33,7 +43,6 @@ public static class CombatSkillFactory
                 name: "FAIバフ"),
             SkillId.Bible_Invulnerable => new BibleInvulnerableSkill(),
             SkillId.Bible_Gotsume => new BibleGotsumeSkill(),
-            SkillId.Bible_CarryRush => new BibleCarryRushSkill(),
             SkillId.Bible_IntBuff => CreateStatBuff(CombatStatusEffects.StatKind.INT),
             SkillId.Bible_AgiBuff => CreateStatBuff(CombatStatusEffects.StatKind.AGI),
             SkillId.StatDebuff_INT => CreateStatDebuff(CombatStatusEffects.StatKind.INT),
@@ -43,6 +52,14 @@ public static class CombatSkillFactory
                 maxRange: ResolveRange(weapon, WeaponKind.Shield, 2f),
                 cooldownSeconds: ResolveCooldown(weapon, WeaponKind.Shield, 1.1f)),
             SkillId.Shield_ShoulderGuard => new ShieldShoulderGuardSkill(),
+            SkillId.Shield_IronWall => new ShieldIronWallSkill(
+                cooldownSeconds: 8f,
+                durationSeconds: 4f,
+                damageReduction: 0.4f),
+            SkillId.Shield_Taunt => new ShieldTauntSkill(
+                cooldownSeconds: 8f,
+                durationSeconds: 4f,
+                radius: 6f),
             SkillId.Grimoire_Bolt => new GrimoireBoltSkill(
                 maxRange: ResolveRange(weapon, WeaponKind.Grimoire, 30f),
                 cooldownSeconds: ResolveCooldown(weapon, WeaponKind.Grimoire, 1.3f)),

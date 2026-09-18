@@ -186,6 +186,40 @@ public sealed class CombatAiContextCollectorTests
     }
 
     [Test]
+    public void Collect_PropagatesTauntSourceThroughLiveAndWorldSnapshotContexts()
+    {
+        AiContextFixture fixture = CreateFixture();
+        try
+        {
+            new ShieldTauntSkill().Execute(fixture.Enemy, SkillExecutionContext.ForSelf(fixture.Enemy));
+
+            CombatAiContext liveContext = fixture.Collector.Collect(fixture.Observer);
+            Assert.That(liveContext.TauntedBy, Is.SameAs(fixture.Enemy));
+            Assert.That(liveContext.FindAllyIntel(fixture.Observer).TauntedBy, Is.SameAs(fixture.Enemy));
+
+            CombatAiWorldSnapshot snapshot = CombatAiWorldSnapshot.Capture(
+                new[] { fixture.Observer, fixture.Owner },
+                new[] { fixture.Enemy, fixture.RememberedEnemy },
+                fixture.MapSystem);
+            CombatAiContext snapshotContext = fixture.Collector.Collect(
+                fixture.Observer,
+                reservations: null,
+                perceptionPrepared: false,
+                hasBlockedMoveDestination: false,
+                blockedMoveDestination: default,
+                recentAttacker: null,
+                worldSnapshot: snapshot);
+
+            Assert.That(snapshotContext.TauntedBy, Is.SameAs(fixture.Enemy));
+            Assert.That(snapshotContext.FindAllyIntel(fixture.Observer).TauntedBy, Is.SameAs(fixture.Enemy));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
     public void Collect_UsesSeventyPercentOfMountainExtentForHighGround()
     {
         AiContextFixture fixture = CreateFixture();

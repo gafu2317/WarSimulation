@@ -153,6 +153,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 ? worldSnapshot.StaticMap.AllyAssaultRoutes
                 : worldSnapshot.StaticMap.EnemyAssaultRoutes
             : _assaultRoutes;
+        Character tauntedBy = GetTauntedBy(owner, worldSnapshot);
 
         return new CombatAiContext(
             owner,
@@ -179,6 +180,7 @@ public sealed class CombatAiContextCollector : MonoBehaviour
             markedStoneAttacker,
             owner != null ? owner.TagalongTarget : null,
             highGroundRegions,
+            tauntedBy,
             worldSnapshot != null);
     }
 
@@ -347,8 +349,23 @@ public sealed class CombatAiContextCollector : MonoBehaviour
                 hasIntendedDestination ? plan.MoveTarget.Destination : default,
                 plan.MovementRole,
                 plan.MoveTarget.HasAssaultRouteKey,
-                plan.MoveTarget.AssaultRouteKey));
+                plan.MoveTarget.AssaultRouteKey,
+                hasSnapshot ? characterSnapshot.TauntedBy : GetTauntedBy(character, null)));
         }
+    }
+
+    private static Character GetTauntedBy(
+        Character character,
+        CombatAiWorldSnapshot worldSnapshot)
+    {
+        if (character == null) return null;
+        if (worldSnapshot != null && worldSnapshot.TryGetCharacter(character, out CombatAiCharacterSnapshot snapshot))
+        {
+            return snapshot.TauntedBy;
+        }
+
+        ShieldTauntTargetEffect effect = character.GetComponent<ShieldTauntTargetEffect>();
+        return effect != null && effect.IsActive ? effect.Source : null;
     }
 
     private static bool ContainsCharacter(List<CombatCharacterIntel> characters, Character target)

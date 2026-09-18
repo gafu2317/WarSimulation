@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static partial class SkillVfxArt
 {
-    private static void Blessing(SkillVfxMesh m, SkillId id, Vector3 self, Vector3 foot, Vector3 p, float t, Color c)
+    private static void Blessing(SkillVfxMesh m, SkillId id, Vector3 foot, Vector3 p, float t, Color c)
     {
         float appear = In(t, .16f), pulse = .92f + .08f * Mathf.Sin(t * 3), pop = RevealScale(t);
         switch (id)
@@ -134,29 +134,6 @@ public static partial class SkillVfxArt
                 LightBand(m, p, 1.4f, .7f, -t * 80, 230, A(c, appear * .55f));
                 float gleam = Mathf.Pow(Mathf.Max(0, Mathf.Sin(t * 4)), 6);
                 Sprite(m, SkillVfxShape.Thorn, p, 1.05f, 1.25f, 0, A(White, appear * gleam * .45f));
-                break;
-            case SkillId.Bible_CarryRush:
-                Vector3 dir = Vector3.ProjectOnPlane(foot - self, Vector3.up).normalized;
-                if (dir.sqrMagnitude < .1f) dir = m.Right;
-                Vector3 across = Vector3.Cross(Vector3.up, dir).normalized;
-                Vector3 basePoint = foot + Vector3.up * .3f;
-                for (int side = -1; side <= 1; side += 2)
-                {
-                    Vector3 lane = basePoint + across * side * .48f;
-                    Sprite(m, SkillVfxShape.Feather, lane - dir * .8f + m.Up * .2f,
-                        1.2f, .3f, Mathf.Atan2(Vector3.Dot(dir, m.Up), Vector3.Dot(dir, m.Right)) * Mathf.Rad2Deg - 35,
-                        A(c, appear * .4f));
-                    Ribbon(m, lane - dir * 3.1f, lane + dir * .75f, side * .38f, .23f, A(c, appear * .6f));
-                    Ribbon(m, lane - dir * 2.8f - m.Up * .15f, lane + dir * .45f + m.Up * .5f,
-                        side * .45f, .11f, A(White, appear * .55f));
-                    float u = Mathf.Repeat(t * 1.7f + (side + 1) * .15f, 1);
-                    Vector3 tip = lane + dir * (-1.8f + u * 2.4f);
-                    m.Stroke(tip - dir * .85f, tip, .045f, A(White, appear * Mathf.Sin(u * Mathf.PI) * .7f), 0);
-                    m.Stroke(tip - dir * .4f + across * .18f, tip, .09f, A(White, appear * Mathf.Sin(u * Mathf.PI)));
-                    m.Stroke(tip, tip - dir * .4f - across * .18f, .09f, A(White, appear * Mathf.Sin(u * Mathf.PI)));
-                }
-                if ((foot - self).sqrMagnitude > .2f)
-                    Ribbon(m, self + Vector3.up * .3f, basePoint, .25f, .04f, A(c, appear * .4f));
                 break;
         }
     }

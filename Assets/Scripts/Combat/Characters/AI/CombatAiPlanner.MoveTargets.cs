@@ -813,6 +813,9 @@ public static partial class CombatAiPlanner
         float focusCommitmentRemainingSeconds,
         bool allowRemembered)
     {
+        Character tauntTarget = FindTauntTarget(context);
+        if (tauntTarget != null) return tauntTarget;
+
         CombatCharacterIntel priorityIntel = context.FindEnemyIntel(priorityEnemy);
         bool usePriority = priorityIntel.Character != null &&
             priorityIntel.IsAlive &&

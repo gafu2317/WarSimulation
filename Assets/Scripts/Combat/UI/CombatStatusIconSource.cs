@@ -16,9 +16,10 @@ public static class CombatStatusIconSource
         CombatStatusIconKind.Stealth => "不可視",
         CombatStatusIconKind.Reflection => "ゴツメ",
         CombatStatusIconKind.ShoulderGuard => "肩代わり",
-        CombatStatusIconKind.CarryRush => "高速移動",
         CombatStatusIconKind.Poison => "毒",
         CombatStatusIconKind.Bind => "金縛り",
+        CombatStatusIconKind.DamageReduction => "鉄壁",
+        CombatStatusIconKind.Taunt => "挑発",
         _ => kind.ToString(),
     };
 
@@ -37,10 +38,6 @@ public static class CombatStatusIconSource
             icons.Add(CombatStatusIconKind.Reflection);
         if (character.GetComponent<ShieldShoulderGuardEffect>()?.IsActive == true)
             icons.Add(CombatStatusIconKind.ShoulderGuard);
-
-        // 高速移動のコンポーネントは運搬者だけにあるため、同乗者は親から参照する。
-        BibleCarryRushEffect carry = character.GetComponentInParent<BibleCarryRushEffect>();
-        if (carry != null && carry.Affects(character)) icons.Add(CombatStatusIconKind.CarryRush);
         icons.Sort();
     }
 
@@ -58,6 +55,8 @@ public static class CombatStatusIconSource
             case CombatStatusEffects.EffectType.Stealth: kind = CombatStatusIconKind.Stealth; return true;
             case CombatStatusEffects.EffectType.Bind: kind = CombatStatusIconKind.Bind; return true;
             case CombatStatusEffects.EffectType.Poison: kind = CombatStatusIconKind.Poison; return true;
+            case CombatStatusEffects.EffectType.DamageReduction: kind = CombatStatusIconKind.DamageReduction; return true;
+            case CombatStatusEffects.EffectType.Taunt: kind = CombatStatusIconKind.Taunt; return true;
             default: return false;
         }
     }

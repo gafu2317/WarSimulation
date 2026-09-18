@@ -20,7 +20,6 @@ public sealed class SkillVfxEffect : MonoBehaviour
     private CombatStatusEffects _status;
     private ShieldShoulderGuardEffect _guard;
     private BibleGotsumeEffect _thorns;
-    private BibleCarryRushEffect _rush;
     private RosaryHealingAreaZone _zone;
     private bool _bound;
     private float _ending = -1f, _radius, _previewLead;
@@ -49,7 +48,7 @@ public sealed class SkillVfxEffect : MonoBehaviour
         RestoreSprites();
         Skill = skill; _self = self; _target = target; _point = point; _phase = phase; _radius = radius;
         _caster = null; _victim = null; FollowCharacter = null; StatusKey = null; _status = null;
-        _guard = null; _thorns = null; _rush = null; _zone = null; _bound = false;
+        _guard = null; _thorns = null; _zone = null; _bound = false;
         _ending = -1; Age = 0; Finished = false; ActionId = 0;
         _camera = Camera.main;
         _mesh.SetGround(skill is SkillId.Wand_AreaBlast or SkillId.Rosary_HealingArea
@@ -85,7 +84,6 @@ public sealed class SkillVfxEffect : MonoBehaviour
             _status = target.StatusEffects;
             _guard = target.GetComponent<ShieldShoulderGuardEffect>();
             _thorns = target.GetComponent<BibleGotsumeEffect>();
-            _rush = target.GetComponent<BibleCarryRushEffect>();
         }
     }
 
@@ -120,7 +118,6 @@ public sealed class SkillVfxEffect : MonoBehaviour
             FollowCharacter.Health == null || !FollowCharacter.Health.IsAlive) return false;
         if (Skill == SkillId.Shield_ShoulderGuard) return _guard != null && _guard.IsActive;
         if (Skill == SkillId.Bible_Gotsume) return _thorns != null && _thorns.IsActive;
-        if (Skill == SkillId.Bible_CarryRush) return _rush != null && _rush.Affects(FollowCharacter);
         return _status != null && !string.IsNullOrEmpty(StatusKey) && _status.HasActiveEffect(StatusKey);
     }
 
@@ -180,10 +177,11 @@ public sealed class SkillVfxEffect : MonoBehaviour
     public static bool IsProjectile(SkillId id) => id == SkillId.Wand_Bolt || id == SkillId.Wand_ArcaneBlast ||
         id == SkillId.Grimoire_Bolt || id == SkillId.Rosary_DistantHeal;
     public static bool IsPersistent(SkillId id) => id is SkillId.Shield_ShoulderGuard or
+        SkillId.Shield_IronWall or SkillId.Shield_Taunt or
         SkillId.Grimoire_StrDebuff or SkillId.StatDebuff_INT or SkillId.StatDebuff_FAI or SkillId.StatDebuff_AGI or
         SkillId.Grimoire_Bind or SkillId.Grimoire_Poison or SkillId.Grimoire_Stealth or
         SkillId.Bible_StrBuff or SkillId.Bible_IntBuff or SkillId.Bible_FaiBuff or SkillId.Bible_AgiBuff or
-        SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume or SkillId.Bible_CarryRush or
+        SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume or
         SkillId.Rosary_Regeneration or SkillId.Rosary_HealingArea;
 
     public static Color ColorFor(SkillId id) => SkillVfxArt.ColorFor(id);

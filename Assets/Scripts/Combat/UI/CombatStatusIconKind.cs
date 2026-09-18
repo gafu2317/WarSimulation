@@ -8,11 +8,12 @@ public enum CombatStatusIconKind
     Stealth,
     Reflection,
     ShoulderGuard,
-    CarryRush,
     STRDebuff,
     INTDebuff,
     FAIDebuff,
     AGIDebuff,
     Poison,
     Bind,
+    DamageReduction,
+    Taunt,
 }

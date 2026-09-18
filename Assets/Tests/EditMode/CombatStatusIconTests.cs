@@ -108,15 +108,12 @@ public sealed class CombatStatusIconTests
             reflect.Initialize(passenger, 1, 5f, default);
             var guard = passengerObject.AddComponent<ShieldShoulderGuardEffect>();
             guard.Initialize(carrier, passenger, 0.6f, 5f);
-            var carry = carrierObject.AddComponent<BibleCarryRushEffect>();
-            carry.Initialize(carrier, passenger, 1.8f, 5f);
             var icons = new List<CombatStatusIconKind>();
             CombatStatusIconSource.Collect(passenger, icons);
             CollectionAssert.AreEquivalent(new[] { CombatStatusIconKind.Reflection,
-                CombatStatusIconKind.ShoulderGuard, CombatStatusIconKind.CarryRush }, icons);
+                CombatStatusIconKind.ShoulderGuard }, icons);
             CombatStatusIconSource.Collect(carrier, icons);
-            CollectionAssert.AreEqual(new[] { CombatStatusIconKind.CarryRush }, icons);
-            carry.CancelImmediate();
+            Assert.That(icons, Is.Empty);
             guard.CancelImmediate();
             reflect.Initialize(passenger, 1, 0f, default);
             CombatStatusIconSource.Collect(passenger, icons);
@@ -147,6 +144,39 @@ public sealed class CombatStatusIconTests
             CollectionAssert.AreEqual(new[] { CombatStatusIconKind.STRBuff }, icons);
         }
         finally { Object.DestroyImmediate(go); }
+    }
+
+    [Test]
+    public void Source_ShowsIronWallAndTauntOnlyOnTheShieldOwner()
+    {
+        var ownerGo = new GameObject("Shield owner");
+        var targetGo = new GameObject("Taunt target");
+        try
+        {
+            Character owner = ownerGo.AddComponent<Character>();
+            Character target = targetGo.AddComponent<Character>();
+            owner.Health.Initialize(30);
+            target.Health.Initialize(30);
+            owner.StatusEffects.ApplyDamageReduction(.4f, 4f, ShieldIronWallSkill.EffectKey, owner);
+            owner.StatusEffects.ApplyTaunt(4f, ShieldTauntSkill.EffectKey, owner);
+            ShieldTauntTargetEffect targetEffect = targetGo.AddComponent<ShieldTauntTargetEffect>();
+            targetEffect.Initialize(owner, 4f);
+
+            var icons = new List<CombatStatusIconKind>();
+            CombatStatusIconSource.Collect(owner, icons);
+            CollectionAssert.AreEquivalent(new[] {
+                CombatStatusIconKind.DamageReduction,
+                CombatStatusIconKind.Taunt,
+            }, icons);
+
+            CombatStatusIconSource.Collect(target, icons);
+            Assert.That(icons, Is.Empty);
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetGo);
+            Object.DestroyImmediate(ownerGo);
+        }
     }
 
     [Test]

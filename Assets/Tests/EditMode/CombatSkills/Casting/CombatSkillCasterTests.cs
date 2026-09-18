@@ -254,7 +254,6 @@ public sealed class CombatSkillCasterTests
     [TestCase(SkillId.Bible_StrBuff, 0.9f)]
     [TestCase(SkillId.Bible_Invulnerable, 1.2f)]
     [TestCase(SkillId.Bible_Gotsume, 1f)]
-    [TestCase(SkillId.Bible_CarryRush, 1.2f)]
     [TestCase(SkillId.Rosary_CloseHeal, 1.3f)]
     [TestCase(SkillId.Rosary_Regeneration, 1f)]
     [TestCase(SkillId.Rosary_HealingArea, 1.5f)]

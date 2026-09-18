@@ -11,7 +11,8 @@ public static partial class SkillVfxArt
 
     public static float Duration(SkillId id) => id switch
     {
-        SkillId.Sword_Slash => .55f,
+        SkillId.Sword_Slash or SkillId.Sword_QuickSlash => .55f,
+        SkillId.Sword_StrongSlash => .85f,
         SkillId.Shield_Slash or SkillId.Rosary_Strike or SkillId.Bible_Smite => .75f,
         SkillId.Wand_Bolt or SkillId.Grimoire_Bolt => .8f,
         SkillId.Wand_ArcaneBlast or SkillId.Wand_AreaBlast or SkillId.Wand_GodsHand => 1.8f,
@@ -22,9 +23,12 @@ public static partial class SkillVfxArt
 
     public static Color ColorFor(SkillId id) => id switch
     {
-        SkillId.Sword_Slash => new(.78f, .88f, 1),
+        SkillId.Sword_Slash or SkillId.Sword_QuickSlash => new(.78f, .88f, 1),
+        SkillId.Sword_StrongSlash => new(1f, .78f, .28f),
         SkillId.Shield_Slash => new(.35f, .57f, .78f),
         SkillId.Shield_ShoulderGuard => Gold,
+        SkillId.Shield_IronWall => new(.3f, .62f, .95f),
+        SkillId.Shield_Taunt => new(1f, .28f, .08f),
         SkillId.Wand_Bolt => new(.25f, .8f, 1),
         SkillId.Wand_ArcaneBlast => new(.58f, .3f, 1),
         SkillId.Wand_AreaBlast => new(1, .34f, .08f),
@@ -35,7 +39,7 @@ public static partial class SkillVfxArt
         SkillId.Grimoire_Stealth => Gold,
         SkillId.Bible_StrBuff or SkillId.Bible_IntBuff or SkillId.Bible_FaiBuff or
         SkillId.Bible_AgiBuff or SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume or
-        SkillId.Bible_CarryRush or SkillId.Bible_Smite => Gold,
+        SkillId.Bible_Smite => Gold,
         SkillId.Rosary_Strike => new(.93f, .87f, .7f),
         SkillId.Rosary_DistantHeal or SkillId.Rosary_CloseHeal or SkillId.Rosary_Regeneration or
         SkillId.Rosary_HealingArea => new(.22f, .91f, .59f),
@@ -146,8 +150,12 @@ public static partial class SkillVfxArt
         switch (id)
         {
             case SkillId.Sword_Slash: Slash(m, p, forward, t, c); break;
+            case SkillId.Sword_QuickSlash: QuickSlash(m, p, forward, t, c); break;
+            case SkillId.Sword_StrongSlash: StrongSlash(m, p, forward, t, c); break;
             case SkillId.Shield_Slash: ShieldStrike(m, p, target, forward, t, c); break;
             case SkillId.Shield_ShoulderGuard: ShoulderGuard(m, self, target, t, c); break;
+            case SkillId.Shield_IronWall: IronWall(m, target, p, t, c); break;
+            case SkillId.Shield_Taunt: Taunt(m, target, p, t, c); break;
             case SkillId.Wand_Bolt: BoltHit(m, p, t, c); break;
             case SkillId.Wand_ArcaneBlast: ArcaneBlast(m, p, target, t, c); break;
             case SkillId.Wand_AreaBlast: AreaBlast(m, point, t, radius, c); break;
@@ -167,7 +175,7 @@ public static partial class SkillVfxArt
             case SkillId.Bible_AgiBuff:
             case SkillId.Bible_Invulnerable:
             case SkillId.Bible_Gotsume:
-            case SkillId.Bible_CarryRush: Blessing(m, id, self, target, p, t, c); break;
+                Blessing(m, id, target, p, t, c); break;
             case SkillId.Rosary_Strike:
             case SkillId.Rosary_DistantHeal:
             case SkillId.Rosary_CloseHeal:

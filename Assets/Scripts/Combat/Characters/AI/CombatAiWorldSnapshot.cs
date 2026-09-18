@@ -85,6 +85,10 @@ internal sealed class CombatAiWorldSnapshot
             IReadOnlyList<CombatStatusEffectSnapshot> effects = statusEffects != null
                 ? statusEffects.GetActiveEffectSnapshots()
                 : Array.Empty<CombatStatusEffectSnapshot>();
+            ShieldTauntTargetEffect tauntEffect = character.GetComponent<ShieldTauntTargetEffect>();
+            Character tauntedBy = tauntEffect != null && tauntEffect.IsActive
+                ? tauntEffect.Source
+                : null;
             var effectCopy = effects.Count > 0
                 ? new CombatStatusEffectSnapshot[effects.Count]
                 : Array.Empty<CombatStatusEffectSnapshot>();
@@ -106,7 +110,8 @@ internal sealed class CombatAiWorldSnapshot
                 effectCopy,
                 character.Vision,
                 brain != null && brain.LastContext != null,
-                brain != null ? brain.LastPlan : CombatAiPlan.None));
+                brain != null ? brain.LastPlan : CombatAiPlan.None,
+                tauntedBy));
         }
     }
 
@@ -191,6 +196,7 @@ internal readonly struct CombatAiCharacterSnapshot
     public CombatVision Vision { get; }
     public bool HasObjective { get; }
     public CombatAiPlan Plan { get; }
+    public Character TauntedBy { get; }
 
     public CombatAiCharacterSnapshot(
         Character character,
@@ -205,7 +211,8 @@ internal readonly struct CombatAiCharacterSnapshot
         IReadOnlyList<CombatStatusEffectSnapshot> statusEffects,
         CombatVision vision,
         bool hasObjective,
-        CombatAiPlan plan)
+        CombatAiPlan plan,
+        Character tauntedBy = null)
     {
         Character = character;
         Team = team;
@@ -220,6 +227,7 @@ internal readonly struct CombatAiCharacterSnapshot
         Vision = vision;
         HasObjective = hasObjective;
         Plan = plan;
+        TauntedBy = tauntedBy;
     }
 }
 

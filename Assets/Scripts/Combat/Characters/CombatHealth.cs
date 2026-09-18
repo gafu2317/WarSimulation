@@ -116,6 +116,17 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         }
 
         Character owner = ResolveOwner();
+        if (owner != null && owner.StatusEffects != null)
+        {
+            float damageMultiplier = owner.StatusEffects.GetDamageTakenMultiplier(
+                out CombatEffectSource reductionSource);
+            if (damageMultiplier < 1f)
+            {
+                amount = Mathf.Max(1, Mathf.RoundToInt(amount * damageMultiplier));
+                incomingDamage.PreventionSource = reductionSource;
+            }
+        }
+
         if (owner != null &&
             owner.StatusEffects != null &&
             owner.StatusEffects.HasActiveEffectImmediate(CombatStatusEffects.EffectType.Invulnerable))
@@ -192,6 +203,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     {
         _hp = 0;
         LifeState = LifeState.Retreating;
+        ResolveOwner()?.StatusEffects?.ClearEffect(CombatStatusEffects.EffectType.Taunt);
         _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = true;
         _withdrawalCompleted = false;
@@ -207,6 +219,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
         _hp = 0;
         LifeState = LifeState.Retreating;
+        ResolveOwner()?.StatusEffects?.ClearEffect(CombatStatusEffects.EffectType.Taunt);
         _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = false;
         _withdrawalCompleted = false;

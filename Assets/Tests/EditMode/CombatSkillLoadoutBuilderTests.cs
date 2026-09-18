@@ -78,8 +78,53 @@ public sealed class CombatSkillLoadoutBuilderTests
         Assert.That(skills[0].CooldownSeconds, Is.EqualTo(3f));
     }
 
+    [Test]
+    public void Build_AddsSwordVariantsForSwordOnlyAndUsesWeaponCooldownMultipliers()
+    {
+        CombatSkillCatalog catalog = CreateCatalog(
+            CombatEditModeTestUtil.CreateTestSkillDefinition(SkillId.Sword_QuickSlash, WeaponKind.Sword),
+            CombatEditModeTestUtil.CreateTestSkillDefinition(SkillId.Sword_StrongSlash, WeaponKind.Sword),
+            CombatEditModeTestUtil.CreateTestSkillDefinition(SkillId.Shield_IronWall, WeaponKind.Shield));
+        var weapon = new Sword(range: 7f, cooldown: 2f);
+
+        IReadOnlyList<SkillBase> skills = CombatSkillLoadoutBuilder.Build(
+            catalog,
+            WeaponKind.Sword,
+            learnedSkillIds: new[] { SkillId.Sword_QuickSlash, SkillId.Sword_StrongSlash, SkillId.Shield_IronWall },
+            grantedSkillIds: System.Array.Empty<SkillId>(),
+            unlockAllCatalogSkillsForKindWhenLearnedEmpty: false,
+            equippedWeapon: weapon);
+
+        Assert.That(skills, Has.Count.EqualTo(2));
+        foreach (SkillBase skill in skills)
+        {
+            Assert.That(skill.MaxRange, Is.EqualTo(7f));
+        }
+
+        SkillBase quick = FindSkill(skills, SkillId.Sword_QuickSlash);
+        SkillBase strong = FindSkill(skills, SkillId.Sword_StrongSlash);
+        Assert.That(quick.CooldownSeconds, Is.EqualTo(1f));
+        Assert.That(strong.CooldownSeconds, Is.EqualTo(4f));
+        Assert.That(quick.PowerDescription, Is.EqualTo("STR × 0.455"));
+        Assert.That(strong.PowerDescription, Is.EqualTo("STR × 1.17"));
+        Assert.That(quick.CanTargetMagicStone, Is.True);
+        Assert.That(strong.CanTargetMagicStone, Is.True);
+    }
+
     private static CombatSkillCatalog CreateCatalog(params SkillDefinition[] definitions)
     {
         return CombatEditModeTestUtil.CreateTestSkillCatalog(definitions);
+    }
+
+    private static SkillBase FindSkill(IReadOnlyList<SkillBase> skills, SkillId skillId)
+    {
+        for (int i = 0; i < skills.Count; i++)
+        {
+            if (skills[i] is IdentifiedSkill identified && identified.SkillId == skillId)
+                return skills[i];
+        }
+
+        Assert.Fail($"Skill {skillId} was not found.");
+        return null;
     }
 }

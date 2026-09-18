@@ -338,16 +338,21 @@ public static partial class CombatAiPlanner
             }
         }
 
-        Character preferredTarget = state == CombatObjective.AttackEnemy && context.MarkedStoneAttacker != null
-            ? context.MarkedStoneAttacker
-            : personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong
-                ? tagalongLeader.IntendedTarget
-                : personality != null && personality.Kind == CombatAiPersonalityKind.Avenger
-                    ? revengeTarget.Character
-                    : personality != null && personality.Kind == CombatAiPersonalityKind.Gatekeeper &&
-                      state == CombatObjective.DefendOwnStone && moveTarget.TargetCharacter != null
-                        ? moveTarget.TargetCharacter
-                        : null;
+        Character tauntTarget = state == CombatObjective.AttackEnemy || state == CombatObjective.DefendOwnStone
+            ? FindTauntTarget(context)
+            : null;
+        Character preferredTarget = tauntTarget != null
+            ? tauntTarget
+            : state == CombatObjective.AttackEnemy && context.MarkedStoneAttacker != null
+                ? context.MarkedStoneAttacker
+                : personality != null && personality.Kind == CombatAiPersonalityKind.Tagalong
+                    ? tagalongLeader.IntendedTarget
+                    : personality != null && personality.Kind == CombatAiPersonalityKind.Avenger
+                        ? revengeTarget.Character
+                        : personality != null && personality.Kind == CombatAiPersonalityKind.Gatekeeper &&
+                          state == CombatObjective.DefendOwnStone && moveTarget.TargetCharacter != null
+                            ? moveTarget.TargetCharacter
+                            : null;
         SelectSkill(
             context,
             personality,
@@ -761,7 +766,7 @@ public static partial class CombatAiPlanner
             {
                 CombatSkillEvaluationResult evaluation = CombatSkillEvaluator.Evaluate(context.Owner, skill, contexts[j]);
                 if (!evaluation.CanUse || !IsUsefulSkillContext(context, state, skill, evaluation.Context) ||
-                    !ContainsPreferredTarget(evaluation.Context, preferredTarget) ||
+                    !ContainsPreferredTarget(skill, evaluation.Context, preferredTarget) ||
                     (restrictToEnemyStoneCenter && !IsEnemyStoneFocusedContext(context, evaluation.Context))) continue;
 
                 int actionPriority = GetSkillActionPriority(state, skill, evaluation.Context);
@@ -814,9 +819,12 @@ public static partial class CombatAiPlanner
         return HorizontalDistance(context.EnemyStonePosition, skillContext.TargetPoint) <= 0.01f;
     }
 
-    private static bool ContainsPreferredTarget(SkillExecutionContext context, Character preferredTarget)
+    private static bool ContainsPreferredTarget(
+        SkillBase skill,
+        SkillExecutionContext context,
+        Character preferredTarget)
     {
-        if (preferredTarget == null) return true;
+        if (preferredTarget == null || skill.TargetKind == SkillTargetKind.Self) return true;
         if (context.PrimaryTarget == preferredTarget) return true;
         for (int i = 0; i < context.ResolvedTargets.Count; i++)
         {
@@ -849,10 +857,10 @@ public static partial class CombatAiPlanner
         {
             CombatObjective.Regroup => CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsStealth(skill),
             CombatObjective.SupportAlly => CombatAiSkillClassifier.IsSupport(skill),
-            CombatObjective.Search => CombatAiSkillClassifier.IsMobility(skill) || CombatAiSkillClassifier.IsStealth(skill),
+            CombatObjective.Search => CombatAiSkillClassifier.IsStealth(skill),
             CombatObjective.DestroyEnemyStone => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsBuff(skill),
-            CombatObjective.AttackEnemy => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill) || CombatAiSkillClassifier.IsProtect(skill),
-            CombatObjective.DefendOwnStone => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsHeal(skill),
+            CombatObjective.AttackEnemy => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsTaunt(skill),
+            CombatObjective.DefendOwnStone => CombatAiSkillClassifier.IsDamage(skill) || CombatAiSkillClassifier.IsDebuff(skill) || CombatAiSkillClassifier.IsProtect(skill) || CombatAiSkillClassifier.IsHeal(skill) || CombatAiSkillClassifier.IsTaunt(skill),
             _ => false,
         };
     }
@@ -894,6 +902,14 @@ public static partial class CombatAiPlanner
             }
 
             return false;
+        }
+
+        if (CombatAiSkillClassifier.IsTaunt(skill))
+        {
+            if (context.Owner == null || context.Owner.StatusEffects == null ||
+                context.Owner.StatusEffects.HasActiveEffect(CombatStatusEffects.EffectType.Taunt)) return false;
+
+            return HasVisibleEnemyInRange(context, skill.AreaRadius);
         }
 
         if ((CombatAiSkillClassifier.IsBuff(skill) || CombatAiSkillClassifier.IsDebuff(skill) || CombatAiSkillClassifier.IsProtect(skill)) && HasMatchingStatus(skill, skillContext)) return false;
@@ -949,9 +965,11 @@ public static partial class CombatAiPlanner
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsHeal(skill) => 0,
             CombatObjective.SupportAlly when CombatAiSkillClassifier.IsProtect(skill) => 1,
             CombatObjective.SupportAlly => 2,
-            CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsProtect(skill) => 0,
+            CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsTaunt(skill) => 0,
+            CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsProtect(skill) => 1,
             CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsDamage(skill) => 1,
             CombatObjective.DefendOwnStone when CombatAiSkillClassifier.IsDebuff(skill) => 2,
+            CombatObjective.AttackEnemy when CombatAiSkillClassifier.IsTaunt(skill) => 0,
             CombatObjective.AttackEnemy when CombatAiSkillClassifier.IsDebuff(skill) => 0,
             CombatObjective.AttackEnemy when CombatAiSkillClassifier.IsDamage(skill) => 1,
             CombatObjective.DestroyEnemyStone when skillContext.PrimaryStone != null || skillContext.ResolvedStones.Count > 0 => 0,
@@ -962,6 +980,9 @@ public static partial class CombatAiPlanner
 
     private static int GetSkillTargetPriority(CombatAiContext context, SkillBase skill, SkillExecutionContext skillContext)
     {
+        Character tauntTarget = FindTauntTarget(context);
+        if (ContainsTarget(skillContext, tauntTarget)) return int.MinValue / 2;
+
         if (CombatAiSkillClassifier.IsHeal(skill))
         {
             int lowestProjectedHpPercent = 100;
@@ -1011,6 +1032,47 @@ public static partial class CombatAiPlanner
         return false;
     }
 
+    private static bool HasVisibleEnemyInRange(CombatAiContext context, float radius)
+    {
+        if (context == null || context.Owner == null || radius <= 0f) return false;
+
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.Character == null || !enemy.IsAlive || !enemy.HasDirectSight || !enemy.HasKnownPosition) continue;
+            if (HorizontalDistance(context.Owner.transform.position, enemy.CurrentPosition) <= radius) return true;
+        }
+
+        return false;
+    }
+
+    private static Character FindTauntTarget(CombatAiContext context)
+    {
+        if (context == null || context.TauntedBy == null) return null;
+
+        CombatCharacterIntel taunter = context.FindEnemyIntel(context.TauntedBy);
+        if (taunter.Character == null || !taunter.IsAlive || !taunter.HasKnownPosition ||
+            !taunter.HasDirectSight ||
+            context.GetEnemyPendingDamage(taunter.Character) >= taunter.HP)
+        {
+            return null;
+        }
+
+        return taunter.Character;
+    }
+
+    private static bool ContainsTarget(SkillExecutionContext context, Character target)
+    {
+        if (target == null) return false;
+        if (context.PrimaryTarget == target) return true;
+        for (int i = 0; i < context.ResolvedTargets.Count; i++)
+        {
+            if (context.ResolvedTargets[i] == target) return true;
+        }
+
+        return false;
+    }
+
     private static bool MatchesEffect(SkillId skillId, CombatStatusEffectSnapshot effect)
     {
         return skillId switch
@@ -1027,6 +1089,8 @@ public static partial class CombatAiPlanner
             SkillId.Grimoire_Poison => effect.Type == CombatStatusEffects.EffectType.Poison,
             SkillId.Grimoire_Stealth => effect.Type == CombatStatusEffects.EffectType.Stealth,
             SkillId.Bible_Invulnerable => effect.Type == CombatStatusEffects.EffectType.Invulnerable,
+            SkillId.Shield_IronWall => effect.Type == CombatStatusEffects.EffectType.DamageReduction,
+            SkillId.Shield_Taunt => effect.Type == CombatStatusEffects.EffectType.Taunt,
             SkillId.Rosary_Regeneration => effect.Type == CombatStatusEffects.EffectType.HealOverTime,
             _ => false,
         };

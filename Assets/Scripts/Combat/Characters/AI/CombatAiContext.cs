@@ -28,6 +28,7 @@ public sealed class CombatAiContext
     public Character RecentAttacker { get; }
     public Character MarkedStoneAttacker { get; }
     public Character TagalongTarget { get; }
+    public Character TauntedBy { get; }
 
     public CombatAiContext(
         Character owner,
@@ -54,6 +55,7 @@ public sealed class CombatAiContext
         Character markedStoneAttacker = null,
         Character tagalongTarget = null,
         IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null,
+        Character tauntedBy = null,
         bool reuseStaticCollections = false)
     {
         Owner = owner;
@@ -88,6 +90,7 @@ public sealed class CombatAiContext
         RecentAttacker = recentAttacker;
         MarkedStoneAttacker = markedStoneAttacker;
         TagalongTarget = tagalongTarget;
+        TauntedBy = tauntedBy;
     }
 
     public bool IsMoveDestinationBlocked(Vector3 destination)
@@ -129,7 +132,8 @@ public sealed class CombatAiContext
                 ? character.StatusEffects.GetActiveEffectSnapshots()
                 : Array.Empty<CombatStatusEffectSnapshot>(),
             hasObjective: false,
-            objective: default);
+            objective: default,
+            tauntedBy: TauntedBy);
     }
 
     public int GetAllyPendingDamage(Character target)
@@ -302,6 +306,7 @@ public readonly struct CombatCharacterIntel
     public Vector3 IntendedDestination { get; }
     public bool HasAssaultRouteKey { get; }
     public string AssaultRouteKey { get; }
+    public Character TauntedBy { get; }
 
     public CombatCharacterIntel(
         Character character,
@@ -327,7 +332,8 @@ public readonly struct CombatCharacterIntel
         Vector3 intendedDestination = default,
         CombatAiMovementRole movementRole = CombatAiMovementRole.Unknown,
         bool hasAssaultRouteKey = false,
-        string assaultRouteKey = null)
+        string assaultRouteKey = null,
+        Character tauntedBy = null)
     {
         Character = character;
         Team = team;
@@ -353,5 +359,6 @@ public readonly struct CombatCharacterIntel
         IntendedDestination = intendedDestination;
         HasAssaultRouteKey = hasAssaultRouteKey;
         AssaultRouteKey = assaultRouteKey;
+        TauntedBy = tauntedBy;
     }
 }

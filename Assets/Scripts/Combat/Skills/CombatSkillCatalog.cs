@@ -45,8 +45,12 @@ public sealed class CombatSkillCatalog : ScriptableObject
         catalog._definitions = new[]
         {
             CreateDefinition(SkillId.Sword_Slash, WeaponKind.Sword, "斬撃"),
+            CreateDefinition(SkillId.Sword_QuickSlash, WeaponKind.Sword, "速斬"),
+            CreateDefinition(SkillId.Sword_StrongSlash, WeaponKind.Sword, "強斬撃"),
             CreateDefinition(SkillId.Shield_Slash, WeaponKind.Shield, "盾撃"),
             CreateDefinition(SkillId.Shield_ShoulderGuard, WeaponKind.Shield, "肩代わり"),
+            CreateDefinition(SkillId.Shield_IronWall, WeaponKind.Shield, "鉄壁"),
+            CreateDefinition(SkillId.Shield_Taunt, WeaponKind.Shield, "挑発"),
             CreateDefinition(SkillId.Wand_Bolt, WeaponKind.Wand, "魔弾"),
             CreateDefinition(SkillId.Wand_ArcaneBlast, WeaponKind.Wand, "極大魔弾"),
             CreateDefinition(SkillId.Wand_AreaBlast, WeaponKind.Wand, "範囲魔法"),
@@ -63,7 +67,6 @@ public sealed class CombatSkillCatalog : ScriptableObject
             CreateDefinition(SkillId.Bible_AgiBuff, WeaponKind.Bible, "AGIバフ"),
             CreateDefinition(SkillId.Bible_Invulnerable, WeaponKind.Bible, "無敵"),
             CreateDefinition(SkillId.Bible_Gotsume, WeaponKind.Bible, "ゴツメ"),
-            CreateDefinition(SkillId.Bible_CarryRush, WeaponKind.Bible, "高速移動"),
             CreateDefinition(SkillId.Rosary_Strike, WeaponKind.Rosary, "通常攻撃"),
             CreateDefinition(SkillId.Rosary_DistantHeal, WeaponKind.Rosary, "遠隔癒し"),
             CreateDefinition(SkillId.Rosary_CloseHeal, WeaponKind.Rosary, "大回復"),

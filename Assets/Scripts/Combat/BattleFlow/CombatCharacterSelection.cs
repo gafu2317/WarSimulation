@@ -1938,7 +1938,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             SkillDefinition definition = definitions[i];
             if (definition == null) continue;
 
-            SkillBase skill = CombatSkillFactory.Create(definition.SkillId);
+            SkillBase skill = CombatSkillFactory.Create(definition.SkillId, weaponRuntime);
             if (skill == null) continue;
 
             hasSkill = true;

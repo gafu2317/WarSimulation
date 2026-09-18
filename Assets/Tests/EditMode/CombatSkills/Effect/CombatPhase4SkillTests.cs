@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.AI;
 
 public sealed class CombatPhase4SkillTests
 {
@@ -122,56 +121,6 @@ public sealed class CombatPhase4SkillTests
     }
 
     [Test]
-    public void BibleCarryRushSkill_BoostsSpeedAndCarriesAlly()
-    {
-        GameObject ownerGo = new GameObject("Owner");
-        GameObject allyGo = new GameObject("Ally");
-        try
-        {
-            Character owner = ownerGo.AddComponent<Character>();
-            Character ally = allyGo.AddComponent<Character>();
-            owner.SetTeam(CombatTeam.Ally);
-            ally.SetTeam(CombatTeam.Ally);
-            owner.Health.Initialize(30);
-            ally.Health.Initialize(30);
-            allyGo.transform.position = ownerGo.transform.position + Vector3.forward * 2f;
-
-            CombatCharacterBody ownerBody = owner.GetComponent<CombatCharacterBody>();
-            CombatCharacterBody allyBody = ally.GetComponent<CombatCharacterBody>();
-            NavMeshAgent allyAgent = ally.GetComponent<NavMeshAgent>();
-            ownerBody.BaseSpeed = 3f;
-            allyBody.BaseSpeed = 2f;
-            Vector3 initialAllyPosition = ally.transform.position;
-
-            new BibleCarryRushSkill().Execute(owner, SkillExecutionContext.ForTarget(ally));
-
-            BibleCarryRushEffect effect = owner.GetComponent<BibleCarryRushEffect>();
-            Assert.That(effect, Is.Not.Null);
-            Assert.That(ownerBody.BaseSpeed, Is.EqualTo(5.4f).Within(0.001f));
-            Assert.That(allyBody.BaseSpeed, Is.EqualTo(3.6f).Within(0.001f));
-            Assert.That(ally.transform.position, Is.EqualTo(initialAllyPosition));
-            Assert.That(ally.transform.parent, Is.EqualTo(owner.transform));
-            Assert.That(allyAgent.enabled, Is.False);
-
-            owner.transform.position += Vector3.right * 5f;
-            Assert.That(ally.transform.position, Is.EqualTo(initialAllyPosition + Vector3.right * 5f));
-
-            ForceCarryRushExpired(effect);
-            InvokePrivateUpdate(effect);
-
-            Assert.That(ownerBody.BaseSpeed, Is.EqualTo(3f).Within(0.001f));
-            Assert.That(allyBody.BaseSpeed, Is.EqualTo(2f).Within(0.001f));
-            Assert.That(ally.transform.parent, Is.Null);
-            Assert.That(allyAgent.enabled, Is.True);
-        }
-        finally
-        {
-            Object.DestroyImmediate(allyGo);
-            Object.DestroyImmediate(ownerGo);
-        }
-    }
-
-    [Test]
     public void ShieldShoulderGuardSkill_RedirectsDamageFromProtectedAlly()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");
@@ -275,6 +224,58 @@ public sealed class CombatPhase4SkillTests
             Object.DestroyImmediate(secondGo);
             Object.DestroyImmediate(firstGo);
             Object.DestroyImmediate(systemGo);
+        }
+    }
+
+    [Test]
+    public void ShieldTauntSkill_UsesActivationRangeAndReplacesThePreviousSource()
+    {
+        GameObject firstGo = new GameObject("First Shield");
+        GameObject secondGo = new GameObject("Second Shield");
+        GameObject nearGo = new GameObject("Near Enemy");
+        GameObject farGo = new GameObject("Far Enemy");
+        try
+        {
+            Character first = firstGo.AddComponent<Character>();
+            Character second = secondGo.AddComponent<Character>();
+            Character near = nearGo.AddComponent<Character>();
+            Character far = farGo.AddComponent<Character>();
+            first.SetTeam(CombatTeam.Ally);
+            second.SetTeam(CombatTeam.Ally);
+            near.SetTeam(CombatTeam.Enemy);
+            far.SetTeam(CombatTeam.Enemy);
+            first.Health.Initialize(30);
+            second.Health.Initialize(30);
+            near.Health.Initialize(30);
+            far.Health.Initialize(30);
+            firstGo.transform.position = Vector3.zero;
+            secondGo.transform.position = Vector3.right;
+            nearGo.transform.position = Vector3.forward * 5f;
+            farGo.transform.position = Vector3.forward * 7f;
+
+            var skill = new ShieldTauntSkill();
+            skill.Execute(first, SkillExecutionContext.ForSelf(first));
+
+            ShieldTauntTargetEffect targetEffect = near.GetComponent<ShieldTauntTargetEffect>();
+            Assert.That(targetEffect, Is.Not.Null);
+            Assert.That(targetEffect.IsActive, Is.True);
+            Assert.That(targetEffect.Source, Is.SameAs(first));
+            Assert.That(far.GetComponent<ShieldTauntTargetEffect>(), Is.Null);
+
+            skill.Execute(second, SkillExecutionContext.ForSelf(second));
+            Assert.That(near.GetComponent<ShieldTauntTargetEffect>().Source, Is.SameAs(second));
+
+            first.Health.EnterRetreat();
+            Assert.That(near.GetComponent<ShieldTauntTargetEffect>().IsActive, Is.True);
+            second.Health.EnterRetreat();
+            Assert.That(near.GetComponent<ShieldTauntTargetEffect>().IsActive, Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(farGo);
+            Object.DestroyImmediate(nearGo);
+            Object.DestroyImmediate(secondGo);
+            Object.DestroyImmediate(firstGo);
         }
     }
 
@@ -567,7 +568,6 @@ public sealed class CombatPhase4SkillTests
     {
         Assert.That(CombatSkillFactory.Create(SkillId.Bible_Invulnerable), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Bible_Gotsume), Is.Not.Null);
-        Assert.That(CombatSkillFactory.Create(SkillId.Bible_CarryRush), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Shield_ShoulderGuard), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Grimoire_Bind), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Grimoire_Poison), Is.Not.Null);
@@ -576,6 +576,26 @@ public sealed class CombatPhase4SkillTests
         Assert.That(CombatSkillFactory.Create(SkillId.Rosary_HealingArea), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Wand_AreaBlast), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Rosary_SacrificeThunder), Is.Not.Null);
+        Assert.That(CombatSkillFactory.Create(SkillId.Sword_QuickSlash), Is.Not.Null);
+        Assert.That(CombatSkillFactory.Create(SkillId.Sword_StrongSlash), Is.Not.Null);
+        Assert.That(CombatSkillFactory.Create(SkillId.Shield_IronWall), Is.Not.Null);
+        Assert.That(CombatSkillFactory.Create(SkillId.Shield_Taunt), Is.Not.Null);
+    }
+
+    [Test]
+    public void CombatSkillFactory_ConfiguresShieldDefensesAsSelfSkills()
+    {
+        SkillBase ironWall = CombatSkillFactory.Create(SkillId.Shield_IronWall);
+        SkillBase taunt = CombatSkillFactory.Create(SkillId.Shield_Taunt);
+
+        Assert.That(ironWall.TargetKind, Is.EqualTo(SkillTargetKind.Self));
+        Assert.That(ironWall.CooldownSeconds, Is.EqualTo(8f));
+        Assert.That(ironWall.AreaRadius, Is.Zero);
+        Assert.That(ironWall.CanTargetMagicStone, Is.False);
+        Assert.That(taunt.TargetKind, Is.EqualTo(SkillTargetKind.Self));
+        Assert.That(taunt.CooldownSeconds, Is.EqualTo(8f));
+        Assert.That(taunt.AreaRadius, Is.EqualTo(6f));
+        Assert.That(taunt.CanTargetMagicStone, Is.False);
     }
 
     private static void ForceAllPeriodicEffectsReadyNow(CombatStatusEffects statusEffects)
@@ -622,14 +642,6 @@ public sealed class CombatPhase4SkillTests
             "Update",
             BindingFlags.NonPublic | BindingFlags.Instance);
         updateMethod?.Invoke(behaviour, null);
-    }
-
-    private static void ForceCarryRushExpired(BibleCarryRushEffect effect)
-    {
-        FieldInfo expiresAtField = typeof(BibleCarryRushEffect).GetField(
-            "_expiresAt",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        expiresAtField?.SetValue(effect, Time.time - 0.01f);
     }
 
     private sealed class TargetAreaFixture

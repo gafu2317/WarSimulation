@@ -290,6 +290,78 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_PrioritizesVisibleTauntSourceOverMarkedTarget()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character taunter = CreateCharacter("Taunter", new Sword(), new Vector3(1.5f, 0f, 0f), team: CombatTeam.Enemy);
+        Character marked = CreateCharacter("Marked", new Sword(), new Vector3(1f, 0f, 1f), team: CombatTeam.Enemy);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(
+            owner,
+            CombatSkillFactory.Create(SkillId.Sword_Slash, owner.EquippedWeapon));
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(taunter), Intel(marked) },
+            markedStoneAttacker: marked,
+            tauntedBy: taunter,
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.SkillTarget, Is.SameAs(taunter));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(taunter));
+    }
+
+    [Test]
+    public void Planner_DoesNotUseTauntSourceOutsideCurrentSight()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character taunter = CreateCharacter("HiddenTaunter", new Sword(), new Vector3(1.5f, 0f, 0f), team: CombatTeam.Enemy);
+        Character marked = CreateCharacter("Marked", new Sword(), new Vector3(1f, 0f, 1f), team: CombatTeam.Enemy);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(
+            owner,
+            CombatSkillFactory.Create(SkillId.Sword_Slash, owner.EquippedWeapon));
+        CombatCharacterIntel hiddenTaunter = CombatEditModeTestUtil.CreateIntel(
+            taunter,
+            hasKnownPosition: true,
+            knownPosition: taunter.transform.position,
+            hasDirectSight: false,
+            hasMemory: true);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { hiddenTaunter, Intel(marked) },
+            markedStoneAttacker: marked,
+            tauntedBy: taunter,
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.SkillTarget, Is.SameAs(marked));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(marked));
+    }
+
+    [Test]
+    public void Planner_DoesNotUseTauntDuringRegroup()
+    {
+        Character owner = CreateCharacter("Owner", new Shield(), Vector3.zero, 100, 15);
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(3f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatEditModeTestUtil.SetAvailableCombatSkills(
+            owner,
+            CombatSkillFactory.Create(SkillId.Shield_Taunt, owner.EquippedWeapon),
+            CombatSkillFactory.Create(SkillId.Shield_IronWall, owner.EquippedWeapon));
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.Regroup));
+        Assert.That(plan.Skill, Is.Not.Null);
+        Assert.That(plan.Skill.Id, Is.EqualTo(SkillId.Shield_IronWall));
+    }
+
+    [Test]
     public void Planner_UsesPlanRolesForRouteCongestionAndIncludesMobileCombat()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
@@ -1955,7 +2027,8 @@ public sealed class CombatAiStatePlannerTests
         Character recentAttacker = null,
         Character markedStoneAttacker = null,
         Character tagalongTarget = null,
-        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null)
+        IReadOnlyList<CombatAiHighGroundRegion> highGroundRegions = null,
+        Character tauntedBy = null)
     {
         return CombatEditModeTestUtil.CreatePlannerContext(
             owner,
@@ -1973,7 +2046,8 @@ public sealed class CombatAiStatePlannerTests
             recentAttacker: recentAttacker,
             markedStoneAttacker: markedStoneAttacker,
             tagalongTarget: tagalongTarget,
-            highGroundRegions: highGroundRegions);
+            highGroundRegions: highGroundRegions,
+            tauntedBy: tauntedBy);
     }
 
     private Character CreateCharacter(

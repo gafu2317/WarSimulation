@@ -54,6 +54,8 @@ public sealed class CombatStatusEffects : MonoBehaviour
         Poison,
         HealOverTime,
         Stealth,
+        DamageReduction,
+        Taunt,
     }
 
     private struct ActiveEffect
@@ -253,9 +255,62 @@ public sealed class CombatStatusEffects : MonoBehaviour
             CombatEffectSource.Capture(source));
     }
 
+    public void ApplyDamageReduction(
+        float reductionRate,
+        float durationSeconds,
+        string key = null,
+        Character source = null)
+    {
+        ApplyOrUpdateEffect(new ActiveEffect
+        {
+            Key = ResolveEffectKey(EffectType.DamageReduction, key),
+            Type = EffectType.DamageReduction,
+            Stat = default,
+            Multiplier = 1f,
+            Magnitude = Mathf.Clamp01(reductionRate),
+            TickIntervalSeconds = 0f,
+            NextTickAt = float.PositiveInfinity,
+            ExpiresAt = Time.time + Mathf.Max(0f, durationSeconds),
+            Source = CombatEffectSource.Capture(source),
+        });
+    }
+
+    public void ApplyTaunt(float durationSeconds, string key = null, Character source = null)
+    {
+        ApplySimpleEffect(
+            EffectType.Taunt,
+            durationSeconds,
+            ResolveEffectKey(EffectType.Taunt, key),
+            CombatEffectSource.Capture(source));
+    }
+
+    public float GetDamageTakenMultiplier(out CombatEffectSource preventionSource)
+    {
+        UpdateEffects();
+
+        float multiplier = 1f;
+        preventionSource = CombatEffectSource.None;
+        bool hasPreventionSource = false;
+        for (int i = 0; i < _effects.Count; i++)
+        {
+            ActiveEffect effect = _effects[i];
+            if (effect.Type != EffectType.DamageReduction) continue;
+
+            multiplier *= 1f - Mathf.Clamp01(effect.Magnitude);
+            if (!hasPreventionSource)
+            {
+                preventionSource = effect.Source;
+                hasPreventionSource = true;
+            }
+        }
+
+        return Mathf.Clamp01(multiplier);
+    }
+
     public bool IsInvulnerable => HasActiveEffect(EffectType.Invulnerable);
     public bool IsBound => HasActiveEffect(EffectType.Bind);
     public bool IsStealthed => HasActiveEffect(EffectType.Stealth);
+    public bool IsTaunted => HasActiveEffect(EffectType.Taunt);
 
     public void ClearEffect(EffectType type)
     {

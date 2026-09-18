@@ -49,7 +49,7 @@ public sealed class SkillVfxProceduralFactoryTests
     {
         foreach (var id in new[] { SkillId.Shield_ShoulderGuard, SkillId.Bible_StrBuff, SkillId.Bible_IntBuff,
             SkillId.Bible_FaiBuff, SkillId.Bible_AgiBuff, SkillId.Bible_Invulnerable, SkillId.Bible_Gotsume,
-            SkillId.Bible_CarryRush, SkillId.Grimoire_Stealth })
+            SkillId.Grimoire_Stealth })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Bible_StrBuff)), id.ToString());
         foreach (var id in new[] { SkillId.Grimoire_StrDebuff, SkillId.StatDebuff_INT, SkillId.StatDebuff_FAI,
             SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison })

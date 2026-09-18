@@ -29,5 +29,8 @@ public enum SkillId
     Rosary_HealingArea = 27,
     Bible_Gotsume = 28,
     Shield_ShoulderGuard = 29,
-    Bible_CarryRush = 30,
+    Sword_QuickSlash = 30,
+    Sword_StrongSlash = 31,
+    Shield_IronWall = 32,
+    Shield_Taunt = 33,
 }

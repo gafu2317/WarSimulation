@@ -11,8 +11,12 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
     private static string Label(SkillId id) => id switch
     {
         SkillId.Sword_Slash => "斬撃  (Sword_Slash)",
+        SkillId.Sword_QuickSlash => "速斬  (Sword_QuickSlash)",
+        SkillId.Sword_StrongSlash => "強斬撃  (Sword_StrongSlash)",
         SkillId.Shield_Slash => "盾撃  (Shield_Slash)",
         SkillId.Shield_ShoulderGuard => "肩代わり  (Shield_ShoulderGuard)",
+        SkillId.Shield_IronWall => "鉄壁  (Shield_IronWall)",
+        SkillId.Shield_Taunt => "挑発  (Shield_Taunt)",
         SkillId.Wand_Bolt => "魔弾  (Wand_Bolt)",
         SkillId.Wand_ArcaneBlast => "極大魔弾  (Wand_ArcaneBlast)",
         SkillId.Wand_AreaBlast => "範囲魔法  (Wand_AreaBlast)",
@@ -32,7 +36,6 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
         SkillId.Bible_AgiBuff => "AGIバフ  (Bible_AgiBuff)",
         SkillId.Bible_Invulnerable => "無敵  (Bible_Invulnerable)",
         SkillId.Bible_Gotsume => "ゴツメ  (Bible_Gotsume)",
-        SkillId.Bible_CarryRush => "高速移動  (Bible_CarryRush)",
         SkillId.Rosary_Strike => "通常攻撃（ロザリオの打撃）  (Rosary_Strike)",
         SkillId.Rosary_DistantHeal => "遠隔癒し  (Rosary_DistantHeal)",
         SkillId.Rosary_CloseHeal => "大回復  (Rosary_CloseHeal)",
@@ -88,7 +91,7 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
     }
     private void OnGUI()
     {
-        EditorGUILayout.HelpBox("全29種の画像併用エフェクト。時刻を固定して前後の形を比較できます。見た目の再生専用で、効果判定・カメラ設定・シーンは変更しません。", MessageType.Info);
+        EditorGUILayout.HelpBox("全32種の画像併用エフェクト。時刻を固定して前後の形を比較できます。見た目の再生専用で、効果判定・カメラ設定・シーンは変更しません。", MessageType.Info);
         _camera = (Camera)EditorGUILayout.ObjectField("カメラ", _camera, typeof(Camera), true);
         _caster = (Transform)EditorGUILayout.ObjectField("術者", _caster, typeof(Transform), true);
         _target = (Transform)EditorGUILayout.ObjectField("対象／地点", _target, typeof(Transform), true);

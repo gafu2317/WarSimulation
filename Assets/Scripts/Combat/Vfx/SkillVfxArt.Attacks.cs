@@ -2,6 +2,32 @@ using UnityEngine;
 
 public static partial class SkillVfxArt
 {
+    private static void QuickSlash(SkillVfxMesh m, Vector3 p, Vector3 forward, float t, Color c)
+    {
+        float strike = Ease(t, .055f);
+        float fade = Out(t, .08f, .36f);
+        float side = Vector3.Dot(forward, m.Right) < 0 ? -1 : 1;
+        float angle = Mathf.Lerp(-58f, 38f, strike) * Mathf.Deg2Rad;
+        Vector3 x = (m.Right * Mathf.Cos(angle) + m.Up * Mathf.Sin(angle)) * side;
+        Vector3 y = -m.Right * Mathf.Sin(angle) + m.Up * Mathf.Cos(angle);
+        Vector3 center = p + x * .25f;
+        SkillVfxAtlas.Stamp(m, SkillVfxShape.Slash, center, x * 1.7f, y * .88f,
+            A(c, fade * .9f), 1 - fade);
+        m.Crescent(center, x, y, 1.75f, .11f * fade, 72, 145, A(White, fade));
+        Sprite(m, SkillVfxShape.Impact, p, .22f + strike * .35f, .22f + strike * .35f,
+            0, A(White, Out(t, .02f, .12f)));
+    }
+
+    private static void StrongSlash(SkillVfxMesh m, Vector3 p, Vector3 forward, float t, Color c)
+    {
+        Slash(m, p, forward, t, c);
+        float impact = Out(t, .06f, .3f);
+        float side = Vector3.Dot(forward, m.Right) < 0 ? -1 : 1;
+        m.Crescent(p, m.Right * side, m.Up, 2.7f * Ease(t, .12f), .24f * impact,
+            70, 150, A(White, impact * .8f));
+        Wave(m, p, 1.1f * Ease(t, .2f), .08f * impact, A(c, impact * .55f));
+    }
+
     private static void Slash(SkillVfxMesh m, Vector3 p, Vector3 forward, float t, Color c)
     {
         float strike = Ease(t, .085f), tail = 1 - Out(t, .11f, .52f);
@@ -60,6 +86,36 @@ public static partial class SkillVfxArt
         Sprite(m, SkillVfxShape.Shield, shield, 1.0f, 1.35f, side * -8, A(c, appear * .85f));
         m.Crescent(shield, m.Right, m.Up * 1.2f, .7f, .035f, 15, 150,
             A(White, appear * (.4f + .15f * Mathf.Sin(t * 2))));
+    }
+
+    private static void IronWall(SkillVfxMesh m, Vector3 foot, Vector3 p, float t, Color c)
+    {
+        float appear = In(t, .2f);
+        float pulse = .95f + .05f * Mathf.Sin(t * 4f);
+        Sprite(m, SkillVfxShape.Shield, p + m.Up * .15f, 1.25f * pulse, 1.5f * pulse,
+            0, A(c, appear * .9f));
+        for (int side = -1; side <= 1; side += 2)
+            Sprite(m, SkillVfxShape.Shield, p + m.Right * side * .85f + m.Up * .1f,
+                .55f, .78f, side * -12f, A(c, appear * .6f));
+        Wave(m, foot, 1.25f + .12f * Mathf.Sin(t * 3f), .07f, A(c, appear * .7f));
+        LightBand(m, p, 1.1f, 1.25f, t * 35f, 240, A(White, appear * .4f));
+    }
+
+    private static void Taunt(SkillVfxMesh m, Vector3 foot, Vector3 p, float t, Color c)
+    {
+        float appear = In(t, .12f);
+        float pulse = .9f + .1f * Mathf.Sin(t * 5f);
+        Halo(m, p + m.Up * .15f, 1.25f * pulse, A(c, appear * .8f));
+        Sprite(m, SkillVfxShape.Shield, p + m.Up * .15f, 1.05f, 1.3f,
+            0, A(c, appear * .9f));
+        for (int i = 0; i < 4; i++)
+        {
+            float angle = i * Mathf.PI * .5f + .25f;
+            Vector3 offset = m.Right * Mathf.Cos(angle) * 1.25f + m.Up * Mathf.Sin(angle) * 1.25f;
+            Sprite(m, SkillVfxShape.Ray, p + offset, .12f, .55f, angle * Mathf.Rad2Deg,
+                A(c, appear * .8f));
+        }
+        Wave(m, foot, 1.4f * pulse, .1f, A(c, appear * .65f));
     }
 
     private static void BoltHit(SkillVfxMesh m, Vector3 p, float t, Color c)

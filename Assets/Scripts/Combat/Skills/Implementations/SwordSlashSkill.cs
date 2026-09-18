@@ -5,20 +5,23 @@ public sealed class SwordSlashSkill : SkillBase
     private readonly float _strScale;
     private readonly float _maxRange;
     private readonly float _cooldownSeconds;
+    private readonly string _name;
 
     public SwordSlashSkill(
         float strScale = 0.65f,
         float maxRange = 2f,
-        float cooldownSeconds = 0.9f)
+        float cooldownSeconds = 0.9f,
+        string name = "斬撃")
     {
         _strScale = strScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
+        _name = string.IsNullOrEmpty(name) ? "斬撃" : name;
     }
 
-    public override string Name => "斬撃";
+    public override string Name => _name;
 
-    public override string PowerDescription => $"STR × {_strScale:0.##}";
+    public override string PowerDescription => $"STR × {_strScale:0.###}";
 
     public override string EffectDescription => "単体ダメージ";
 

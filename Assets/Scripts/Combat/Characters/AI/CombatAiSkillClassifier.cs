@@ -12,6 +12,8 @@ public static class CombatAiSkillClassifier
     {
         return skill != null && skill.Id is
             SkillId.Sword_Slash or
+            SkillId.Sword_QuickSlash or
+            SkillId.Sword_StrongSlash or
             SkillId.Shield_Slash or
             SkillId.Wand_Bolt or
             SkillId.Wand_ArcaneBlast or
@@ -59,12 +61,13 @@ public static class CombatAiSkillClassifier
         return skill != null && skill.Id is
             SkillId.Bible_Invulnerable or
             SkillId.Bible_Gotsume or
-            SkillId.Shield_ShoulderGuard;
+            SkillId.Shield_ShoulderGuard or
+            SkillId.Shield_IronWall;
     }
 
-    public static bool IsMobility(SkillBase skill)
+    public static bool IsTaunt(SkillBase skill)
     {
-        return skill != null && skill.Id == SkillId.Bible_CarryRush;
+        return skill != null && skill.Id == SkillId.Shield_Taunt;
     }
 
     public static bool IsStealth(SkillBase skill)
