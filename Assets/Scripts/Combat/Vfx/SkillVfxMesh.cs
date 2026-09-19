@@ -56,7 +56,7 @@ public sealed class SkillVfxMesh
 
     private void Vertex(Vector3 p, Color c, Vector4 uv = default)
     {
-        c.a *= Opacity;
+        c.a = Mathf.Clamp01(c.a * 1.5f) * Opacity;
         _vertices.Add(p);
         _colors.Add(c);
         _uvs.Add(uv);

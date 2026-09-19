@@ -6,6 +6,7 @@ public static partial class CombatAiPlanner
 {
     internal const float RegroupTriggerHpRatio = 0.15f;
     internal const float RegroupReleaseHpRatio = 0.5f;
+    internal const float EnemyStonePriorityMaxAliveRatio = 0.5f;
     private const float RosaryPreferredSupportDistance = 5.5f;
     private const float RosaryCloseHealDistance = 2.5f;
     private const float RosaryEnemyClearanceDistance = 6.5f;
@@ -186,6 +187,12 @@ public static partial class CombatAiPlanner
                 ? CombatAiReasonCode.PersonalityPreference
                 : CombatAiReasonCode.AllyFragilityHigh;
             return CombatObjective.SupportAlly;
+        }
+
+        if (ShouldPrioritizeEnemyStoneForCasualties(context))
+        {
+            reason = CombatAiReasonCode.EnemyCasualtiesHigh;
+            return CombatObjective.DestroyEnemyStone;
         }
 
         if (ShouldAttack(context))
@@ -1172,6 +1179,24 @@ public static partial class CombatAiPlanner
 
     private static bool HasLivingEnemyStone(CombatAiContext context) =>
         context.HasEnemyStonePosition && (!context.HasEnemyStoneHealth || context.EnemyStoneHP > 0);
+
+    private static bool ShouldPrioritizeEnemyStoneForCasualties(CombatAiContext context)
+    {
+        if (!HasLivingEnemyStone(context)) return false;
+
+        int totalEnemies = 0;
+        int livingEnemies = 0;
+        for (int i = 0; i < context.EnemyIntel.Count; i++)
+        {
+            CombatCharacterIntel enemy = context.EnemyIntel[i];
+            if (enemy.Character == null) continue;
+
+            totalEnemies++;
+            if (enemy.IsAlive) livingEnemies++;
+        }
+
+        return totalEnemies > 0 && livingEnemies / (float)totalEnemies <= EnemyStonePriorityMaxAliveRatio;
+    }
 
     private static bool HasLivingAlly(CombatAiContext context)
     {

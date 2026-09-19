@@ -9,4 +9,5 @@ public enum CombatAiReasonCode
     AllyFragilityHigh = 27,
     EnemyLocationUncertain = 29,
     OwnStoneAttackerMarked = 30,
+    EnemyCasualtiesHigh = 31,
 }

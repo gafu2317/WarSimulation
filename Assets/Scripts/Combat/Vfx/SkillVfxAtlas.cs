@@ -1,6 +1,12 @@
 using UnityEngine;
 
-public enum SkillVfxShape { Slash, Petal, Impact, Smoke, Sigil, Feather, Ray, Thorn, Lightning, Orb, Hand, Shield, Chain, Tome, Gauntlet, Skull }
+public enum SkillVfxShape
+{
+    Slash, Petal, Impact, Smoke, Sigil, Feather, Ray, Thorn, Lightning, Orb, Hand, Shield,
+    Chain, Tome, Gauntlet, Skull, WindBlade, FlameTongue, BlastLobe, EnergyFilament,
+    LightningBranch, SlashSmear, ExplosionCore, ExplosionBillow, ExplosionFlameFront,
+    WindSpiral, FireCracks
+}
 
 public sealed class SkillVfxAtlas : ScriptableObject
 {

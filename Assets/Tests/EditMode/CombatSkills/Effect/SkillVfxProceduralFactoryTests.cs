@@ -5,6 +5,13 @@ using UnityEngine;
 public sealed class SkillVfxProceduralFactoryTests
 {
     [Test]
+    public void Atlas_HasARegionForEveryLayerSprite()
+    {
+        Assert.That(SkillVfxAtlas.Shared.Regions.Length,
+            Is.EqualTo(Enum.GetValues(typeof(SkillVfxShape)).Length));
+    }
+
+    [Test]
     public void Mesh_ReusedTexturedQuadsPreserveTrianglesUvAndOpacity()
     {
         var builder = new SkillVfxMesh { Opacity = .5f };
@@ -57,6 +64,17 @@ public sealed class SkillVfxProceduralFactoryTests
         foreach (var id in new[] { SkillId.Rosary_DistantHeal, SkillId.Rosary_CloseHeal,
             SkillId.Rosary_Regeneration, SkillId.Rosary_HealingArea })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Rosary_CloseHeal)), id.ToString());
+    }
+
+    [Test]
+    public void SupportColors_UseOrangeForBuffsAndBluePurpleForDebuffs()
+    {
+        Color buff = SkillVfxArt.ColorFor(SkillId.Bible_StrBuff);
+        Color debuff = SkillVfxArt.ColorFor(SkillId.Grimoire_StrDebuff);
+        Assert.That(buff.r, Is.GreaterThan(buff.g));
+        Assert.That(buff.g, Is.GreaterThan(buff.b));
+        Assert.That(debuff.b, Is.GreaterThan(debuff.r));
+        Assert.That(debuff.b, Is.GreaterThan(debuff.g));
     }
 
     [Test]

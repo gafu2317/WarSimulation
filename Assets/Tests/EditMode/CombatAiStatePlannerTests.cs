@@ -1365,6 +1365,43 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_PrioritizesEnemyStoneWhenEnemyAliveRatioIsAtMostHalf()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character livingEnemy = CreateCharacter("LivingEnemy", new Sword(), new Vector3(3f, 0f, 0f), team: CombatTeam.Enemy);
+        Character deadEnemyA = CreateCharacter("DeadEnemyA", new Sword(), new Vector3(8f, 0f, 0f), 30, 0, CombatTeam.Enemy);
+        Character deadEnemyB = CreateCharacter("DeadEnemyB", new Sword(), new Vector3(12f, 0f, 0f), 30, 0, CombatTeam.Enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(livingEnemy), Intel(deadEnemyA), Intel(deadEnemyB) },
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyCasualtiesHigh));
+    }
+
+    [Test]
+    public void Planner_KeepsAttackingWhenEnemyAliveRatioIsAboveHalf()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        Character livingEnemyA = CreateCharacter("LivingEnemyA", new Sword(), new Vector3(3f, 0f, 0f), team: CombatTeam.Enemy);
+        Character livingEnemyB = CreateCharacter("LivingEnemyB", new Sword(), new Vector3(12f, 0f, 0f), team: CombatTeam.Enemy);
+        Character deadEnemy = CreateCharacter("DeadEnemy", new Sword(), new Vector3(15f, 0f, 0f), 30, 0, CombatTeam.Enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(livingEnemyA), Intel(livingEnemyB), Intel(deadEnemy) },
+            enemyStone: new Vector3(20f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.AttackEnemy));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyInRange));
+        Assert.That(plan.MoveTarget.TargetCharacter, Is.SameAs(livingEnemyA));
+    }
+
+    [Test]
     public void Planner_SelectsDestroyEnemyStoneWhenNoHigherPriorityStateApplies()
     {
         Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);

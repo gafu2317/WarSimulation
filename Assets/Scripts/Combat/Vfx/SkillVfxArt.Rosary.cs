@@ -5,24 +5,34 @@ public static partial class SkillVfxArt
     private static void Rosary(SkillVfxMesh m, SkillId id, Vector3 self, Vector3 foot, Vector3 point,
         Vector3 p, float t, float radius, Color c)
     {
+        if (id is SkillId.Rosary_DistantHeal or SkillId.Rosary_CloseHeal or
+            SkillId.Rosary_Regeneration or SkillId.Rosary_HealingArea)
+            HealingSparkles(m, id == SkillId.Rosary_HealingArea ? point + Vector3.up * .25f : p, t,
+                id == SkillId.Rosary_HealingArea ? radius : 1.25f);
         switch (id)
         {
             case SkillId.Rosary_Strike:
-                Glint(m, p, 1.1f, t - .22f, c);
-                Sparks(m, p, t - .24f, 1.4f, 60, 180, c, 4);
-                Vector3 previous = self + Vector3.up;
-                for (int i = 0; i < 8; i++)
-                {
-                    float u = Mathf.Clamp01((t - i * .035f) / .24f);
-                    float alpha = Out(t - i * .035f, .18f, .4f);
-                    if (t < i * .035f) continue;
-                    Vector3 q = Vector3.Lerp(self + Vector3.up, p, u) + m.Up * Mathf.Sin(u * Mathf.PI) * (.8f + i * .11f);
-                    m.Stroke(previous, q, .075f, A(c, alpha * .8f));
-                    if (i == 0 || i == 7) Glint(m, q, .35f, t - i * .035f - .14f, c);
-                    Bead(m, q, .2f, A(White, alpha));
-                    if (u > .8f) Sprite(m, SkillVfxShape.Impact, p, .24f, .24f, i * 63, A(c, alpha * .5f));
-                    previous = q;
-                }
+                Vector3 normal = Vector3.Cross(m.Right, m.Up).normalized;
+                Vector3 origin = self + Vector3.up + m.Up * .12f - normal * 1.2f;
+                Vector3 beam = p + m.Up * .12f - normal * .4f - origin;
+                float fire = Ease(t, .1f), beamFade = Out(t, .18f, .62f);
+                Vector3 end = origin + beam * fire;
+                Vector3 beamDirection = end - origin;
+                Vector3 beamDirectionNormal = beamDirection.sqrMagnitude > .001f ? beamDirection.normalized : m.Right;
+                Vector3 beamSide = Vector3.Cross(beamDirectionNormal, normal).normalized;
+                if (beamSide.sqrMagnitude < .001f) beamSide = m.Up;
+                Vector3 outer = beamSide * .3f, inner = beamSide * .085f;
+                m.Quad(origin - outer, origin + outer, end + outer * .18f, end - outer * .18f,
+                    A(c, beamFade * .72f));
+                m.Quad(origin - inner, origin + inner, end + inner * .3f, end - inner * .3f,
+                    A(Color.white, beamFade));
+                Vector3 beamCenter = (origin + end) * .5f;
+                SkillVfxAtlas.Stamp(m, SkillVfxShape.EnergyFilament, beamCenter,
+                    beamDirection * .5f, beamSide * .13f, A(Color.white, beamFade));
+                Glint(m, origin, .72f, t, c);
+                Glint(m, p, 1.5f, t - .05f, c);
+                Sparks(m, p, t - .06f, 1.45f, 60, 210, c, 4);
+                Wave(m, foot, .25f + fire * .9f, .08f * beamFade, A(c, beamFade));
                 break;
             case SkillId.Rosary_DistantHeal:
                 float f = Out(t, .2f, 1.2f), receive = Ease(t, .45f);
@@ -77,7 +87,7 @@ public static partial class SkillVfxArt
                 break;
             case SkillId.Rosary_SacrificeThunder:
                 bool sacrifice = (self - foot).sqrMagnitude < .1f;
-                float flash = Mathf.Max(Out(t, .02f, .16f), In(t - .16f, .02f) * Out(t, .2f, .42f));
+                float flash = Mathf.Max(Out(t, .02f, .2f), In(t - .16f, .02f) * Out(t, .2f, .5f));
                 if (sacrifice)
                 {
                     float collapse = 1 - Ease(t, .3f);
@@ -88,13 +98,23 @@ public static partial class SkillVfxArt
                 {
                     for (int side = -1; side <= 1; side += 2)
                         Sprite(m, SkillVfxShape.Lightning, foot + m.Up * 1.8f + m.Right * side * .65f,
-                            1.0f, 2.6f, side * 16, A(c, flash * .65f));
-                    Glint(m, p, 2.2f, t, c);
-                    Sparks(m, p, t - .16f, 2.6f, 90, 290, c, 6);
-                    Sprite(m, SkillVfxShape.Lightning, foot + Vector3.up * 3.5f, t < .17f ? 1.85f : 2.4f, 3.7f,
+                            1.25f, 2.9f, side * 16, A(c, flash));
+                    Glint(m, p, 2.7f, t, c);
+                    Sparks(m, p, t - .16f, 3.1f, 90, 300, c, 9);
+                    Sprite(m, SkillVfxShape.Lightning, foot + Vector3.up * 3.5f, t < .17f ? 2.2f : 2.75f, 4.2f,
                         t < .17f ? -3 : 4, A(White, flash));
                     Sprite(m, SkillVfxShape.Ray, foot + Vector3.up * 2.7f, .3f, 2.9f, 0,
-                        A(c, Out(t, .2f, 1.1f) * .65f), In(t - .35f, .75f));
+                        A(c, Out(t, .2f, 1.35f) * .85f), In(t - .5f, .8f));
+                    float crackle = t < .18f ? 0 :
+                        (.65f + .35f * Mathf.Pow(Mathf.Max(0, Mathf.Sin(t * 31)), 4)) * Out(t, .42f, 1.5f);
+                    for (int i = 0; i < 6; i++)
+                    {
+                        float a = t * (5 + i) + i * 1.7f;
+                        Vector3 q = p + m.Right * Mathf.Cos(a) * (.75f + i * .13f) +
+                            m.Up * Mathf.Sin(a * 1.3f) * (.58f + i * .1f);
+                        Sprite(m, SkillVfxShape.LightningBranch, q, .82f, .96f,
+                            i * 57 + t * (82 + i * 7), A(i % 2 == 0 ? White : c, crackle));
+                    }
                 }
                 SkillVfxAtlas.Ground(m, SkillVfxShape.Impact, foot, .5f + Ease(t, .35f) * 1.5f,
                     0, A(sacrifice ? Gold : c, Out(t, .12f, .8f)), In(t - .2f, .6f));
@@ -142,6 +162,40 @@ public static partial class SkillVfxArt
             float u = Mathf.Clamp01((t - .16f - i * .09f) / .95f), alpha = Mathf.Sin(u * Mathf.PI);
             Vector3 p = basePoint + m.Right * Mathf.Sin(i * 2.4f) * (.55f + .25f * u) + m.Up * (.25f + u * 2.2f);
             Orb(m, p, .07f * alpha, A(White, alpha));
+        }
+    }
+
+    private static void HealingSparkles(SkillVfxMesh m, Vector3 center, float t, float radius)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            float cycle = Mathf.Repeat(t * .72f + i * .19f, 1);
+            float a = i * 2.4f + t * .45f;
+            Vector3 q = center + m.Right * Mathf.Sin(a) * radius * (.35f + cycle * .45f) +
+                m.Up * (.15f + cycle * 1.55f);
+            float shine = Mathf.Sin(cycle * Mathf.PI);
+            ConcaveSparkle(m, q, .12f + shine * .12f, .26f + shine * .22f,
+                i * 41, A(Color.white, shine));
+        }
+    }
+
+    private static void ConcaveSparkle(SkillVfxMesh m, Vector3 center, float width, float height,
+        float angle, Color color)
+    {
+        float rotation = angle * Mathf.Deg2Rad;
+        Vector3 Point(int index)
+        {
+            float a = rotation + index * Mathf.PI * .25f;
+            float inset = index % 2 == 0 ? 1f : .22f;
+            return center + m.Right * Mathf.Cos(a) * width * inset +
+                m.Up * Mathf.Sin(a) * height * inset;
+        }
+        Vector3 previous = Point(7);
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 next = Point(i);
+            m.Triangle(center, previous, next, color);
+            previous = next;
         }
     }
 }

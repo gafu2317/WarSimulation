@@ -50,6 +50,7 @@ public static class CombatAiDebugLabels
             CombatAiReasonCode.AllyFragilityHigh => Format(nameof(CombatAiReasonCode.AllyFragilityHigh), "味方脆弱性高い"),
             CombatAiReasonCode.EnemyLocationUncertain => Format(nameof(CombatAiReasonCode.EnemyLocationUncertain), "敵位置不確実"),
             CombatAiReasonCode.OwnStoneAttackerMarked => Format(nameof(CombatAiReasonCode.OwnStoneAttackerMarked), "自軍魔石攻撃者をマーク"),
+            CombatAiReasonCode.EnemyCasualtiesHigh => Format(nameof(CombatAiReasonCode.EnemyCasualtiesHigh), "敵生存率低下で魔石優先"),
             _ => reason.ToString(),
         };
     }

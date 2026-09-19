@@ -5,7 +5,8 @@ public static partial class SkillVfxArt
     private static readonly Color White = new(1, .98f, .86f);
     private static readonly Color Dark = new(.18f, .06f, .27f);
     private static readonly Color Gold = new(1, .74f, .24f);
-    private static readonly Color DebuffPurple = new(.7f, .32f, .9f);
+    private static readonly Color BuffOrange = new(1, .42f, .08f);
+    private static readonly Color DebuffBluePurple = new(.38f, .25f, 1f);
     private static readonly Color HealGreen = new(.22f, .91f, .59f);
     private static readonly Color SwordQuickCyan = new(.15f, .85f, 1f);
     private static readonly Color SwordStrongRed = new(1f, .28f, .12f);
@@ -21,7 +22,7 @@ public static partial class SkillVfxArt
         SkillId.Wand_Bolt or SkillId.Grimoire_Bolt => .8f,
         SkillId.Wand_ArcaneBlast or SkillId.Wand_AreaBlast or SkillId.Wand_GodsHand => 1.8f,
         SkillId.Rosary_CloseHeal => 1.65f,
-        SkillId.Rosary_SacrificeThunder => 1.4f,
+        SkillId.Rosary_SacrificeThunder => 1.8f,
         _ => 1.3f
     };
 
@@ -31,21 +32,21 @@ public static partial class SkillVfxArt
         SkillId.Sword_QuickSlash => SwordQuickCyan,
         SkillId.Sword_StrongSlash => SwordStrongRed,
         SkillId.Shield_Slash => new(.35f, .57f, .78f),
-        SkillId.Shield_ShoulderGuard => Gold,
-        SkillId.Shield_IronWall => Gold,
-        SkillId.Shield_Taunt => DebuffPurple,
-        SkillId.Wand_Bolt => new(.25f, .8f, 1),
-        SkillId.Wand_ArcaneBlast => new(.58f, .3f, 1),
+        SkillId.Shield_ShoulderGuard => BuffOrange,
+        SkillId.Shield_IronWall => BuffOrange,
+        SkillId.Shield_Taunt => DebuffBluePurple,
+        SkillId.Wand_Bolt => new(.2f, 1f, .68f),
+        SkillId.Wand_ArcaneBlast => new(1f, .18f, .055f),
         SkillId.Wand_AreaBlast => new(1, .34f, .08f),
         SkillId.Wand_GodsHand => new(1, .83f, .42f),
         SkillId.Grimoire_Bolt => new(.65f, .22f, .85f),
         SkillId.Grimoire_StrDebuff or SkillId.StatDebuff_INT or SkillId.StatDebuff_FAI or
-        SkillId.StatDebuff_AGI or SkillId.Grimoire_Bind or SkillId.Grimoire_Poison => DebuffPurple,
-        SkillId.Grimoire_Stealth => Gold,
+        SkillId.StatDebuff_AGI or SkillId.Grimoire_Bind or SkillId.Grimoire_Poison => DebuffBluePurple,
+        SkillId.Grimoire_Stealth => BuffOrange,
         SkillId.Bible_StrBuff or SkillId.Bible_IntBuff or SkillId.Bible_FaiBuff or
-        SkillId.Bible_AgiBuff or SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume or
+        SkillId.Bible_AgiBuff or SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume => BuffOrange,
         SkillId.Bible_Smite => Gold,
-        SkillId.Rosary_Strike => new(.93f, .87f, .7f),
+        SkillId.Rosary_Strike => new(1f, .42f, .08f),
         SkillId.Rosary_DistantHeal or SkillId.Rosary_CloseHeal or SkillId.Rosary_Regeneration or
         SkillId.Rosary_HealingArea => HealGreen,
         SkillId.Rosary_SacrificeThunder => new(.77f, .61f, 1),
@@ -65,20 +66,65 @@ public static partial class SkillVfxArt
         Vector3 p = self + Vector3.up * 1.2f;
         if (id == SkillId.Wand_GodsHand)
         {
-            float descend = Mathf.Pow(Mathf.Clamp01((u - .45f) / .55f), 3);
-            Fist(m, target + Vector3.up * (4.5f * (1 - descend) + .15f + .2f * (1 - u)), 2.6f, A(White, u));
-            Sprite(m, SkillVfxShape.Ray, target + Vector3.up * 3.5f, 1.4f, 3.5f, 0, A(Gold, u * .2f));
-            Wave(m, target, 1.4f, .035f, A(Gold, .45f * u));
-            if (u > .72f)
+            float scale = u < .28f ? .82f : u < .56f ? 1.55f : 2.6f;
+            float descend = Ease(u - .84f, .08f);
+            Vector3 hand = target + Vector3.up * (3.35f * (1 - descend) + .15f);
+            Fist(m, hand, scale, A(White, Mathf.Clamp01(u * 4)));
+            Halo(m, hand + m.Up * scale * .75f, scale * .58f, A(Gold, .85f));
+            float falling = In(u - .82f, .025f) * Out(u, .92f, .98f);
+            if (falling > 0)
                 for (int side = -1; side <= 1; side += 2)
-                    Sprite(m, SkillVfxShape.Ray, target + m.Up * (3.5f + 2 * (1 - descend)) + m.Right * side * 1.05f,
-                        .12f, 2.1f, 0, A(Gold, (u - .72f) / .28f * .65f));
+                    Sprite(m, SkillVfxShape.Ray, target + m.Up * (2.55f + 1.25f * (1 - descend)) + m.Right * side * 1.05f,
+                        .16f, 2.35f, 0, A(Gold, falling * .9f));
             return;
         }
-        if (id == SkillId.Wand_AreaBlast || id == SkillId.Rosary_HealingArea)
+        if (id == SkillId.Wand_Bolt)
+        {
+            float angle = u * 420;
+            Sprite(m, SkillVfxShape.WindSpiral, p, .55f + u * 1.3f, .48f + u * .9f,
+                -angle * .72f, A(c, u * .78f), 1 - u);
+            Sprite(m, SkillVfxShape.WindBlade, p, .7f + u * 1.35f, .42f + u * .32f,
+                angle, A(Color.Lerp(c, White, .18f), u));
+            m.Crescent(p, m.Right, m.Up * .72f, .35f + u * 1.15f, .055f * u,
+                25 + u * 120, 190, A(White, u * .65f));
+            for (int i = -1; i <= 1; i += 2)
+            {
+                float curl = u * Mathf.PI * 1.4f + i * .7f;
+                Vector3 a = p + m.Right * i * (.48f + u * .22f) - m.Up * .25f;
+                Vector3 b = p + m.Right * i * Mathf.Cos(curl) * .28f + m.Up * (.45f + u * .35f);
+                m.Stroke(a, b, .045f + u * .025f, A(White, u * .7f));
+            }
+            return;
+        }
+        if (id == SkillId.Wand_ArcaneBlast)
+        {
+            float charge = .2f + u * .58f;
+            Orb(m, p, charge, A(Color.Lerp(c, White, .35f), u));
+            m.Ring(p, .9f - u * .42f, .065f, A(c, u * .85f), u * 180, 280, false, 24);
+            return;
+        }
+        if (id == SkillId.Wand_AreaBlast)
+        {
+            float spread = Ease(u, .72f);
+            SkillVfxAtlas.Ground(m, SkillVfxShape.FireCracks, point,
+                radius * (.18f + spread * .68f), u * .18f, A(c, u * .48f), 1 - u);
+            m.Ring(point + Vector3.up * .1f, radius * (.2f + spread * .66f), .09f,
+                A(Gold, u * .8f), 35 + u * 150, 300 * spread, true, 32, true);
+            for (int i = 0; i < 4; i++)
+            {
+                float age = Mathf.Clamp01(u * 1.45f - i * .12f);
+                float a = i * 1.73f + .4f;
+                Vector3 q = m.Surface(point + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * radius * (.35f + i % 2 * .28f));
+                Sprite(m, SkillVfxShape.FlameTongue, q + m.Up * (.2f + age * .3f),
+                    .2f + age * (.12f + i % 2 * .05f), .35f + age * (.55f + i % 3 * .12f),
+                    i % 2 == 0 ? -11 : 9, A(i == 0 ? White : i % 2 == 0 ? Gold : c, age * .9f));
+            }
+            return;
+        }
+        if (id == SkillId.Rosary_HealingArea)
         {
             Wave(m, point, radius, .035f, A(c, .35f * u), true);
-            SkillVfxAtlas.Ground(m, id == SkillId.Wand_AreaBlast ? SkillVfxShape.Impact : SkillVfxShape.Petal,
+            SkillVfxAtlas.Ground(m, SkillVfxShape.Petal,
                 point + Vector3.up * .1f, radius * .7f * u, u, A(c, .16f * u));
         }
         bool curse = IsCurse(id);
@@ -129,11 +175,23 @@ public static partial class SkillVfxArt
         }
         else if (id == SkillId.Wand_ArcaneBlast)
         {
-            Sprite(m, SkillVfxShape.Orb, p - dir * 1.05f, 1.65f, .65f, angle, A(c, .22f));
-            Sprite(m, SkillVfxShape.Orb, p - dir * .6f, 1.9f, 1.2f, angle, c);
-            for (int i = 0; i < 3; i++)
-                m.Crescent(p - dir * (.15f + i * .3f), m.Right, m.Up, .55f + i * .09f,
-                    .09f, angle + u * 540 + i * 120, 120, A(i == 0 ? White : c, .75f));
+            Orb(m, p, .62f, c);
+            Orb(m, p + dir * .08f, .24f, White);
+            m.Stroke(p - dir * 1.15f, p - dir * .15f, .16f, A(c, .55f), .08f);
+        }
+        else if (id == SkillId.Wand_Bolt)
+        {
+            Sprite(m, SkillVfxShape.WindSpiral, p - dir * .12f, 1.05f, .72f,
+                -angle - u * 480, A(c, .72f));
+            Sprite(m, SkillVfxShape.WindBlade, p, 1.5f, .6f,
+                angle + u * 420, Color.Lerp(c, White, .15f));
+            for (int i = 1; i <= 2; i++)
+            {
+                float trail = Mathf.Clamp01(u - i * .065f);
+                Vector3 q = Vector3.Lerp(a, b, trail);
+                m.Stroke(q - dir * (.55f + i * .16f), q, .055f + i * .012f,
+                    A(i == 1 ? White : c, .72f / i), .02f);
+            }
         }
         else
         {
