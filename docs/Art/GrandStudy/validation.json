@@ -1,0 +1,58 @@
+{
+  "art_checks": {
+    "Picture_Landscape": "packed texture and flat UV canvas",
+    "Picture_Portrait": "packed texture and flat UV canvas",
+    "Photo_Frame": "packed texture and flat UV canvas"
+  },
+  "plant_mesh_bounds_m": {
+    "Plant_Broadleaf": [
+      [
+        -0.4619,
+        -0.4683,
+        0.0
+      ],
+      [
+        0.5336,
+        0.5013,
+        1.43
+      ]
+    ],
+    "Plant_Palm": [
+      [
+        -0.6949,
+        -0.7973,
+        0.0
+      ],
+      [
+        0.67,
+        0.6932,
+        1.6357
+      ]
+    ],
+    "Plant_Croton": [
+      [
+        -0.4647,
+        -0.5227,
+        0.0
+      ],
+      [
+        0.5451,
+        0.4527,
+        1.25
+      ]
+    ]
+  },
+  "reopened": true,
+  "cabinet_top_joints": true,
+  "asset_count": 73,
+  "scenes": [
+    "01 Furnished Study",
+    "02 Asset Catalogue",
+    "03 Furniture Detail"
+  ],
+  "external_image_dependencies": 0,
+  "floor_tiles": 12,
+  "ceiling_tiles": 12,
+  "valid_meshes_and_materials": true,
+  "notes": "Visual review is separate; no claim of exhaustive mesh-intersection testing. Internal construction joints intentionally overlap."
+}

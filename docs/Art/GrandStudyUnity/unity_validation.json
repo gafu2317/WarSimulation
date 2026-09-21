@@ -1,0 +1,1696 @@
+{
+    "unityVersion": "6000.4.3f1",
+    "scene": "Assets/Scenes/GrandStudyRoom.unity",
+    "roomPrefab": "Assets/Prefabs/GrandStudy/GrandStudyRoom.prefab",
+    "expectedModels": 73,
+    "importedFbx": 73,
+    "createdPrefabs": 73,
+    "roomInstances": 107,
+    "allUseUrpLit": true,
+    "allGrounded": true,
+    "allDimensionsMatch": true,
+    "roomPrefabConnections": true,
+    "cameraConfigured": true,
+    "models": [
+        {
+            "name": "Armchair_Leather",
+            "fbx": "Assets/Models/GrandStudy/Models/Armchair_Leather.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Armchair_Leather.prefab",
+            "rendererCount": 27,
+            "materialCount": 4,
+            "triangles": 25220,
+            "expectedSize": {
+                "x": 1.03000009059906,
+                "y": 1.3574882745742798,
+                "z": 0.9350000619888306
+            },
+            "prefabSize": {
+                "x": 1.0299999713897706,
+                "y": 1.3574883937835694,
+                "z": 0.9350000619888306
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Bird_Sculpture",
+            "fbx": "Assets/Models/GrandStudy/Models/Bird_Sculpture.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Bird_Sculpture.prefab",
+            "rendererCount": 33,
+            "materialCount": 2,
+            "triangles": 33250,
+            "expectedSize": {
+                "x": 0.19200000166893006,
+                "y": 0.4180000126361847,
+                "z": 0.289000004529953
+            },
+            "prefabSize": {
+                "x": 0.19200000166893006,
+                "y": 0.4180000126361847,
+                "z": 0.289000004529953
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Closed",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Closed.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Closed.prefab",
+            "rendererCount": 10,
+            "materialCount": 4,
+            "triangles": 2136,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Open",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Open.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Open.prefab",
+            "rendererCount": 35,
+            "materialCount": 3,
+            "triangles": 820,
+            "expectedSize": {
+                "x": 0.41999998688697817,
+                "y": 0.04800000041723251,
+                "z": 0.2800000011920929
+            },
+            "prefabSize": {
+                "x": 0.41999998688697817,
+                "y": 0.04800000041723251,
+                "z": 0.2800000011920929
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Stack",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Stack.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Stack.prefab",
+            "rendererCount": 9,
+            "materialCount": 3,
+            "triangles": 2700,
+            "expectedSize": {
+                "x": 0.3100000023841858,
+                "y": 0.18599998950958253,
+                "z": 0.2199999988079071
+            },
+            "prefabSize": {
+                "x": 0.3100000023841858,
+                "y": 0.18599998950958253,
+                "z": 0.2199999988079071
+            },
+            "groundHeight": 7.450580596923828e-9,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_01",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_01.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_01.prefab",
+            "rendererCount": 10,
+            "materialCount": 4,
+            "triangles": 2136,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_02",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_02.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_02.prefab",
+            "rendererCount": 14,
+            "materialCount": 4,
+            "triangles": 2864,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_03",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_03.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_03.prefab",
+            "rendererCount": 8,
+            "materialCount": 3,
+            "triangles": 2400,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_04",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_04.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_04.prefab",
+            "rendererCount": 10,
+            "materialCount": 4,
+            "triangles": 2136,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_05",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_05.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_05.prefab",
+            "rendererCount": 14,
+            "materialCount": 4,
+            "triangles": 2864,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_06",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_06.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_06.prefab",
+            "rendererCount": 8,
+            "materialCount": 3,
+            "triangles": 2400,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_07",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_07.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_07.prefab",
+            "rendererCount": 10,
+            "materialCount": 4,
+            "triangles": 2136,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_08",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_08.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_08.prefab",
+            "rendererCount": 14,
+            "materialCount": 4,
+            "triangles": 2864,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_09",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_09.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_09.prefab",
+            "rendererCount": 8,
+            "materialCount": 3,
+            "triangles": 2400,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_10",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_10.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_10.prefab",
+            "rendererCount": 10,
+            "materialCount": 4,
+            "triangles": 2136,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_11",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_11.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_11.prefab",
+            "rendererCount": 14,
+            "materialCount": 4,
+            "triangles": 2864,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Book_Variant_12",
+            "fbx": "Assets/Models/GrandStudy/Models/Book_Variant_12.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Book_Variant_12.prefab",
+            "rendererCount": 8,
+            "materialCount": 3,
+            "triangles": 2400,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Bookcase_Filled",
+            "fbx": "Assets/Models/GrandStudy/Models/Bookcase_Filled.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Bookcase_Filled.prefab",
+            "rendererCount": 959,
+            "materialCount": 12,
+            "triangles": 226600,
+            "expectedSize": {
+                "x": 2.5,
+                "y": 2.8499999046325685,
+                "z": 0.5529999732971191
+            },
+            "prefabSize": {
+                "x": 2.5,
+                "y": 2.8499999046325685,
+                "z": 0.5529999732971191
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Bust_Sculpture",
+            "fbx": "Assets/Models/GrandStudy/Models/Bust_Sculpture.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Bust_Sculpture.prefab",
+            "rendererCount": 57,
+            "materialCount": 1,
+            "triangles": 927860,
+            "expectedSize": {
+                "x": 0.20147711038589478,
+                "y": 0.3894444406032562,
+                "z": 0.14399999380111695
+            },
+            "prefabSize": {
+                "x": 0.20147711038589478,
+                "y": 0.3894444406032562,
+                "z": 0.14399999380111695
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Candelabra",
+            "fbx": "Assets/Models/GrandStudy/Models/Candelabra.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Candelabra.prefab",
+            "rendererCount": 13,
+            "materialCount": 3,
+            "triangles": 1536,
+            "expectedSize": {
+                "x": 0.38600000739097597,
+                "y": 0.4860000014305115,
+                "z": 0.18000000715255738
+            },
+            "prefabSize": {
+                "x": 0.38600000739097597,
+                "y": 0.4860000014305115,
+                "z": 0.18000000715255738
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Ceiling_Coffer_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Ceiling_Coffer_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Ceiling_Coffer_2m.prefab",
+            "rendererCount": 6,
+            "materialCount": 3,
+            "triangles": 1276,
+            "expectedSize": {
+                "x": 2.0,
+                "y": 0.18000000715255738,
+                "z": 2.0
+            },
+            "prefabSize": {
+                "x": 2.0,
+                "y": 0.17999999225139619,
+                "z": 2.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Chair_Arms",
+            "fbx": "Assets/Models/GrandStudy/Models/Chair_Arms.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Chair_Arms.prefab",
+            "rendererCount": 16,
+            "materialCount": 2,
+            "triangles": 4496,
+            "expectedSize": {
+                "x": 0.6159999966621399,
+                "y": 1.1366816759109498,
+                "z": 0.598379373550415
+            },
+            "prefabSize": {
+                "x": 0.6159999966621399,
+                "y": 1.1366817951202393,
+                "z": 0.598379373550415
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Chair_Red",
+            "fbx": "Assets/Models/GrandStudy/Models/Chair_Red.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Chair_Red.prefab",
+            "rendererCount": 12,
+            "materialCount": 2,
+            "triangles": 3832,
+            "expectedSize": {
+                "x": 0.5699999928474426,
+                "y": 1.1366816759109498,
+                "z": 0.598379373550415
+            },
+            "prefabSize": {
+                "x": 0.5699999928474426,
+                "y": 1.1366817951202393,
+                "z": 0.598379373550415
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Chandelier",
+            "fbx": "Assets/Models/GrandStudy/Models/Chandelier.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Chandelier.prefab",
+            "rendererCount": 58,
+            "materialCount": 3,
+            "triangles": 30784,
+            "expectedSize": {
+                "x": 1.3360000848770142,
+                "y": 1.1200000047683716,
+                "z": 1.3360000848770142
+            },
+            "prefabSize": {
+                "x": 1.3360000848770142,
+                "y": 1.1200000047683716,
+                "z": 1.3360000848770142
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Chess_Set",
+            "fbx": "Assets/Models/GrandStudy/Models/Chess_Set.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Chess_Set.prefab",
+            "rendererCount": 137,
+            "materialCount": 3,
+            "triangles": 20876,
+            "expectedSize": {
+                "x": 0.47999998927116396,
+                "y": 0.164000004529953,
+                "z": 0.47999998927116396
+            },
+            "prefabSize": {
+                "x": 0.47999998927116396,
+                "y": 0.164000004529953,
+                "z": 0.47999998927116396
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Coffee_Table",
+            "fbx": "Assets/Models/GrandStudy/Models/Coffee_Table.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Coffee_Table.prefab",
+            "rendererCount": 11,
+            "materialCount": 2,
+            "triangles": 4740,
+            "expectedSize": {
+                "x": 1.3049999475479127,
+                "y": 0.429999977350235,
+                "z": 0.7250000238418579
+            },
+            "prefabSize": {
+                "x": 1.3049999475479127,
+                "y": 0.429999977350235,
+                "z": 0.7250000238418579
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Cornice_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Cornice_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Cornice_2m.prefab",
+            "rendererCount": 2,
+            "materialCount": 2,
+            "triangles": 600,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Curtain_Pair",
+            "fbx": "Assets/Models/GrandStudy/Models/Curtain_Pair.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Curtain_Pair.prefab",
+            "rendererCount": 24,
+            "materialCount": 4,
+            "triangles": 42124,
+            "expectedSize": {
+                "x": 2.2899999618530275,
+                "y": 3.336681604385376,
+                "z": 0.36500000953674319
+            },
+            "prefabSize": {
+                "x": 2.2899999618530275,
+                "y": 3.336681842803955,
+                "z": 0.36500000953674319
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Desk_Lamp",
+            "fbx": "Assets/Models/GrandStudy/Models/Desk_Lamp.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Desk_Lamp.prefab",
+            "rendererCount": 96,
+            "materialCount": 3,
+            "triangles": 45312,
+            "expectedSize": {
+                "x": 0.503000020980835,
+                "y": 0.6930000185966492,
+                "z": 0.503000020980835
+            },
+            "prefabSize": {
+                "x": 0.503000020980835,
+                "y": 0.693000078201294,
+                "z": 0.503000020980835
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Desk_Pedestal",
+            "fbx": "Assets/Models/GrandStudy/Models/Desk_Pedestal.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Desk_Pedestal.prefab",
+            "rendererCount": 25,
+            "materialCount": 3,
+            "triangles": 5060,
+            "expectedSize": {
+                "x": 1.9500000476837159,
+                "y": 0.8389999866485596,
+                "z": 0.9325311183929443
+            },
+            "prefabSize": {
+                "x": 1.9500000476837159,
+                "y": 0.8389999866485596,
+                "z": 0.9325311183929443
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Display_Cabinet",
+            "fbx": "Assets/Models/GrandStudy/Models/Display_Cabinet.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Display_Cabinet.prefab",
+            "rendererCount": 339,
+            "materialCount": 12,
+            "triangles": 77920,
+            "expectedSize": {
+                "x": 1.0499999523162842,
+                "y": 2.700000047683716,
+                "z": 0.5529999732971191
+            },
+            "prefabSize": {
+                "x": 1.0499999523162842,
+                "y": 2.700000047683716,
+                "z": 0.5529999732971191
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Door_Frame",
+            "fbx": "Assets/Models/GrandStudy/Models/Door_Frame.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Door_Frame.prefab",
+            "rendererCount": 7,
+            "materialCount": 2,
+            "triangles": 2116,
+            "expectedSize": {
+                "x": 1.5499999523162842,
+                "y": 2.629999876022339,
+                "z": 0.2930000126361847
+            },
+            "prefabSize": {
+                "x": 1.5499999523162842,
+                "y": 2.629999876022339,
+                "z": 0.2930000126361847
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Door_Leaf",
+            "fbx": "Assets/Models/GrandStudy/Models/Door_Leaf.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Door_Leaf.prefab",
+            "rendererCount": 6,
+            "materialCount": 2,
+            "triangles": 1468,
+            "expectedSize": {
+                "x": 1.159999966621399,
+                "y": 2.4600000381469728,
+                "z": 0.19750002026557923
+            },
+            "prefabSize": {
+                "x": 1.159999966621399,
+                "y": 2.4600000381469728,
+                "z": 0.19750002026557923
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Floor_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Floor_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Floor_2m.prefab",
+            "rendererCount": 20,
+            "materialCount": 1,
+            "triangles": 6000,
+            "expectedSize": {
+                "x": 1.9959999322891236,
+                "y": 0.09000000357627869,
+                "z": 1.996000051498413
+            },
+            "prefabSize": {
+                "x": 1.996000051498413,
+                "y": 0.09000000357627869,
+                "z": 1.996000051498413
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Globe_Stand",
+            "fbx": "Assets/Models/GrandStudy/Models/Globe_Stand.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Globe_Stand.prefab",
+            "rendererCount": 16,
+            "materialCount": 4,
+            "triangles": 3856,
+            "expectedSize": {
+                "x": 0.8700000047683716,
+                "y": 1.350000023841858,
+                "z": 0.8700000047683716
+            },
+            "prefabSize": {
+                "x": 0.8700000047683716,
+                "y": 1.350000023841858,
+                "z": 0.8700000047683716
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Gramophone",
+            "fbx": "Assets/Models/GrandStudy/Models/Gramophone.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Gramophone.prefab",
+            "rendererCount": 49,
+            "materialCount": 5,
+            "triangles": 45940,
+            "expectedSize": {
+                "x": 0.5355327129364014,
+                "y": 0.7705867290496826,
+                "z": 0.6062721610069275
+            },
+            "prefabSize": {
+                "x": 0.5355327725410461,
+                "y": 0.7705867290496826,
+                "z": 0.6062721014022827
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Lace_Doily",
+            "fbx": "Assets/Models/GrandStudy/Models/Lace_Doily.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Lace_Doily.prefab",
+            "rendererCount": 28,
+            "materialCount": 1,
+            "triangles": 5632,
+            "expectedSize": {
+                "x": 0.29978734254837038,
+                "y": 0.004000001586973667,
+                "z": 0.29978734254837038
+            },
+            "prefabSize": {
+                "x": 0.29978734254837038,
+                "y": 0.004000001586973667,
+                "z": 0.29978734254837038
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Meeting_Table",
+            "fbx": "Assets/Models/GrandStudy/Models/Meeting_Table.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Meeting_Table.prefab",
+            "rendererCount": 11,
+            "materialCount": 2,
+            "triangles": 4740,
+            "expectedSize": {
+                "x": 2.255000114440918,
+                "y": 0.7800000309944153,
+                "z": 1.0549999475479127
+            },
+            "prefabSize": {
+                "x": 2.255000114440918,
+                "y": 0.7799999713897705,
+                "z": 1.0549999475479127
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Newspaper",
+            "fbx": "Assets/Models/GrandStudy/Models/Newspaper.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Newspaper.prefab",
+            "rendererCount": 65,
+            "materialCount": 2,
+            "triangles": 1068,
+            "expectedSize": {
+                "x": 0.3799999952316284,
+                "y": 0.012800000607967377,
+                "z": 0.2800000011920929
+            },
+            "prefabSize": {
+                "x": 0.3799999952316284,
+                "y": 0.012800000607967377,
+                "z": 0.2800000011920929
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Paper_Letter",
+            "fbx": "Assets/Models/GrandStudy/Models/Paper_Letter.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Paper_Letter.prefab",
+            "rendererCount": 19,
+            "materialCount": 2,
+            "triangles": 228,
+            "expectedSize": {
+                "x": 0.20999999344348908,
+                "y": 0.00279999990016222,
+                "z": 0.28999999165534975
+            },
+            "prefabSize": {
+                "x": 0.20999999344348908,
+                "y": 0.00279999990016222,
+                "z": 0.28999999165534975
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Photo_Frame",
+            "fbx": "Assets/Models/GrandStudy/Models/Photo_Frame.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Photo_Frame.prefab",
+            "rendererCount": 9,
+            "materialCount": 3,
+            "triangles": 1258,
+            "expectedSize": {
+                "x": 0.18000000715255738,
+                "y": 0.27305251359939577,
+                "z": 0.14903846383094788
+            },
+            "prefabSize": {
+                "x": 0.18000000715255738,
+                "y": 0.27305251359939577,
+                "z": 0.14903846383094788
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Picture_Landscape",
+            "fbx": "Assets/Models/GrandStudy/Models/Picture_Landscape.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Picture_Landscape.prefab",
+            "rendererCount": 118,
+            "materialCount": 3,
+            "triangles": 9902,
+            "expectedSize": {
+                "x": 1.0499999523162842,
+                "y": 0.6800000071525574,
+                "z": 0.049000002443790439
+            },
+            "prefabSize": {
+                "x": 1.0499999523162842,
+                "y": 0.6800000071525574,
+                "z": 0.049000002443790439
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Picture_Portrait",
+            "fbx": "Assets/Models/GrandStudy/Models/Picture_Portrait.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Picture_Portrait.prefab",
+            "rendererCount": 64,
+            "materialCount": 3,
+            "triangles": 5550,
+            "expectedSize": {
+                "x": 0.5400000214576721,
+                "y": 0.75,
+                "z": 0.049000002443790439
+            },
+            "prefabSize": {
+                "x": 0.5400000214576721,
+                "y": 0.75,
+                "z": 0.049000002443790439
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Plant_Broadleaf",
+            "fbx": "Assets/Models/GrandStudy/Models/Plant_Broadleaf.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Plant_Broadleaf.prefab",
+            "rendererCount": 112,
+            "materialCount": 5,
+            "triangles": 63120,
+            "expectedSize": {
+                "x": 0.9955799579620361,
+                "y": 1.4300000667572022,
+                "z": 0.969558835029602
+            },
+            "prefabSize": {
+                "x": 0.9955799579620361,
+                "y": 1.4300000667572022,
+                "z": 0.969558835029602
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Plant_Croton",
+            "fbx": "Assets/Models/GrandStudy/Models/Plant_Croton.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Plant_Croton.prefab",
+            "rendererCount": 112,
+            "materialCount": 5,
+            "triangles": 63120,
+            "expectedSize": {
+                "x": 1.0097970962524415,
+                "y": 1.25,
+                "z": 0.9753842353820801
+            },
+            "prefabSize": {
+                "x": 1.0097970962524415,
+                "y": 1.25,
+                "z": 0.9753842353820801
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Plant_Palm",
+            "fbx": "Assets/Models/GrandStudy/Models/Plant_Palm.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Plant_Palm.prefab",
+            "rendererCount": 523,
+            "materialCount": 5,
+            "triangles": 203076,
+            "expectedSize": {
+                "x": 1.3648581504821778,
+                "y": 1.6382135152816773,
+                "z": 1.4904881715774537
+            },
+            "prefabSize": {
+                "x": 1.3648581504821778,
+                "y": 1.6382133960723878,
+                "z": 1.4904881715774537
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Plant_Stand",
+            "fbx": "Assets/Models/GrandStudy/Models/Plant_Stand.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Plant_Stand.prefab",
+            "rendererCount": 4,
+            "materialCount": 1,
+            "triangles": 1376,
+            "expectedSize": {
+                "x": 0.5,
+                "y": 0.699999988079071,
+                "z": 0.5
+            },
+            "prefabSize": {
+                "x": 0.5,
+                "y": 0.699999988079071,
+                "z": 0.5
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Rose_Bouquet",
+            "fbx": "Assets/Models/GrandStudy/Models/Rose_Bouquet.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Rose_Bouquet.prefab",
+            "rendererCount": 252,
+            "materialCount": 4,
+            "triangles": 168204,
+            "expectedSize": {
+                "x": 0.20786088705062867,
+                "y": 0.47117990255355837,
+                "z": 0.21008890867233277
+            },
+            "prefabSize": {
+                "x": 0.20786088705062867,
+                "y": 0.47117987275123598,
+                "z": 0.21008890867233277
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Rug_Large",
+            "fbx": "Assets/Models/GrandStudy/Models/Rug_Large.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Rug_Large.prefab",
+            "rendererCount": 270,
+            "materialCount": 3,
+            "triangles": 7148,
+            "expectedSize": {
+                "x": 2.702000141143799,
+                "y": 0.01720000058412552,
+                "z": 1.9400888681411744
+            },
+            "prefabSize": {
+                "x": 2.702000141143799,
+                "y": 0.01720000058412552,
+                "z": 1.9400887489318848
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Rug_Runner",
+            "fbx": "Assets/Models/GrandStudy/Models/Rug_Runner.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Rug_Runner.prefab",
+            "rendererCount": 81,
+            "materialCount": 3,
+            "triangles": 2156,
+            "expectedSize": {
+                "x": 0.8519999980926514,
+                "y": 0.01720000058412552,
+                "z": 2.8900890350341799
+            },
+            "prefabSize": {
+                "x": 0.8519999980926514,
+                "y": 0.01720000058412552,
+                "z": 2.8900890350341799
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Serving_Tray",
+            "fbx": "Assets/Models/GrandStudy/Models/Serving_Tray.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Serving_Tray.prefab",
+            "rendererCount": 2,
+            "materialCount": 1,
+            "triangles": 364,
+            "expectedSize": {
+                "x": 0.44999998807907107,
+                "y": 0.03500000014901161,
+                "z": 0.3100000023841858
+            },
+            "prefabSize": {
+                "x": 0.44999998807907107,
+                "y": 0.03500000014901161,
+                "z": 0.3100000023841858
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Side_Table",
+            "fbx": "Assets/Models/GrandStudy/Models/Side_Table.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Side_Table.prefab",
+            "rendererCount": 11,
+            "materialCount": 2,
+            "triangles": 4740,
+            "expectedSize": {
+                "x": 0.7253646850585938,
+                "y": 0.6299999952316284,
+                "z": 0.5049999952316284
+            },
+            "prefabSize": {
+                "x": 0.7253646850585938,
+                "y": 0.6299999952316284,
+                "z": 0.5049999952316284
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Sideboard",
+            "fbx": "Assets/Models/GrandStudy/Models/Sideboard.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Sideboard.prefab",
+            "rendererCount": 15,
+            "materialCount": 3,
+            "triangles": 4100,
+            "expectedSize": {
+                "x": 1.75,
+                "y": 0.9200000166893005,
+                "z": 0.6150000095367432
+            },
+            "prefabSize": {
+                "x": 1.75,
+                "y": 0.9200000166893005,
+                "z": 0.6150000095367432
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Skirting_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Skirting_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Skirting_2m.prefab",
+            "rendererCount": 2,
+            "materialCount": 2,
+            "triangles": 600,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Small_Cabinet",
+            "fbx": "Assets/Models/GrandStudy/Models/Small_Cabinet.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Small_Cabinet.prefab",
+            "rendererCount": 15,
+            "materialCount": 3,
+            "triangles": 4100,
+            "expectedSize": {
+                "x": 0.6600000262260437,
+                "y": 0.8199999928474426,
+                "z": 0.6349999904632568
+            },
+            "prefabSize": {
+                "x": 0.6600000262260437,
+                "y": 0.8199999928474426,
+                "z": 0.6349999904632568
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Sofa_ThreeSeat",
+            "fbx": "Assets/Models/GrandStudy/Models/Sofa_ThreeSeat.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Sofa_ThreeSeat.prefab",
+            "rendererCount": 50,
+            "materialCount": 4,
+            "triangles": 39444,
+            "expectedSize": {
+                "x": 2.1600000858306886,
+                "y": 1.2274795770645142,
+                "z": 0.9350000619888306
+            },
+            "prefabSize": {
+                "x": 2.1600000858306886,
+                "y": 1.2274796962738038,
+                "z": 0.9350000619888306
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Sugar_Bowl",
+            "fbx": "Assets/Models/GrandStudy/Models/Sugar_Bowl.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Sugar_Bowl.prefab",
+            "rendererCount": 2,
+            "materialCount": 2,
+            "triangles": 696,
+            "expectedSize": {
+                "x": 0.15000000596046449,
+                "y": 0.14900000393390656,
+                "z": 0.15000000596046449
+            },
+            "prefabSize": {
+                "x": 0.15000000596046449,
+                "y": 0.14900000393390656,
+                "z": 0.15000000596046449
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Table_Lamp",
+            "fbx": "Assets/Models/GrandStudy/Models/Table_Lamp.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Table_Lamp.prefab",
+            "rendererCount": 4,
+            "materialCount": 3,
+            "triangles": 2624,
+            "expectedSize": {
+                "x": 0.4359999895095825,
+                "y": 0.578000009059906,
+                "z": 0.4359999895095825
+            },
+            "prefabSize": {
+                "x": 0.4359999895095825,
+                "y": 0.578000009059906,
+                "z": 0.4359999895095825
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Tea_Trolley",
+            "fbx": "Assets/Models/GrandStudy/Models/Tea_Trolley.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Tea_Trolley.prefab",
+            "rendererCount": 43,
+            "materialCount": 3,
+            "triangles": 6920,
+            "expectedSize": {
+                "x": 1.0579999685287476,
+                "y": 0.9682080149650574,
+                "z": 0.5379999876022339
+            },
+            "prefabSize": {
+                "x": 1.0579999685287476,
+                "y": 0.9682080149650574,
+                "z": 0.5379999876022339
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Teacup_Saucer",
+            "fbx": "Assets/Models/GrandStudy/Models/Teacup_Saucer.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Teacup_Saucer.prefab",
+            "rendererCount": 4,
+            "materialCount": 2,
+            "triangles": 1728,
+            "expectedSize": {
+                "x": 0.1899999976158142,
+                "y": 0.09700000286102295,
+                "z": 0.1899999976158142
+            },
+            "prefabSize": {
+                "x": 0.1899999976158142,
+                "y": 0.09700000286102295,
+                "z": 0.1899999976158142
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Teapot",
+            "fbx": "Assets/Models/GrandStudy/Models/Teapot.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Teapot.prefab",
+            "rendererCount": 5,
+            "materialCount": 2,
+            "triangles": 968,
+            "expectedSize": {
+                "x": 0.3926440477371216,
+                "y": 0.23999999463558198,
+                "z": 0.23999999463558198
+            },
+            "prefabSize": {
+                "x": 0.3926440477371216,
+                "y": 0.23999997973442079,
+                "z": 0.23999999463558198
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Telephone",
+            "fbx": "Assets/Models/GrandStudy/Models/Telephone.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Telephone.prefab",
+            "rendererCount": 52,
+            "materialCount": 6,
+            "triangles": 26745,
+            "expectedSize": {
+                "x": 0.320000022649765,
+                "y": 0.31369853019714358,
+                "z": 0.34623104333877566
+            },
+            "prefabSize": {
+                "x": 0.320000022649765,
+                "y": 0.31369853019714358,
+                "z": 0.34623104333877566
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Trophy_Cup",
+            "fbx": "Assets/Models/GrandStudy/Models/Trophy_Cup.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Trophy_Cup.prefab",
+            "rendererCount": 10,
+            "materialCount": 2,
+            "triangles": 6892,
+            "expectedSize": {
+                "x": 0.19587334990501405,
+                "y": 0.2199999988079071,
+                "z": 0.12999999523162843
+            },
+            "prefabSize": {
+                "x": 0.19587334990501405,
+                "y": 0.2199999988079071,
+                "z": 0.12999999523162843
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Vase_Ceramic",
+            "fbx": "Assets/Models/GrandStudy/Models/Vase_Ceramic.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Vase_Ceramic.prefab",
+            "rendererCount": 4,
+            "materialCount": 2,
+            "triangles": 3904,
+            "expectedSize": {
+                "x": 0.23999999463558198,
+                "y": 0.44999998807907107,
+                "z": 0.23999999463558198
+            },
+            "prefabSize": {
+                "x": 0.23999999463558198,
+                "y": 0.44999998807907107,
+                "z": 0.23999999463558198
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Vent_Lattice",
+            "fbx": "Assets/Models/GrandStudy/Models/Vent_Lattice.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Vent_Lattice.prefab",
+            "rendererCount": 24,
+            "materialCount": 2,
+            "triangles": 716,
+            "expectedSize": {
+                "x": 1.2442426681518555,
+                "y": 0.4042426347732544,
+                "z": 0.08950000256299973
+            },
+            "prefabSize": {
+                "x": 1.2442426681518555,
+                "y": 0.4042426347732544,
+                "z": 0.08950001001358032
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Wall_Clock",
+            "fbx": "Assets/Models/GrandStudy/Models/Wall_Clock.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Wall_Clock.prefab",
+            "rendererCount": 18,
+            "materialCount": 5,
+            "triangles": 1172,
+            "expectedSize": {
+                "x": 0.36000001430511477,
+                "y": 1.0199999809265137,
+                "z": 0.1860000044107437
+            },
+            "prefabSize": {
+                "x": 0.36000001430511477,
+                "y": 1.0199999809265137,
+                "z": 0.1860000044107437
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Wall_DoorOpening_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Wall_DoorOpening_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Wall_DoorOpening_2m.prefab",
+            "rendererCount": 3,
+            "materialCount": 1,
+            "triangles": 36,
+            "expectedSize": {
+                "x": 2.0,
+                "y": 3.6000001430511476,
+                "z": 0.20000000298023225
+            },
+            "prefabSize": {
+                "x": 2.0,
+                "y": 3.6000001430511476,
+                "z": 0.20000000298023225
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Wall_Panel_1m",
+            "fbx": "Assets/Models/GrandStudy/Models/Wall_Panel_1m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Wall_Panel_1m.prefab",
+            "rendererCount": 41,
+            "materialCount": 5,
+            "triangles": 3988,
+            "expectedSize": {
+                "x": 1.0,
+                "y": 3.5999999046325685,
+                "z": 0.32999998331069949
+            },
+            "prefabSize": {
+                "x": 1.0,
+                "y": 3.5999999046325685,
+                "z": 0.32999998331069949
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Wall_Panel_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Wall_Panel_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Wall_Panel_2m.prefab",
+            "rendererCount": 77,
+            "materialCount": 5,
+            "triangles": 6764,
+            "expectedSize": {
+                "x": 2.0,
+                "y": 3.5999999046325685,
+                "z": 0.32999998331069949
+            },
+            "prefabSize": {
+                "x": 2.0,
+                "y": 3.5999999046325685,
+                "z": 0.32999998331069949
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Wall_Sconce",
+            "fbx": "Assets/Models/GrandStudy/Models/Wall_Sconce.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Wall_Sconce.prefab",
+            "rendererCount": 5,
+            "materialCount": 2,
+            "triangles": 2712,
+            "expectedSize": {
+                "x": 0.25599998235702517,
+                "y": 0.40143704414367678,
+                "z": 0.4509999752044678
+            },
+            "prefabSize": {
+                "x": 0.25599998235702517,
+                "y": 0.40143704414367678,
+                "z": 0.4509999752044678
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Wall_WindowOpening_2m",
+            "fbx": "Assets/Models/GrandStudy/Models/Wall_WindowOpening_2m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Wall_WindowOpening_2m.prefab",
+            "rendererCount": 4,
+            "materialCount": 2,
+            "triangles": 48,
+            "expectedSize": {
+                "x": 2.0,
+                "y": 3.6000001430511476,
+                "z": 0.20000000298023225
+            },
+            "prefabSize": {
+                "x": 2.0,
+                "y": 3.6000001430511476,
+                "z": 0.20000000298023225
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Window_Tall_1p7m",
+            "fbx": "Assets/Models/GrandStudy/Models/Window_Tall_1p7m.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Window_Tall_1p7m.prefab",
+            "rendererCount": 12,
+            "materialCount": 2,
+            "triangles": 3312,
+            "expectedSize": {
+                "x": 1.940000057220459,
+                "y": 2.5350000858306886,
+                "z": 0.3499999940395355
+            },
+            "prefabSize": {
+                "x": 1.940000057220459,
+                "y": 2.5350000858306886,
+                "z": 0.3499999940395355
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        },
+        {
+            "name": "Writing_Set",
+            "fbx": "Assets/Models/GrandStudy/Models/Writing_Set.fbx",
+            "prefab": "Assets/Prefabs/GrandStudy/Objects/Writing_Set.prefab",
+            "rendererCount": 7,
+            "materialCount": 4,
+            "triangles": 848,
+            "expectedSize": {
+                "x": 0.4036010801792145,
+                "y": 0.35116562247276308,
+                "z": 0.15000000596046449
+            },
+            "prefabSize": {
+                "x": 0.4036010503768921,
+                "y": 0.35116562247276308,
+                "z": 0.15000000596046449
+            },
+            "groundHeight": 0.0,
+            "usesUrpLit": true,
+            "grounded": true,
+            "dimensionsMatch": true,
+            "status": "PASS"
+        }
+    ],
+    "status": "PASS"
+}
