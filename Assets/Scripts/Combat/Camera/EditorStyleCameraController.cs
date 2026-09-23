@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.InputSystem.OnScreen;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
@@ -36,6 +37,15 @@ public class EditorStyleCameraController : MonoBehaviour
 
     private void Start()
     {
+        Camera camera = GetComponent<Camera>();
+        UniversalAdditionalCameraData cameraData = GetComponent<UniversalAdditionalCameraData>();
+        if (camera != null && cameraData != null)
+        {
+            camera.allowMSAA = false;
+            cameraData.renderPostProcessing = true;
+            cameraData.antialiasing = AntialiasingMode.TemporalAntiAliasing;
+        }
+
         SyncStateFromTransform();
     }
 
