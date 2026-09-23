@@ -13,7 +13,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private const string FinalStatColor = "#FF4D4D";
     private const float StatusHeadingHeight = 32f;
     private const float StatusValueHeight = 30f;
-    private static readonly float[] MovementSpeedMultipliers = { 1f, 2f, 4f };
+    private static readonly float[] CameraSpeedMultipliers = { 1f, 2f, 4f };
     private static readonly CombatStat[] AdjustableStats =
     {
         CombatStat.STR,
@@ -193,7 +193,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<SelectionRow> _enemyRows = new();
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
-    private Button _movementSpeedButton;
+    private Button _cameraSpeedButton;
     private Button _bulkWeaponButton;
     private Button _bulkPersonalityButton;
     private Button _enemyFormationButton;
@@ -239,11 +239,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private bool _detailSettingsOpen;
     private bool _stonePositionReversed;
     private bool _externalStartAllowed = true;
-    private int _movementSpeedMultiplierIndex;
+    private int _cameraSpeedMultiplierIndex;
+    private bool _cameraSpeedBaseCaptured;
+    private float _baseCameraMoveSpeed;
+    private float _baseCameraPanSpeed;
+    private float _baseCameraScrollSpeed;
 
     public IReadOnlyList<WeaponConfig> WeaponOptions => _weaponOptions;
     public bool IsStonePositionReversed => _stonePositionReversed;
-    public float MovementSpeedMultiplier => MovementSpeedMultipliers[_movementSpeedMultiplierIndex];
+    public float CameraSpeedMultiplier => CameraSpeedMultipliers[_cameraSpeedMultiplierIndex];
     public event Action<bool> StonePositionReversedChanged;
 
     public void SetExternalStartAllowed(bool allowed)
@@ -427,10 +431,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ClearToolbarButtons()
     {
-        if (_movementSpeedButton != null)
+        if (_cameraSpeedButton != null)
         {
-            _movementSpeedButton.onClick.RemoveListener(CycleMovementSpeed);
-            _movementSpeedButton = null;
+            _cameraSpeedButton.onClick.RemoveListener(CycleCameraSpeed);
+            _cameraSpeedButton = null;
         }
 
         if (_bulkWeaponButton != null)
@@ -547,16 +551,16 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         headerObject.GetComponent<LayoutElement>().preferredHeight = 148f;
 
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
-        _movementSpeedButton = CreateButton(actionRow, "MovementSpeedButton", 220f, 48f, CycleMovementSpeed);
+        _cameraSpeedButton = CreateButton(actionRow, "CameraSpeedButton", 250f, 48f, CycleCameraSpeed);
         _bulkWeaponButton = CreateButton(actionRow, "BulkWeaponButton", 220f, 48f, OpenBulkWeaponPicker);
         _bulkPersonalityButton = CreateButton(actionRow, "BulkPersonalityButton", 220f, 48f, OpenBulkPersonalityPicker);
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
         _battleUiModeButton = CreateButton(actionRow, "BattleUiModeButton", 220f, 48f, ToggleBattleUiMode);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
-        RefreshMovementSpeedButton();
+        RefreshCameraSpeedButton();
         SetButtonLabel(_bulkWeaponButton, "武器一括変更");
         SetButtonLabel(_bulkPersonalityButton, "性格一括変更");
-        ConfigureToolbarLabel(_movementSpeedButton, 24f);
+        ConfigureToolbarLabel(_cameraSpeedButton, 24f);
         ConfigureToolbarLabel(_bulkWeaponButton, 24f);
         ConfigureToolbarLabel(_bulkPersonalityButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
@@ -1370,16 +1374,42 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Refresh();
     }
 
-    private void CycleMovementSpeed()
+    private void CycleCameraSpeed()
     {
-        _movementSpeedMultiplierIndex =
-            (_movementSpeedMultiplierIndex + 1) % MovementSpeedMultipliers.Length;
-        RefreshMovementSpeedButton();
+        _cameraSpeedMultiplierIndex =
+            (_cameraSpeedMultiplierIndex + 1) % CameraSpeedMultipliers.Length;
+        RefreshCameraSpeedButton();
     }
 
-    private void RefreshMovementSpeedButton()
+    private void RefreshCameraSpeedButton()
     {
-        SetButtonLabel(_movementSpeedButton, $"移動速度: {MovementSpeedMultiplier:0}x");
+        ApplyCameraSpeed();
+        SetButtonLabel(_cameraSpeedButton, $"カメラ速度: {CameraSpeedMultiplier:0}x");
+    }
+
+    private void ApplyCameraSpeed()
+    {
+        EditorStyleCameraController camera = Camera.main != null
+            ? Camera.main.GetComponent<EditorStyleCameraController>()
+            : null;
+        if (camera == null)
+        {
+            camera = FindAnyObjectByType<EditorStyleCameraController>(FindObjectsInactive.Include);
+        }
+
+        if (camera == null) return;
+
+        if (!_cameraSpeedBaseCaptured)
+        {
+            _baseCameraMoveSpeed = camera.moveSpeed;
+            _baseCameraPanSpeed = camera.panSpeed;
+            _baseCameraScrollSpeed = camera.scrollSpeed;
+            _cameraSpeedBaseCaptured = true;
+        }
+
+        camera.moveSpeed = _baseCameraMoveSpeed * CameraSpeedMultiplier;
+        camera.panSpeed = _baseCameraPanSpeed * CameraSpeedMultiplier;
+        camera.scrollSpeed = _baseCameraScrollSpeed * CameraSpeedMultiplier;
     }
 
     private void OpenWeaponPicker(SelectionRow row)
@@ -2393,7 +2423,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 row.Character,
                 weapon,
                 personality,
-                MovementSpeedMultiplier,
+                1f,
                 tagalongTarget,
                 row.StatAdjustments));
             previousSelectedCharacter = row.Character;

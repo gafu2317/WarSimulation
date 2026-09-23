@@ -10,15 +10,15 @@
     {
       "name": "Wall_Panel_1m",
       "category": "Architecture",
-      "parts": 41,
+      "parts": 33,
       "mesh_bounds_m": [
         [
-          -0.5,
+          -0.52,
           -0.13,
           0.0
         ],
         [
-          0.5,
+          0.52,
           0.2,
           3.6
         ]
@@ -30,12 +30,12 @@
       "parts": 77,
       "mesh_bounds_m": [
         [
-          -1.0,
+          -1.02,
           -0.13,
           0.0
         ],
         [
-          1.0,
+          1.02,
           0.2,
           3.6
         ]
@@ -44,15 +44,15 @@
     {
       "name": "Wall_WindowOpening_2m",
       "category": "Architecture",
-      "parts": 4,
+      "parts": 28,
       "mesh_bounds_m": [
         [
-          -1.0,
-          0.0,
+          -1.02,
+          -0.17,
           0.0
         ],
         [
-          1.0,
+          1.02,
           0.2,
           3.6
         ]
@@ -112,15 +112,15 @@
     {
       "name": "Wall_DoorOpening_2m",
       "category": "Architecture",
-      "parts": 3,
+      "parts": 37,
       "mesh_bounds_m": [
         [
-          -1.0,
-          0.0,
+          -1.02,
+          -0.13,
           0.0
         ],
         [
-          1.0,
+          1.02,
           0.2,
           3.6
         ]
@@ -401,7 +401,7 @@
     {
       "name": "Sofa_ThreeSeat",
       "category": "Furniture",
-      "parts": 50,
+      "parts": 41,
       "mesh_bounds_m": [
         [
           -1.08,
@@ -410,15 +410,15 @@
         ],
         [
           1.08,
-          0.5,
-          1.225
+          0.445,
+          1.08
         ]
       ]
     },
     {
       "name": "Armchair_Leather",
       "category": "Furniture",
-      "parts": 27,
+      "parts": 24,
       "mesh_bounds_m": [
         [
           -0.515,
@@ -427,8 +427,8 @@
         ],
         [
           0.515,
-          0.5,
-          1.355
+          0.445,
+          1.16
         ]
       ]
     },
@@ -979,11 +979,11 @@
     {
       "name": "Globe_Stand",
       "category": "Objects",
-      "parts": 16,
+      "parts": 13,
       "mesh_bounds_m": [
         [
           -0.35,
-          -0.35,
+          -0.3526,
           0.0
         ],
         [
@@ -1081,7 +1081,19 @@
     {
       "name": "Lace_Doily",
       "category": "Textiles",
-      "parts": 28
+      "parts": 3,
+      "mesh_bounds_m": [
+        [
+          -0.145,
+          -0.145,
+          0.0
+        ],
+        [
+          0.145,
+          0.145,
+          0.003
+        ]
+      ]
     },
     {
       "name": "Plant_Broadleaf",
@@ -1171,7 +1183,7 @@
     {
       "name": "Trophy_Cup",
       "category": "Objects",
-      "parts": 10,
+      "parts": 6,
       "mesh_bounds_m": [
         [
           -0.065,

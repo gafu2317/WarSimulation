@@ -58,9 +58,9 @@ for a in [0,math.tau/3,2*math.tau/3]:
 
 clear('Telephone')
 block('Ebonised telephone foot',(0,0,.022),(.32,.255,.044),'Dark wood',.013)
-block('Brass lower step',(0,0,.050),(.29,.227,.019),'Brass',.005)
-block('Telephone enclosed case',(0,.016,.101),(.255,.181,.084),'Brass',.008)
-block('Case shoulder',(0,.016,.15),(.276,.196,.016),'Brass',.006)
+block('Wood lower step',(0,0,.050),(.29,.227,.019),'Dark wood',.005)
+block('Telephone enclosed case',(0,.016,.101),(.255,.181,.084),'Dark wood',.008)
+block('Case shoulder',(0,.016,.15),(.276,.196,.016),'Dark wood',.006)
 lathe('Central receiver pedestal',[(0,.157),(.04,.157),(.043,.171),(.024,.18),(.015,.224),(.028,.235),(.022,.247),(0,.249)],(0,.033,0),'Brass',48)
 for x in [-.108,.108]:
     bezier('Curved cradle fork',[(0,.033,.215),(x*.5,.033,.205),(x,.033,.218),(x,.033,.271)],.006)
@@ -90,9 +90,9 @@ for x in [-.113,.113]:
 curve('Braided receiver cable',[(.137+.009*math.cos(i*.65),.036+.009*math.sin(i*.65),.265-i*.0015) for i in range(125)],.0025,'Black')
 
 clear('Gramophone')
-block('Gramophone bottom moulding',(0,0,.015),(.36,.335,.03),'Walnut',.006)
-block('Gramophone cabinet',(0,0,.089),(.332,.303,.119),'Walnut',.005)
-block('Gramophone top moulding',(0,0,.157),(.36,.335,.018),'Walnut',.004)
+block('Gramophone bottom moulding',(0,0,.015),(.36,.335,.03),'Dark wood',.006)
+block('Gramophone cabinet',(0,0,.089),(.332,.303,.119),'Dark wood',.005)
+block('Gramophone top moulding',(0,0,.157),(.36,.335,.018),'Dark wood',.004)
 for z in [.037,.143]:
     curve('Cabinet fine brass inlay',[(-.168,-.155,z),(.168,-.155,z),(.168,.155,z),(-.168,.155,z)],.0012,'Brass',True)
 disk('Turntable felt',.141,.007,(0,0,.168),'Dark wood');disk('Shellac record',.133,.003,(0,0,.177),'Black')
@@ -152,6 +152,7 @@ for node in M['Brass'].node_tree.nodes:
 room=bpy.data.scenes['01 Furnished Study'];bpy.context.window.scene=room
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+if '--geometry-only' in sys.argv:raise SystemExit
 # Temporary contact sheet scene is not saved into the reusable asset file.
 preview=bpy.data.scenes.new('Focal props review');setup(preview);preview.cycles.samples=48
 current=bpy.data.collections.new('Preview surface');preview.collection.children.link(current)

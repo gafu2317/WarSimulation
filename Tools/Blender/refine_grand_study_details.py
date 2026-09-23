@@ -1,5 +1,5 @@
 """Detail pass on the editable study: structural upholstery and restrained PBR materials."""
-import bpy, math, random, ast, json
+import bpy, math, random, ast, json, sys
 from pathlib import Path
 from mathutils import Vector,Matrix
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/GrandStudy'
@@ -43,15 +43,30 @@ def surface(name,color,rough,kind,metal=0):
 surface('Walnut',(.041,.013,.006),.34,'wood')
 surface('Dark wood',(.018,.012,.009),.4,'wood')
 surface('Leather',(.030,.013,.009),.43,'leather')
+surface('Back leather',(.025,.011,.008),.68,'leather')
 surface('Red velvet',(.14,.006,.012),.75,'cloth')
 surface('Curtain blue',(.037,.042,.049),.82,'cloth')
 surface('Brass',(.33,.22,.09),.35,'metal',1)
 surface('Brocade',(.4,.3,.13),.78,'brocade')
 surface('Piping',(.065,.033,.009),.72,'cloth')
-# Reduce applied ornament to shallow relief, not thick rods standing off furniture.
-for name in ['Wall_Panel_1m','Wall_Panel_2m']:
+# Reduce applied ornament to shallow relief while keeping it clear of the wall face.
+for name in ['Wall_Panel_1m','Wall_Panel_2m','Wall_WindowOpening_2m','Wall_DoorOpening_2m']:
     for obj in bpy.data.collections[name].objects:
-        if obj.name.startswith('Wallpaper diamond'):obj.data.bevel_depth=.00065
+        if obj.name.startswith('Wallpaper diamond'):
+            obj.data.bevel_depth=.0025
+            for spline in obj.data.splines:
+                for point in spline.points:point.co.y=-.014
+# Overlap modular rails slightly so bevels cannot expose seams at joins.
+for name,width in [('Wall_Panel_1m',1.04),('Wall_Panel_2m',2.04)]:
+    for obj in bpy.data.collections[name].objects:
+        if obj.name.startswith('Wall trim'):obj.dimensions.x=width
+for name in ['Wall_WindowOpening_2m','Wall_DoorOpening_2m']:
+    for obj in bpy.data.collections[name].objects:
+        if obj.name.startswith(('Window lower trim','Window crown trim','Door lower trim','Door crown trim')):obj.dimensions.x=2.04
+current=bpy.data.collections['Wall_WindowOpening_2m']
+for obj in list(current.objects):
+    if obj.name.startswith('Window opening side casing'):bpy.data.objects.remove(obj,do_unlink=True)
+for x in [-.925,.925]:box('Window opening side casing',(x,-.09,2.0),(.17,.16,2.4),'Walnut',.008)
 for col in bpy.data.collections:
     if not col.get('category'):continue
     for obj in col.objects:
@@ -87,9 +102,9 @@ def pillow(x,y,z,w=.40,h=.40):
     obj['bottom_contact_z']=z;obj['independent_cushion']=True
 
 def padded_back(w,h):
-    bottom=.53;n=64;m=32;vs=[];buttons=[]
+    bottom=.52;n=64;m=32;vs=[];buttons=[]
     columns=9 if w>1.5 else 3
-    for j,t in enumerate([.25,.52,.78]):
+    for j,t in enumerate([.30,.62]):
         for i in range(columns):
             u=(i+.5+(j%2)*.20)/columns
             if u<.95:buttons.append((u,t))
@@ -97,10 +112,13 @@ def padded_back(w,h):
         for j in range(m+1):
             t=j/m
             for i in range(n+1):
-                u=i/n;x=(u-.5)*(w-.10);height=h+.045*math.sin(u*math.pi)
-                dent=sum(.035*math.exp(-((u-bu)/.023)**2-((t-bt)/.045)**2) for bu,bt in buttons)
-                bulge=.035*math.sin(math.pi*t)*math.sin(math.pi*u)
-                y=.28+.09*t+(.13 if rear else -bulge+dent)
+                u=i/n
+                height=h-.055+.055*math.sin(u*math.pi)
+                taper=1-.055*t*t
+                x=(u-.5)*(w-.10)*taper
+                dent=sum(.022*math.exp(-((u-bu)/.028)**2-((t-bt)/.06)**2) for bu,bt in buttons)
+                bulge=.025*math.sin(math.pi*t)*math.sin(math.pi*u)
+                y=.285+.055*t+(.105 if rear else -bulge+dent)
                 vs.append((x,y,bottom+t*height))
     count=(n+1)*(m+1);fs=[]
     for j in range(m):
@@ -108,12 +126,12 @@ def padded_back(w,h):
             a=j*(n+1)+i;fs.extend([(a,a+n+1,a+n+2,a+1),(a+count,a+1+count,a+n+2+count,a+n+1+count)])
     edge=list(range(n+1))+[j*(n+1)+n for j in range(1,m+1)]+[m*(n+1)+i for i in range(n-1,-1,-1)]+[j*(n+1) for j in range(m-1,0,-1)]
     for a,b in zip(edge,edge[1:]+edge[:1]):fs.append((a,b,b+count,a+count))
-    obj=mesh('Continuous tufted leather back',vs,fs,'Leather')
+    obj=mesh('Continuous tufted leather back',vs,fs,'Back leather')
     for p in obj.data.polygons:p.use_smooth=True
-    curve('Back welt seam',[vs[i] for i in edge],.0025,'Leather',True)
+    curve('Back welt seam',[vs[i] for i in edge],.0025,'Back leather',True)
     for u,t in buttons:
         index=round(t*m)*(n+1)+round(u*n);x,y,z=vs[index]
-        ball('Recessed covered button',(x,y-.001,z),(.007,.003,.007),'Leather')
+        ball('Recessed covered button',(x,y-.001,z),(.007,.003,.007),'Back leather')
 
 def seating(w,armchair=False):
     for x in [-w/2+.12,w/2-.12]:
@@ -125,7 +143,7 @@ def seating(w,armchair=False):
         width=(w-.34)/n;cx=-w/2+.17+(i+.5)*width
         box('Separate seat pad',(cx,-.045,.455),(width-.012,.67,.21),'Leather',.07)
         curve('Seat welt',[(cx-width/2+.03,-.352,.46),(cx+width/2-.03,-.352,.46),(cx+width/2-.03,.26,.46),(cx-width/2+.03,.26,.46)],.0025,'Leather',True)
-    padded_back(w,.78 if armchair else .65)
+    padded_back(w,.64 if armchair else .56)
     for side in [-1,1]:
         x=side*(w/2-.065)
         box('Leather arm body',(x,.01,.49),(.20,.72,.37),'Leather',.075)
@@ -193,6 +211,7 @@ for sc in bpy.data.scenes:
     sc.cycles.samples=40
 bpy.context.window.scene=room;bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+if '--geometry-only' in sys.argv:raise SystemExit
 # Close-ups first, before full-room renders.
 detail=bpy.data.scenes['03 Furniture Detail'];bpy.context.window.scene=detail;original_camera=detail.camera
 camera(detail,'Upholstery detail',(3.7,-4.8,2.5),(1.42,.25,.72),ortho=3.4)

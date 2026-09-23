@@ -137,9 +137,10 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
-    public void CharacterSelection_CyclesMovementSpeedWithoutSixfoldOption()
+    public void CharacterSelection_CyclesCameraSpeedWithoutSixfoldOption()
     {
         GameObject selectionObject = null;
+        GameObject cameraObject = null;
         var characters = new List<GameObject>();
 
         try
@@ -148,6 +149,14 @@ public sealed class CombatBattleFlowTests
                 "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
             Assert.That(selectionPrefab, Is.Not.Null);
 
+            cameraObject = new GameObject("Camera");
+            cameraObject.tag = "MainCamera";
+            cameraObject.AddComponent<Camera>();
+            EditorStyleCameraController camera = cameraObject.AddComponent<EditorStyleCameraController>();
+            camera.moveSpeed = 10f;
+            camera.panSpeed = 0.5f;
+            camera.scrollSpeed = 20f;
+
             selectionObject = Object.Instantiate(selectionPrefab);
             CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
             selection.Initialize(
@@ -155,21 +164,28 @@ public sealed class CombatBattleFlowTests
                 CreateCharacters("Enemy", CombatTeam.Enemy, 1, characters),
                 null);
 
-            Button movementSpeedButton = GetPrivateField<Button>(selection, "_movementSpeedButton");
-            TMP_Text movementSpeedText = movementSpeedButton.GetComponentInChildren<TMP_Text>(true);
+            Button cameraSpeedButton = GetPrivateField<Button>(selection, "_cameraSpeedButton");
+            TMP_Text cameraSpeedText = cameraSpeedButton.GetComponentInChildren<TMP_Text>(true);
 
-            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(1f));
-            movementSpeedButton.onClick.Invoke();
-            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(2f));
-            movementSpeedButton.onClick.Invoke();
-            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(4f));
-            movementSpeedButton.onClick.Invoke();
-            Assert.That(selection.MovementSpeedMultiplier, Is.EqualTo(1f));
-            Assert.That(movementSpeedText.text, Is.EqualTo("移動速度: 1x"));
+            Assert.That(selection.CameraSpeedMultiplier, Is.EqualTo(1f));
+            Assert.That(camera.moveSpeed, Is.EqualTo(10f));
+            cameraSpeedButton.onClick.Invoke();
+            Assert.That(selection.CameraSpeedMultiplier, Is.EqualTo(2f));
+            Assert.That(camera.moveSpeed, Is.EqualTo(20f));
+            Assert.That(camera.panSpeed, Is.EqualTo(1f));
+            Assert.That(camera.scrollSpeed, Is.EqualTo(40f));
+            cameraSpeedButton.onClick.Invoke();
+            Assert.That(selection.CameraSpeedMultiplier, Is.EqualTo(4f));
+            Assert.That(camera.moveSpeed, Is.EqualTo(40f));
+            cameraSpeedButton.onClick.Invoke();
+            Assert.That(selection.CameraSpeedMultiplier, Is.EqualTo(1f));
+            Assert.That(camera.moveSpeed, Is.EqualTo(10f));
+            Assert.That(cameraSpeedText.text, Is.EqualTo("カメラ速度: 1x"));
         }
         finally
         {
             if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            if (cameraObject != null) Object.DestroyImmediate(cameraObject);
             for (int i = 0; i < characters.Count; i++)
             {
                 if (characters[i] != null) Object.DestroyImmediate(characters[i]);

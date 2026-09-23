@@ -1,14 +1,670 @@
 {
   "blender": "5.0.0",
   "source": "ArtSource/Blender/GrandStudy.blend",
+  "materials": [
+    {
+      "name": "Aged bronze",
+      "base_color": [
+        0.1599999964237213,
+        0.10499999672174454,
+        0.052000001072883606,
+        1.0
+      ],
+      "metallic": 0.8299999833106995,
+      "roughness": 0.38999998569488525,
+      "alpha": 1.0
+    },
+    {
+      "name": "Back leather",
+      "base_color": [
+        0.02500000037252903,
+        0.010999999940395355,
+        0.00800000037997961,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.6800000071525574,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_back_leather_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_back_leather_mask.png"
+    },
+    {
+      "name": "Black",
+      "base_color": [
+        0.014000000432133675,
+        0.017999999225139618,
+        0.01899999938905239,
+        1.0
+      ],
+      "metallic": 0.20000000298023224,
+      "roughness": 0.3199999928474426,
+      "alpha": 1.0
+    },
+    {
+      "name": "Black book",
+      "base_color": [
+        0.019999999552965164,
+        0.01899999938905239,
+        0.014999999664723873,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7799999713897705,
+      "alpha": 1.0
+    },
+    {
+      "name": "Blue book",
+      "base_color": [
+        0.023000000044703484,
+        0.06800000369548798,
+        0.10000000149011612,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.550000011920929,
+      "alpha": 1.0
+    },
+    {
+      "name": "Brass",
+      "base_color": [
+        0.33000001311302185,
+        0.2199999988079071,
+        0.09000000357627869,
+        1.0
+      ],
+      "metallic": 1.0,
+      "roughness": 0.3499999940395355,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_brass_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_brass_mask.png"
+    },
+    {
+      "name": "Brocade",
+      "base_color": [
+        0.4000000059604645,
+        0.30000001192092896,
+        0.12999999523162842,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7799999713897705,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_brocade_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_brocade_mask.png"
+    },
+    {
+      "name": "Brown book",
+      "base_color": [
+        0.09000000357627869,
+        0.027000000700354576,
+        0.012000000104308128,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7799999713897705,
+      "alpha": 1.0
+    },
+    {
+      "name": "Burgundy book",
+      "base_color": [
+        0.10999999940395355,
+        0.013000000268220901,
+        0.019999999552965164,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7799999713897705,
+      "alpha": 1.0
+    },
+    {
+      "name": "Carved ivory stone",
+      "base_color": [
+        0.6100000143051147,
+        0.5699999928474426,
+        0.4699999988079071,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4000000059604645,
+      "alpha": 1.0
+    },
+    {
+      "name": "Cream",
+      "base_color": [
+        0.7200000286102295,
+        0.6499999761581421,
+        0.46000000834465027,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0
+    },
+    {
+      "name": "Croton burgundy",
+      "base_color": [
+        0.1599999964237213,
+        0.029999999329447746,
+        0.007000000216066837,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4099999964237213,
+      "alpha": 1.0
+    },
+    {
+      "name": "Croton green",
+      "base_color": [
+        0.035999998450279236,
+        0.07500000298023224,
+        0.013000000268220901,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4099999964237213,
+      "alpha": 1.0
+    },
+    {
+      "name": "Curtain blue",
+      "base_color": [
+        0.03700000047683716,
+        0.041999999433755875,
+        0.04899999871850014,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8199999928474426,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_curtain_blue_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_curtain_blue_mask.png"
+    },
+    {
+      "name": "Dark wood",
+      "base_color": [
+        0.017999999225139618,
+        0.012000000104308128,
+        0.008999999612569809,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4000000059604645,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_dark_wood_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_dark_wood_mask.png"
+    },
+    {
+      "name": "Ficus deep",
+      "base_color": [
+        0.02500000037252903,
+        0.09200000017881393,
+        0.017000000923871994,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4099999964237213,
+      "alpha": 1.0
+    },
+    {
+      "name": "Ficus young",
+      "base_color": [
+        0.06300000101327896,
+        0.17000000178813934,
+        0.027000000700354576,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4099999964237213,
+      "alpha": 1.0
+    },
+    {
+      "name": "Green book",
+      "base_color": [
+        0.035999998450279236,
+        0.09000000357627869,
+        0.061000000685453415,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.550000011920929,
+      "alpha": 1.0
+    },
+    {
+      "name": "Ink",
+      "base_color": [
+        0.054999999701976776,
+        0.03400000184774399,
+        0.02199999988079071,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "alpha": 1.0
+    },
+    {
+      "name": "Ivory glazed planter",
+      "base_color": [
+        0.4300000071525574,
+        0.38999998569488525,
+        0.2800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.27000001072883606,
+      "alpha": 1.0
+    },
+    {
+      "name": "Land",
+      "base_color": [
+        0.49000000953674316,
+        0.3799999952316284,
+        0.20000000298023224,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.800000011920929,
+      "alpha": 1.0
+    },
+    {
+      "name": "Leather",
+      "base_color": [
+        0.029999999329447746,
+        0.013000000268220901,
+        0.008999999612569809,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4300000071525574,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_leather_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_leather_mask.png"
+    },
+    {
+      "name": "Oak plank amber",
+      "base_color": [
+        0.47999998927116394,
+        0.36000001430511475,
+        0.2199999988079071,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0
+    },
+    {
+      "name": "Oak plank honey",
+      "base_color": [
+        0.6200000047683716,
+        0.5,
+        0.3400000035762787,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0
+    },
+    {
+      "name": "Oak plank light",
+      "base_color": [
+        0.8399999737739563,
+        0.7599999904632568,
+        0.6200000047683716,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0
+    },
+    {
+      "name": "Oak plank pale",
+      "base_color": [
+        0.7200000286102295,
+        0.6399999856948853,
+        0.5,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0
+    },
+    {
+      "name": "Oak seam",
+      "base_color": [
+        0.1599999964237213,
+        0.10999999940395355,
+        0.07000000029802322,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0
+    },
+    {
+      "name": "Ochre book",
+      "base_color": [
+        0.18000000715255737,
+        0.10000000149011612,
+        0.03500000014901161,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7799999713897705,
+      "alpha": 1.0
+    },
+    {
+      "name": "Opal glass",
+      "base_color": [
+        0.7200000286102295,
+        0.6499999761581421,
+        0.4300000071525574,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.23999999463558197,
+      "alpha": 1.0
+    },
+    {
+      "name": "Palm jade",
+      "base_color": [
+        0.02800000086426735,
+        0.11999999731779099,
+        0.03400000184774399,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4099999964237213,
+      "alpha": 1.0
+    },
+    {
+      "name": "Palm olive",
+      "base_color": [
+        0.07999999821186066,
+        0.1599999964237213,
+        0.02500000037252903,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.4099999964237213,
+      "alpha": 1.0
+    },
+    {
+      "name": "Paper",
+      "base_color": [
+        0.7300000190734863,
+        0.6399999856948853,
+        0.4300000071525574,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8500000238418579,
+      "alpha": 1.0
+    },
+    {
+      "name": "Parchment book",
+      "base_color": [
+        0.36000001430511475,
+        0.27000001072883606,
+        0.14000000059604645,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7799999713897705,
+      "alpha": 1.0
+    },
+    {
+      "name": "Photo_Frame oil on canvas",
+      "base_color": [
+        0.30000001192092896,
+        0.25,
+        0.17000000178813934,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.47999998927116394,
+      "alpha": 1.0
+    },
+    {
+      "name": "Picture_Landscape oil on canvas",
+      "base_color": [
+        0.30000001192092896,
+        0.25,
+        0.17000000178813934,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.47999998927116394,
+      "alpha": 1.0
+    },
+    {
+      "name": "Picture_Portrait oil on canvas",
+      "base_color": [
+        0.30000001192092896,
+        0.25,
+        0.17000000178813934,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.47999998927116394,
+      "alpha": 1.0
+    },
+    {
+      "name": "Piping",
+      "base_color": [
+        0.06499999761581421,
+        0.032999999821186066,
+        0.008999999612569809,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.7200000286102295,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_piping_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_piping_mask.png"
+    },
+    {
+      "name": "Plant bark",
+      "base_color": [
+        0.07100000232458115,
+        0.03999999910593033,
+        0.017000000923871994,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.800000011920929,
+      "alpha": 1.0
+    },
+    {
+      "name": "Plaster",
+      "base_color": [
+        0.6600000262260437,
+        0.6200000047683716,
+        0.47999998927116394,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "alpha": 1.0
+    },
+    {
+      "name": "Porcelain",
+      "base_color": [
+        0.8199999928474426,
+        0.7900000214576721,
+        0.6700000166893005,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.23000000417232513,
+      "alpha": 1.0
+    },
+    {
+      "name": "Potting soil",
+      "base_color": [
+        0.023000000044703484,
+        0.014000000432133675,
+        0.007000000216066837,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071,
+      "alpha": 1.0
+    },
+    {
+      "name": "Red book",
+      "base_color": [
+        0.20000000298023224,
+        0.026000000536441803,
+        0.019999999552965164,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.550000011920929,
+      "alpha": 1.0
+    },
+    {
+      "name": "Red velvet",
+      "base_color": [
+        0.14000000059604645,
+        0.006000000052154064,
+        0.012000000104308128,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.75,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_red_velvet_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_red_velvet_mask.png"
+    },
+    {
+      "name": "Rose edges",
+      "base_color": [
+        0.4300000071525574,
+        0.026000000536441803,
+        0.02199999988079071,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5699999928474426,
+      "alpha": 1.0
+    },
+    {
+      "name": "Rose velvet",
+      "base_color": [
+        0.3199999928474426,
+        0.014000000432133675,
+        0.017999999225139618,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5699999928474426,
+      "alpha": 1.0
+    },
+    {
+      "name": "Rose wine",
+      "base_color": [
+        0.20999999344348907,
+        0.004999999888241291,
+        0.012000000104308128,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5699999928474426,
+      "alpha": 1.0
+    },
+    {
+      "name": "Rug",
+      "base_color": [
+        0.1899999976158142,
+        0.06700000166893005,
+        0.03500000014901161,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071,
+      "alpha": 1.0
+    },
+    {
+      "name": "Rug dark",
+      "base_color": [
+        0.026000000536441803,
+        0.04699999839067459,
+        0.041999999433755875,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071,
+      "alpha": 1.0
+    },
+    {
+      "name": "Sea",
+      "base_color": [
+        0.10999999940395355,
+        0.18000000715255737,
+        0.1899999976158142,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.699999988079071,
+      "alpha": 1.0
+    },
+    {
+      "name": "Sheer",
+      "base_color": [
+        0.7400000095367432,
+        0.6899999976158142,
+        0.550000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071,
+      "alpha": 1.0
+    },
+    {
+      "name": "Wallpaper",
+      "base_color": [
+        0.3199999928474426,
+        0.3499999940395355,
+        0.2199999988079071,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8999999761581421,
+      "alpha": 1.0
+    },
+    {
+      "name": "Walnut",
+      "base_color": [
+        0.04100000113248825,
+        0.013000000268220901,
+        0.006000000052154064,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.3400000035762787,
+      "alpha": 1.0,
+      "base_texture": "Assets/Models/GrandStudy/Textures/grandstudy_walnut_base.png",
+      "mask_texture": "Assets/Models/GrandStudy/Textures/grandstudy_walnut_mask.png"
+    },
+    {
+      "name": "Window glass",
+      "base_color": [
+        0.6100000143051147,
+        0.75,
+        0.7799999713897705,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.1599999964237213,
+      "alpha": 0.30000001192092896
+    }
+  ],
   "models": [
     {
       "name": "Armchair_Leather",
       "asset_type": "Furniture",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Armchair_Leather.fbx",
-      "parts": 27,
-      "triangles": 24868,
+      "parts": 24,
+      "triangles": 23548,
       "minimum": [
         -0.51500004529953,
         -0.43500009179115295,
@@ -16,10 +672,11 @@
       ],
       "maximum": [
         0.51500004529953,
-        0.5,
-        1.3574882745742798
+        0.4449999928474426,
+        1.1624870300292969
       ],
       "materials": [
+        "Back leather",
         "Brocade",
         "Leather",
         "Piping",
@@ -507,7 +1164,7 @@
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Chair_Arms.fbx",
       "parts": 16,
-      "triangles": 1104,
+      "triangles": 1976,
       "minimum": [
         -0.30799999833106995,
         -0.2750000059604645,
@@ -529,7 +1186,7 @@
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Chair_Red.fbx",
       "parts": 12,
-      "triangles": 1016,
+      "triangles": 1888,
       "minimum": [
         -0.2849999964237213,
         -0.2750000059604645,
@@ -786,20 +1443,24 @@
       "asset_type": "Architecture",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Floor_2m.fbx",
-      "parts": 20,
-      "triangles": 240,
+      "parts": 244,
+      "triangles": 2928,
       "minimum": [
-        -0.9979999661445618,
-        -0.9980000257492065,
-        -0.09000000357627869
+        -2.996500015258789,
+        -3.996500015258789,
+        -0.0949999988079071
       ],
       "maximum": [
-        0.9979999661445618,
-        0.9980000257492065,
+        2.996500015258789,
+        3.996500015258789,
         0.0
       ],
       "materials": [
-        "Walnut"
+        "Oak plank amber",
+        "Oak plank honey",
+        "Oak plank light",
+        "Oak plank pale",
+        "Oak seam"
       ]
     },
     {
@@ -807,8 +1468,8 @@
       "asset_type": "Objects",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Globe_Stand.fbx",
-      "parts": 16,
-      "triangles": 3952,
+      "parts": 13,
+      "triangles": 4126,
       "minimum": [
         -0.4350000023841858,
         -0.4350000023841858,
@@ -856,20 +1517,21 @@
       "asset_type": "Textiles",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Lace_Doily.fbx",
-      "parts": 28,
-      "triangles": 5632,
+      "parts": 3,
+      "triangles": 2236,
       "minimum": [
-        -0.14989367127418518,
-        -0.14989367127418518,
-        -6.984919309616089e-10
+        -0.14499999582767487,
+        -0.14499999582767487,
+        0.0
       ],
       "maximum": [
-        0.14989367127418518,
-        0.14989367127418518,
-        0.0040000006556510925
+        0.14499999582767487,
+        0.14499999582767487,
+        0.004700000397861004
       ],
       "materials": [
-        "Cream"
+        "Cream",
+        "Piping"
       ]
     },
     {
@@ -957,8 +1619,8 @@
       ],
       "materials": [
         "Brass",
-        "Photo_Frame oil on canvas",
-        "Walnut"
+        "Dark wood",
+        "Photo_Frame oil on canvas"
       ]
     },
     {
@@ -980,8 +1642,8 @@
       ],
       "materials": [
         "Brass",
-        "Picture_Landscape oil on canvas",
-        "Walnut"
+        "Dark wood",
+        "Picture_Landscape oil on canvas"
       ]
     },
     {
@@ -1003,8 +1665,8 @@
       ],
       "materials": [
         "Brass",
-        "Picture_Portrait oil on canvas",
-        "Walnut"
+        "Dark wood",
+        "Picture_Portrait oil on canvas"
       ]
     },
     {
@@ -1202,12 +1864,12 @@
       "parts": 11,
       "triangles": 4004,
       "minimum": [
-        -0.3626823425292969,
+        -0.2775000035762787,
         -0.2524999976158142,
         0.0
       ],
       "maximum": [
-        0.3626823425292969,
+        0.2775000035762787,
         0.2524999976158142,
         0.6299999952316284
       ],
@@ -1289,8 +1951,8 @@
       "asset_type": "Furniture",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Sofa_ThreeSeat.fbx",
-      "parts": 50,
-      "triangles": 38900,
+      "parts": 41,
+      "triangles": 34940,
       "minimum": [
         -1.0800000429153442,
         -0.43500009179115295,
@@ -1298,10 +1960,11 @@
       ],
       "maximum": [
         1.0800000429153442,
-        0.5,
-        1.2274795770645142
+        0.4449999928474426,
+        1.0824676752090454
       ],
       "materials": [
+        "Back leather",
         "Brocade",
         "Leather",
         "Piping",
@@ -1451,8 +2114,8 @@
       "asset_type": "Objects",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Trophy_Cup.fbx",
-      "parts": 10,
-      "triangles": 6668,
+      "parts": 6,
+      "triangles": 3596,
       "minimum": [
         -0.09793667495250702,
         -0.06499999761581421,
@@ -1542,20 +2205,24 @@
       "asset_type": "Architecture",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Wall_DoorOpening_2m.fbx",
-      "parts": 3,
-      "triangles": 36,
+      "parts": 37,
+      "triangles": 1900,
       "minimum": [
-        -1.0,
-        0.0,
+        -1.0199999809265137,
+        -0.12999999523162842,
         0.0
       ],
       "maximum": [
-        1.0,
+        1.0199999809265137,
         0.20000000298023224,
         3.6000001430511475
       ],
       "materials": [
-        "Wallpaper"
+        "Brass",
+        "Cream",
+        "Dark wood",
+        "Wallpaper",
+        "Walnut"
       ]
     },
     {
@@ -1563,15 +2230,15 @@
       "asset_type": "Architecture",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Wall_Panel_1m.fbx",
-      "parts": 41,
-      "triangles": 2260,
+      "parts": 33,
+      "triangles": 1748,
       "minimum": [
-        -0.5,
+        -0.5199999809265137,
         -0.12999999523162842,
         0.0
       ],
       "maximum": [
-        0.5,
+        0.5199999809265137,
         0.20000000298023224,
         3.5999999046325684
       ],
@@ -1591,12 +2258,12 @@
       "parts": 77,
       "triangles": 4460,
       "minimum": [
-        -1.0,
+        -1.0199999809265137,
         -0.12999999523162842,
         0.0
       ],
       "maximum": [
-        1.0,
+        1.0199999809265137,
         0.20000000298023224,
         3.5999999046325684
       ],
@@ -1635,21 +2302,24 @@
       "asset_type": "Architecture",
       "source": "ArtSource/Blender/GrandStudy.blend",
       "fbx": "Assets/Models/GrandStudy/Models/Wall_WindowOpening_2m.fbx",
-      "parts": 4,
-      "triangles": 48,
+      "parts": 28,
+      "triangles": 908,
       "minimum": [
-        -1.0,
-        0.0,
+        -1.0199999809265137,
+        -0.17000000178813934,
         0.0
       ],
       "maximum": [
-        1.0,
+        1.0199999809265137,
         0.20000000298023224,
         3.6000001430511475
       ],
       "materials": [
+        "Brass",
+        "Cream",
         "Dark wood",
-        "Wallpaper"
+        "Wallpaper",
+        "Walnut"
       ]
     },
     {
@@ -1702,42 +2372,12 @@
   "room": {
     "instances": [
       {
-        "name": "Floor_2m",
-        "asset": "Floor_2m",
-        "location": [
-          -2.0,
-          -3.0,
-          0.0
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
         "name": "Ceiling_Coffer_2m",
         "asset": "Ceiling_Coffer_2m",
         "location": [
           -2.0,
           -3.0,
           3.5999999046325684
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "name": "Floor_2m.001",
-        "asset": "Floor_2m",
-        "location": [
-          -2.0,
-          -1.0,
-          0.0
         ],
         "rotation_z": 0.0,
         "scale": [
@@ -1762,42 +2402,12 @@
         ]
       },
       {
-        "name": "Floor_2m.002",
-        "asset": "Floor_2m",
-        "location": [
-          -2.0,
-          1.0,
-          0.0
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
         "name": "Ceiling_Coffer_2m.002",
         "asset": "Ceiling_Coffer_2m",
         "location": [
           -2.0,
           1.0,
           3.5999999046325684
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "name": "Floor_2m.003",
-        "asset": "Floor_2m",
-        "location": [
-          -2.0,
-          3.0,
-          0.0
         ],
         "rotation_z": 0.0,
         "scale": [
@@ -1822,42 +2432,12 @@
         ]
       },
       {
-        "name": "Floor_2m.004",
-        "asset": "Floor_2m",
-        "location": [
-          0.0,
-          -3.0,
-          0.0
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
         "name": "Ceiling_Coffer_2m.004",
         "asset": "Ceiling_Coffer_2m",
         "location": [
           0.0,
           -3.0,
           3.5999999046325684
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "name": "Floor_2m.005",
-        "asset": "Floor_2m",
-        "location": [
-          0.0,
-          -1.0,
-          0.0
         ],
         "rotation_z": 0.0,
         "scale": [
@@ -1882,42 +2462,12 @@
         ]
       },
       {
-        "name": "Floor_2m.006",
-        "asset": "Floor_2m",
-        "location": [
-          0.0,
-          1.0,
-          0.0
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
         "name": "Ceiling_Coffer_2m.006",
         "asset": "Ceiling_Coffer_2m",
         "location": [
           0.0,
           1.0,
           3.5999999046325684
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "name": "Floor_2m.007",
-        "asset": "Floor_2m",
-        "location": [
-          0.0,
-          3.0,
-          0.0
         ],
         "rotation_z": 0.0,
         "scale": [
@@ -1942,42 +2492,12 @@
         ]
       },
       {
-        "name": "Floor_2m.008",
-        "asset": "Floor_2m",
-        "location": [
-          2.0,
-          -3.0,
-          0.0
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
         "name": "Ceiling_Coffer_2m.008",
         "asset": "Ceiling_Coffer_2m",
         "location": [
           2.0,
           -3.0,
           3.5999999046325684
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "name": "Floor_2m.009",
-        "asset": "Floor_2m",
-        "location": [
-          2.0,
-          -1.0,
-          0.0
         ],
         "rotation_z": 0.0,
         "scale": [
@@ -2002,42 +2522,12 @@
         ]
       },
       {
-        "name": "Floor_2m.010",
-        "asset": "Floor_2m",
-        "location": [
-          2.0,
-          1.0,
-          0.0
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
         "name": "Ceiling_Coffer_2m.010",
         "asset": "Ceiling_Coffer_2m",
         "location": [
           2.0,
           1.0,
           3.5999999046325684
-        ],
-        "rotation_z": 0.0,
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "name": "Floor_2m.011",
-        "asset": "Floor_2m",
-        "location": [
-          2.0,
-          3.0,
-          0.0
         ],
         "rotation_z": 0.0,
         "scale": [
@@ -2459,7 +2949,7 @@
           2.990000009536743,
           0.0
         ],
-        "rotation_z": 3.1415927410125732,
+        "rotation_z": 0.0,
         "scale": [
           1.0,
           1.0,
@@ -3298,6 +3788,21 @@
           1.25,
           3.6500000953674316,
           2.25
+        ],
+        "rotation_z": 0.0,
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "name": "Floor",
+        "asset": "Floor_2m",
+        "location": [
+          0.0,
+          0.0,
+          0.0
         ],
         "rotation_z": 0.0,
         "scale": [

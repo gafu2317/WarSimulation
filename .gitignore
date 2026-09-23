@@ -117,5 +117,10 @@ InitTestScene*.unity*
 .unity/gh-pages-deploy/
 /WarSimulation1.slnx
 
-# Local recordings and frame sequences from the provisional VFX pass
-/Captures/Vfx/
+# Local recordings, frame sequences, and visual check images
+/Captures/
+docs/Art/**/*.png
+docs/Art/**/*.jpg
+docs/Art/**/*.jpeg
+docs/Art/GrandStudy/validation.json
+/Assets/Screenshots/

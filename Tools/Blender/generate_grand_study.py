@@ -22,7 +22,7 @@ def material(name,color,rough=.45,metal=0,texture=None):
         bump=n.new('ShaderNodeBump');bump.inputs['Strength'].default_value=.16;bump.inputs['Distance'].default_value=.012 if texture=='wood' else .004
         m.node_tree.links.new(tex.outputs['Fac'],bump.inputs['Height']);m.node_tree.links.new(bump.outputs[0],p.inputs['Normal'])
     M[name]=m
-for args in [('Walnut',(.065,.021,.009),.32,0,'wood'),('Dark wood',(.043,.024,.016),.35,0,'wood'),('Brass',(.53,.32,.105),.3,.72,None),('Leather',(.048,.018,.011),.52,0,'leather'),('Red velvet',(.27,.016,.026),.8,0,'fabric'),('Cream',(.72,.65,.46),.72,0,'fabric'),('Wallpaper',(.32,.35,.22),.9,0,'fabric'),('Plaster',(.66,.62,.48),.9,0,None),('Porcelain',(.82,.79,.67),.23,0,None),('Black',(.014,.018,.019),.32,.2,None),('Paper',(.73,.64,.43),.85,0,'fabric'),('Ink',(.055,.034,.022),.9,0,None),('Green',(.035,.19,.065),.65,0,None),('Leaf light',(.13,.32,.055),.7,0,None),('Red flower',(.42,.018,.028),.6,0,None),('Blue book',(.023,.068,.10),.55,0,None),('Red book',(.20,.026,.02),.55,0,None),('Green book',(.036,.09,.061),.55,0,None),('Rug',(.19,.067,.035),.95,0,'fabric'),('Rug dark',(.026,.047,.042),.95,0,'fabric'),('Sea',(.11,.18,.19),.7,0,None),('Land',(.49,.38,.20),.8,0,None)]:material(*args)
+for args in [('Walnut',(.065,.021,.009),.32,0,'wood'),('Dark wood',(.043,.024,.016),.35,0,'wood'),('Brass',(.53,.32,.105),.3,.72,None),('Leather',(.048,.018,.011),.52,0,'leather'),('Red velvet',(.27,.016,.026),.8,0,'fabric'),('Cream',(.72,.65,.46),.72,0,'fabric'),('Piping',(.46,.39,.25),.8,0,'fabric'),('Wallpaper',(.32,.35,.22),.9,0,'fabric'),('Plaster',(.66,.62,.48),.9,0,None),('Porcelain',(.82,.79,.67),.23,0,None),('Black',(.014,.018,.019),.32,.2,None),('Paper',(.73,.64,.43),.85,0,'fabric'),('Ink',(.055,.034,.022),.9,0,None),('Green',(.035,.19,.065),.65,0,None),('Leaf light',(.13,.32,.055),.7,0,None),('Red flower',(.42,.018,.028),.6,0,None),('Blue book',(.023,.068,.10),.55,0,None),('Red book',(.20,.026,.02),.55,0,None),('Green book',(.036,.09,.061),.55,0,None),('Rug',(.19,.067,.035),.95,0,'fabric'),('Rug dark',(.026,.047,.042),.95,0,'fabric'),('Sea',(.11,.18,.19),.7,0,None),('Land',(.49,.38,.20),.8,0,None)]:material(*args)
 for name,color in [('Ochre book',(.18,.10,.035)),('Brown book',(.09,.027,.012)),('Black book',(.02,.019,.015)),('Parchment book',(.36,.27,.14)),('Burgundy book',(.11,.013,.02)),('Curtain blue',(.065,.079,.095))]:material(name,color,.78,0,'fabric')
 material('Sheer',(.74,.69,.55),.95)
 m=M['Sheer'];nodes=m.node_tree.nodes;links=m.node_tree.links
@@ -102,7 +102,8 @@ def table(w,d,h=.76):
     box('Apron',(0,0,h-.17),(w-.12,d-.12,.2))
     for x in [-w/2+.12,w/2-.12]:
         for y in [-d/2+.12,d/2-.12]:leg(x,y,h-.2)
-    for yy in [-d/2+.051,d/2-.051]:scroll(0,yy,h-.17,.18)
+    ornament_size=min(.18,max(.08,(w-.16)/4))
+    for yy in [-d/2+.051,d/2-.051]:scroll(0,yy,h-.17,ornament_size)
 
 def book(x,y,z,w=.07,h=.26,d=.18,color='Red book',style=0,lean=0):
     before=set(current.objects)
@@ -160,18 +161,42 @@ def cabinet(w,d,h,shelves=False):
     for x in [-w/2+.06,w/2-.06]:frame(x,-d/2-.024,h/2,.055,h-.22)
     scroll(0,-d/2-.08,h-.10,.13)
 
+def wallpaper_pattern(rectangles):
+    # Keep one repeat and one margin across every module so adjacent walls do not
+    # produce the conspicuous blank bands caused by per-panel integer rounding.
+    for cx,cz,width,height in rectangles:
+        columns=max(1,round(width/.24))
+        rows=max(1,round(height/.28))
+        step_x=width/columns
+        step_z=height/rows
+        half_width=min(.10,step_x*.40)
+        half_height=min(.13,step_z*.43)
+        for column in range(columns):
+            x=cx-width/2+(column+.5)*step_x
+            for row in range(rows):
+                z=cz-height/2+(row+.5)*step_z
+                curve('Wallpaper diamond',[(x,-.014,z-half_height),(x+half_width,-.014,z),(x,-.014,z+half_height),(x-half_width,-.014,z)],.0025,'Cream',True)
+
 # Architecture: wall fronts face local -Y, wall pivots at the bottom centre.
 for w in [1,2]:
     asset(f'Wall_Panel_{w}m','Architecture');box('Plaster wall',(0,.1,1.8),(w,.2,3.6),'Wallpaper',0)
-    box('Wainscot backing',(0,-.018,.55),(w,.045,1.1),'Dark wood',.004)
+    box('Wainscot backing',(0,-.018,.55),(w+.02,.045,1.1),'Dark wood',.004)
     for x in [-w/2+.25+i*.5 for i in range(int(w/.5))]:panel_front(x,-.046,.53,.44,.84)
-    for z,h in [(.09,.15),(1.10,.07),(3.5,.16)]:box('Wall trim',(0,-.07,z),(w,.12,h),'Walnut',.006)
-    for x in [-w/2+.12+i*.24 for i in range(int(w/.24))]:
-        for z in [1.3+i*.28 for i in range(8)]:
-            curve('Wallpaper diamond',[(x,-.003,z),(x+.10,-.003,z+.13),(x,-.003,z+.26),(x-.10,-.003,z+.13)],.0025,'Cream',True)
+    for z,h in [(.09,.15),(1.10,.07),(3.5,.16)]:box('Wall trim',(0,-.07,z),(w+.04,.12,h),'Walnut',.006)
+    wallpaper_pattern([(0,2.34,w-.18,2.20)])
 asset('Wall_WindowOpening_2m','Architecture')
 for x in [-.925,.925]:box('Window wall pier',(x,.1,1.8),(.15,.2,3.6),'Wallpaper',0)
-box('Window wall below',(0,.1,.4),(1.7,.2,.8),'Dark wood',0);box('Window wall above',(0,.1,3.4),(1.7,.2,.4),'Wallpaper',0)
+box('Window wall below',(0,.1,.4),(1.7,.2,.8),'Wallpaper',0)
+box('Window wainscot backing',(0,-.018,.4),(2.02,.045,.8),'Dark wood',.004)
+for x in [-.56,0,.56]:panel_front(x,-.046,.4,.48,.62)
+for x in [-.925,.925]:panel_front(x,-.046,.4,.10,.62)
+box('Window lower trim',(0,-.07,.09),(2.04,.12,.15),'Walnut',.006)
+box('Window sill trim',(0,-.07,.81),(1.82,.16,.10),'Walnut',.006)
+for x in [-.925,.925]:box('Window pier chair rail',(x,-.07,1.10),(.15,.12,.07),'Walnut',.006)
+for x in [-.925,.925]:box('Window opening side casing',(x,-.09,2.0),(.17,.16,2.4),'Walnut',.008)
+box('Window wall above',(0,.1,3.4),(1.7,.2,.4),'Wallpaper',0)
+box('Window crown trim',(0,-.07,3.5),(2.04,.12,.16),'Walnut',.006)
+wallpaper_pattern([(0,3.36,1.48,.28)])
 asset('Window_Tall_1p7m','Architecture')
 for x in [-.84,.84]:box('Window jamb',(x,0,1.2),(.1,.15,2.4))
 for z in [0,2.4]:box('Window horizontal frame',(0,0,z),(1.78,.16,.1))
@@ -187,6 +212,12 @@ ball('Door knob',(.43,-.12,1.13),(.045,.04,.045),'Brass')
 asset('Wall_DoorOpening_2m','Architecture')
 for x in [-.85,.85]:box('Door wall pier',(x,.1,1.8),(.3,.2,3.6),'Wallpaper',0)
 box('Above door',(0,.1,3.13),(1.4,.2,.94),'Wallpaper',0)
+for x in [-.85,.85]:
+    box('Door pier wainscot backing',(x,-.018,.55),(.3,.045,1.1),'Dark wood',.004)
+    panel_front(x,-.046,.53,.22,.84)
+box('Door lower trim',(0,-.07,.09),(2.04,.12,.15),'Walnut',.006)
+box('Door crown trim',(0,-.07,3.5),(2.04,.12,.16),'Walnut',.006)
+wallpaper_pattern([(-.85,2.34,.24,2.20),(.85,2.34,.24,2.20),(0,3.15,1.18,.62)])
 asset('Floor_2m','Architecture')
 for i in range(10):
     for j in range(2):box('Floorboard',(-.9+i*.2,-.5+j, -.045),(.196,.996,.09),'Walnut',.002)
@@ -278,8 +309,7 @@ def timber_between(name,a,b,width=.045,depth=.055):
 
 def chair(arm=False):
     for x in [-.22,.22]:
-        leg(x,-.21,.44)
-        timber_between('Rear leg',(x,.21,.035),(x,.21,.49),.045,.052)
+        for y in [-.21,.21]:leg(x,y,.44)
     box('Seat frame',(0,0,.44),(.52,.50,.085));box('Seat cushion',(0,-.012,.495),(.47,.45,.09),'Red velvet',.035)
     before=set(current.objects)
     for x in [-.22,.22]:box('Solid back stile',(x,.21,.79),(.048,.065,.66),'Walnut',.012)
@@ -403,13 +433,33 @@ for i in range(12):
 curve('Clock hands',[(-.064,-.108,.81),(0,-.108,.77),(.07,-.108,.85)],.004,'Black');curve('Pendulum rod',[(0,-.10,.55),(0,-.10,.21)],.006)
 ball('Pendulum bob',(0,-.10,.21),(.062,.016,.062),'Brass')
 asset('Globe_Stand','Objects');ball('Terrestrial sphere',(0,0,.95),(.35,.35,.35),'Sea')
-# Stylised invented landmasses, not a geographic map.
-for i in range(10):
-    lon=random.uniform(0,math.tau);lat=random.uniform(-1.1,1.1);vs=[]
-    for j in range(14):
-        a=j*math.tau/14;lo=lon+.20*math.cos(a)*(1+random.random()*.5);la=lat+.22*math.sin(a)
-        vs.append((.352*math.cos(la)*math.cos(lo),.352*math.cos(la)*math.sin(lo),.95+.352*math.sin(la)))
-    mesh('Invented continent',vs,[tuple(range(14))],'Land')
+# Stylised fictional continents follow the sphere instead of spanning it as flat ngons.
+continent_random=random.Random(17)
+continent_centres=[(-2.45,.42,.30),(-1.55,-.28,.22),(-.55,.62,.25),(.25,-.48,.20),(1.15,.18,.31),(2.15,-.22,.24),(2.75,.66,.18)]
+for lon,lat,size in continent_centres:
+    segments=14
+    radii=[size*(.72+continent_random.random()*.34) for _ in range(segments)]
+    vs=[]
+    for ring_index,ring_scale in enumerate([0,.48,1]):
+        count=1 if ring_index==0 else segments
+        for j in range(count):
+            if ring_index==0:
+                lo,la=lon,lat
+            else:
+                a=j*math.tau/segments
+                radial=radii[j]*ring_scale
+                lo=lon+radial*math.cos(a)/max(.35,math.cos(lat))
+                la=max(-1.35,min(1.35,lat+radial*.72*math.sin(a)))
+            radius=.356
+            vs.append((radius*math.cos(la)*math.cos(lo),radius*math.cos(la)*math.sin(lo),.95+radius*math.sin(la)))
+    fs=[]
+    inner_start=1;outer_start=1+segments
+    for j in range(segments):
+        next_index=(j+1)%segments
+        fs.append((0,inner_start+j,inner_start+next_index))
+        fs.append((inner_start+j,outer_start+j,outer_start+next_index,inner_start+next_index))
+    land=mesh('Invented continent',vs,fs,'Land')
+    for polygon in land.data.polygons:polygon.use_smooth=True
 ring('Globe meridian',(0,0,.95),.385,.015,plane='XZ');ring('Equatorial support',(0,0,.94),.41,.025,'Walnut')
 for i in range(3):
     a=i*math.tau/3;leg(.3*math.cos(a),.3*math.sin(a),.93)
@@ -448,9 +498,16 @@ for name,w,d in [('Rug_Large',2.7,1.85),('Rug_Runner',.85,2.8)]:
     for i in range(int(w/.025)):
         for sign in [-1,1]:curve('Rug fringe',[(-w/2+i*.025,sign*d/2,.01),(-w/2+i*.025,sign*(d/2+.045),.009)],.002,'Cream')
 asset('Lace_Doily','Textiles')
-for r in [.04,.07,.1,.13]:ring('Crochet ring',(0,0,.002),r,.002,'Cream')
-for i in range(24):
-    a=i*math.tau/24;curve('Crochet petal',[(r*math.cos(a+.06*math.sin(t*math.pi)),r*math.sin(a+.06*math.sin(t*math.pi)),.002) for t,r in [(0,.04),(.3,.1),(.5,.15),(.7,.1),(1,.04)]],.002,'Cream')
+segments=48
+outline=[(.145 if i%2==0 else .137)*Vector((math.cos(i*math.tau/segments),math.sin(i*math.tau/segments))) for i in range(segments)]
+vs=[(p.x,p.y,z) for z in [0,.003] for p in outline]
+fs=[tuple(reversed(range(segments))),tuple(range(segments,segments*2))]
+for i in range(segments):
+    next_index=(i+1)%segments
+    fs.append((i,next_index,segments+next_index,segments+i))
+mesh('Scalloped linen doily',vs,fs,'Cream')
+for radius in [.105,.126]:
+    ring('Embroidered border',(0,0,.004),radius,.0007,'Piping')
 
 def leaf(start,end,width,mat):
     a,b=Vector(start),Vector(end);mid=(a+b)/2;delta=b-a;cross=delta.cross(Vector((0,0,1))).normalized()*width
@@ -511,7 +568,7 @@ for y in [-2,2]:
     place('Window_Tall_1p7m',(-2.99,y,.8),90);place('Curtain_Pair',(-2.79,y,.75),90);place('Vent_Lattice',(-2.88,y,.12),90)
 place('Door_Frame',(2.96,-1,0),-90);place('Door_Leaf',(3,-1,0),-90)
 for x in [-1.25,1.25]:place('Bookcase_Filled',(x,3.70,0))
-place('Desk_Pedestal',(0,2.05,0),180);place('Chair_Arms',(0,2.99,0),180)
+place('Desk_Pedestal',(0,2.05,0),180);place('Chair_Arms',(0,2.99,0))
 place('Meeting_Table',(0,.42,0),90)
 for x in [-.94,.94]:
     for y in [-.18,.97]:place('Chair_Red',(x,y,0),90 if x<0 else -90)

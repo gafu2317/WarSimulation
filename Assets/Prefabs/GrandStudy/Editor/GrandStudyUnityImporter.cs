@@ -15,6 +15,10 @@ namespace WarSimulation.GrandStudy
         const string ManifestPath = "docs/Art/GrandStudy/unity_export_manifest.json";
         const string ModelRoot = "Assets/Models/GrandStudy/Models";
         const string TextureRoot = "Assets/Models/GrandStudy/Textures";
+        const string LightOakTexturePath = TextureRoot + "/grandstudy_light_oak_base.png";
+        const string WalnutGrainTexturePath = TextureRoot + "/grandstudy_walnut_grain.png";
+        const string RugLargeTexturePath = TextureRoot + "/grandstudy_rug_large.png";
+        const string RugRunnerTexturePath = TextureRoot + "/grandstudy_rug_runner.png";
         const string MaterialRoot = "Assets/Prefabs/GrandStudy/Materials";
         const string PrefabRoot = "Assets/Prefabs/GrandStudy/Objects";
         const string RoomPrefabPath = "Assets/Prefabs/GrandStudy/GrandStudyRoom.prefab";
@@ -32,6 +36,18 @@ namespace WarSimulation.GrandStudy
             public float[] minimum;
             public float[] maximum;
             public string[] materials;
+        }
+
+        [Serializable]
+        class ExportMaterial
+        {
+            public string name;
+            public float[] base_color;
+            public float metallic;
+            public float roughness;
+            public float alpha;
+            public string base_texture;
+            public string mask_texture;
         }
 
         [Serializable]
@@ -67,6 +83,7 @@ namespace WarSimulation.GrandStudy
         {
             public string blender;
             public string source;
+            public ExportMaterial[] materials;
             public ExportModel[] models;
             public RoomData room;
         }
@@ -119,12 +136,13 @@ namespace WarSimulation.GrandStudy
             Directory.CreateDirectory(PrefabRoot);
             Directory.CreateDirectory(Path.GetDirectoryName(ValidationPath));
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ConfigureTextures();
+            ConfigureTextures(manifest);
+            var materials = MaterialDefinitions(manifest);
 
             foreach (var model in manifest.models)
             {
                 ConfigureModelImporter(model.fbx);
-                BuildObjectPrefab(model);
+                BuildObjectPrefab(model, materials);
             }
 
             AssetDatabase.SaveAssets();
@@ -144,6 +162,33 @@ namespace WarSimulation.GrandStudy
             Debug.Log($"Grand study imported: {report.createdPrefabs} object prefabs, {report.roomInstances} room instances.");
         }
 
+        [MenuItem("WarSim/Grand Study/Import Objects And Build Room Prefab")]
+        public static void BuildPrefabsOnly()
+        {
+            if (EditorApplication.isPlaying)
+                throw new InvalidOperationException("Exit Play mode before importing the grand study.");
+
+            var manifest = ReadManifest();
+            Directory.CreateDirectory(MaterialRoot);
+            Directory.CreateDirectory(PrefabRoot);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureTextures(manifest);
+            var materials = MaterialDefinitions(manifest);
+
+            foreach (var model in manifest.models)
+            {
+                ConfigureModelImporter(model.fbx);
+                BuildObjectPrefab(model, materials);
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            BuildRoomPrefab(manifest);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            Debug.Log($"Grand study prefabs imported: {manifest.models.Length} object prefabs, {manifest.room.instances.Length} room instances.");
+        }
+
         static ExportManifest ReadManifest()
         {
             if (!File.Exists(ManifestPath))
@@ -156,18 +201,47 @@ namespace WarSimulation.GrandStudy
             return manifest;
         }
 
-        static void ConfigureTextures()
+        static void ConfigureTextures(ExportManifest manifest)
         {
-            foreach (var file in new[] { "landscape.png", "portrait.png" })
+            var colorTextures = new[]
             {
-                var path = TextureRoot + "/" + file;
+                TextureRoot + "/landscape.png",
+                TextureRoot + "/portrait.png",
+                LightOakTexturePath,
+                WalnutGrainTexturePath,
+                RugLargeTexturePath,
+                RugRunnerTexturePath,
+            }
+                .Concat(manifest.materials.Where(material => !string.IsNullOrEmpty(material.base_texture)).Select(material => ToAssetPath(material.base_texture)))
+                .Distinct();
+            foreach (var path in colorTextures)
+            {
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
                 var importer = AssetImporter.GetAtPath(path) as TextureImporter;
                 if (importer == null) throw new InvalidOperationException("Unity could not import " + path);
                 importer.sRGBTexture = true;
                 importer.alphaSource = TextureImporterAlphaSource.None;
                 importer.mipmapEnabled = true;
-                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.wrapMode = path.EndsWith("landscape.png", StringComparison.Ordinal)
+                    || path.EndsWith("portrait.png", StringComparison.Ordinal)
+                    ? TextureWrapMode.Clamp
+                    : TextureWrapMode.Repeat;
+                importer.filterMode = FilterMode.Trilinear;
+                importer.anisoLevel = 4;
+                importer.SaveAndReimport();
+            }
+            foreach (var path in manifest.materials
+                         .Where(material => !string.IsNullOrEmpty(material.mask_texture))
+                         .Select(material => ToAssetPath(material.mask_texture))
+                         .Distinct())
+            {
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+                var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (importer == null) throw new InvalidOperationException("Unity could not import " + path);
+                importer.sRGBTexture = false;
+                importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = TextureWrapMode.Repeat;
                 importer.filterMode = FilterMode.Trilinear;
                 importer.anisoLevel = 4;
                 importer.SaveAndReimport();
@@ -190,12 +264,19 @@ namespace WarSimulation.GrandStudy
             importer.importTangents = ModelImporterTangents.None;
             importer.importCameras = false;
             importer.importLights = false;
-            importer.isReadable = false;
-            importer.meshCompression = ModelImporterMeshCompression.High;
+            importer.isReadable = path.Contains("Rug_");
+            importer.meshCompression = ModelImporterMeshCompression.Off;
             importer.SaveAndReimport();
         }
 
-        static void BuildObjectPrefab(ExportModel model)
+        static IReadOnlyDictionary<string, ExportMaterial> MaterialDefinitions(ExportManifest manifest)
+        {
+            if (manifest.materials == null || manifest.materials.Length == 0)
+                throw new InvalidOperationException("Grand study manifest has no Blender material definitions.");
+            return manifest.materials.ToDictionary(material => material.name);
+        }
+
+        static void BuildObjectPrefab(ExportModel model, IReadOnlyDictionary<string, ExportMaterial> materials)
         {
             var fbxPath = ToAssetPath(model.fbx);
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
@@ -208,9 +289,8 @@ namespace WarSimulation.GrandStudy
                 if (visual == null) throw new InvalidOperationException("Unity could not instantiate " + fbxPath);
                 visual.name = "Visual";
                 visual.transform.SetParent(root.transform, false);
-                visual.transform.localScale = new Vector3(1f, 1f, -1f);
                 PrefabUtility.UnpackPrefabInstance(visual, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-                ReplaceMaterials(visual, model.name);
+                ReplaceMaterials(visual, model.name, materials);
                 RemoveImportedColliders(visual);
                 GroundVisual(root, visual);
                 AddPlacementCollider(root, visual, model.asset_type);
@@ -223,21 +303,36 @@ namespace WarSimulation.GrandStudy
             }
         }
 
-        static void ReplaceMaterials(GameObject visual, string modelName)
+        static void ReplaceMaterials(GameObject visual, string modelName, IReadOnlyDictionary<string, ExportMaterial> materials)
         {
             foreach (var renderer in visual.GetComponentsInChildren<Renderer>(true))
             {
                 renderer.sharedMaterials = renderer.sharedMaterials
-                    .Select(material => BuildUrpMaterial(material, modelName))
+                    .Select(material => BuildUrpMaterial(material, modelName, materials))
                     .ToArray();
+                if (modelName == "Ceiling_Coffer_2m")
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
         }
 
-        static Material BuildUrpMaterial(Material imported, string modelName)
+        static Material BuildUrpMaterial(Material imported, string modelName, IReadOnlyDictionary<string, ExportMaterial> materials)
         {
-            var sourceName = imported == null ? "Fallback" : imported.name.Replace(" (Instance)", string.Empty);
-            var sofaSuffix = modelName == "Sofa_ThreeSeat" ? "_Sofa" : string.Empty;
-            var materialName = "GrandStudy_" + SanitizeFileName(sourceName) + sofaSuffix;
+            if (imported == null)
+                throw new InvalidOperationException("Grand study renderer has an empty material slot.");
+            var sourceName = imported.name.Replace(" (Instance)", string.Empty);
+            if (!materials.TryGetValue(sourceName, out var definition) || definition.base_color == null || definition.base_color.Length < 3)
+                throw new InvalidOperationException("Blender material definition is missing: " + sourceName);
+            var isPictureBrass = sourceName == "Brass"
+                && (modelName.StartsWith("Picture_", StringComparison.Ordinal) || modelName == "Photo_Frame");
+            var isFloor = modelName == "Floor_2m";
+            var isRug = modelName == "Rug_Large" || modelName == "Rug_Runner";
+            var tint = FurnitureTint(modelName, sourceName);
+            var variantSuffix = modelName == "Sofa_ThreeSeat" ? "_Sofa" : isPictureBrass ? "_Picture" : string.Empty;
+            if (tint != Color.white || isRug)
+                variantSuffix = "_" + SanitizeFileName(modelName);
+            if (isFloor)
+                variantSuffix = "_Floor_2m";
+            var materialName = "GrandStudy_" + SanitizeFileName(sourceName) + variantSuffix;
             var path = MaterialRoot + "/" + materialName + ".mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             var shader = Shader.Find("Universal Render Pipeline/Lit");
@@ -249,17 +344,173 @@ namespace WarSimulation.GrandStudy
             }
 
             material.shader = shader;
-            material.SetColor("_BaseColor", ImportedColor(imported, sourceName));
-            material.SetFloat("_Metallic", IsMetal(sourceName) ? 0.78f : 0f);
             var lower = sourceName.ToLowerInvariant();
-            material.SetFloat("_Smoothness", IsMetal(sourceName) ? 0.72f : IsGlossy(sourceName) ? 0.48f : lower.Contains("cream") ? 0.12f : 0.24f);
+            var alpha = definition.base_color.Length > 3 ? definition.base_color[3] : definition.alpha;
+            material.SetColor("_BaseColor", new Color(definition.base_color[0], definition.base_color[1], definition.base_color[2], alpha));
+            material.SetFloat("_Metallic", Mathf.Clamp01(definition.metallic));
+            material.SetFloat("_Smoothness", 1f - Mathf.Clamp01(definition.roughness));
             material.SetFloat("_Surface", 0);
-            material.SetFloat("_Cull", modelName == "Sofa_ThreeSeat" ? 0 : 2);
+            material.SetFloat("_AlphaClip", 0);
+            material.SetFloat("_Cull", 0);
+            material.renderQueue = -1;
+            material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHATEST_ON");
             material.DisableKeyword("_EMISSION");
+            material.DisableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+            material.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
+            material.DisableKeyword("_SPECULAR_SETUP");
+            material.DisableKeyword("_METALLICSPECGLOSSMAP");
             material.SetColor("_EmissionColor", Color.black);
+            material.SetFloat("_EnvironmentReflections", 1);
+            material.SetFloat("_SpecularHighlights", 1);
+            material.SetFloat("_WorkflowMode", 1);
+            material.SetTexture("_BaseMap", null);
+            material.SetTexture("_MainTex", null);
+            material.SetTexture("_MetallicGlossMap", null);
+            material.SetTexture("_SpecGlossMap", null);
             material.enableInstancing = true;
 
-            if (lower.Contains("landscape") || lower.Contains("portrait"))
+            if (!isPictureBrass && !string.IsNullOrEmpty(definition.base_texture))
+            {
+                var baseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(ToAssetPath(definition.base_texture));
+                if (baseTexture == null)
+                    throw new InvalidOperationException("Grand study base texture is missing: " + definition.base_texture);
+                material.SetTexture("_BaseMap", baseTexture);
+                material.SetColor("_BaseColor", new Color(
+                    definition.base_color[0],
+                    definition.base_color[1],
+                    definition.base_color[2],
+                    alpha));
+            }
+            if (!isPictureBrass && !string.IsNullOrEmpty(definition.mask_texture))
+            {
+                var maskTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(ToAssetPath(definition.mask_texture));
+                if (maskTexture == null)
+                    throw new InvalidOperationException("Grand study mask texture is missing: " + definition.mask_texture);
+                material.SetTexture("_MetallicGlossMap", maskTexture);
+                material.SetFloat("_Metallic", 1);
+                material.SetFloat("_Smoothness", 1);
+                material.EnableKeyword("_METALLICSPECGLOSSMAP");
+            }
+
+            var isScaleStableDark = lower == "dark wood"
+                || lower == "walnut"
+                || lower == "leather"
+                || lower == "back leather";
+            var isAgedBronze = lower == "aged bronze";
+            var useSimpleLit = (isScaleStableDark && !string.IsNullOrEmpty(definition.base_texture))
+                || isAgedBronze
+                || isFloor
+                || isRug && (lower == "rug" || lower == "rug dark" || lower == "cream");
+            if (useSimpleLit)
+            {
+                var simpleLit = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (simpleLit == null)
+                    throw new InvalidOperationException("Universal Render Pipeline/Simple Lit shader is unavailable.");
+                material.shader = simpleLit;
+                material.SetColor("_BaseColor", isAgedBronze ? new Color(0.28f, 0.16f, 0.06f, 1f) : Color.white);
+                material.SetFloat("_Smoothness", 0);
+                material.SetFloat("_SpecularHighlights", 0);
+                material.SetFloat("_EnvironmentReflections", 0);
+                material.SetTexture("_MetallicGlossMap", null);
+                material.DisableKeyword("_METALLICSPECGLOSSMAP");
+                material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+            }
+            if ((lower == "walnut" || lower == "dark wood") && !isFloor)
+            {
+                var grain = AssetDatabase.LoadAssetAtPath<Texture2D>(WalnutGrainTexturePath);
+                if (grain == null)
+                    throw new InvalidOperationException("Grand study walnut grain is missing: " + WalnutGrainTexturePath);
+                material.SetTexture("_BaseMap", grain);
+                material.SetColor("_BaseColor", lower == "dark wood" ? new Color(0.78f, 0.7f, 0.62f, 1f) : Color.white);
+            }
+            if (isFloor)
+            {
+                if (lower == "oak seam")
+                {
+                    material.SetTexture("_BaseMap", null);
+                    material.SetColor("_BaseColor", new Color(0.18f, 0.13f, 0.08f, 1f));
+                }
+                else
+                {
+                    var oak = AssetDatabase.LoadAssetAtPath<Texture2D>(LightOakTexturePath);
+                    if (oak == null)
+                        throw new InvalidOperationException("Grand study light oak texture is missing: " + LightOakTexturePath);
+                    material.SetTexture("_BaseMap", oak);
+                    material.SetColor("_BaseColor", Color.white);
+                }
+            }
+            if (isRug && lower == "rug")
+            {
+                var oak = AssetDatabase.LoadAssetAtPath<Texture2D>(LightOakTexturePath);
+                if (oak == null)
+                    throw new InvalidOperationException("Grand study light oak texture is missing: " + LightOakTexturePath);
+                material.SetTexture("_BaseMap", oak);
+                material.SetColor("_BaseColor", new Color(0.32f, 0.16f, 0.09f, 1f));
+            }
+            else if (isRug && lower == "rug dark")
+            {
+                material.SetTexture("_BaseMap", null);
+                material.SetColor("_BaseColor", new Color(0.1f, 0.045f, 0.02f, 1f));
+            }
+            else if (isRug && lower == "cream")
+            {
+                material.SetTexture("_BaseMap", null);
+                material.SetColor("_BaseColor", new Color(0.62f, 0.5f, 0.34f, 1f));
+            }
+            if (lower == "brass" && !isPictureBrass)
+            {
+                var simpleLit = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (simpleLit == null)
+                    throw new InvalidOperationException("Universal Render Pipeline/Simple Lit shader is unavailable.");
+                material.shader = simpleLit;
+                material.SetTexture("_BaseMap", null);
+                material.SetTexture("_MetallicGlossMap", null);
+                material.SetColor("_BaseColor", new Color(0.72f, 0.5f, 0.18f, 1f));
+                material.SetFloat("_Smoothness", 0.35f);
+                material.SetFloat("_SpecularHighlights", 0f);
+                material.DisableKeyword("_METALLICSPECGLOSSMAP");
+                material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+            }
+            if (lower == "wallpaper")
+            {
+                material.SetColor("_BaseColor", new Color(0.22f, 0.34f, 0.30f, 1f));
+                material.SetFloat("_Metallic", 0f);
+                material.SetFloat("_Smoothness", 0.04f);
+            }
+            if ((modelName == "Chair_Red" || modelName == "Chair_Arms") && lower == "red velvet")
+            {
+                var simpleLit = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (simpleLit == null)
+                    throw new InvalidOperationException("Universal Render Pipeline/Simple Lit shader is unavailable.");
+                material.shader = simpleLit;
+                material.SetTexture("_BaseMap", null);
+                material.SetColor("_BaseColor", new Color(0.1f, 0.2f, 0.16f, 1f));
+                material.SetFloat("_Smoothness", 0.18f);
+                material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+            }
+            if (tint != Color.white)
+                material.SetColor("_BaseColor", tint);
+
+            if (isPictureBrass)
+            {
+                material.SetColor("_BaseColor", new Color(0.12f, 0.035f, 0.004f, alpha));
+                material.SetFloat("_Metallic", 0);
+                material.SetFloat("_Smoothness", 0.1f);
+                material.SetFloat("_WorkflowMode", 0);
+                material.SetColor("_SpecColor", Color.black);
+                material.SetFloat("_SpecularHighlights", 0);
+                material.EnableKeyword("_SPECULAR_SETUP");
+                material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+            }
+
+            var isArtwork = lower.Contains("landscape")
+                || lower.Contains("portrait")
+                || modelName == "Photo_Frame" && lower.Contains("oil on canvas");
+            if (isArtwork)
             {
                 var textureName = lower.Contains("landscape") ? "landscape.png" : "portrait.png";
                 var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(TextureRoot + "/" + textureName);
@@ -279,37 +530,24 @@ namespace WarSimulation.GrandStudy
             return material;
         }
 
-        static Color ImportedColor(Material material, string sourceName)
+        static Color FurnitureTint(string modelName, string sourceName)
         {
-            var fallback = FallbackColor(sourceName);
-            if (material == null) return fallback;
-            var color = material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") : material.HasProperty("_Color") ? material.GetColor("_Color") : material.color;
-            return color.maxColorComponent < 0.015f ? fallback : new Color(color.r, color.g, color.b, 1);
-        }
-
-        static Color FallbackColor(string name)
-        {
-            var lower = name.ToLowerInvariant();
-            if (lower.Contains("walnut") || lower.Contains("dark wood") || lower.Contains("brown book")) return new Color(0.12f, 0.045f, 0.022f, 1);
-            if (lower.Contains("leather")) return new Color(0.08f, 0.025f, 0.014f, 1);
-            if (lower.Contains("velvet")) return new Color(0.30f, 0.018f, 0.028f, 1);
-            if (lower.Contains("brass") || lower.Contains("bronze") || lower.Contains("gold")) return new Color(0.47f, 0.25f, 0.07f, 1);
-            if (lower.Contains("porcelain") || lower.Contains("cream") || lower.Contains("paper")) return new Color(0.72f, 0.68f, 0.54f, 1);
-            if (lower.Contains("green") || lower.Contains("leaf") || lower.Contains("plant")) return new Color(0.06f, 0.18f, 0.025f, 1);
-            if (lower.Contains("black")) return new Color(0.012f, 0.010f, 0.008f, 1);
-            return new Color(0.42f, 0.42f, 0.40f, 1);
-        }
-
-        static bool IsMetal(string name)
-        {
-            var lower = name.ToLowerInvariant();
-            return lower.Contains("brass") || lower.Contains("bronze") || lower.Contains("gold") || lower.Contains("iron") || lower.Contains("metal");
-        }
-
-        static bool IsGlossy(string name)
-        {
-            var lower = name.ToLowerInvariant();
-            return lower.Contains("leather") || lower.Contains("porcelain") || lower.Contains("glass") || lower.Contains("lacquer");
+            var lower = sourceName.ToLowerInvariant();
+            if (modelName.StartsWith("Wall_", StringComparison.Ordinal) && lower == "cream")
+                return new Color(0.34f, 0.46f, 0.4f, 1f);
+            if ((modelName == "Chair_Red" || modelName == "Chair_Arms") && lower == "red velvet")
+                return new Color(0.1f, 0.2f, 0.16f, 1f);
+            if (lower != "dark wood" && lower != "walnut")
+                return Color.white;
+            switch (modelName)
+            {
+                case "Meeting_Table": return new Color(0.92f, 0.86f, 0.78f, 1f);
+                case "Coffee_Table": return new Color(0.88f, 0.82f, 0.74f, 1f);
+                case "Telephone": return new Color(0.62f, 0.56f, 0.5f, 1f);
+                case "Desk_Pedestal": return new Color(1.06f, 0.98f, 0.9f, 1f);
+                case "Sideboard": return new Color(0.96f, 0.9f, 0.82f, 1f);
+                default: return Color.white;
+            }
         }
 
         static string SanitizeFileName(string value)
@@ -343,16 +581,19 @@ namespace WarSimulation.GrandStudy
 
         static GameObject BuildRoomPrefab(ExportManifest manifest)
         {
-            var byName = manifest.models.ToDictionary(model => model.name, model => AssetDatabase.LoadAssetAtPath<GameObject>(PrefabRoot + "/" + model.name + ".prefab"));
+            var modelsByName = manifest.models.ToDictionary(model => model.name);
+            var prefabsByName = manifest.models.ToDictionary(model => model.name, model => AssetDatabase.LoadAssetAtPath<GameObject>(PrefabRoot + "/" + model.name + ".prefab"));
             var root = new GameObject("GrandStudyRoom");
             try
             {
                 var categoryRoots = new Dictionary<string, Transform>(StringComparer.Ordinal);
                 foreach (var placement in manifest.room.instances)
                 {
-                    if (!byName.TryGetValue(placement.asset, out var prefab) || prefab == null)
+                    if (!modelsByName.TryGetValue(placement.asset, out var model) ||
+                        !prefabsByName.TryGetValue(placement.asset, out var prefab) ||
+                        prefab == null)
                         throw new InvalidOperationException("Room references missing prefab: " + placement.asset);
-                    var category = manifest.models.First(model => model.name == placement.asset).asset_type;
+                    var category = model.asset_type;
                     if (!categoryRoots.TryGetValue(category, out var categoryRoot))
                     {
                         categoryRoot = new GameObject(category).transform;
@@ -362,8 +603,8 @@ namespace WarSimulation.GrandStudy
                     var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
                     instance.name = placement.name;
                     instance.transform.SetParent(categoryRoot, false);
-                    instance.transform.localPosition = MapPosition(placement.location);
-                    instance.transform.localRotation = Quaternion.Euler(0, placement.rotation_z * Mathf.Rad2Deg, 0);
+                    instance.transform.localPosition = MapGroundedPrefabPosition(placement, model);
+                    instance.transform.localRotation = Quaternion.Euler(0, -placement.rotation_z * Mathf.Rad2Deg, 0);
                     instance.transform.localScale = new Vector3(placement.scale[0], placement.scale[2], placement.scale[1]);
                 }
                 return PrefabUtility.SaveAsPrefabAsset(root, RoomPrefabPath);
@@ -456,7 +697,10 @@ namespace WarSimulation.GrandStudy
             var materials = renderers.SelectMany(renderer => renderer.sharedMaterials).Where(material => material != null).Distinct().ToArray();
             var bounds = RendererBounds(prefab);
             var expected = new Vector3(model.maximum[0] - model.minimum[0], model.maximum[2] - model.minimum[2], model.maximum[1] - model.minimum[1]);
-            var usesUrp = materials.Length > 0 && materials.All(material => material.shader != null && material.shader.name == "Universal Render Pipeline/Lit");
+            var usesUrp = materials.Length > 0 && materials.All(material =>
+                material.shader != null
+                && (material.shader.name == "Universal Render Pipeline/Lit"
+                    || material.shader.name == "Universal Render Pipeline/Simple Lit"));
             var grounded = Mathf.Abs(bounds.min.y) < 0.01f;
             var dimensionsMatch = Approximately(bounds.size, expected, 0.03f);
             return new ModelValidation
@@ -507,7 +751,14 @@ namespace WarSimulation.GrandStudy
 
         static Vector3 MapPosition(float[] source)
         {
-            return new Vector3(source[0], source[2], -source[1]);
+            return new Vector3(source[0], source[2], source[1]);
+        }
+
+        static Vector3 MapGroundedPrefabPosition(RoomInstance placement, ExportModel model)
+        {
+            var position = MapPosition(placement.location);
+            position.y += model.minimum[2] * placement.scale[2];
+            return position;
         }
     }
 }

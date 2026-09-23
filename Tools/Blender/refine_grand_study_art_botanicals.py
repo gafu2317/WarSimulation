@@ -275,7 +275,7 @@ for sign in [-1,1]:bezier('Cast trophy scroll handle',[(sign*.05,0,.206),(sign*.
 if '--geometry-only' not in sys.argv:
     for name,w,h,file in [('Picture_Landscape',1.05,.68,'landscape.png'),('Picture_Portrait',.54,.75,'portrait.png'),('Photo_Frame',.18,.24,'portrait.png')]:
         clear(name);small=w<.3;border=.017 if small else .037
-        block('Frame wooden backing',(0,.005,h/2),(w,.022,h),'Walnut',.003)
+        block('Frame wooden backing',(0,.005,h/2),(w,.022,h),'Dark wood',.003)
         iw=w-2*border;ih=h-2*border
         mat,p=material(name+' oil on canvas',(.3,.25,.17),.48)
         nodes=mat.node_tree.nodes;links=mat.node_tree.links;tex=nodes.new('ShaderNodeTexImage');tex.image=bpy.data.images.load(str(TEX/file),check_existing=True);tex.image.pack();tex.interpolation='Linear';links.new(tex.outputs['Color'],p.inputs['Base Color'])
@@ -287,15 +287,15 @@ if '--geometry-only' not in sys.argv:
         u0=(1-aspect/image_aspect)/2 if aspect<image_aspect else 0
         v0=(1-image_aspect/aspect)/2 if aspect>image_aspect else 0
         for i,co in enumerate([(u0,v0),(1-u0,v0),(1-u0,1-v0),(u0,1-v0)]):uv.data[i].uv=co
-        for x in [-w/2+border/2,w/2-border/2]:block('Wood frame vertical',(x,-.008,h/2),(border,.040,h),'Walnut',.004 if not small else .001)
-        for z in [border/2,h-border/2]:block('Wood frame horizontal',(0,-.008,z),(w-2*border,.040,border),'Walnut',.004 if not small else .001)
+        for x in [-w/2+border/2,w/2-border/2]:block('Wood frame vertical',(x,-.008,h/2),(border,.040,h),'Dark wood',.004 if not small else .001)
+        for z in [border/2,h-border/2]:block('Wood frame horizontal',(0,-.008,z),(w-2*border,.040,border),'Dark wood',.004 if not small else .001)
         for offset,thick in [(border*.78,.002 if not small else .0008),(border*.27,.0013 if not small else .0006)]:
             curve('Gilt picture moulding',[(-w/2+offset,-.031,offset),(w/2-offset,-.031,offset),(w/2-offset,-.031,h-offset),(-w/2+offset,-.031,h-offset)],thick,'Brass',True)
         if not small:
             for k in range(int(w/.019)):
                 for z in [border*.45,h-border*.45]:ellipsoid('Gilt frame bead',(-w/2+border+k*(w-2*border)/max(1,int(w/.019)-1),-.030,z),(.0016,.001,.0016),'Brass',8,6)
         else:
-            block('Picture easel rear foot',(0,.055,.065),(.018,.012,.14),'Walnut',.001).rotation_euler.x=math.radians(-28)
+            block('Picture easel rear foot',(0,.055,.065),(.018,.012,.14),'Dark wood',.001).rotation_euler.x=math.radians(-28)
 
 room=bpy.data.scenes['01 Furnished Study'];bpy.context.window.scene=room
 for obj in room.objects:
@@ -303,6 +303,7 @@ for obj in room.objects:
 
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+if '--no-preview' in sys.argv:raise SystemExit
 # Transient review scene, excluded from the saved three-scene project.
 preview=bpy.data.scenes.new('Botanical and art inspection');setup(preview);preview.cycles.samples=40
 current=bpy.data.collections.new('Review ground');preview.collection.children.link(current)
