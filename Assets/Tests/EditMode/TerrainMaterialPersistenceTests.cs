@@ -15,7 +15,7 @@ public sealed class TerrainMaterialPersistenceTests
         Assert.That(expected, Is.Not.Null);
         Assert.That(expected.IsKeywordEnabled("_TERRAIN_INSTANCED_PERPIXEL_NORMAL"), Is.True);
 
-        var paths = new List<string> { "Assets/Scenes/GafuTest.unity" };
+        var paths = new List<string> { "Assets/Scenes/Combat/GafuTest.unity" };
         string[] guids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Scenes/BakedMaps" });
         for (int i = 0; i < guids.Length; i++) paths.Add(AssetDatabase.GUIDToAssetPath(guids[i]));
 

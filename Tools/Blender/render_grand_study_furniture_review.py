@@ -6,7 +6,7 @@ import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "ArtSource/Blender/GrandStudy.blend"
+SOURCE = ROOT / "ArtSource/Blender/GrandStudy/GrandStudy.blend"
 OUTPUT = ROOT / "docs/Art/GrandStudy/FurnitureReview"
 ANGLES = {
     "front": Vector((0, -1, 0.25)),

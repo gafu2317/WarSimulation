@@ -53,7 +53,7 @@ for entry in manifest["models"]:
                     "bounds_error_m": error, "open_edges": open_edges,
                     "ground_minimum_m": minimum[2], "dimensions_m": [b-a for a,b in zip(minimum, maximum)]})
 assert all(section == profiles["Kingdom_Wall_Straight"] for section in profiles.values()), "matching wall connections"
-bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT, "ArtSource/Blender/KingdomBuildings.blend"))
+bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT, "ArtSource/Blender/Kingdom/KingdomBuildings.blend"))
 assert {"Buildings", "Wall Modules", "Wall Connection Example"}.issubset(bpy.data.scenes.keys())
 output = {"environment": "Blender " + bpy.app.version_string, "models": results,
           "wall_endpoint_sections": "PASS", "gate_opening": "PASS", "blend_reopen": "PASS",

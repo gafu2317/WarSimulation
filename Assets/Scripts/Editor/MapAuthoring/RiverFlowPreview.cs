@@ -51,7 +51,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
             Material material = Resources.Load<Material>("Combat/Map/StylizedRiver");
             if (material == null || ShaderUtil.ShaderHasError(material.shader))
                 throw new InvalidOperationException("River shader failed to compile.");
-            ApplySavedScene("Assets/Scenes/GafuTest.unity");
+            ApplySavedScene("Assets/Scenes/Combat/GafuTest.unity");
             foreach (string guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Scenes/BakedMaps" }))
                 ApplySavedScene(AssetDatabase.GUIDToAssetPath(guid));
             if (!Application.isBatchMode) EditorSceneManager.RestoreSceneManagerSetup(setup);
@@ -70,7 +70,7 @@ namespace WarSimulation.Combat.Map.EditorOnly
         public static void Capture()
         {
             if (Application.isBatchMode)
-                EditorSceneManager.OpenScene("Assets/Scenes/GafuTest.unity", OpenSceneMode.Single);
+                EditorSceneManager.OpenScene("Assets/Scenes/Combat/GafuTest.unity", OpenSceneMode.Single);
             Material material = Resources.Load<Material>("Combat/Map/StylizedRiver");
             if (material == null || ShaderUtil.ShaderHasError(material.shader))
                 throw new InvalidOperationException("River shader failed to compile.");

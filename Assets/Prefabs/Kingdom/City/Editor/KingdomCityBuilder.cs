@@ -14,7 +14,7 @@ namespace WarSimulation.Kingdom.City
 {
     public static class KingdomCityBuilder
     {
-        const string ScenePath = "Assets/Scenes/Country.unity";
+        const string ScenePath = "Assets/Scenes/Country/Country.unity";
         const string ModelRoot = "Assets/Models/Kingdom/City";
         const string PrefabRoot = "Assets/Prefabs/Kingdom/City";
         const string ReviewRoot = "docs/Art/KingdomCity";
@@ -94,7 +94,7 @@ namespace WarSimulation.Kingdom.City
         {
             if (EditorApplication.isPlaying) throw new InvalidOperationException("Exit Play mode before building Country.");
             var scene = SceneManager.GetActiveScene();
-            if (scene.path != ScenePath) throw new InvalidOperationException("Open Assets/Scenes/Country.unity before building the kingdom.");
+            if (scene.path != ScenePath) throw new InvalidOperationException("Open Assets/Scenes/Country/Country.unity before building the kingdom.");
             if (scene.isDirty) throw new InvalidOperationException("Save unrelated Country changes before rebuilding the kingdom.");
             var manifest = JsonUtility.FromJson<ExportManifest>(File.ReadAllText(ReviewRoot + "/export_manifest.json"));
             Directory.CreateDirectory(PrefabRoot + "/Materials");

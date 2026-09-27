@@ -12,7 +12,7 @@ public class ReadmeEditor : Editor
 {
     static string s_ShowedReadmeSessionStateName = "ReadmeEditor.showedReadme";
     
-    static string s_ReadmeSourceDirectory = "Assets/TutorialInfo";
+    static string s_ReadmeSourceDirectory = "Assets/Development/Tutorial";
 
     const float k_Space = 16f;
 

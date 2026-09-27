@@ -1,6 +1,6 @@
 # Grand Study — 書斎・応接室の部品セット
 
-原本: `ArtSource/Blender/GrandStudy.blend`
+原本: `ArtSource/Blender/GrandStudy/GrandStudy.blend`
 再生成: `Tools/Blender/generate_grand_study.py`
 部品一覧: `manifest.json`
 
@@ -92,7 +92,7 @@ Review_01〜04の4方向画像もこの改訂モデルから再描画する。
 最終工程: `Tools/Blender/refine_grand_study_art_botanicals.py`。素材コレクション名は維持し、73部品・3シーンの構成を変更しない。既存の城・学校・Unityアセットには変更なし。
 
 - 絵画: 浮き出た記号状の図柄を撤去。新規生成した城と川の風景画・女性の人物画を、UVを持つ平面キャンバスへ適用。縦横比は維持して枠に合わせて端をクロップする。木製額、細い金色モール、鋲、キャンバスの微細バンプを追加。卓上写真立てには同じ人物画を使用。
-- 画像: `ArtSource/Blender/Textures/GrandStudy/landscape.png`、`portrait.png`。built-in image_genで生成したオリジナルの絵柄。正確なプロンプトは同フォルダの `generation-prompts.md`。2枚とも原本にpack済みで、画像ファイルを別途配置しなくても表示できる。
+- 画像: `ArtSource/Blender/GrandStudy/Textures/landscape.png`、`portrait.png`。built-in image_genで生成したオリジナルの絵柄。正確なプロンプトは同フォルダの `generation-prompts.md`。2枚とも原本にpack済みで、画像ファイルを別途配置しなくても表示できる。
 - 植物: フィカス風広葉植物・ヤシ・クロトン風斑入り植物を再制作。曲面の葉、先端の反り、葉脈用UV、葉の厚み、枝への接続、頂芽、ヤシの弓なりの葉軸と小葉を作成。3種類の鉢は開口・土・縁のある陶器。
 - 花束: 球状の花を撤去し、巻いた花びら・内側のつぼみ・葉・茎で構成したバラ9輪へ交換。
 - 彫刻: 胸像に鼻筋・顎・眼窩・まぶた・耳・髪の巻き・衣服の起伏を追加し、頭・髪・肩を一体の石の面へ接続。鳥は細い脚・足指・連続したS字の首・先細りのくちばし・翼の羽模様を持つサギ風のブロンズ像へ交換。トロフィーの取っ手も滑らかな曲線へ変更。

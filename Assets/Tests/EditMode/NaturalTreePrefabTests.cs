@@ -184,7 +184,7 @@ public sealed class NaturalTreePrefabTests
     [Test]
     public void SourceMapScene_ReferencesTheConfiguredTreePrefabs()
     {
-        const string path = "Assets/Scenes/GafuTest.unity";
+        const string path = "Assets/Scenes/Combat/GafuTest.unity";
         Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
         try
         {

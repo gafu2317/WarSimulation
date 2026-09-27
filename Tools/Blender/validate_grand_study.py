@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 from mathutils import Vector
 root=Path(__file__).resolve().parents[2]
-bpy.ops.wm.open_mainfile(filepath=str(root/'ArtSource/Blender/GrandStudy.blend'))
+bpy.ops.wm.open_mainfile(filepath=str(root/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 manifest=json.loads((root/'docs/Art/GrandStudy/manifest.json').read_text())
 assert len(manifest['assets'])==73
 assert len(bpy.data.scenes)==3

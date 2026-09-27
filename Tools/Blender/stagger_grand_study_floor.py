@@ -5,7 +5,7 @@ from pathlib import Path
 import bpy
 
 ROOT = Path(__file__).resolve().parents[2]
-BLEND = ROOT / "ArtSource/Blender/GrandStudy.blend"
+BLEND = ROOT / "ArtSource/Blender/GrandStudy/GrandStudy.blend"
 X0, X1 = -3.0, 3.0
 Y0, Y1 = -4.0, 4.0
 GAP = 0.007

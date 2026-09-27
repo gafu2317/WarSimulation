@@ -8,7 +8,7 @@ namespace WarSimulation.Kingdom.Schools
 {
     public static class SchoolLevelUnityMigration
     {
-        const string CountryScenePath = "Assets/Scenes/Country.unity";
+        const string CountryScenePath = "Assets/Scenes/Country/Country.unity";
         const string CatalogScenePath = "Assets/Scenes/KingdomAssetCatalog.unity";
 
         [MenuItem("WarSim/Kingdom/Replace Schools And Rebuild Catalog")]

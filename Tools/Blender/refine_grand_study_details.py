@@ -3,7 +3,7 @@ import bpy, math, random, ast, json, sys
 from pathlib import Path
 from mathutils import Vector,Matrix
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/GrandStudy'
-bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 source=ast.parse((ROOT/'Tools/Blender/generate_grand_study.py').read_text())
 M={m.name:m for m in bpy.data.materials};current=None
 for node in source.body:
@@ -210,7 +210,7 @@ for obj in room.objects:
 for sc in bpy.data.scenes:
     sc.cycles.samples=40
 bpy.context.window.scene=room;bpy.context.preferences.filepaths.save_version=0
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 if '--geometry-only' in sys.argv:raise SystemExit
 # Close-ups first, before full-room renders.
 detail=bpy.data.scenes['03 Furniture Detail'];bpy.context.window.scene=detail;original_camera=detail.camera

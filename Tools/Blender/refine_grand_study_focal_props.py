@@ -5,7 +5,7 @@ import bpy
 from mathutils import Vector, Matrix
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'docs/Art/GrandStudy'
-bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 M={m.name:m for m in bpy.data.materials};current=None
 for node in ast.parse((ROOT/'Tools/Blender/generate_grand_study.py').read_text()).body:
     if isinstance(node,ast.FunctionDef) and node.name in ['mesh','curve','lathe','ring','camera','area','setup']:
@@ -151,7 +151,7 @@ for node in M['Brass'].node_tree.nodes:
 
 room=bpy.data.scenes['01 Furnished Study'];bpy.context.window.scene=room
 bpy.context.preferences.filepaths.save_version=0
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 if '--geometry-only' in sys.argv:raise SystemExit
 # Temporary contact sheet scene is not saved into the reusable asset file.
 preview=bpy.data.scenes.new('Focal props review');setup(preview);preview.cycles.samples=48

@@ -3,7 +3,7 @@ import bpy, math, random, json
 from pathlib import Path
 from mathutils import Vector
 R=Path(__file__).resolve().parents[2]
-OUT=R/'ArtSource/Blender/GrandStudy.blend'
+OUT=R/'ArtSource/Blender/GrandStudy/GrandStudy.blend'
 REVIEW=R/'docs/Art/GrandStudy'
 random.seed(17)
 bpy.ops.wm.read_factory_settings(use_empty=True)

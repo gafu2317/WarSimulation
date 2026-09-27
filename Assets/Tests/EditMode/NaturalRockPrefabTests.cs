@@ -174,7 +174,7 @@ public sealed class NaturalRockPrefabTests
     [Test]
     public void MapScenes_ReferenceTheConfiguredRockPrefabs()
     {
-        var paths = new List<string> { "Assets/Scenes/GafuTest.unity" };
+        var paths = new List<string> { "Assets/Scenes/Combat/GafuTest.unity" };
         string[] guids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Scenes/BakedMaps" });
         for (int i = 0; i < guids.Length; i++) paths.Add(AssetDatabase.GUIDToAssetPath(guids[i]));
 

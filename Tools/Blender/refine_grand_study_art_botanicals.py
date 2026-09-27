@@ -3,8 +3,8 @@ import ast, math, random, sys
 from pathlib import Path
 import bpy
 from mathutils import Vector, Matrix
-ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/GrandStudy';TEX=ROOT/'ArtSource/Blender/Textures/GrandStudy'
-bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/GrandStudy';TEX=ROOT/'ArtSource/Blender/GrandStudy/Textures'
+bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 M={m.name:m for m in bpy.data.materials};current=None;random.seed(93)
 for path,names in [('generate_grand_study.py',['mesh','curve','lathe','ring','camera','area','setup']),('refine_grand_study_focal_props.py',['block','clear','bezier','disk'])]:
     for node in ast.parse((ROOT/'Tools/Blender'/path).read_text()).body:
@@ -302,7 +302,7 @@ for obj in room.objects:
     if obj.instance_collection and obj.instance_collection.name=='Plant_Broadleaf':obj.location=(1.80,2.95,0)
 
 bpy.context.preferences.filepaths.save_version=0
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy.blend'))
+bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 if '--no-preview' in sys.argv:raise SystemExit
 # Transient review scene, excluded from the saved three-scene project.
 preview=bpy.data.scenes.new('Botanical and art inspection');setup(preview);preview.cycles.samples=40

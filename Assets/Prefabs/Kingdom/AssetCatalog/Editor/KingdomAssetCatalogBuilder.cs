@@ -15,7 +15,7 @@ namespace WarSimulation.Kingdom.EditorOnly
     public static class KingdomAssetCatalogBuilder
     {
         const string ScenePath = "Assets/Scenes/KingdomAssetCatalog.unity";
-        const string MaterialRoot = "Assets/Images/Materials";
+        const string MaterialRoot = "Assets/Materials/Kingdom";
         const string ValidationPath = "docs/Art/KingdomAssetCatalog/validation.json";
         const string FontPath = "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset";
 

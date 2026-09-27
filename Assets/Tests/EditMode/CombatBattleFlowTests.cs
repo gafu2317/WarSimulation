@@ -50,7 +50,7 @@ public sealed class CombatBattleFlowTests
 
         try
         {
-            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Combat/BattleUI.prefab");
             Assert.That(hudPrefab, Is.Not.Null);
             hudObject = Object.Instantiate(hudPrefab);
 
@@ -200,7 +200,7 @@ public sealed class CombatBattleFlowTests
 
         try
         {
-            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Combat/BattleUI.prefab");
             Assert.That(hudPrefab, Is.Not.Null);
             hudObject = Object.Instantiate(hudPrefab);
 
@@ -231,7 +231,7 @@ public sealed class CombatBattleFlowTests
     [Test]
     public void BattleUi_HasLayeredHpBarsForCharacterCardsAndMagicStones()
     {
-        GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+        GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Combat/BattleUI.prefab");
         Assert.That(hudPrefab, Is.Not.Null);
 
         GameObject hudObject = Object.Instantiate(hudPrefab);
@@ -269,7 +269,7 @@ public sealed class CombatBattleFlowTests
 
         try
         {
-            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Combat/BattleUI.prefab");
             Assert.That(hudPrefab, Is.Not.Null);
             hudObject = Object.Instantiate(hudPrefab);
 
@@ -331,7 +331,7 @@ public sealed class CombatBattleFlowTests
 
         try
         {
-            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/BattleUI.prefab");
+            GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Combat/BattleUI.prefab");
             Assert.That(hudPrefab, Is.Not.Null);
             hudObject = Object.Instantiate(hudPrefab);
             CombatPartyStatusPanel panel = hudObject.GetComponent<CombatPartyStatusPanel>();

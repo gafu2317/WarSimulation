@@ -9,7 +9,7 @@ import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "ArtSource/Blender/GrandStudy.blend"
+SOURCE = ROOT / "ArtSource/Blender/GrandStudy/GrandStudy.blend"
 MODEL_ROOT = ROOT / "Assets/Models/GrandStudy/Models"
 TEXTURE_ROOT = ROOT / "Assets/Models/GrandStudy/Textures"
 REPORT_ROOT = ROOT / "docs/Art/GrandStudy"
@@ -236,7 +236,7 @@ def export_collection(collection, output_path):
     return {
         "name": collection.name,
         "asset_type": collection.get("category", "Objects"),
-        "source": "ArtSource/Blender/GrandStudy.blend",
+        "source": "ArtSource/Blender/GrandStudy/GrandStudy.blend",
         "fbx": str(output_path.relative_to(ROOT)),
         "parts": len(sources),
         "triangles": triangle_count,
@@ -310,7 +310,7 @@ def export_all():
     }
     manifest = {
         "blender": bpy.app.version_string,
-        "source": "ArtSource/Blender/GrandStudy.blend",
+        "source": "ArtSource/Blender/GrandStudy/GrandStudy.blend",
         "materials": [material_record(material, baked_textures) for material in sorted(bpy.data.materials, key=lambda item: item.name)],
         "models": records,
         "room": room_data,

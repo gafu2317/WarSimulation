@@ -1,6 +1,6 @@
 # Country 王国配置
 
-`Assets/Scenes/Country.unity` に城壁都市を配置する。
+`Assets/Scenes/Country/Country.unity` に城壁都市を配置する。
 
 ## 意図
 

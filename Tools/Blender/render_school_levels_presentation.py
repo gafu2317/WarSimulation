@@ -9,8 +9,8 @@ try:
     ROOT = Path(__file__).resolve().parents[2]
 except NameError:
     ROOT = Path("/Users/fukutomi/Unity/WarSimulation")
-SOURCE = ROOT / "ArtSource/Blender/FantasySchoolLevels.blend"
-OUTPUT = ROOT / "ArtSource/Blender/SchoolLevelsPresentation.blend"
+SOURCE = ROOT / "ArtSource/Blender/Kingdom/FantasySchoolLevels.blend"
+OUTPUT = ROOT / "ArtSource/Blender/Kingdom/SchoolLevelsPresentation.blend"
 RENDER = ROOT / "docs/Art/SchoolLevelUnity/school_levels_presentation.png"
 
 ROWS = [
