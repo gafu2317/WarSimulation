@@ -54,7 +54,7 @@ public static partial class SkillVfxArt
             A(Color.Lerp(c, White, .28f), blur * .82f), 1 - blur);
     }
 
-    private static void ShieldStrike(SkillVfxMesh m, Vector3 p, Vector3 foot, Vector3 forward, float t, Color c)
+    private static void ShieldStrike(SkillVfxMesh m, Vector3 p, Vector3 foot, float t, Color c)
     {
         float hit = Ease(t, .085f), fade = Out(t, .12f, .65f);
         Glint(m, p, .85f, t - .04f, c);
@@ -62,34 +62,27 @@ public static partial class SkillVfxArt
         for (int side = -1; side <= 1; side += 2)
             m.Crescent(p, m.Right * side, m.Up, .55f + hit * 1.5f, .16f * fade,
                 -65, 130, A(c, Out(t, .13f, .5f) * .8f));
-        Vector3 shield = p - forward * (1 - hit) * .65f;
-        Sprite(m, SkillVfxShape.Shield, shield, 1.08f, 1.3f, -8 * (1 - hit),
-            A(c, Out(t, .12f, .4f) * .95f), In(t - .2f, .2f));
-        Sprite(m, SkillVfxShape.Impact, p + forward * .35f, .3f + hit * .9f, .25f + hit * .35f,
+        Sprite(m, SkillVfxShape.Impact, p, .3f + hit * .9f, .25f + hit * .35f,
             0, A(White, Out(t, .08f, .32f)), 1 - fade);
         for (int i = -1; i <= 1; i += 2)
             Sprite(m, SkillVfxShape.Smoke, foot + m.Right * i * hit + Vector3.up * .2f,
                 .6f, .35f, i * 20, A(c, fade * .33f), 1 - fade);
     }
 
-    private static void ShoulderGuard(SkillVfxMesh m, Vector3 self, Vector3 foot, float t, Color c)
+    private static void ShoulderGuard(SkillVfxMesh m, Vector3 self, Vector3 foot, Vector3 p, float t, Color c)
     {
-        float appear = In(t, .22f), arrive = Ease(t, .32f);
-        Vector3 p = foot + Vector3.up * 1.05f - Vector3.Cross(m.Right, m.Up) * .8f;
-        float side = Vector3.Dot(self - foot, m.Right) < 0 ? -1 : 1;
-        Vector3 shield = Vector3.Lerp(self + Vector3.up, p + m.Right * side * .63f, arrive);
-        Vector3 link = self + Vector3.up * .6f;
-        Ribbon(m, link, shield, .5f, .13f, A(c, appear * .55f));
+        float appear = In(t, .18f);
+        Vector3 normal = Vector3.Cross(m.Right, m.Up).normalized;
+        Vector3 towardSelf = Vector3.ProjectOnPlane(self - foot, normal).normalized;
+        if (towardSelf.sqrMagnitude < .001f) towardSelf = -m.Right;
+        Vector3 link = self + Vector3.up * .72f;
+        Vector3 anchor = p + towardSelf * .92f;
+        float bend = .34f + .08f * Mathf.Sin(t * 2.4f);
+        Ribbon(m, link, anchor, bend, .13f, A(c, appear * .62f));
+        Ribbon(m, link, anchor, bend * .72f, .035f, A(White, appear * .48f));
         float flow = Mathf.Repeat(t * .65f, 1);
-        Glint(m, Vector3.Lerp(link, shield, flow), .38f, Mathf.Repeat(t, 1.5f), c);
-        if (t < .65f)
-            Sprite(m, SkillVfxShape.Shield, shield - m.Right * side * .2f, 1.02f, 1.24f,
-                side * -8, A(c, appear * Out(t, .18f, .65f) * .22f));
-        LightBand(m, shield, 1.05f, 1.4f, -t * 75, 230, A(c, appear * .75f));
-        Glint(m, shield + m.Up * .5f, .75f, t - .22f, c);
-        Sprite(m, SkillVfxShape.Shield, shield, 1.0f, 1.35f, side * -8, A(c, appear * .85f));
-        m.Crescent(shield, m.Right, m.Up * 1.2f, .7f, .035f, 15, 150,
-            A(White, appear * (.4f + .15f * Mathf.Sin(t * 2))));
+        Glint(m, Vector3.Lerp(link, anchor, flow), .38f, Mathf.Repeat(t, 1.5f), c);
+        ProtectionCircle(m, foot, p, t, c, rainbow: false);
     }
 
     private static void IronWall(SkillVfxMesh m, Vector3 foot, Vector3 p, float t, Color c)
@@ -105,21 +98,47 @@ public static partial class SkillVfxArt
         LightBand(m, p, 1.1f, 1.25f, t * 35f, 240, A(White, appear * .4f));
     }
 
-    private static void Taunt(SkillVfxMesh m, Vector3 foot, Vector3 p, float t, Color c)
+    private static void Taunt(SkillVfxMesh m, Vector3 foot, Vector3 p, float t, Color c,
+        float remaining, float duration)
     {
         float appear = In(t, .12f);
-        float pulse = .9f + .1f * Mathf.Sin(t * 5f);
-        Halo(m, p + m.Up * .15f, 1.25f * pulse, A(c, appear * .8f));
-        Sprite(m, SkillVfxShape.Shield, p + m.Up * .15f, 1.05f, 1.3f,
-            0, A(c, appear * .9f));
-        for (int i = 0; i < 4; i++)
+        float pulse = 1f + .035f * Mathf.Sin(t * 5.5f);
+        float remainingRatio = duration > .01f
+            ? Mathf.Clamp01(remaining / duration)
+            : 1f;
+
+        float markSize = (.72f + .025f * Mathf.Sin(t * 5.5f)) * (.86f + .14f * Ease(t, .16f));
+        float sizeBias = .18f * Mathf.Cos(t * 7.2f);
+        float upperMarkSize = markSize * (1f + sizeBias);
+        float lowerMarkSize = markSize * (1f - sizeBias);
+        Vector3 markCenter = p + m.Up * (1.9f + .035f * Mathf.Sin(t * 8f)) +
+            m.Right * (.025f * Mathf.Sin(t * 17f));
+        Vector3 upperLeft = markCenter - m.Right * .5f + m.Up * .28f;
+        Vector3 lowerRight = markCenter + m.Right * .5f - m.Up * .28f;
+        float markAlpha = appear * (.94f + .06f * pulse);
+        Sprite(m, SkillVfxShape.AngerMark, upperLeft, upperMarkSize, upperMarkSize,
+            -8f + Mathf.Sin(t * 1.5f) * 2f, A(TauntAngerRed, markAlpha));
+        Sprite(m, SkillVfxShape.AngerMark, lowerRight, lowerMarkSize, lowerMarkSize,
+            8f + Mathf.Sin(t * 1.5f) * 2f, A(TauntAngerRed, markAlpha));
+
+        const int segmentCount = 8;
+        float ringRadius = 1.38f * pulse;
+        for (int i = 0; i < segmentCount; i++)
         {
-            float angle = i * Mathf.PI * .5f + .25f;
-            Vector3 offset = m.Right * Mathf.Cos(angle) * 1.25f + m.Up * Mathf.Sin(angle) * 1.25f;
-            Sprite(m, SkillVfxShape.Ray, p + offset, .12f, .55f, angle * Mathf.Rad2Deg,
-                A(c, appear * .8f));
+            float segmentProgress = Mathf.Clamp01(remainingRatio * segmentCount - i);
+            float alpha = appear * (.08f + segmentProgress * .92f) * .72f;
+            float angle = -90f + i * 45f;
+            m.Ring(foot + Vector3.up * .08f, ringRadius, .095f, A(c, alpha),
+                angle, 31f, true, 4);
         }
-        Wave(m, foot, 1.4f * pulse, .1f, A(c, appear * .65f));
+
+        float waveAge = Mathf.Repeat(t + .18f, .95f);
+        float waveProgress = Ease(waveAge, .3f);
+        float waveFade = Out(waveAge, .12f, .82f);
+        Wave(m, foot, .82f + waveProgress * .72f, .065f,
+            A(c, waveFade * .36f));
+
+        Wave(m, foot, 1.38f * pulse, .055f, A(c, appear * .34f));
     }
 
     private static void BoltHit(SkillVfxMesh m, Vector3 p, float t, Color c)
@@ -141,15 +160,20 @@ public static partial class SkillVfxArt
         float flash = Out(t, .025f, .12f);
         Orb(m, p, .12f + Ease(t, .035f) * .72f, A(Color.white, flash));
 
-        float flameAge = t - .018f;
-        if (flameAge > 0)
+        for (int i = 0; i < 3; i++)
         {
-            float expand = Ease(flameAge, .105f);
-            float fade = Out(flameAge, .14f, .34f);
-            Color fire = new(1f, .31f, .035f, fade);
-            Sprite(m, SkillVfxShape.ExplosionFlameFront, p,
-                .14f + expand * 1.8f, .14f + expand * 1.6f, -7 + t * 19,
-                fire, 1 - fade);
+            float age = t - (.018f + i * .14f);
+            if (age <= 0) continue;
+            float expand = Ease(age, .105f);
+            float fade = Out(age, .1f, .72f);
+            float scale = i == 0 ? 1.45f : 1.05f;
+            float side = i == 0 ? -.2f : i == 1 ? .45f : -.36f;
+            float height = i == 0 ? -.1f : i == 1 ? .22f : .12f;
+            Vector3 burst = p + m.Right * side + m.Up * height;
+            Color fire = Color.Lerp(new Color(1f, .24f, .02f), Gold, i * .34f);
+            Sprite(m, SkillVfxShape.ExplosionFlameFront, burst,
+                (.14f + expand * 1.8f) * scale, (.14f + expand * 1.6f) * scale,
+                -7 + i * 14 + t * 19, A(fire, fade), 1 - fade);
         }
 
         for (int i = 0; i < 6; i++)
@@ -191,20 +215,16 @@ public static partial class SkillVfxArt
             A(White, fieldFade * .7f), true);
         for (int i = 0; i < 7; i++)
         {
-            float age = t - i * .055f;
-            if (age <= 0) continue;
+            float age = t;
             float erupt = Ease(age, .18f), fade = Out(age, .82f, 1.62f);
-            float angle = i * 2.17f + .28f;
-            float distance = radius * (.18f + (i % 3) * .27f) * ignition;
+            float angle = Mathf.PI * 2f * i / 7f + .28f;
+            float distance = radius * .46f * ignition;
             Vector3 offset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * distance;
             Vector3 basePoint = m.Surface(point + offset);
             float flicker = .82f + .18f * Mathf.Sin(t * (13 + i % 3) + i * 1.8f);
-            float height = (.85f + i % 4 * .28f) * flicker * erupt;
-            Vector3 center = basePoint + m.Up * (height * .7f + .12f);
-            Color flame = i == 0 ? White : i % 2 == 0 ? Gold : c;
-            Sprite(m, SkillVfxShape.FlameTongue, center,
-                .28f + i % 3 * .075f, height, Mathf.Sin(t * 8 + i) * 11,
-                A(flame, fade), 1 - fade);
+            float height = (.95f + i % 2 * .12f) * flicker * erupt;
+            TwinFlame(m, basePoint, .28f + i % 2 * .04f, height,
+                Mathf.Sin(t * 8 + i) * 11, c, fade);
         }
         for (int i = 0; i < 5; i++)
         {
@@ -216,6 +236,17 @@ public static partial class SkillVfxArt
             Sprite(m, SkillVfxShape.Ray, q, .055f, .16f + u * .12f,
                 i * 29, A(i % 3 == 0 ? White : Gold, ember));
         }
+    }
+
+    private static void TwinFlame(SkillVfxMesh m, Vector3 basePoint, float width, float height,
+        float angle, Color outer, float alpha)
+    {
+        const float baseLift = .1f;
+        float innerWidth = width * .55f, innerHeight = height * .62f;
+        Sprite(m, SkillVfxShape.FlameTongue, basePoint + m.Up * (baseLift + height),
+            width, height, angle, A(outer, alpha), 1 - alpha);
+        Sprite(m, SkillVfxShape.FlameTongue, basePoint + m.Up * (baseLift + innerHeight),
+            innerWidth, innerHeight, angle, A(Gold, alpha * .95f), 1 - alpha);
     }
 
     private static void Fist(SkillVfxMesh m, Vector3 contact, float scale, Color c)

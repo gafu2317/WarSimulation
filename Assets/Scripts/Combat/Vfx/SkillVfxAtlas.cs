@@ -5,7 +5,7 @@ public enum SkillVfxShape
     Slash, Petal, Impact, Smoke, Sigil, Feather, Ray, Thorn, Lightning, Orb, Hand, Shield,
     Chain, Tome, Gauntlet, Skull, WindBlade, FlameTongue, BlastLobe, EnergyFilament,
     LightningBranch, SlashSmear, ExplosionCore, ExplosionBillow, ExplosionFlameFront,
-    WindSpiral, FireCracks
+    WindSpiral, FireCracks, AngerMark
 }
 
 public sealed class SkillVfxAtlas : ScriptableObject
@@ -23,7 +23,7 @@ public sealed class SkillVfxAtlas : ScriptableObject
     {
         if (color.a <= .002f || dissolve >= 1 || right.sqrMagnitude < .000001f || up.sqrMagnitude < .000001f) return;
         mesh.TextureQuad(center, right, up, color, Mathf.Clamp01(dissolve), Shared.Regions[(int)shape],
-            shape == SkillVfxShape.Petal ? .24f : .09f);
+            shape == SkillVfxShape.Petal ? .24f : .09f, shape == SkillVfxShape.AngerMark);
     }
 
     public static void Ground(SkillVfxMesh mesh, SkillVfxShape shape, Vector3 center,

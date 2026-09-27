@@ -90,6 +90,34 @@ public sealed class CombatSkillEvaluatorTests
     }
 
     [Test]
+    public void Evaluate_EnemiesAroundSelfResolvesTargetsFromTheOwnerPosition()
+    {
+        SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create(withEnemy: true, registerSystem: true);
+        try
+        {
+            var skill = new EvaluatorTestSkill(
+                SkillTargetKind.EnemiesAroundSelf,
+                maxRange: 0f,
+                areaRadius: 3f);
+
+            CombatSkillEvaluationResult result = CombatSkillEvaluator.Evaluate(
+                skill,
+                CombatSkillEvaluationRequest.ForTarget(fixture.Owner, (Character)null));
+
+            Assert.That(result.CanUse, Is.True, result.FailureReason);
+            Assert.That(result.ResolvedTargets, Has.Member(fixture.Enemy));
+            Assert.That(result.HasAreaPreview, Is.True);
+            Assert.That(result.AreaCenter, Is.EqualTo(fixture.OwnerGo.transform.position));
+            Assert.That(result.Context.HasTargetPoint, Is.True);
+            Assert.That(result.Context.TargetPoint, Is.EqualTo(fixture.OwnerGo.transform.position));
+        }
+        finally
+        {
+            fixture.Destroy();
+        }
+    }
+
+    [Test]
     public void Evaluate_RequiresPointForPointSkill()
     {
         SkillEvaluatorFixture fixture = SkillEvaluatorFixture.Create();

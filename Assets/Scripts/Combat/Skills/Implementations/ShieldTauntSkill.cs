@@ -23,7 +23,7 @@ public sealed class ShieldTauntSkill : SkillBase
     public override string EffectDescription =>
         $"周囲 {_radius:0.##}m の敵が自身を優先（{_durationSeconds:0.##}秒）";
     public override float CooldownSeconds => _cooldownSeconds;
-    public override SkillTargetKind TargetKind => SkillTargetKind.Self;
+    public override SkillTargetKind TargetKind => SkillTargetKind.EnemiesAroundSelf;
     public override float AreaRadius => _radius;
 
     public override void Execute(Character self, SkillExecutionContext context)
@@ -31,18 +31,40 @@ public sealed class ShieldTauntSkill : SkillBase
         if (self == null || self.Health == null || !self.Health.IsAlive) return;
 
         self.StatusEffects?.ApplyTaunt(_durationSeconds, EffectKey, self);
-        IReadOnlyList<Character> enemies = CombatSkillTargeting.GetEnemiesInRadius(
-            self,
-            self.transform.position,
-            _radius);
+        IReadOnlyList<Character> enemies = context.ResolvedTargets ?? System.Array.Empty<Character>();
+        bool hasResolvedEnemy = false;
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Character candidate = enemies[i];
+            if (candidate != null && candidate != self && candidate.Team != self.Team)
+            {
+                hasResolvedEnemy = true;
+                break;
+            }
+        }
+
+        if (!hasResolvedEnemy)
+        {
+            enemies = CombatSkillTargeting.GetEnemiesInRadius(
+                self,
+                self.transform.position,
+                _radius);
+        }
+
         for (int i = 0; i < enemies.Count; i++)
         {
             Character enemy = enemies[i];
-            if (enemy == null || enemy.Health == null || !enemy.Health.IsTargetable) continue;
+            if (enemy == null || enemy == self || enemy.Team == self.Team ||
+                enemy.Health == null || !enemy.Health.IsTargetable) continue;
 
             ShieldTauntTargetEffect effect = enemy.GetComponent<ShieldTauntTargetEffect>();
             if (effect == null) effect = enemy.gameObject.AddComponent<ShieldTauntTargetEffect>();
             effect.Initialize(self, _durationSeconds);
+            CombatSkillActionEvents.RecordCharacterEffect(
+                CombatActionEffectKind.PersistentEffectStarted,
+                CombatEffectSource.Capture(self),
+                enemy,
+                statusKey: EffectKey);
         }
     }
 }

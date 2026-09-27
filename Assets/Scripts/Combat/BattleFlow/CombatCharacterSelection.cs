@@ -2350,6 +2350,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return targetKind switch
         {
             SkillTargetKind.Self => "自身",
+            SkillTargetKind.EnemiesAroundSelf => "自身周囲の敵",
             SkillTargetKind.Enemy => "敵単体",
             SkillTargetKind.Ally => "味方単体",
             SkillTargetKind.AllyOrSelf => "味方単体/自身",

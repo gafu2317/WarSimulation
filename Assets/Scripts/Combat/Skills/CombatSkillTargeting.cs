@@ -93,6 +93,13 @@ public static class CombatSkillTargeting
         return SkillExecutionContext.ForPoint(center, targets, stones);
     }
 
+    public static SkillExecutionContext CreateEnemyAreaAroundSelfContext(Character owner, float radius)
+    {
+        return owner == null
+            ? SkillExecutionContext.ForPoint(default)
+            : CreateEnemyAreaContext(owner, owner.transform.position, radius, includeMagicStones: false);
+    }
+
     public static SkillExecutionContext CreateAllyAreaContext(
         Character owner,
         Vector3 center,

@@ -51,8 +51,11 @@ public sealed class SkillVfxAudit : MonoBehaviour
     private IEnumerator Preview()
     {
         var player=FindAnyObjectByType<SkillVfxViewer>().GetComponent<SkillVfxPlayer>();
-        Vector3 self=GameObject.Find("Caster").transform.position; self.y=0;
-        Vector3 target=GameObject.Find("Target").transform.position; target.y=0;
+        var selfObject=GameObject.Find("Self") ?? GameObject.Find("Caster");
+        var targetObject=GameObject.Find("Other") ?? GameObject.Find("Target");
+        if(selfObject==null || targetObject==null) { Status="Missing preview participants"; yield break; }
+        Vector3 self=selfObject.transform.position; self.y=0;
+        Vector3 target=targetObject.transform.position; target.y=0;
         foreach(SkillId id in Enum.GetValues(typeof(SkillId)))
         {
             if(id==SkillId.None) continue;
@@ -98,10 +101,15 @@ public sealed class SkillVfxAudit : MonoBehaviour
             SkillBase skill=CombatSkillFactory.Create(id);
             Character recipient=skill.TargetKind is SkillTargetKind.Ally or SkillTargetKind.AllyOrSelf ? ally :
                 skill.TargetKind==SkillTargetKind.Self ? actor : enemy;
-            SkillExecutionContext context=skill.TargetKind is SkillTargetKind.Point or SkillTargetKind.Area
-                ? SkillExecutionContext.ForPoint(recipient.transform.position,new[]{recipient})
-                : skill.TargetKind==SkillTargetKind.RecognizedEnemies ? SkillExecutionContext.ForTargets(new[]{enemy})
-                : SkillExecutionContext.ForTarget(recipient);
+            SkillExecutionContext context;
+            if(skill.TargetKind is SkillTargetKind.Point or SkillTargetKind.Area)
+                context=SkillExecutionContext.ForPoint(recipient.transform.position,new[]{recipient});
+            else if(skill.TargetKind==SkillTargetKind.EnemiesAroundSelf)
+                context=CombatSkillTargeting.CreateEnemyAreaAroundSelfContext(actor,skill.AreaRadius);
+            else if(skill.TargetKind==SkillTargetKind.RecognizedEnemies)
+                context=SkillExecutionContext.ForTargets(new[]{enemy});
+            else
+                context=SkillExecutionContext.ForTarget(recipient);
             actor.SkillCooldowns.ResetCooldown(skill);
             bool started=actor.SkillCaster.TryStartCast(skill,context);
             yield return CaptureSequence(id,skill.CastTimeSeconds+(SkillVfxEffect.IsPersistent(id)?5.5f:2f),player,started?"cast started":"CAST FAILED");

@@ -20,6 +20,9 @@ public static class CombatAiSkillContextBuilder
             case SkillTargetKind.Self:
                 contexts.Add(SkillExecutionContext.ForSelf(owner));
                 break;
+            case SkillTargetKind.EnemiesAroundSelf:
+                contexts.Add(CombatSkillTargeting.CreateEnemyAreaAroundSelfContext(owner, skill.AreaRadius));
+                break;
             case SkillTargetKind.Enemy:
                 AddEnemyTargets(context, skill, contexts);
                 break;

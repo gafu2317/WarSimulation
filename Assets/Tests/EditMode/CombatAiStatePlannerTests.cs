@@ -530,6 +530,23 @@ public sealed class CombatAiStatePlannerTests
     }
 
     [Test]
+    public void Planner_MakesDefendOwnStoneHarderToSelectWhenOwnerIsFarAway()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(30f, 0f, 0f));
+        Character enemy = CreateCharacter("Enemy", new Sword(), new Vector3(8f, 0f, 0f), team: CombatTeam.Enemy);
+        CombatAiContext context = Context(
+            owner,
+            enemies: new[] { Intel(enemy) },
+            ownStone: Vector3.zero,
+            enemyStone: new Vector3(40f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+        Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyStoneKnown));
+    }
+
+    [Test]
     public void Planner_GatekeeperReturnsToOwnStoneWhenNoThreatIsKnown()
     {
         Character owner = CreateCharacter("Gatekeeper", new Sword(), new Vector3(8f, 0f, 0f));

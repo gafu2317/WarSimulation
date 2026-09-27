@@ -73,7 +73,8 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
     private void FindTargets()
     {
         _camera = Camera.main;
-        var caster = GameObject.Find("Caster"); var target = GameObject.Find("Target");
+        var caster = GameObject.Find("Self") ?? GameObject.Find("Caster");
+        var target = GameObject.Find("Other") ?? GameObject.Find("Target");
         if (caster != null) _caster = caster.transform;
         if (target != null) _target = target.transform;
         if (_target == null)
@@ -93,8 +94,8 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
     {
         EditorGUILayout.HelpBox("全32種の画像併用エフェクト。時刻を固定して前後の形を比較できます。見た目の再生専用で、効果判定・カメラ設定・シーンは変更しません。", MessageType.Info);
         _camera = (Camera)EditorGUILayout.ObjectField("カメラ", _camera, typeof(Camera), true);
-        _caster = (Transform)EditorGUILayout.ObjectField("術者", _caster, typeof(Transform), true);
-        _target = (Transform)EditorGUILayout.ObjectField("対象／地点", _target, typeof(Transform), true);
+        _caster = (Transform)EditorGUILayout.ObjectField("自分", _caster, typeof(Transform), true);
+        _target = (Transform)EditorGUILayout.ObjectField("その他／地点", _target, typeof(Transform), true);
         if (GUILayout.Button("現在のシーンから取得")) FindTargets();
         int previous = _skill;
         _skill = EditorGUILayout.Popup("スキル", _skill, Labels);
@@ -143,10 +144,11 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
     }
     public void RenderFrame(float time, RenderTexture destination)
     {
-        if (_camera == null || _target == null) FindTargets();
-        if (_camera == null || _target == null) return;
+        if (_camera == null || _caster == null || _target == null) FindTargets();
+        if (_camera == null || _caster == null || _target == null) return;
         Vector3 point = Feet(_target), caster = _caster != null ? Feet(_caster) : point - Vector3.right * 2;
         var definition = Definition;
+        Vector3 effectTarget = UsesCasterAsPreviewTarget(definition) ? caster : point;
         for (int i = 0; i < _count; i++)
         {
             if (_effects[i] == null)
@@ -156,7 +158,7 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
             }
             Vector3 offset = i == 0 ? Vector3.zero : _camera.transform.right * (i % 2 == 0 ? -1 : 1) * .8f + Vector3.forward * .3f * i;
             var fx = _effects[i];
-            fx.Prepare(Skills[_skill], caster + offset, point + offset, point + offset,
+            fx.Prepare(Skills[_skill], caster + offset, effectTarget + offset, effectTarget + offset,
                 _cast ? SkillVfxEffect.Phase.Cast : SkillVfxEffect.Phase.Preview, definition.CastTimeSeconds, definition.AreaRadius);
             fx.SetPreviewCamera(_camera);
             fx.RenderAt(time);
@@ -169,6 +171,8 @@ public sealed class SkillVfxPrototypeWindow : EditorWindow
             foreach (var fx in _effects) if (fx != null) fx.gameObject.SetActive(false);
         }
     }
+    private static bool UsesCasterAsPreviewTarget(SkillBase definition) =>
+        definition.TargetKind == SkillTargetKind.Self;
     private static Vector3 Feet(Transform t)
     {
         if (t.GetComponent<Character>() != null) return SkillVfxEffect.FootPosition(t);

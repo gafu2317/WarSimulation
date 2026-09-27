@@ -40,9 +40,13 @@ Shader "WarSimulation/SkillAtlas"
                 if (input.uv.z > 0.5)
                 {
                     half4 shape = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv.xy);
+                    half packedFloor = input.uv.z - 1.0h;
+                    half useTextureColor = step(0.5h, packedFloor);
+                    packedFloor -= useTextureColor;
                     half coverage = shape.a * lerp(0.75h, 1.0h, shape.r);
                     color.rgb *= lerp(0.45h, 1.0h, shape.r);
-                    half floor = lerp(max(_AlphaFloor, input.uv.z - 1.0h), 1.01h, input.uv.w);
+                    color.rgb = lerp(color.rgb, color.rgb * shape.rgb, useTextureColor);
+                    half floor = lerp(max(_AlphaFloor, packedFloor), 1.01h, input.uv.w);
                     color.a *= smoothstep(floor, max(floor + 0.025h, _AlphaCeiling), coverage);
                 }
                 return color;

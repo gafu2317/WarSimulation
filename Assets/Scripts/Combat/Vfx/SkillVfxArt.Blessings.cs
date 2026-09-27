@@ -2,6 +2,65 @@ using UnityEngine;
 
 public static partial class SkillVfxArt
 {
+    private static void ProtectionCircle(
+        SkillVfxMesh m,
+        Vector3 foot,
+        Vector3 p,
+        float t,
+        Color c,
+        bool rainbow)
+    {
+        float appear = In(t, .16f), close = Ease(t, .25f);
+        Color main = rainbow
+            ? Color.HSVToRGB(Mathf.Repeat(t * .12f, 1), .82f, 1)
+            : Color.Lerp(c, White, .28f);
+        Glint(m, p + m.Up * 1.15f, .95f, t - .18f, main);
+
+        Vector3 center = p + m.Up * .18f;
+        for (int i = 0; i < 24; i++)
+        {
+            float a = i * Mathf.PI * 2 / 24, b = (i + 1) * Mathf.PI * 2 / 24;
+            Vector3 va = m.Right * Mathf.Cos(a) * 1.05f + m.Up * Mathf.Sin(a) * 1.12f;
+            Vector3 vb = m.Right * Mathf.Cos(b) * 1.05f + m.Up * Mathf.Sin(b) * 1.12f;
+            float highlight = .14f + .12f * (0.5f + 0.5f * Mathf.Sin(i * .9f + t * 2.4f));
+            Color segment = rainbow
+                ? Color.HSVToRGB(Mathf.Repeat(i / 24f + t * .08f, 1), .78f, 1)
+                : Color.Lerp(c, White, highlight);
+            m.Triangle(center, center + va * close, center + vb * close,
+                A(segment, appear * .13f));
+        }
+
+        for (int layer = 0; layer < 6; layer++)
+        {
+            float tint = .18f + .22f * (0.5f + 0.5f * Mathf.Sin(layer * 1.4f + t * 2.2f));
+            Color arc = rainbow
+                ? Color.HSVToRGB(Mathf.Repeat(layer / 6f + t * .09f, 1), .9f, 1)
+                : Color.Lerp(c, White, tint);
+            float speed = layer % 2 == 0 ? 58 + layer * 4 : -52 - layer * 3;
+            m.Crescent(center, m.Right, m.Up * 1.07f,
+                1.08f - layer * .012f, .115f,
+                layer * 60 + t * speed, 104, A(arc, appear));
+        }
+
+        Color edge = rainbow ? Color.white : Color.Lerp(c, White, .78f);
+        m.Crescent(center, m.Right, m.Up * 1.07f, 1.02f, .04f,
+            t * -34, 305, A(edge, appear * .9f));
+        float guardPhase = t * 1.15f;
+        Vector3 guardLight = center + m.Right * Mathf.Cos(guardPhase) * 1.05f +
+            m.Up * Mathf.Sin(guardPhase) * 1.12f;
+        Glint(m, guardLight, .45f, Mathf.Repeat(t, 1.3f), main);
+
+        for (int layer = 0; layer < 3; layer++)
+        {
+            float tint = .2f + layer * .18f;
+            Color groundArc = rainbow
+                ? Color.HSVToRGB(Mathf.Repeat(layer / 3f + t * .16f, 1), .9f, 1)
+                : Color.Lerp(c, White, tint);
+            m.Ring(foot + Vector3.up * .1f, 1.03f + layer * .07f, .075f,
+                A(groundArc, appear * .9f), t * (layer % 2 == 0 ? 52 : -48), 105, true, 18);
+        }
+    }
+
     private static void Blessing(SkillVfxMesh m, SkillId id, Vector3 foot, Vector3 p, float t, Color c)
     {
         float appear = In(t, .16f), pulse = .92f + .08f * Mathf.Sin(t * 3), pop = RevealScale(t);
@@ -98,38 +157,7 @@ public static partial class SkillVfxArt
                 }
                 break;
             case SkillId.Bible_Invulnerable:
-                float close = Ease(t, .25f);
-                Color rainbow = Color.HSVToRGB(Mathf.Repeat(t * .12f, 1), .82f, 1);
-                Glint(m, p + m.Up * 1.15f, .95f, t - .18f, rainbow);
-                Vector3 barrierCenter = p + m.Up * .18f;
-                for (int i = 0; i < 24; i++)
-                {
-                    float a = i * Mathf.PI * 2 / 24, b = (i + 1) * Mathf.PI * 2 / 24;
-                    Vector3 va = m.Right * Mathf.Cos(a) * 1.05f + m.Up * Mathf.Sin(a) * 1.12f;
-                    Vector3 vb = m.Right * Mathf.Cos(b) * 1.05f + m.Up * Mathf.Sin(b) * 1.12f;
-                    Color segment = Color.HSVToRGB(Mathf.Repeat(i / 24f + t * .08f, 1), .78f, 1);
-                    m.Triangle(barrierCenter, barrierCenter + va * close, barrierCenter + vb * close,
-                        A(segment, appear * .13f));
-                }
-                for (int layer = 0; layer < 6; layer++)
-                {
-                    Color arc = Color.HSVToRGB(Mathf.Repeat(layer / 6f + t * .09f, 1), .9f, 1);
-                    float speed = layer % 2 == 0 ? 58 + layer * 4 : -52 - layer * 3;
-                    m.Crescent(barrierCenter, m.Right, m.Up * 1.07f,
-                        1.08f - layer * .012f, .115f,
-                        layer * 60 + t * speed, 104, A(arc, appear));
-                }
-                m.Crescent(barrierCenter, m.Right, m.Up * 1.07f, 1.02f, .04f,
-                    t * -34, 305, A(Color.white, appear * .9f));
-                float guardPhase = t * 1.15f;
-                Vector3 guardLight = p + m.Up * .18f + m.Right * Mathf.Cos(guardPhase) * 1.05f + m.Up * Mathf.Sin(guardPhase) * 1.12f;
-                Glint(m, guardLight, .45f, Mathf.Repeat(t, 1.3f), rainbow);
-                for (int layer = 0; layer < 3; layer++)
-                {
-                    Color groundArc = Color.HSVToRGB(Mathf.Repeat(layer / 3f + t * .16f, 1), .9f, 1);
-                    m.Ring(foot + Vector3.up * .1f, 1.03f + layer * .07f, .075f,
-                        A(groundArc, appear * .9f), t * (layer % 2 == 0 ? 52 : -48), 105, true, 18);
-                }
+                ProtectionCircle(m, foot, p, t, c, rainbow: true);
                 break;
             case SkillId.Bible_Gotsume:
                 Sparks(m, p, t - .08f, 1.4f, 90, 310, c, 6);

@@ -7,6 +7,7 @@ public static partial class SkillVfxArt
     private static readonly Color Gold = new(1, .74f, .24f);
     private static readonly Color BuffOrange = new(1, .42f, .08f);
     private static readonly Color DebuffBluePurple = new(.38f, .25f, 1f);
+    private static readonly Color TauntAngerRed = new(1f, .11f, .025f);
     private static readonly Color HealGreen = new(.22f, .91f, .59f);
     private static readonly Color SwordQuickCyan = new(.15f, .85f, 1f);
     private static readonly Color SwordStrongRed = new(1f, .28f, .12f);
@@ -34,7 +35,7 @@ public static partial class SkillVfxArt
         SkillId.Shield_Slash => new(.35f, .57f, .78f),
         SkillId.Shield_ShoulderGuard => BuffOrange,
         SkillId.Shield_IronWall => BuffOrange,
-        SkillId.Shield_Taunt => DebuffBluePurple,
+        SkillId.Shield_Taunt => TauntAngerRed,
         SkillId.Wand_Bolt => new(.2f, 1f, .68f),
         SkillId.Wand_ArcaneBlast => new(1f, .18f, .055f),
         SkillId.Wand_AreaBlast => new(1, .34f, .08f),
@@ -112,12 +113,12 @@ public static partial class SkillVfxArt
                 A(Gold, u * .8f), 35 + u * 150, 300 * spread, true, 32, true);
             for (int i = 0; i < 4; i++)
             {
-                float age = Mathf.Clamp01(u * 1.45f - i * .12f);
-                float a = i * 1.73f + .4f;
-                Vector3 q = m.Surface(point + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * radius * (.35f + i % 2 * .28f));
-                Sprite(m, SkillVfxShape.FlameTongue, q + m.Up * (.2f + age * .3f),
-                    .2f + age * (.12f + i % 2 * .05f), .35f + age * (.55f + i % 3 * .12f),
-                    i % 2 == 0 ? -11 : 9, A(i == 0 ? White : i % 2 == 0 ? Gold : c, age * .9f));
+                float age = Mathf.Clamp01(u * 1.45f);
+                float a = Mathf.PI * 2f * i / 4f + .4f;
+                Vector3 q = m.Surface(point + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * radius * .48f);
+                float height = .35f + age * (.55f + i % 2 * .05f);
+                TwinFlame(m, q, .2f + age * (.12f + i % 2 * .05f), height,
+                    i % 2 == 0 ? -11 : 9, c, age * .9f);
             }
             return;
         }
@@ -203,7 +204,7 @@ public static partial class SkillVfxArt
     }
 
     public static void Impact(SkillVfxMesh m, SkillId id, Vector3 self, Vector3 target, Vector3 point,
-        Vector3 forward, float time, float radius)
+        Vector3 forward, float time, float radius, float statusRemaining = -1f, float statusDuration = -1f)
     {
         float t = Mathf.Max(0, time);
         Vector3 p = target + Vector3.up;
@@ -215,10 +216,12 @@ public static partial class SkillVfxArt
             case SkillId.Sword_Slash: Slash(m, p, forward, t, c); break;
             case SkillId.Sword_QuickSlash: QuickSlash(m, p, forward, t, c); break;
             case SkillId.Sword_StrongSlash: StrongSlash(m, p, forward, t, c); break;
-            case SkillId.Shield_Slash: ShieldStrike(m, p, target, forward, t, c); break;
-            case SkillId.Shield_ShoulderGuard: ShoulderGuard(m, self, target, t, c); break;
+            case SkillId.Shield_Slash: ShieldStrike(m, p, target, t, c); break;
+            case SkillId.Shield_ShoulderGuard: ShoulderGuard(m, self, target, p, t, c); break;
             case SkillId.Shield_IronWall: IronWall(m, target, p, t, c); break;
-            case SkillId.Shield_Taunt: Taunt(m, target, p, t, c); break;
+            case SkillId.Shield_Taunt:
+                Taunt(m, target, target + Vector3.up, t, c, statusRemaining, statusDuration);
+                break;
             case SkillId.Wand_Bolt: BoltHit(m, p, t, c); break;
             case SkillId.Wand_ArcaneBlast: ArcaneBlast(m, p, target, t, c); break;
             case SkillId.Wand_AreaBlast: AreaBlast(m, point, t, radius, c); break;

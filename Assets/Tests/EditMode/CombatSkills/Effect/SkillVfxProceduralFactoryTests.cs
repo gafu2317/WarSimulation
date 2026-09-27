@@ -59,7 +59,7 @@ public sealed class SkillVfxProceduralFactoryTests
             SkillId.Grimoire_Stealth, SkillId.Shield_IronWall })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Bible_StrBuff)), id.ToString());
         foreach (var id in new[] { SkillId.Grimoire_StrDebuff, SkillId.StatDebuff_INT, SkillId.StatDebuff_FAI,
-            SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison, SkillId.Shield_Taunt })
+            SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison })
             Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Grimoire_Poison)), id.ToString());
         foreach (var id in new[] { SkillId.Rosary_DistantHeal, SkillId.Rosary_CloseHeal,
             SkillId.Rosary_Regeneration, SkillId.Rosary_HealingArea })
@@ -75,6 +75,17 @@ public sealed class SkillVfxProceduralFactoryTests
         Assert.That(buff.g, Is.GreaterThan(buff.b));
         Assert.That(debuff.b, Is.GreaterThan(debuff.r));
         Assert.That(debuff.b, Is.GreaterThan(debuff.g));
+    }
+
+    [Test]
+    public void Taunt_UsesDedicatedAngerColor()
+    {
+        Color taunt = SkillVfxArt.ColorFor(SkillId.Shield_Taunt);
+        Color debuff = SkillVfxArt.ColorFor(SkillId.Grimoire_Poison);
+
+        Assert.That(taunt, Is.Not.EqualTo(debuff));
+        Assert.That(taunt.r, Is.GreaterThan(taunt.g));
+        Assert.That(taunt.r, Is.GreaterThan(taunt.b));
     }
 
     [Test]
@@ -208,6 +219,93 @@ public sealed class SkillVfxProceduralFactoryTests
             Assert.That(player.PooledCount, Is.EqualTo(96));
         }
         finally { UnityEngine.Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void PreviewTarget_UsesTargetKindInsteadOfSkillIdExceptions()
+    {
+        var host = new GameObject("Preview target test");
+        try
+        {
+            var player = host.AddComponent<SkillVfxPlayer>();
+            var targetField = typeof(SkillVfxEffect).GetField(
+                "_target",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Vector3 self = Vector3.left * 2f;
+            Vector3 other = Vector3.right * 2f;
+
+            foreach (SkillId id in new[] { SkillId.Shield_IronWall, SkillId.Grimoire_Stealth, SkillId.Bible_Invulnerable })
+            {
+                player.ClearAll();
+                Assert.That(player.TryPlay(id, self, other, other, out _), Is.True);
+                var effect = host.GetComponentInChildren<SkillVfxEffect>();
+                Assert.That((Vector3)targetField.GetValue(effect), Is.EqualTo(self), id.ToString());
+            }
+
+            player.ClearAll();
+            Assert.That(player.TryPlay(SkillId.Shield_Taunt, self, other, other, out _), Is.True);
+            var taunt = host.GetComponentInChildren<SkillVfxEffect>();
+            Assert.That((Vector3)targetField.GetValue(taunt), Is.EqualTo(other));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void TauntActionVfx_BindsToAffectedEnemyAndUsesSourceLifetime()
+    {
+        var actorGo = new GameObject("Taunt actor");
+        var enemyGo = new GameObject("Taunt enemy");
+        var host = new GameObject("Taunt VFX player");
+        try
+        {
+            var actor = actorGo.AddComponent<Character>(); actor.Health.Initialize(30);
+            var enemy = enemyGo.AddComponent<Character>(); enemy.Health.Initialize(30);
+            actor.StatusEffects.ApplyTaunt(4f, ShieldTauntSkill.EffectKey, actor);
+            var targetEffect = enemyGo.AddComponent<ShieldTauntTargetEffect>();
+            targetEffect.Initialize(actor, 4f);
+
+            var player = host.AddComponent<SkillVfxPlayer>();
+            var skill = CombatSkillFactory.Create(SkillId.Shield_Taunt);
+            var action = new CombatSkillActionInfo(
+                11,
+                actor,
+                skill,
+                SkillExecutionContext.ForTargets(new[] { enemy }),
+                0);
+            var source = CombatEffectSource.Capture(actor);
+            var effects = new[]
+            {
+                new CombatActionEffect(
+                    CombatActionEffectKind.StatusApplied,
+                    source,
+                    actor,
+                    -1,
+                    0,
+                    CombatStatusEffects.EffectType.Taunt,
+                    ShieldTauntSkill.EffectKey),
+                new CombatActionEffect(
+                    CombatActionEffectKind.PersistentEffectStarted,
+                    source,
+                    enemy,
+                    -1,
+                    0,
+                    default,
+                    ShieldTauntSkill.EffectKey),
+            };
+
+            player.PlayAction(new CombatSkillActionResult(action, CombatSkillActionOutcome.Completed, effects));
+
+            var visual = host.GetComponentInChildren<SkillVfxEffect>();
+            Assert.That(player.ActiveCount, Is.EqualTo(1));
+            Assert.That(visual.FollowCharacter, Is.SameAs(enemy));
+            Assert.That(visual.Tick(.01f), Is.True);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(host);
+            UnityEngine.Object.DestroyImmediate(enemyGo);
+            UnityEngine.Object.DestroyImmediate(actorGo);
+        }
     }
 
     [Test]

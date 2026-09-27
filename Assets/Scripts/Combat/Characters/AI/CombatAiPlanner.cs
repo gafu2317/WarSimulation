@@ -7,6 +7,10 @@ public static partial class CombatAiPlanner
     internal const float RegroupTriggerHpRatio = 0.15f;
     internal const float RegroupReleaseHpRatio = 0.5f;
     internal const float EnemyStonePriorityMaxAliveRatio = 0.5f;
+    private const float OwnStoneDefenseStartDistance = CombatAiAssessmentBuilder.OwnStoneAreaRadius * 0.5f;
+    private const float OwnStoneDefenseEndDistance = CombatAiAssessmentBuilder.OwnStoneAreaRadius * 2f;
+    private const float OwnStoneThreatBaseThreshold = 25f;
+    private const float OwnStoneThreatFarThreshold = 75f;
     private const float RosaryPreferredSupportDistance = 5.5f;
     private const float RosaryCloseHealDistance = 2.5f;
     private const float RosaryEnemyClearanceDistance = 6.5f;
@@ -169,7 +173,7 @@ public static partial class CombatAiPlanner
             return CombatObjective.Search;
         }
 
-        if (assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > 25f)
+        if (ShouldDefendOwnStone(context, assessment))
         {
             reason = CombatAiReasonCode.OwnStoneThreatHigh;
             return CombatObjective.DefendOwnStone;
@@ -224,6 +228,26 @@ public static partial class CombatAiPlanner
 
         reason = CombatAiReasonCode.EnemyLocationUncertain;
         return CombatObjective.Search;
+    }
+
+    private static bool ShouldDefendOwnStone(
+        CombatAiContext context,
+        CombatAiAssessment assessment)
+    {
+        if (!context.HasOwnStonePosition) return false;
+
+        float distance = HorizontalDistance(
+            context.Owner.transform.position,
+            context.OwnStonePosition);
+        float distanceRatio = Mathf.InverseLerp(
+            OwnStoneDefenseStartDistance,
+            OwnStoneDefenseEndDistance,
+            distance);
+        float requiredThreat = Mathf.Lerp(
+            OwnStoneThreatBaseThreshold,
+            OwnStoneThreatFarThreshold,
+            distanceRatio);
+        return assessment.GetValue(CombatAiMetricIndex.OwnStoneThreat) > requiredThreat;
     }
 
     private static bool ShouldSelectRegroup(

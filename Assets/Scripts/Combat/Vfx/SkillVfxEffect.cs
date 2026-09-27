@@ -18,7 +18,10 @@ public sealed class SkillVfxEffect : MonoBehaviour
     private Vector3 _self, _target, _point, _forward;
     private Transform _caster, _victim;
     private CombatStatusEffects _status;
+    private float _statusRemaining = -1f;
+    private float _statusDuration = -1f;
     private ShieldShoulderGuardEffect _guard;
+    private ShieldTauntTargetEffect _taunt;
     private BibleGotsumeEffect _thorns;
     private RosaryHealingAreaZone _zone;
     private bool _bound;
@@ -48,7 +51,8 @@ public sealed class SkillVfxEffect : MonoBehaviour
         RestoreSprites();
         Skill = skill; _self = self; _target = target; _point = point; _phase = phase; _radius = radius;
         _caster = null; _victim = null; FollowCharacter = null; StatusKey = null; _status = null;
-        _guard = null; _thorns = null; _zone = null; _bound = false;
+        _statusRemaining = -1f; _statusDuration = -1f;
+        _guard = null; _taunt = null; _thorns = null; _zone = null; _bound = false;
         _ending = -1; Age = 0; Finished = false; ActionId = 0;
         _camera = Camera.main;
         _mesh.SetGround(skill is SkillId.Wand_AreaBlast or SkillId.Rosary_HealingArea
@@ -81,7 +85,15 @@ public sealed class SkillVfxEffect : MonoBehaviour
                 target.GetComponentsInChildren(true, _sprites);
                 for (int i = 0; i < _sprites.Count; i++) _spriteAlphas.Add(_sprites[i].color.a);
             }
-            _status = target.StatusEffects;
+            _taunt = target.GetComponent<ShieldTauntTargetEffect>();
+            _status = Skill == SkillId.Shield_Taunt && _taunt != null && _taunt.Source != null
+                ? _taunt.Source.StatusEffects
+                : target.StatusEffects;
+            if (_status != null && !string.IsNullOrEmpty(StatusKey))
+            {
+                _statusRemaining = _status.GetRemainingSeconds(StatusKey);
+                _statusDuration = _statusRemaining;
+            }
             _guard = target.GetComponent<ShieldShoulderGuardEffect>();
             _thorns = target.GetComponent<BibleGotsumeEffect>();
         }
@@ -94,6 +106,8 @@ public sealed class SkillVfxEffect : MonoBehaviour
         Age += delta;
         if (_caster != null) _self = FootPosition(_caster);
         if (_victim != null) _target = FootPosition(_victim);
+        if (_status != null && !string.IsNullOrEmpty(StatusKey))
+            _statusRemaining = _status.GetRemainingSeconds(StatusKey);
         if (_bound && _ending < 0 && !BindingAlive()) End();
         if (!_bound && Age >= Lifetime) Finished = true;
         if (_ending >= 0 && Age - _ending >= .25f) Finished = true;
@@ -117,6 +131,7 @@ public sealed class SkillVfxEffect : MonoBehaviour
         if (FollowCharacter == null || !FollowCharacter.gameObject.activeInHierarchy ||
             FollowCharacter.Health == null || !FollowCharacter.Health.IsAlive) return false;
         if (Skill == SkillId.Shield_ShoulderGuard) return _guard != null && _guard.IsActive;
+        if (Skill == SkillId.Shield_Taunt) return _taunt != null && _taunt.IsActive;
         if (Skill == SkillId.Bible_Gotsume) return _thorns != null && _thorns.IsActive;
         return _status != null && !string.IsNullOrEmpty(StatusKey) && _status.HasActiveEffect(StatusKey);
     }
@@ -163,7 +178,8 @@ public sealed class SkillVfxEffect : MonoBehaviour
     {
         Vector3 direction = Vector3.ProjectOnPlane(_target - _self, Vector3.up);
         if (direction.sqrMagnitude > .001f) _forward = direction.normalized;
-        SkillVfxArt.Impact(_mesh, Skill, _self, _target, _point, _forward, t, _radius);
+        SkillVfxArt.Impact(_mesh, Skill, _self, _target, _point, _forward, t, _radius,
+            _statusRemaining, _statusDuration);
     }
 
     private static Color Alpha(Color c, float a) { c.a = a; return c; }

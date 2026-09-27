@@ -90,13 +90,25 @@ public sealed class SkillVfxMesh
         => TextureQuad(center - right - up, center + right - up, center + right + up,
             center - right + up, color, dissolve, region, alphaFloor);
 
+    public void TextureQuad(Vector3 center, Vector3 right, Vector3 up, Color color,
+        float dissolve, Rect region, float alphaFloor, bool useTextureColor)
+        => TextureQuad(center - right - up, center + right - up, center + right + up,
+            center - right + up, color, dissolve, region, alphaFloor, useTextureColor);
+
     public void TextureQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Color color,
         float dissolve, Rect region, float alphaFloor)
     {
-        Vector4 a = new(region.xMin, region.yMin, 1 + alphaFloor, dissolve);
-        Vector4 b = new(region.xMax, region.yMin, 1 + alphaFloor, dissolve);
-        Vector4 c = new(region.xMax, region.yMax, 1 + alphaFloor, dissolve);
-        Vector4 d = new(region.xMin, region.yMax, 1 + alphaFloor, dissolve);
+        TextureQuad(p0, p1, p2, p3, color, dissolve, region, alphaFloor, false);
+    }
+
+    public void TextureQuad(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Color color,
+        float dissolve, Rect region, float alphaFloor, bool useTextureColor)
+    {
+        float packedAlphaFloor = 1 + alphaFloor + (useTextureColor ? 1 : 0);
+        Vector4 a = new(region.xMin, region.yMin, packedAlphaFloor, dissolve);
+        Vector4 b = new(region.xMax, region.yMin, packedAlphaFloor, dissolve);
+        Vector4 c = new(region.xMax, region.yMax, packedAlphaFloor, dissolve);
+        Vector4 d = new(region.xMin, region.yMax, packedAlphaFloor, dissolve);
         int start = _vertices.Count;
         Vertex(p0, color, a); Vertex(p1, color, b); Vertex(p2, color, c); Vertex(p3, color, d);
         QuadIndices(start);

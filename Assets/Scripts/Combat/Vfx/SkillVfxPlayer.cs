@@ -30,8 +30,11 @@ public sealed class SkillVfxPlayer : MonoBehaviour
         if (skillId == SkillId.None) { message = "未定義のスキル"; return false; }
         SkillBase skill = CombatSkillFactory.Create(skillId);
         if (skill == null) { message = "未定義のスキル"; return false; }
-        var effect = Play(skillId, selfPosition, targetPosition ?? selfPosition,
-            pointPosition ?? targetPosition ?? selfPosition, SkillVfxEffect.Phase.Preview, 0, skill.AreaRadius);
+        bool targetsSelf = skill.TargetKind == SkillTargetKind.Self;
+        Vector3 previewTarget = targetsSelf ? selfPosition : targetPosition ?? selfPosition;
+        Vector3 previewPoint = targetsSelf ? selfPosition : pointPosition ?? previewTarget;
+        var effect = Play(skillId, selfPosition, previewTarget, previewPoint,
+            SkillVfxEffect.Phase.Preview, 0, skill.AreaRadius);
         message = effect != null ? $"{skillId} / 画像併用" : "VFX同時表示上限";
         return effect != null;
     }
@@ -106,6 +109,7 @@ public sealed class SkillVfxPlayer : MonoBehaviour
                 var hit = result.Effects[i];
                 if (hit.Kind != CombatActionEffectKind.StatusApplied && hit.Kind != CombatActionEffectKind.StatusRefreshed &&
                     hit.Kind != CombatActionEffectKind.PersistentEffectStarted) continue;
+                if (hit.Target == actor && hit.StatusType == CombatStatusEffects.EffectType.Taunt) continue;
                 Character recipient = hit.Target;
                 if (recipient == null) continue;
                 for (int j = _active.Count - 1; j >= 0; j--)

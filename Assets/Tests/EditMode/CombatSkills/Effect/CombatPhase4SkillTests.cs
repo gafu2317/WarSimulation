@@ -583,7 +583,7 @@ public sealed class CombatPhase4SkillTests
     }
 
     [Test]
-    public void CombatSkillFactory_ConfiguresShieldDefensesAsSelfSkills()
+    public void CombatSkillFactory_ConfiguresShieldDefenseTargetKinds()
     {
         SkillBase ironWall = CombatSkillFactory.Create(SkillId.Shield_IronWall);
         SkillBase taunt = CombatSkillFactory.Create(SkillId.Shield_Taunt);
@@ -592,7 +592,7 @@ public sealed class CombatPhase4SkillTests
         Assert.That(ironWall.CooldownSeconds, Is.EqualTo(8f));
         Assert.That(ironWall.AreaRadius, Is.Zero);
         Assert.That(ironWall.CanTargetMagicStone, Is.False);
-        Assert.That(taunt.TargetKind, Is.EqualTo(SkillTargetKind.Self));
+        Assert.That(taunt.TargetKind, Is.EqualTo(SkillTargetKind.EnemiesAroundSelf));
         Assert.That(taunt.CooldownSeconds, Is.EqualTo(8f));
         Assert.That(taunt.AreaRadius, Is.EqualTo(6f));
         Assert.That(taunt.CanTargetMagicStone, Is.False);
