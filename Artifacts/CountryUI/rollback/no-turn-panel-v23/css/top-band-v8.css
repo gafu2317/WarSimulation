@@ -1,0 +1,191 @@
+/* Order the permanent game HUD from realm identity to time, treasury, and settings. */
+.hud {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 4;
+  width: 100%;
+  height: 96px;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid #b49b60;
+  color: var(--paper);
+  background: linear-gradient(180deg, #171b14fa 0%, #0d110df5 88%, #090c09f2 100%);
+  box-shadow: 0 4px 16px #0009;
+  pointer-events: none;
+}
+.hud-zone { position: relative; display: flex; align-items: center; min-width: 0; min-height: 0; pointer-events: auto; }
+.hud-state { flex: 0 0 auto; padding-right: 22px; border-right: 1px solid #aa9c6a80; }
+.realm {
+  position: static;
+  inset: auto;
+  transform: none;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 4px 3px;
+  border: 0;
+  color: var(--paper);
+  background: transparent;
+  box-shadow: none;
+  font-size: 19px;
+  letter-spacing: .04em;
+  text-align: left;
+}
+.realm:hover:not(:disabled) { color: #fff2c8; background: transparent; }
+.realm:focus-visible { outline-offset: -2px; }
+.realm-copy { display: flex; min-width: 0; flex-direction: column; gap: 5px; white-space: nowrap; }
+.realm-copy strong { overflow: hidden; font: 600 20px/1.1 Georgia, "Yu Mincho", serif; text-overflow: ellipsis; }
+.realm-copy small { color: #bdb394; font-size: 14px; line-height: 1.1; letter-spacing: .03em; }
+.crest { flex: 0 0 auto; color: #dfc98a; font-size: 22px; line-height: 1; }
+.hud-time { flex: 0 0 auto; gap: 14px; padding: 0 22px; border-right: 1px solid #aa9c6a80; }
+.calendar {
+  flex: 0 0 132px;
+  width: 132px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.date { display: flex; min-width: 0; flex-direction: column; gap: 6px; white-space: nowrap; }
+.date b { color: #f2e8ce; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.date small { color: #d1bd7d; font-size: 15px; line-height: 1.1; }
+.time-controls {
+  position: static;
+  flex: 0 0 auto;
+  min-height: 0;
+  height: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.time-controls button { min-height: 44px; padding: 8px 12px; font-size: 15px; white-space: nowrap; }
+.time-controls .time-auto { min-width: 58px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding-inline: 9px; }
+.time-auto span { font-size: 16px; }
+.time-auto small { color: inherit; font-size: 14px; }
+.hud-treasury { flex: 0 1 980px; min-width: 0; max-width: 980px; margin-left: auto; padding-left: 18px; }
+.resources {
+  width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.resources::before, .resources::after { display: none; }
+.resource {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 1px;
+  padding: 5px 15px;
+  border: 0;
+  color: var(--paper);
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+.resource:hover:not(:disabled) { color: #fff5da; background: #ffffff08; box-shadow: none; filter: none; }
+.resource:active:not(:disabled) { background: #ffffff0d; box-shadow: none; filter: none; }
+.resource:focus-visible { outline: 2px solid #ead59d; outline-offset: -3px; }
+.resource + .resource::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, #aa9c6a80, transparent);
+}
+.resource-topline { display: contents; }
+.resource-symbol { grid-column: 1; grid-row: 1; width: 16px; height: 16px; display: grid; place-items: center; color: var(--resource-accent); }
+.resource-symbol svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; }
+.resource-name { grid-column: 1; grid-row: 1; overflow: hidden; margin-left: 23px; color: #d0c7ae; font: 600 16px/1.2 "Hiragino Sans", "Yu Gothic", sans-serif; text-overflow: ellipsis; }
+.resource-income { grid-column: 1; grid-row: 2; margin-left: 23px; color: var(--resource-accent); font: 14px/1.15 Georgia, "Yu Mincho", serif; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.resource-value { grid-column: 2; grid-row: 1 / 3; justify-self: end; color: #f3e9d0; font: 600 32px/1 Georgia, "Yu Mincho", serif; font-variant-numeric: tabular-nums; letter-spacing: .02em; text-shadow: 0 1px 3px #000b; }
+.resource--funds { --resource-accent: #d7b86c; }
+.resource--wood { --resource-accent: #a8bd86; }
+.resource--ore { --resource-accent: #aebac0; }
+.resource.is-short .resource-name, .resource.is-short .resource-value { color: #d68770; }
+.resource.is-short::after { content: ""; position: absolute; right: 15px; bottom: 5px; left: 15px; height: 2px; background: #c77e6390; }
+.resource-delta { position: absolute; z-index: 1; top: 5px; right: 14px; color: var(--resource-accent); font: 600 12px/1 Georgia, serif; font-variant-numeric: tabular-nums; pointer-events: none; animation: resource-delta 1.5s ease-out forwards; }
+.resource-delta.is-loss { color: #d68770; }
+.resource.is-changed .resource-value { animation: resource-flash .55s ease-out; }
+.hud-settings { flex: 0 0 58px; justify-content: flex-end; margin-left: 16px; padding-left: 14px; border-left: 1px solid #aa9c6a80; }
+.settings-button { width: 42px; height: 42px; min-height: 42px; padding: 0; font-size: 19px; }
+
+@media (max-width: 1480px) {
+  .hud { padding-inline: 14px; }
+  .hud-state { padding-right: 14px; }
+  .realm { gap: 8px; }
+  .realm-copy strong { font-size: 18px; }
+  .hud-time { gap: 9px; padding-inline: 14px; }
+  .calendar { flex-basis: 122px; width: 122px; }
+  .date b { font-size: 20px; }
+  .time-controls { gap: 4px; }
+  .time-controls button { min-height: 40px; padding-inline: 9px; font-size: 14px; }
+  .hud-treasury { flex-basis: 920px; max-width: 920px; padding-left: 12px; }
+  .resource { padding-inline: 10px; }
+}
+
+@media (max-width: 1140px) {
+  .hud { height: 124px; display: grid; grid-template-columns: minmax(170px, .8fr) minmax(0, 1fr) 58px; grid-template-rows: 54px 70px; padding: 0 12px; }
+  .hud-state { grid-column: 1; grid-row: 1; padding-right: 12px; border-right: 1px solid #aa9c6a80; }
+  .realm-copy strong { font-size: 18px; }
+  .hud-time { grid-column: 2; grid-row: 1; gap: 10px; padding: 0 14px; border: 0; }
+  .hud-treasury { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; margin: 0; padding: 0; border-top: 1px solid #aa9c6a70; }
+  .resources { min-height: 68px; }
+  .resource { min-height: 66px; padding: 4px 14px; }
+  .resource-value { font-size: 28px; }
+  .hud-settings { grid-column: 3; grid-row: 1; flex-basis: 58px; justify-content: center; margin: 0; padding: 0; border-left: 1px solid #aa9c6a80; }
+}
+
+@media (max-width: 740px) {
+  .hud { height: 166px; grid-template-columns: minmax(0, 1fr) 54px; grid-template-rows: 42px 52px 72px; padding-inline: 9px; }
+  .hud-state { grid-column: 1 / -1; grid-row: 1; padding: 0; border: 0; }
+  .realm { min-height: 38px; gap: 8px; padding: 0 2px; }
+  .realm-copy { flex-direction: row; align-items: baseline; gap: 8px; }
+  .realm-copy strong { font-size: 15px; }
+  .realm-copy small { font-size: 12px; }
+  .crest { font-size: 18px; }
+  .hud-time { grid-column: 1; grid-row: 2; gap: 8px; padding: 0; }
+  .calendar { flex-basis: 118px; width: 118px; }
+  .date { gap: 3px; }
+  .date b { font-size: 17px; }
+  .date small { font-size: 13px; }
+  .time-controls { gap: 3px; }
+  .time-controls button { min-height: 34px; padding: 5px 7px; font-size: 12px; }
+  .time-controls .time-auto { min-width: 48px; gap: 4px; padding-inline: 6px; }
+  .time-auto small { font-size: 12px; }
+  .hud-settings { grid-column: 2; grid-row: 2; flex-basis: 54px; }
+  .settings-button { width: 38px; height: 38px; min-height: 38px; }
+  .hud-treasury { grid-column: 1 / -1; grid-row: 3; }
+  .resource { min-height: 68px; grid-template-columns: minmax(0, 1fr) auto; padding: 5px 8px; column-gap: 4px; }
+  .resource-symbol { width: 13px; height: 13px; }
+  .resource-name { margin-left: 18px; font-size: 12px; }
+  .resource-income { grid-column: 1 / -1; grid-row: 2; margin-left: 18px; font-size: 12px; }
+  .resource-value { grid-column: 2; grid-row: 1; align-self: center; font-size: 20px; }
+}

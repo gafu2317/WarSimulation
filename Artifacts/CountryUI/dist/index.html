@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="施設への投資と月ごとの国家運営を試せるWarSimulationプロトタイプ">
+  <title>国家画面 — WarSimulation</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23252b2d' stroke='%23c5ae78' stroke-width='4' d='M8 8h48v25c0 13-10 20-24 25C18 53 8 46 8 33V8Z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/country.css">
+  <!-- Remove this layer to restore the previous resource HUD styling. -->
+  <link rel="stylesheet" href="css/resources-v2.css">
+  <!-- Remove v3 alone to return to the v14 resource HUD. -->
+  <link rel="stylesheet" href="css/resources-v3.css">
+  <!-- Remove v4 alone to return to the v15 resource HUD. -->
+  <link rel="stylesheet" href="css/resources-v4.css">
+  <!-- Restore rollback/no-turn-panel-v23 to return to the immediately preceding layout. -->
+  <link rel="stylesheet" href="css/top-band-v8.css">
+  <link rel="stylesheet" href="css/palette-blue-grey.css">
+  <link rel="stylesheet" href="css/menu-roles.css">
+  <link rel="stylesheet" href="css/budget.css">
+  <script src="js/country.js" defer></script>
+</head>
+<body>
+  <div class="game" aria-label="国家運営">
+    <div class="world" aria-hidden="true"></div>
+    <div class="hud" role="group" aria-label="常時表示の国家情報">
+      <section class="hud-zone hud-state" aria-label="王国">
+        <button class="realm" data-action="navigate-history" data-route="history" aria-label="国家記録を開く" title="国家記録"><span class="crest" aria-hidden="true">♜</span><span class="realm-copy"><strong>アルトリア王国</strong><small>王領 1</small></span><span class="record-notice" hidden aria-hidden="true"></span></button>
+      </section>
+      <section class="hud-zone hud-time" aria-label="日付と時間操作">
+        <div class="calendar"><div id="date" class="date"></div></div>
+        <div id="time-controls" class="time-controls" aria-label="時間操作"></div>
+      </section>
+      <section class="hud-zone hud-treasury" aria-label="国家資源">
+        <div class="population resource" aria-label="人口 12,560人、仮表示" title="人口は仮表示。増減ルールは未実装">
+          <span class="resource-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M6 21v-5a6 6 0 0 1 12 0v5M5 5a2 2 0 0 0-2 2m18-2a2 2 0 0 1 2 2"/></svg></span><span class="resource-name">人口</span>
+          <strong class="resource-value">12,560</strong>
+        </div>
+        <div id="resources" class="resources"></div>
+      </section>
+      <section class="hud-zone hud-settings" aria-label="設定">
+        <button data-action="settings" class="settings-button" aria-label="設定・保存">⚙</button>
+      </section>
+    </div>
+    <main id="view" tabindex="-1"></main>
+    <div class="command-dock" role="group" aria-label="王国の命令">
+      <button class="facilities-command" data-action="navigate-facilities" data-route="facilities"><span aria-hidden="true">⚒</span><b>建築物一覧</b></button>
+    </div>
+  </div>
+  <dialog id="modal" aria-labelledby="modal-title"><div id="modal-body"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

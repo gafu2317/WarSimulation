@@ -1,0 +1,194 @@
+/* Single, full-width game HUD. Remove this layer and restore rollback/floating-resource-v4 to return to the previous layout. */
+.hud {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 4;
+  width: 100%;
+  height: 78px;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: clamp(8px, 1vw, 18px);
+  padding: 0 22px;
+  border-bottom: 1px solid #c5ae7270;
+  background: linear-gradient(180deg, #11150ff7, #0b0e0bee 82%, #0b0e0bdc);
+  box-shadow: 0 4px 18px #0008;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+.calendar, .realm, .empire-status, .resources, .time-controls { pointer-events: auto; }
+.calendar {
+  width: auto;
+  min-width: 164px;
+  min-height: 0;
+  grid-template-columns: 1fr 34px;
+  gap: 9px;
+  padding: 0 12px 0 0;
+  border: 0;
+  border-right: 1px solid #aa9c6a78;
+  background: transparent;
+  box-shadow: none;
+}
+.date { gap: 4px; }
+.date b { font-size: 1.04rem; font-variant-numeric: tabular-nums; }
+.date small { color: #d4c18a; font-size: .64rem; }
+.settings-button { width: 32px; height: 32px; min-height: 32px; padding: 0; border-color: #8d8059; font-size: .95rem; }
+.time-controls {
+  position: static;
+  grid-column: 2;
+  min-height: 42px;
+  height: 42px;
+  gap: 5px;
+  padding: 0 10px;
+  border: 0;
+  border-right: 1px solid #aa9c6a78;
+  border-left: 1px solid #aa9c6a78;
+  background: #07090752;
+  box-shadow: none;
+}
+.time-controls button { min-height: 34px; padding: 6px 9px; font-size: .72rem; white-space: nowrap; }
+.realm {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  justify-self: auto;
+  grid-column: auto;
+  width: max-content;
+  min-width: 0;
+  min-height: 48px;
+  gap: 9px;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: .96rem;
+}
+.realm:hover:not(:disabled) { background: linear-gradient(90deg, transparent, #e9dfc50d, transparent); }
+.realm:focus-visible { outline-offset: -2px; }
+.realm small { margin-top: 2px; font-size: .62rem; }
+.crest { font-size: 1.35rem; }
+.empire-status {
+  grid-column: 4;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 0 14px;
+  border-right: 1px solid #aa9c6a78;
+  border-left: 1px solid #aa9c6a78;
+  white-space: nowrap;
+}
+.empire-stat { display: flex; align-items: baseline; gap: 4px; }
+.empire-stat small:first-child { color: #aaa38c; font-size: .63rem; }
+.empire-stat small:last-child { color: #928c78; font-size: .56rem; }
+.empire-stat strong { color: #ead59d; font: 600 1.08rem/1 Georgia, "Yu Mincho", serif; font-variant-numeric: tabular-nums; }
+#top-construction-count { color: #b5ce94; }
+.resources {
+  grid-column: 5;
+  justify-self: end;
+  min-width: 390px;
+  min-height: 54px;
+  gap: 0;
+  padding: 0 0 0 11px;
+  border: 0;
+  border-left: 1px solid #aa9c6a78;
+  background: transparent;
+  box-shadow: none;
+}
+.resources::before, .resources::after { display: none; }
+.resource {
+  min-width: 122px;
+  min-height: 50px;
+  gap: 7px;
+  padding: 2px 8px;
+  background: transparent;
+}
+.resource:hover:not(:disabled), .resource:active:not(:disabled) { background: #ffffff08; }
+.resource + .resource::before {
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 1px;
+  height: auto;
+  transform: none;
+  background: linear-gradient(180deg, transparent, #aa9c6a78, transparent);
+}
+.resource-symbol { width: 19px; height: 19px; flex-basis: 19px; }
+.resource-copy { gap: 4px; }
+.resource-heading { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.resource-name { color: #b8b09a; font-size: .64rem; letter-spacing: .04em; }
+.resource-income { color: var(--resource-accent); font: .59rem/1 Georgia, "Yu Mincho", serif; font-variant-numeric: tabular-nums; opacity: .9; }
+.resource-value { color: #f0e6cc; font-size: 1.38rem; line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
+.resource-symbol, .resource-name, .resource-value { text-shadow: 0 1px 3px #0009; }
+.resource-delta { top: 2px; right: 6px; }
+
+@media (max-width: 1180px) {
+  .hud { gap: 8px; padding-inline: 14px; }
+  .calendar { min-width: 146px; grid-template-columns: 1fr 30px; gap: 7px; padding-right: 8px; }
+  .date b { font-size: .9rem; }
+  .date small { font-size: .59rem; }
+  .settings-button { width: 29px; height: 30px; min-height: 30px; }
+  .time-controls { gap: 3px; padding-inline: 6px; }
+  .time-controls button { padding-inline: 7px; font-size: .67rem; }
+  .realm { gap: 6px; padding-inline: 6px; font-size: .83rem; }
+  .crest { font-size: 1.15rem; }
+  .empire-status { gap: 8px; padding-inline: 9px; }
+  .resources { min-width: 330px; padding-left: 6px; }
+  .resource { min-width: 103px; gap: 5px; padding-inline: 5px; }
+  .resource-symbol { width: 17px; height: 17px; flex-basis: 17px; }
+  .resource-value { font-size: 1.12rem; }
+  .resource-name { font-size: .58rem; }
+  .resource-income { font-size: .54rem; }
+}
+
+@media (max-width: 920px) {
+  .hud { height: 74px; gap: 5px; padding-inline: 9px; }
+  .calendar { min-width: 126px; grid-template-columns: 1fr 27px; gap: 5px; padding-right: 5px; }
+  .date b { font-size: .78rem; }
+  .date small { font-size: .53rem; }
+  .settings-button { width: 26px; height: 28px; min-height: 28px; font-size: .82rem; }
+  .time-controls { min-height: 38px; height: 38px; padding-inline: 5px; }
+  .time-controls button { min-height: 31px; padding: 5px 6px; font-size: .62rem; }
+  .realm { min-height: 42px; gap: 4px; font-size: .76rem; }
+  .realm small { display: none; }
+  .crest { font-size: 1rem; }
+  .empire-status { min-height: 38px; gap: 6px; padding-inline: 6px; }
+  .empire-stat { gap: 3px; }
+  .empire-stat small:first-child { font-size: .56rem; }
+  .empire-stat small:last-child { font-size: .5rem; }
+  .empire-stat strong { font-size: .95rem; }
+  .resources { min-width: 300px; min-height: 46px; padding-left: 4px; }
+  .resource { min-width: 94px; min-height: 44px; gap: 4px; padding-inline: 4px; }
+  .resource-symbol { width: 15px; height: 15px; flex-basis: 15px; }
+  .resource-copy { gap: 3px; }
+  .resource-heading { gap: 4px; }
+  .resource-name { font-size: .53rem; }
+  .resource-income { font-size: .49rem; }
+  .resource-value { font-size: 1rem; }
+}
+
+@media (max-width: 760px) {
+  .hud { grid-template-columns: auto auto minmax(0, 1fr) auto auto; height: 70px; gap: 3px; padding-inline: 6px; }
+  .calendar { min-width: 104px; grid-template-columns: 1fr 24px; gap: 3px; padding-right: 3px; }
+  .date { gap: 3px; }
+  .date b { font-size: .68rem; }
+  .date small { font-size: .48rem; }
+  .settings-button { width: 23px; height: 25px; min-height: 25px; padding: 0; font-size: .72rem; }
+  .time-controls { height: 35px; min-height: 35px; gap: 2px; padding-inline: 3px; }
+  .time-controls button { min-height: 29px; padding: 4px 5px; font-size: .56rem; }
+  .realm { display: none; }
+  .empire-status { min-height: 35px; gap: 4px; padding-inline: 4px; }
+  .empire-stat { gap: 2px; }
+  .empire-stat small:first-child { font-size: .49rem; }
+  .empire-stat small:last-child { font-size: .45rem; }
+  .empire-stat strong { font-size: .82rem; }
+  .resources { min-width: 249px; min-height: 40px; padding-left: 2px; }
+  .resource { min-width: 82px; min-height: 38px; gap: 3px; padding: 1px 3px; }
+  .resource-symbol { width: 13px; height: 13px; flex-basis: 13px; }
+  .resource-heading { gap: 3px; }
+  .resource-name { font-size: .48rem; }
+  .resource-income { font-size: .45rem; }
+  .resource-value { font-size: .86rem; }
+  .resource-delta { top: -2px; right: 1px; font-size: .47rem; }
+}

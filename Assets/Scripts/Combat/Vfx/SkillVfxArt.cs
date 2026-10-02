@@ -67,7 +67,9 @@ public static partial class SkillVfxArt
         Vector3 p = self + Vector3.up * 1.2f;
         if (id == SkillId.Wand_GodsHand)
         {
-            float scale = u < .28f ? .82f : u < .56f ? 1.55f : 2.6f;
+            float scale = .82f
+                + .73f * Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.23f, .33f, u))
+                + 1.05f * Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.50f, .62f, u));
             float descend = Ease(u - .84f, .08f);
             Vector3 hand = target + Vector3.up * (3.35f * (1 - descend) + .15f);
             Fist(m, hand, scale, A(White, Mathf.Clamp01(u * 4)));
