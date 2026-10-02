@@ -82,7 +82,10 @@ function renderFacilities() {
 }
 function budgetValues() {
   state.budget ??= [0, 0, 0, 0]; state.boost ??= [0, 0, 0, 0];
-  const maintenance = state.levels.reduce((sum, level) => sum + level * 10, 0);
+  state.maintenance ??= state.levels.map(level => level * 10);
+  let remaining = monthlyIncome[0];
+  state.maintenance = state.maintenance.map(n => { const paid = Math.min(remaining, Math.max(0, n)); remaining -= paid; return paid; });
+  const maintenance = state.maintenance.reduce((a,b) => a+b, 0);
   const available = Math.max(0, monthlyIncome[0] - maintenance);
   state.budgetShare ??= state.budget.map(n => available ? Math.floor(n / available * 100) : 0);
   state.budget = state.budgetShare.map(n => Math.floor(available * n / 100));
@@ -97,11 +100,11 @@ function renderPlan() {
   return `<section class="game-window budget-window" aria-label="今月の予算">
     ${windowTitle('今月の予算', '<span class="tag">建物の運営費を配分</span>')}
     <div class="window-content budget-content">
-      <div class="allocation-summary"><div><h2>今月の配分</h2><p>維持費は確保済み。残りの税収を100％として振り分ける。</p></div><div class="allocation-saving"><small>国庫へ積立</small><strong>${100-share}％</strong></div></div>
+      <div class="allocation-summary"><div><h2>今月の配分</h2><p>運営費を0にすると稼働停止。残りの税収を100％として配分する。</p></div><div class="allocation-saving"><small>国庫へ積立</small><strong>${100-share}％</strong></div></div>
       <div class="allocation-bar" aria-label="予算配分">${state.budgetShare.map((n,i)=>n ? `<span class="allocation-segment allocation-${i}" style="flex:${n}" title="${facilities[i].name} ${n}％"></span>` : '').join('')}<span class="allocation-segment allocation-saved" style="flex:${100-share}" title="国庫へ積立 ${100-share}％"></span></div>
       <div class="budget-layout"><div class="building-budgets"><div class="budget-columns"><span>建築物・維持費</span><span>税収の配分率</span><span>国庫からブースト</span></div>
-      ${facilities.map((f,i)=>`<article class="building-budget"><div class="budget-building"><span class="facility-icon">${f.icon}</span><div><h2>${f.name}</h2><small>Lv.${state.levels[i]} · 維持費 <b>${state.levels[i]*10}</b>／固定</small></div></div><div class="allocation-control"><div class="budget-adjust tax-accent"><button data-action="budget-down" data-index="${i}" aria-label="${f.name}の配分率を減らす" ${locked || !state.budgetShare[i] ? 'disabled' : ''}>−</button><strong>${state.budgetShare[i]}<small>％</small></strong><button data-action="budget-up" data-index="${i}" aria-label="${f.name}の配分率を増やす" ${locked || share + 5 > 100 ? 'disabled' : ''}>＋</button></div><input type="range" min="0" max="${100-share+state.budgetShare[i]}" step="1" value="${state.budgetShare[i]}" data-budget-index="${i}" aria-label="${f.name}の配分率" ${locked ? 'disabled' : ''}><small>配分額 ${state.budget[i]}</small></div><div class="budget-adjust reserve-accent"><button data-action="boost-down" data-index="${i}" aria-label="${f.name}のブーストを減らす" ${locked || !state.boost[i] ? 'disabled' : ''}>−</button><strong>${state.boost[i]}</strong><button data-action="boost-up" data-index="${i}" aria-label="${f.name}のブーストを増やす" ${locked || b.withdrawal + 5 > state.resources[0] ? 'disabled' : ''}>＋</button></div></article>`).join('')}</div>
-      <aside class="budget-reserve"><h2>国庫の動き</h2><div><span>現在の国庫</span><b>${state.resources[0].toLocaleString()}</b></div><div class="reserve-accent"><span>今月のブースト</span><b>−${b.boost}</b></div>${b.shortfall ? `<div class="reserve-accent"><span>維持費の不足を補填</span><b>−${b.shortfall}</b></div>` : ''}<div class="tax-accent"><span>未配分を積立</span><b>＋${b.deposit}</b></div><div class="budget-balance"><span>予算確定後の国庫</span><strong>${(state.resources[0]+b.deposit-b.withdrawal).toLocaleString()}</strong></div><p>維持費は必ず支払い、残った税収は国庫へ。ブーストは今月だけの追加支援。</p><small>建築・強化費用は別途、国庫から支払う。</small></aside></div>
+      ${facilities.map((f,i)=>`<article class="building-budget"><div class="budget-building"><span class="facility-icon">${f.icon}</span><div><h2>${f.name}</h2><small>Lv.${state.levels[i]} · ${state.maintenance[i] ? '稼働中' : '稼働停止・効果0'}</small><div class="maintenance-adjust"><span>運営費</span><button data-action="maintenance-down" data-index="${i}" aria-label="${f.name}の運営費を減らす" ${locked || !state.maintenance[i] ? 'disabled' : ''}>−</button><b>${state.maintenance[i]}</b><button data-action="maintenance-up" data-index="${i}" aria-label="${f.name}の運営費を増やす" ${locked || b.maintenance + 5 > monthlyIncome[0] ? 'disabled' : ''}>＋</button></div></div></div><div class="allocation-control"><div class="budget-adjust tax-accent"><button data-action="budget-down" data-index="${i}" aria-label="${f.name}の配分率を減らす" ${locked || !state.budgetShare[i] ? 'disabled' : ''}>−</button><strong>${state.budgetShare[i]}<small>％</small></strong><button data-action="budget-up" data-index="${i}" aria-label="${f.name}の配分率を増やす" ${locked || share + 5 > 100 ? 'disabled' : ''}>＋</button></div><input type="range" min="0" max="${100-share+state.budgetShare[i]}" step="1" value="${state.budgetShare[i]}" data-budget-index="${i}" aria-label="${f.name}の配分率" ${locked ? 'disabled' : ''}><small>配分額 ${state.budget[i]}</small></div><div class="budget-adjust reserve-accent"><button data-action="boost-down" data-index="${i}" aria-label="${f.name}のブーストを減らす" ${locked || !state.boost[i] ? 'disabled' : ''}>−</button><strong>${state.boost[i]}</strong><button data-action="boost-up" data-index="${i}" aria-label="${f.name}のブーストを増やす" ${locked || b.withdrawal + 5 > state.resources[0] ? 'disabled' : ''}>＋</button></div></article>`).join('')}</div>
+      <aside class="budget-reserve"><h2>国庫の動き</h2><div><span>現在の国庫</span><b>${state.resources[0].toLocaleString()}</b></div><div class="reserve-accent"><span>今月のブースト</span><b>−${b.boost}</b></div>${b.shortfall ? `<div class="reserve-accent"><span>維持費の不足を補填</span><b>−${b.shortfall}</b></div>` : ''}<div class="tax-accent"><span>未配分を積立</span><b>＋${b.deposit}</b></div><div class="budget-balance"><span>予算確定後の国庫</span><strong>${(state.resources[0]+b.deposit-b.withdrawal).toLocaleString()}</strong></div><p>運営費0の建物は稼働停止。残った税収は国庫へ。ブーストは今月だけの追加支援。</p><small>建築・強化費用は別途、国庫から支払う。</small></aside></div>
 
     </div><div class="window-bottom"><div class="budget-footer"><span>建物へ配分 <b>${share}％</b></span><span>国庫へ積立 <b>${100-share}％</b></span></div><button class="primary" data-action="commit" ${locked || !valid ? 'disabled' : ''}>${locked ? '今月の予算は確定済み' : '今月の予算を確定'}</button></div></section>`;
 }
@@ -157,7 +160,7 @@ function advanceDay() {
   state.queues.forEach((q, i) => { if (!q.length) return; q[0].remaining--; if (!q[0].remaining) { const task = q.shift(); state.levels[i] = task.level; const text = `${facilities[i].name}がLv.${task.level}に到達`; state.completed.push(text); log(`${text}。育成枠（仮）は月${task.level * 5}人に拡張。`); } });
   if (newMonth) {
     stopTime(); state.phase = 'planning'; state.resources = state.resources.map((n, i) => n + (i ? monthlyIncome[i] : 0)); state.boost = [0, 0, 0, 0];
-    state.report = { title: `${state.year}年 ${state.month}月の月次報告`, completed: [...state.completed] }; state.completed = [];
+    state.report = { finance: state.monthBudget ? { ...state.monthBudget, building: state.monthBuilding || 0, closing: state.resources[0] } : null, title: `${state.year}年 ${state.month}月の月次報告`, completed: [...state.completed] }; state.completed = []; state.monthBudget = null; state.monthBuilding = 0; state.monthOpening = state.resources[0];
     log('新しい月の税収100を配分できる。木材50、鉱石30を受け取り。');
   }
   save(); render(); if (newMonth) showReport();
@@ -167,7 +170,7 @@ function openModal(title, body, actions = '') {
   document.querySelector('#modal-body').innerHTML = `<div class="modal-heading"><h2 id="modal-title">${title}</h2><button class="close" data-action="close" aria-label="閉じる">×</button></div>${resumeAfterModal ? '<p class="muted">表示中は時間を一時停止しています。閉じると再開します。</p>' : ''}${body}<div class="actions end" style="margin-top:24px">${actions}</div>`;
   if (!modal.open) modal.showModal();
 }
-function closeModal() { modal.close(); modal.classList.remove('resource-detail'); if (resumeAfterModal) startTime(); resumeAfterModal = false; if (modalOpener?.isConnected) modalOpener.focus(); else if (modalOpener?.dataset.action === 'resource-detail') document.querySelector(`[data-action="resource-detail"][data-index="${modalOpener.dataset.index}"]`)?.focus({ preventScroll: true }); else document.querySelector('#view').focus({ preventScroll: true }); }
+function closeModal() { modal.close(); modal.classList.remove('resource-detail', 'monthly-report'); if (resumeAfterModal) startTime(); resumeAfterModal = false; if (modalOpener?.isConnected) modalOpener.focus(); else if (modalOpener?.dataset.action === 'resource-detail') document.querySelector(`[data-action="resource-detail"][data-index="${modalOpener.dataset.index}"]`)?.focus({ preventScroll: true }); else document.querySelector('#view').focus({ preventScroll: true }); }
 function showResourceDetails(i) {
   const income = monthlyIncome[i];
   const planned = state.phase === 'planning' ? totalCost()[i] : 0;
@@ -186,11 +189,22 @@ function showDetail(i) { const f = facilities[i]; const next = targetLevel(i); o
 function commit() {
   const b = budgetValues();
   if (state.phase !== 'planning' || b.allocation > b.available || b.withdrawal > state.resources[0]) return;
+  state.monthBudget = { year: state.year, month: state.month, opening: state.monthOpening ?? state.resources[0], tax: monthlyIncome[0], maintenance: b.maintenance, allocation: b.allocation, boost: b.boost, shortfall: b.shortfall, deposit: b.deposit, shares: [...state.budgetShare], budgets: [...state.budget], boosts: [...state.boost] };
   state.resources[0] += b.deposit - b.withdrawal;
   log(`今月の予算を確定：維持費 ${b.maintenance}、追加予算 ${b.allocation}、国庫ブースト ${b.boost}、積立 ${b.deposit}。`);
-  state.phase = 'running'; save(); location.hash = 'kingdom'; render(); toast('予算を確定。日付横の「▶ 進行」で時間を進める');
+  state.phase = 'running'; save(); location.hash = 'kingdom'; startTime(); toast('予算を確定。時間を自動で進めています');
 }
-function showReport() { if (!state.report) return; openModal(escapeHTML(state.report.title), `<span class="tag">月初の収入を受け取りました</span><div class="report">${resourceNames.map((n, i) => `<div class="report-row"><span>${i ? n : '配分する税収'}</span><b class="success">${monthlyIncome[i]}</b></div>`).join('')}</div><h3>今回の完成結果</h3>${state.report.completed.length ? `<ul>${state.report.completed.map(t => `<li>${escapeHTML(t)}</li>`).join('')}</ul>` : '<p class="muted">完了した工事はありません。</p>'}<p class="muted">${state.queues.reduce((n, q) => n + q.length, 0)}件の工事を継続中。報告を確認したら、次の月の施設を選ぼう。</p><small>施設効果は育成枠（仮）の表示。兵士育成・戦闘は未実装。</small>`, '<button data-action="close">報告を閉じる</button><button class="primary" data-action="report-plan">次の月の施設を選ぶ →</button>'); }
+function showReport() {
+  if (!state.report) return;
+  const f = state.report.finance;
+  const money = n => n.toLocaleString();
+  const change = f ? f.closing - f.opening : 0;
+  modal.classList.add('monthly-report');
+  const body = f ? `<div class="month-result"><span>${f.year}年${f.month}月の運営結果</span><div><small>国庫の変化</small><strong class="${change >= 0 ? 'tax-accent' : 'reserve-accent'}">${change >= 0 ? '＋' : '−'}${money(Math.abs(change))}</strong></div><p>月初 ${money(f.opening)} <span>→</span> 月末 <b>${money(f.closing)}</b></p></div>
+    <div class="month-ledgers"><section><h3>税収の使い道</h3><div class="month-line month-total"><span>税収</span><b>${money(f.tax)}</b></div><div class="month-line"><span>建物の運営費</span><b>${money(f.maintenance - f.shortfall)}</b></div><div class="month-line"><span>建物への追加予算</span><b>${money(f.allocation)}</b></div><div class="month-line tax-accent"><span>国庫へ積立</span><b>＋${money(f.deposit)}</b></div></section><section><h3>国庫からの支出</h3><div class="month-line"><span>建築・強化</span><b>${money(f.building)}</b></div><div class="month-line reserve-accent"><span>運営ブースト</span><b>${money(f.boost)}</b></div><div class="month-line"><span>維持費の不足を補填</span><b>${money(f.shortfall)}</b></div></section></div>
+    <section class="month-buildings"><h3>建物への配分記録</h3><div class="month-building-head"><span>建物</span><span>配分率</span><span>配分額</span><span>ブースト</span></div>${facilities.map((building,i)=>`<div class="month-building-row"><span>${building.name}</span><b class="tax-accent">${f.shares[i]}％</b><span>${money(f.budgets[i])}</span><span class="reserve-accent">${money(f.boosts[i])}</span></div>`).join('')}</section>` : '<p class="muted">この月の収支記録はありません。新しい予算を確定した月から収支を記録します。</p>';
+  openModal('月次報告', `${body}<div class="month-completed"><h3>完成した工事</h3>${state.report.completed.length ? state.report.completed.map(t=>`<p>${escapeHTML(t)}</p>`).join('') : '<p class="muted">今月の完成工事はありません。</p>'}</div>`, '<button data-action="close">城下町へ戻る</button><button class="primary" data-action="report-plan">次月の予算を配分</button>');
+}
 function showSettings() { openModal('設定・保存', '<p class="muted">記録は随時、自動保存する。手動保存は独立した1枠に残る。読込後は時間を停止した状態で再開する。</p><div class="actions"><button data-action="save">手動保存する</button><button data-action="load">手動保存を読込</button></div><div class="separator"></div><h3>試作のルール</h3><p class="muted">初期資源：資金1,000 / 木材600 / 鉱石360<br>月収：資金100 / 木材50 / 鉱石30<br>強化費用：目標Lv. × 100 / 50 / 30<br>工期：5日。育成枠：Lv. × 5人 / 月（仮）<br>領土は1領固定。閏年は扱いません。</p>', '<button class="danger" data-action="reset-confirm">最初からやり直す</button><button data-action="close">閉じる</button>'); }
 document.addEventListener('click', event => {
   if (modal.open && event.target === modal && event.clientY <= document.querySelector('.hud').getBoundingClientRect().bottom) { closeModal(); return; }
@@ -200,12 +214,13 @@ document.addEventListener('click', event => {
   if (action === 'navigate-budget') { closeModal(); location.hash = 'plan'; render(); const target = document.querySelector(`[data-action="add"][data-index="${i}"]`); target?.scrollIntoView({ block: 'nearest' }); target?.focus({ preventScroll: true }); return; }
   if (action.startsWith('navigate-')) { location.hash = action.replace('navigate-', ''); return; }
   if (action === 'resource-detail' && Number.isInteger(i) && resourceNames[i]) showResourceDetails(i);
-  if (action === 'build') { const next = state.levels[i] + state.queues[i].length + 1; const price = cost(next); if (price.every((n,j)=>n<=state.resources[j])) { state.resources = state.resources.map((n,j)=>n-price[j]); state.queues[i].push({level:next,remaining:5}); log(`${facilities[i].name}の強化を国庫で発注。資金 ${price[0]}。`); closeModal(); save(); render(); } return; }
+  if (action === 'build') { const next = state.levels[i] + state.queues[i].length + 1; const price = cost(next); if (price.every((n,j)=>n<=state.resources[j])) { state.monthOpening ??= state.resources[0]; state.monthBuilding = (state.monthBuilding || 0) + price[0]; state.resources = state.resources.map((n,j)=>n-price[j]); state.queues[i].push({level:next,remaining:5}); log(`${facilities[i].name}の強化を国庫で発注。資金 ${price[0]}。`); closeModal(); save(); render(); } return; }
   if (action === 'detail') showDetail(i);
   if (['add', 'remove'].includes(action) && state.phase === 'planning') { state.plan[i] = Math.max(0, state.plan[i] + (action === 'remove' ? -1 : 1)); save(); render(); if (action === 'add') toast(`${facilities[i].name}の強化を追加しました`); }
   if (action === 'clear-plan') { state.plan = [0, 0, 0, 0]; save(); render(); toast('未決定の計画をクリアしました'); }
   if (action === 'close') closeModal();
 
+  if (action === 'maintenance-up' || action === 'maintenance-down') { if (state.phase !== 'planning') return; const b = budgetValues(); const up = action.endsWith('up'); if (!up || b.maintenance + 5 <= monthlyIncome[0]) state.maintenance[i] = Math.max(0, state.maintenance[i] + (up ? 5 : -5)); budgetValues(); save(); render(); return; }
   if (/^(budget|boost)-(up|down)$/.test(action) && state.phase === 'planning') { const b = budgetValues(); const up = action.endsWith('up'); if (action.startsWith('budget')) { const used = state.budgetShare.reduce((a,b)=>a+b,0); if (!up || used + 5 <= 100) state.budgetShare[i] = Math.max(0, state.budgetShare[i] + (up ? 5 : -5)); } else if (!up || b.withdrawal + 5 <= state.resources[0]) state.boost[i] = Math.max(0, state.boost[i] + (up ? 5 : -5)); save(); render(); return; }
   if (action === 'commit') commit();
   if (action === 'toggle-time') { if (timer) { stopTime(); render(); } else startTime(); }
@@ -213,7 +228,7 @@ document.addEventListener('click', event => {
   if (action === 'next-event') { stopTime(); const days = nextEventDays(); for (let n = 0; n < days && state.phase === 'running'; n++) advanceDay(); }
   if (action === 'month') { stopTime(); for (let n = 0; n < 31 && state.phase === 'running'; n++) advanceDay(); }
   if (action === 'report') showReport();
-  if (action === 'report-plan') { closeModal(); location.hash = 'facilities'; }
+  if (action === 'report-plan') { closeModal(); location.hash = 'plan'; }
   if (action === 'settings') showSettings();
   if (action === 'save') save(true);
   if (action === 'load') { try { const saved = JSON.parse(localStorage.getItem(manualSaveKey)); if (!validState(saved)) throw new Error(); stopTime(); resumeAfterModal = false; state = saved; save(); closeModal(); render(); toast('手動保存した国家状態を読み込みました'); } catch { toast('手動保存がありません。先に手動保存してください'); } }

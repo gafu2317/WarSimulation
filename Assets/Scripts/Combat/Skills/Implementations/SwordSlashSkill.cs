@@ -11,12 +11,12 @@ public sealed class SwordSlashSkill : SkillBase
         float strScale = 0.65f,
         float maxRange = 2f,
         float cooldownSeconds = 0.9f,
-        string name = "斬撃")
+        string name = "剣通常")
     {
         _strScale = strScale;
         _maxRange = maxRange;
         _cooldownSeconds = cooldownSeconds;
-        _name = string.IsNullOrEmpty(name) ? "斬撃" : name;
+        _name = string.IsNullOrEmpty(name) ? "剣通常" : name;
     }
 
     public override string Name => _name;

@@ -16,7 +16,7 @@ public sealed class GrimoireBoltSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "通常攻撃";
+    public override string Name => "魔導書通常";
 
     public override string PowerDescription => $"INT × {_intScale:0.##}";
 

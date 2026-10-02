@@ -16,7 +16,7 @@ public sealed class ShieldSlashSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "盾撃";
+    public override string Name => "盾通常";
 
     public override string PowerDescription => $"STR × {_strScale:0.##}";
 

@@ -16,7 +16,7 @@ public sealed class RosaryStrikeSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "通常攻撃";
+    public override string Name => "ロザリオ通常";
 
     public override string PowerDescription => $"FAI × {_faiScale:0.##}";
 

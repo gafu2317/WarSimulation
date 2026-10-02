@@ -353,6 +353,12 @@ public sealed class CombatBattleLogFormatterTests
     [Test]
     public void IsBasicAttackSkillName_RecognizesKnownNames()
     {
+        Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("剣通常"), Is.True);
+        Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("盾通常"), Is.True);
+        Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("杖通常"), Is.True);
+        Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("魔導書通常"), Is.True);
+        Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("聖書通常"), Is.True);
+        Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("ロザリオ通常"), Is.True);
         Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("斬撃"), Is.True);
         Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("通常攻撃"), Is.True);
         Assert.That(CombatBattleLogFormatter.IsBasicAttackSkillName("STRバフ"), Is.False);

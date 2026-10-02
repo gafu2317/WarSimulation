@@ -16,7 +16,7 @@ public sealed class BibleSmiteSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "通常攻撃";
+    public override string Name => "聖書通常";
 
     public override string PowerDescription => $"FAI × {_faiScale:0.##}";
 

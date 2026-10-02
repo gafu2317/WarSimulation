@@ -16,7 +16,7 @@ public sealed class WandBoltSkill : SkillBase
         _cooldownSeconds = cooldownSeconds;
     }
 
-    public override string Name => "魔弾";
+    public override string Name => "杖通常";
 
     public override string PowerDescription => $"INT × {_intScale:0.##}";
 

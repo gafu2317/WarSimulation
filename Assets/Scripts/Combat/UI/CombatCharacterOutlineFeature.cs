@@ -10,7 +10,7 @@ public sealed class CombatCharacterOutlineFeature : ScriptableRendererFeature
     public const uint RenderingLayer = 1u << 31;
 
     [SerializeField] private Shader _shader;
-    [SerializeField, Range(1, 4)] private int _width = 2;
+    [SerializeField, Range(1, 12)] private int _width = 6;
     private Material _material;
     private OutlinePass _pass;
 

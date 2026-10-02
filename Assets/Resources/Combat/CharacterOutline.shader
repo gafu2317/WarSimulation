@@ -4,7 +4,7 @@ Shader "WarSimulation/CharacterOutline"
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _CombatOutlineColor ("Team Color", Color) = (0, 0, 0, 0)
-        _OutlineWidth ("Width", Float) = 2
+        _OutlineWidth ("Width", Float) = 6
     }
     SubShader
     {

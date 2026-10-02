@@ -11,10 +11,9 @@ public static partial class SkillVfxArt
         bool rainbow)
     {
         float appear = In(t, .16f), close = Ease(t, .25f);
-        Color main = rainbow
-            ? Color.HSVToRGB(Mathf.Repeat(t * .12f, 1), .82f, 1)
-            : Color.Lerp(c, White, .28f);
-        Glint(m, p + m.Up * 1.15f, .95f, t - .18f, main);
+        Color main = Color.Lerp(c, White, .28f);
+        if (!rainbow)
+            Glint(m, p + m.Up * 1.15f, .95f, t - .18f, main);
 
         Vector3 center = p + m.Up * .18f;
         for (int i = 0; i < 24; i++)
@@ -45,10 +44,13 @@ public static partial class SkillVfxArt
         Color edge = rainbow ? Color.white : Color.Lerp(c, White, .78f);
         m.Crescent(center, m.Right, m.Up * 1.07f, 1.02f, .04f,
             t * -34, 305, A(edge, appear * .9f));
-        float guardPhase = t * 1.15f;
-        Vector3 guardLight = center + m.Right * Mathf.Cos(guardPhase) * 1.05f +
-            m.Up * Mathf.Sin(guardPhase) * 1.12f;
-        Glint(m, guardLight, .45f, Mathf.Repeat(t, 1.3f), main);
+        if (!rainbow)
+        {
+            float guardPhase = t * 1.15f;
+            Vector3 guardLight = center + m.Right * Mathf.Cos(guardPhase) * 1.05f +
+                m.Up * Mathf.Sin(guardPhase) * 1.12f;
+            Glint(m, guardLight, .45f, Mathf.Repeat(t, 1.3f), main);
+        }
 
         for (int layer = 0; layer < 3; layer++)
         {

@@ -8,6 +8,7 @@ using UnityEngine.UI;
 /// <summary>
 /// EffectTest 専用。全 SkillId のVFXを手動・自動再生する。
 /// </summary>
+[ExecuteAlways]
 public sealed class SkillVfxViewer : MonoBehaviour
 {
     private static readonly WeaponKind[] WeaponOrder =
@@ -36,26 +37,32 @@ public sealed class SkillVfxViewer : MonoBehaviour
 
     private SkillId[] _skillIds = Array.Empty<SkillId>();
     private readonly Dictionary<SkillId, WeaponKind> _weaponBySkill = new();
+    private readonly List<UnityEngine.UI.Outline> _skillButtonOutlines = new();
+    private ScrollRect _skillScroll;
     private int _index;
     private bool _autoPlaying;
 
     private void OnEnable()
     {
         ApplyUiLayout();
-        BindButtons(true);
+        BindButtons(Application.isPlaying);
         RebuildSkillList();
+        BuildSkillButtons();
+        BindSkillButtons(Application.isPlaying);
         RefreshLabels("Ready");
     }
 
     private void OnDisable()
     {
         BindButtons(false);
+        BindSkillButtons(false);
         StopAutoPlay();
-        Time.timeScale = 1f;
+        if (Application.isPlaying) Time.timeScale = 1f;
     }
 
     private void Update()
     {
+        if (!Application.isPlaying) return;
         AdvanceAutoPlay();
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null) return;
@@ -134,12 +141,11 @@ public sealed class SkillVfxViewer : MonoBehaviour
         RectTransform panel = skill.parent as RectTransform;
         if (panel == null) return;
 
-        // ButtonRow を外したあと、3行スキル + 2行ステータスが収まる高さにする。
-        panel.anchorMin = new Vector2(0f, 1f);
-        panel.anchorMax = new Vector2(1f, 1f);
-        panel.pivot = new Vector2(0.5f, 1f);
-        panel.anchoredPosition = new Vector2(0f, -24f);
-        panel.sizeDelta = new Vector2(-48f, 210f);
+        panel.anchorMin = Vector2.zero;
+        panel.anchorMax = Vector2.right;
+        panel.pivot = new Vector2(0.5f, 0f);
+        panel.anchoredPosition = new Vector2(0f, 120f);
+        panel.sizeDelta = new Vector2(-48f, 150f);
 
         skill.anchorMin = new Vector2(0f, 0.4f);
         skill.anchorMax = Vector2.one;
@@ -147,6 +153,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
         skill.offsetMin = new Vector2(16f, 4f);
         skill.offsetMax = new Vector2(-16f, -12f);
         _skillText.verticalAlignment = VerticalAlignmentOptions.Top;
+        _skillText.fontSize = 24f;
         _skillText.textWrappingMode = TextWrappingModes.Normal;
         _skillText.overflowMode = TextOverflowModes.Ellipsis;
 
@@ -156,9 +163,176 @@ public sealed class SkillVfxViewer : MonoBehaviour
         status.offsetMin = new Vector2(16f, 8f);
         status.offsetMax = new Vector2(-16f, -4f);
         _statusText.verticalAlignment = VerticalAlignmentOptions.Top;
+        _statusText.fontSize = 20f;
         _statusText.textWrappingMode = TextWrappingModes.Normal;
         _statusText.overflowMode = TextOverflowModes.Ellipsis;
     }
+
+    private void BuildSkillButtons()
+    {
+        if (_skillScroll != null || _skillText == null) return;
+        Canvas canvas = _skillText.GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+        Transform existing = canvas.transform.Find("SkillPicker");
+        if (existing != null)
+        {
+            _skillScroll = existing.GetComponent<ScrollRect>();
+            _skillButtonOutlines.Clear();
+            foreach (Transform tile in _skillScroll.content)
+                _skillButtonOutlines.Add(tile.GetComponent<UnityEngine.UI.Outline>());
+            return;
+        }
+
+        RectTransform panel = UiRect("SkillPicker", canvas.transform);
+        panel.anchorMin = Vector2.up;
+        panel.anchorMax = Vector2.one;
+        panel.pivot = new Vector2(.5f, 1);
+        panel.offsetMin = new Vector2(0, -240);
+        panel.offsetMax = Vector2.zero;
+        panel.gameObject.AddComponent<Image>().color = new Color(.12f, .12f, .12f, .96f);
+        _skillScroll = panel.gameObject.AddComponent<ScrollRect>();
+        _skillScroll.horizontal = true;
+        _skillScroll.vertical = false;
+        _skillScroll.movementType = ScrollRect.MovementType.Clamped;
+        _skillScroll.scrollSensitivity = 32;
+
+        RectTransform viewport = UiRect("Viewport", panel);
+        Stretch(viewport, new Vector2(16, 24), new Vector2(-16, -12));
+        viewport.gameObject.AddComponent<RectMask2D>();
+        RectTransform content = UiRect("Skills", viewport);
+        content.anchorMin = Vector2.zero;
+        content.anchorMax = Vector2.up;
+        content.pivot = new Vector2(0, 1);
+        content.sizeDelta = Vector2.zero;
+        var grid = content.gameObject.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(92, 92);
+        grid.spacing = new Vector2(8, 8);
+        grid.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+        grid.constraintCount = 2;
+        grid.padding = new RectOffset(4, 4, 4, 4);
+        var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        _skillScroll.viewport = viewport;
+        _skillScroll.content = content;
+
+        RectTransform track = UiRect("Scrollbar", panel);
+        track.anchorMin = Vector2.zero;
+        track.anchorMax = Vector2.right;
+        track.offsetMin = new Vector2(16, 8);
+        track.offsetMax = new Vector2(-16, 16);
+        track.gameObject.AddComponent<Image>().color = new Color(1, 1, 1, .08f);
+        RectTransform handle = UiRect("Handle", track);
+        Stretch(handle, Vector2.zero, Vector2.zero);
+        Image handleImage = handle.gameObject.AddComponent<Image>();
+        handleImage.color = new Color(.6f, .7f, .9f, .7f);
+        var scrollbar = track.gameObject.AddComponent<Scrollbar>();
+        scrollbar.direction = Scrollbar.Direction.LeftToRight;
+        scrollbar.handleRect = handle;
+        scrollbar.targetGraphic = handleImage;
+        _skillScroll.horizontalScrollbar = scrollbar;
+
+        SkillVfxAtlas atlas = SkillVfxAtlas.Shared;
+        for (int i = 0; i < _skillIds.Length; i++)
+        {
+            SkillId id = _skillIds[i];
+            Color color = SkillVfxArt.ColorFor(id);
+            RectTransform tile = UiRect(id.ToString(), content);
+            Image background = tile.gameObject.AddComponent<Image>();
+            background.color = new Color(.25f, .25f, .25f);
+            var selection = tile.gameObject.AddComponent<UnityEngine.UI.Outline>();
+            selection.effectColor = Color.white;
+            selection.effectDistance = new Vector2(2, -2);
+            _skillButtonOutlines.Add(selection);
+            var button = tile.gameObject.AddComponent<Button>();
+            button.targetGraphic = background;
+
+            RectTransform art = UiRect("Effect", tile);
+            Stretch(art, new Vector2(12, 30), new Vector2(-12, -8));
+            var icon = art.gameObject.AddComponent<RawImage>();
+            icon.raycastTarget = false;
+            icon.color = Color.Lerp(color, Color.white, .35f);
+            if (atlas != null && atlas.Material != null)
+            {
+                icon.texture = atlas.Material.mainTexture;
+                icon.uvRect = atlas.Regions[(int)SkillIcon(id)];
+            }
+
+            RectTransform labelRect = UiRect("Name", tile);
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.right;
+            labelRect.offsetMin = new Vector2(3, 3);
+            labelRect.offsetMax = new Vector2(-3, 29);
+            var label = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
+            label.font = _skillText.font;
+            label.fontSharedMaterial = _skillText.fontSharedMaterial;
+            label.text = CombatSkillFactory.Create(id)?.Name ?? id.ToString();
+            label.alignment = TextAlignmentOptions.Center;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 10;
+            label.fontSizeMax = 16;
+            label.raycastTarget = false;
+        }
+    }
+
+    private void BindSkillButtons(bool bind)
+    {
+        for (int i = 0; i < _skillButtonOutlines.Count; i++)
+        {
+            int index = i;
+            Button button = _skillButtonOutlines[i].GetComponent<Button>();
+            button.onClick.RemoveAllListeners();
+            if (bind) button.onClick.AddListener(() => SelectSkill(index));
+        }
+    }
+
+    private void SelectSkill(int index)
+    {
+        StopAutoPlay();
+        _index = index;
+        _player?.ClearAll();
+        PlayCurrent();
+    }
+
+    private static RectTransform UiRect(string name, Transform parent)
+    {
+        var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        return rect;
+    }
+
+    private static void Stretch(RectTransform rect, Vector2 min, Vector2 max)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = min;
+        rect.offsetMax = max;
+    }
+
+    private static SkillVfxShape SkillIcon(SkillId id) => id switch
+    {
+        SkillId.Sword_Slash or SkillId.Shield_Slash => SkillVfxShape.Slash,
+        SkillId.Sword_QuickSlash => SkillVfxShape.SlashSmear,
+        SkillId.Sword_StrongSlash => SkillVfxShape.Impact,
+        SkillId.Shield_IronWall or SkillId.Shield_ShoulderGuard or SkillId.Bible_Invulnerable => SkillVfxShape.Shield,
+        SkillId.Shield_Taunt => SkillVfxShape.AngerMark,
+        SkillId.Wand_Bolt => SkillVfxShape.WindSpiral,
+        SkillId.Wand_ArcaneBlast => SkillVfxShape.ExplosionCore,
+        SkillId.Wand_AreaBlast => SkillVfxShape.ExplosionFlameFront,
+        SkillId.Wand_GodsHand => SkillVfxShape.Hand,
+        SkillId.Grimoire_Bind => SkillVfxShape.Chain,
+        SkillId.Grimoire_Poison => SkillVfxShape.Skull,
+        SkillId.Grimoire_Stealth => SkillVfxShape.Smoke,
+        SkillId.Bible_StrBuff => SkillVfxShape.Gauntlet,
+        SkillId.Bible_IntBuff => SkillVfxShape.Tome,
+        SkillId.Bible_AgiBuff => SkillVfxShape.Feather,
+        SkillId.Bible_FaiBuff => SkillVfxShape.Orb,
+        SkillId.Bible_Gotsume => SkillVfxShape.Thorn,
+        SkillId.Bible_Smite or SkillId.Rosary_SacrificeThunder => SkillVfxShape.Lightning,
+        SkillId.Rosary_Strike => SkillVfxShape.FlameTongue,
+        SkillId.Rosary_DistantHeal or SkillId.Rosary_CloseHeal or SkillId.Rosary_Regeneration or
+            SkillId.Rosary_HealingArea => SkillVfxShape.Petal,
+        _ => SkillVfxShape.Sigil
+    };
 
     private static void Bind(Button button, UnityEngine.Events.UnityAction action, bool bind)
     {
@@ -326,6 +500,10 @@ public sealed class SkillVfxViewer : MonoBehaviour
     private void RefreshLabels(string status)
     {
         UpdateAutoButton();
+        for (int i = 0; i < _skillButtonOutlines.Count; i++)
+        {
+            _skillButtonOutlines[i].enabled = i == _index;
+        }
         if (_skillText != null)
         {
             if (_skillIds.Length == 0)
@@ -338,17 +516,14 @@ public sealed class SkillVfxViewer : MonoBehaviour
                 SkillBase skill = CombatSkillFactory.Create(id);
                 string skillName = skill != null ? skill.Name : id.ToString();
                 string weaponName = WeaponDisplayName(ResolveWeaponKind(id));
-                string source = "画像併用";
-
                 _skillText.text =
-                    $"武器: {weaponName}\nスキル: {skillName}  [{_index + 1}/{_skillIds.Length}]\nVFX: {source}";
+                    $"武器: {weaponName}\nスキル: {skillName}  [{_index + 1}/{_skillIds.Length}]";
             }
         }
 
         if (_statusText != null)
         {
-            _statusText.text = (_autoPlaying ? "全スキル自動再生中（繰り返し） / " : "") + status +
-                "\n←/→: 選択  Space: 再生  P: 全自動/停止  C: 消去  1:×0.25  2:×1";
+            _statusText.text = (_autoPlaying ? "全スキル自動再生中（繰り返し） / " : "") + status;
         }
     }
 

@@ -176,7 +176,7 @@ public sealed class CombatSkillExecutionTests
             skill.Execute(owner, evaluation.Context);
 
             Assert.That(label.CurrentWeaponText, Is.EqualTo("杖"));
-            Assert.That(label.CurrentSkillText, Is.EqualTo("斬撃"));
+            Assert.That(label.CurrentSkillText, Is.EqualTo("剣通常"));
         }
         finally
         {

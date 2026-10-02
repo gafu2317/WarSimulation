@@ -46,6 +46,12 @@ public sealed class CombatBattleLogFormatter
 {
     private static readonly HashSet<string> BasicAttackSkillNames = new HashSet<string>
     {
+        "剣通常",
+        "盾通常",
+        "杖通常",
+        "魔導書通常",
+        "聖書通常",
+        "ロザリオ通常",
         "斬撃",
         "盾撃",
         "魔弾",
