@@ -16,9 +16,9 @@
   <!-- Restore rollback/no-turn-panel-v23 to return to the immediately preceding layout. -->
   <link rel="stylesheet" href="css/top-band-v8.css">
   <link rel="stylesheet" href="css/palette-blue-grey.css">
-  <link rel="stylesheet" href="css/menu-roles.css">
-  <link rel="stylesheet" href="css/budget.css">
-  <script src="js/country.js" defer></script>
+  <link rel="stylesheet" href="css/menu-roles.css?v=50">
+  <link rel="stylesheet" href="css/budget.css?v=50">
+  <script src="js/country.js?v=50" defer></script>
 </head>
 <body>
   <div class="game" aria-label="国家運営">
@@ -32,10 +32,10 @@
         <div id="time-controls" class="time-controls" aria-label="時間操作"></div>
       </section>
       <section class="hud-zone hud-treasury" aria-label="国家資源">
-        <div class="population resource" aria-label="人口 12,560人、仮表示" title="人口は仮表示。増減ルールは未実装">
+        <button class="population resource" data-action="population-detail" aria-label="人口の詳細を表示" title="人口の詳細">
           <span class="resource-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><path d="M6 21v-5a6 6 0 0 1 12 0v5M5 5a2 2 0 0 0-2 2m18-2a2 2 0 0 1 2 2"/></svg></span><span class="resource-name">人口</span>
           <strong class="resource-value">12,560</strong>
-        </div>
+        </button>
         <div id="resources" class="resources"></div>
       </section>
       <section class="hud-zone hud-settings" aria-label="設定">

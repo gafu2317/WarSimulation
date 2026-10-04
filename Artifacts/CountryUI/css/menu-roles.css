@@ -40,3 +40,11 @@
 @media (max-width: 1480px) and (min-width: 1141px) { .hud-treasury .resource { padding-inline: 10px; column-gap: 9px; } .hud-treasury .resource-value { font-size: 28px; } }
 @media (max-width: 740px) { .hud-treasury .resources { grid-template-columns: repeat(4, minmax(0, 1fr)); } .hud-treasury .resource { padding-inline: 4px; } .hud-treasury .resource-name, .hud-treasury .resource-symbol { grid-row: 1; } }
 @media (max-width: 480px) { .hud-treasury .resource-value { font-size: 20px; } .hud-treasury .resource-name { font-size: 11px; } .population.resource { padding-inline: 5px; } }
+
+@media (min-width:1141px) and (max-width:1350px) {
+  .hud-treasury .resource { padding-inline:4px; column-gap:5px; }
+  .hud-treasury .resource-value { font-size:22px; }
+  .hud-treasury { padding-left:6px; }
+  .hud-treasury .resource-name { font-size:13px; }
+  .hud-settings { margin-left:8px; padding-left:8px; flex-basis:50px; }
+}
