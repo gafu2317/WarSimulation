@@ -576,6 +576,10 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
         _battleUiModeButton = CreateButton(actionRow, "BattleUiModeButton", 220f, 48f, ToggleBattleUiMode);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
+        Button audioButton = CreateButton(actionRow, "AudioSettingsButton", 140f, 48f,
+            () => CombatAudioSettingsView.Open(GetComponentInParent<Canvas>().transform));
+        SetButtonLabel(audioButton, "音設定");
+        ConfigureToolbarLabel(audioButton, 24f);
         RefreshCameraSpeedButton();
         SetButtonLabel(_bulkWeaponButton, "武器一括変更");
         SetButtonLabel(_bulkPersonalityButton, "性格一括変更");

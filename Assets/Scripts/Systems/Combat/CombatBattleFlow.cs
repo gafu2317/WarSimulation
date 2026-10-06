@@ -87,12 +87,14 @@ public sealed class CombatBattleFlow : MonoBehaviour
     {
         if (s_instance == this)
         {
+            CombatAudioPlayer.Instance?.StopBattle();
             s_instance = null;
         }
     }
 
     public void ResetBattle()
     {
+        CombatAudioPlayer.Instance?.StopBattle();
         _state = CombatBattleState.WaitingToStart;
     }
 
@@ -106,6 +108,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
             _magicStoneSystem?.Initialize(map);
         }
 
+        CombatAudioPlayer.Instance?.StopBattle();
         _state = CombatBattleState.WaitingToStart;
     }
 
@@ -133,6 +136,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
         CombatSkillActionEvents.ResetBattle();
         _magicStoneSystem?.Initialize(map);
         _state = CombatBattleState.Running;
+        CombatAudioPlayer.Instance?.StartBattle();
     }
 
     [ContextMenu("Restart Battle On Current Map")]
@@ -155,6 +159,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
         CombatSkillActionEvents.ResetBattle();
         _magicStoneSystem?.Initialize(map);
         _state = CombatBattleState.Running;
+        CombatAudioPlayer.Instance?.StartBattle();
     }
 
     private static void CancelTransientBattleArtifacts()
@@ -188,6 +193,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
         if (outcome != CombatBattleState.Victory && outcome != CombatBattleState.Defeat) return;
 
         _state = outcome;
+        CombatAudioPlayer.Instance?.StopBattle();
         StopAllCharacters();
         BattleEnded?.Invoke(outcome);
     }

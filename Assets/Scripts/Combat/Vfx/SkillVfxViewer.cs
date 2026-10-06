@@ -254,7 +254,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
             if (atlas != null && atlas.Material != null)
             {
                 icon.texture = atlas.Material.mainTexture;
-                icon.uvRect = atlas.Regions[(int)SkillIcon(id)];
+                icon.uvRect = atlas.Regions[(int)SkillVfxArt.IconFor(id)];
             }
 
             RectTransform labelRect = UiRect("Name", tile);
@@ -308,31 +308,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
         rect.offsetMax = max;
     }
 
-    private static SkillVfxShape SkillIcon(SkillId id) => id switch
-    {
-        SkillId.Sword_Slash or SkillId.Shield_Slash => SkillVfxShape.Slash,
-        SkillId.Sword_QuickSlash => SkillVfxShape.SlashSmear,
-        SkillId.Sword_StrongSlash => SkillVfxShape.Impact,
-        SkillId.Shield_IronWall or SkillId.Shield_ShoulderGuard or SkillId.Bible_Invulnerable => SkillVfxShape.Shield,
-        SkillId.Shield_Taunt => SkillVfxShape.AngerMark,
-        SkillId.Wand_Bolt => SkillVfxShape.WindSpiral,
-        SkillId.Wand_ArcaneBlast => SkillVfxShape.ExplosionCore,
-        SkillId.Wand_AreaBlast => SkillVfxShape.ExplosionFlameFront,
-        SkillId.Wand_GodsHand => SkillVfxShape.Hand,
-        SkillId.Grimoire_Bind => SkillVfxShape.Chain,
-        SkillId.Grimoire_Poison => SkillVfxShape.Skull,
-        SkillId.Grimoire_Stealth => SkillVfxShape.Smoke,
-        SkillId.Bible_StrBuff => SkillVfxShape.Gauntlet,
-        SkillId.Bible_IntBuff => SkillVfxShape.Tome,
-        SkillId.Bible_AgiBuff => SkillVfxShape.Feather,
-        SkillId.Bible_FaiBuff => SkillVfxShape.Orb,
-        SkillId.Bible_Gotsume => SkillVfxShape.Thorn,
-        SkillId.Bible_Smite or SkillId.Rosary_SacrificeThunder => SkillVfxShape.Lightning,
-        SkillId.Rosary_Strike => SkillVfxShape.FlameTongue,
-        SkillId.Rosary_DistantHeal or SkillId.Rosary_CloseHeal or SkillId.Rosary_Regeneration or
-            SkillId.Rosary_HealingArea => SkillVfxShape.Petal,
-        _ => SkillVfxShape.Sigil
-    };
+
 
     private static void Bind(Button button, UnityEngine.Events.UnityAction action, bool bind)
     {
