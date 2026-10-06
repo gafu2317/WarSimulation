@@ -49,6 +49,25 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         CombatAiPersonalityKind.Devoted,
     };
 
+    private static readonly EnemyPresetDefinition EnemyStrongPreset = new(
+        "最強編成",
+        new[]
+        {
+            WeaponKind.Sword,
+            WeaponKind.Sword,
+            WeaponKind.Wand,
+            WeaponKind.Wand,
+            WeaponKind.Rosary,
+        },
+        new[]
+        {
+            CombatAiPersonalityKind.Reckless,
+            CombatAiPersonalityKind.Reckless,
+            CombatAiPersonalityKind.Reckless,
+            CombatAiPersonalityKind.Reckless,
+            CombatAiPersonalityKind.Devoted,
+        });
+
     private static readonly EnemyPresetDefinition EnemyStandardPreset = new(
         "テテSnレ",
         new[]
@@ -971,9 +990,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ApplyEnemyPresetDefault()
     {
-        ClosePicker();
-        ApplyDefaultParty(GetVisibleRows(), useEnemyPersonalities: true, useEnemyWeapons: true);
-        Refresh();
+        ApplyEnemyPreset(EnemyStrongPreset);
     }
 
     private void ApplyEnemyPresetStandard()

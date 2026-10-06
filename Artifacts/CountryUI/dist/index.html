@@ -16,9 +16,10 @@
   <!-- Restore rollback/no-turn-panel-v23 to return to the immediately preceding layout. -->
   <link rel="stylesheet" href="css/top-band-v8.css">
   <link rel="stylesheet" href="css/palette-blue-grey.css">
-  <link rel="stylesheet" href="css/menu-roles.css?v=50">
-  <link rel="stylesheet" href="css/budget.css?v=50">
-  <script src="js/country.js?v=50" defer></script>
+  <link rel="stylesheet" href="css/menu-roles.css?v=64">
+  <link rel="stylesheet" href="css/budget.css?v=64">
+  <link rel="stylesheet" href="css/training.css?v=64">
+  <script src="js/country.js?v=64" defer></script>
 </head>
 <body>
   <div class="game" aria-label="国家運営">
@@ -44,6 +45,7 @@
     </div>
     <main id="view" tabindex="-1"></main>
     <div class="command-dock" role="group" aria-label="王国の命令">
+      <button class="training-command" data-action="navigate-plan" data-route="plan"><span aria-hidden="true">⚖</span><b>今月の予算</b></button>
       <button class="facilities-command" data-action="navigate-facilities" data-route="facilities"><span aria-hidden="true">⚒</span><b>建築物一覧</b></button>
     </div>
   </div>
