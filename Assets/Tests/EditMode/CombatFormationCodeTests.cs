@@ -1,6 +1,11 @@
 using System.Collections.Generic;
+using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
+using TMPro;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class CombatFormationCodeTests
 {
@@ -40,22 +45,6 @@ public sealed class CombatFormationCodeTests
     }
 
     [Test]
-    public void BuiltInProfile_RegistersAttentionSeekerNameAndDescription()
-    {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.AttentionSeeker);
-        try
-        {
-            Assert.That(profile.DisplayNameJapanese, Is.EqualTo("陽キャ"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("集まる場所"));
-        }
-        finally
-        {
-            Object.DestroyImmediate(profile);
-        }
-    }
-
-    [Test]
     public void EncodeAndDecode_SupportsGatekeeperWithoutChangingEntryShape()
     {
         var entries = new List<CombatFormationCodeEntry>
@@ -72,22 +61,6 @@ public sealed class CombatFormationCodeTests
         Assert.That(data.Entries[0].Selected, Is.True);
         Assert.That(data.Entries[0].Weapon, Is.EqualTo(WeaponKind.Shield));
         Assert.That(data.Entries[0].Personality, Is.EqualTo(CombatAiPersonalityKind.Gatekeeper));
-    }
-
-    [Test]
-    public void BuiltInProfile_RegistersGatekeeperNameAndDescription()
-    {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Gatekeeper);
-        try
-        {
-            Assert.That(profile.DisplayNameJapanese, Is.EqualTo("門番"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("魔石"));
-        }
-        finally
-        {
-            Object.DestroyImmediate(profile);
-        }
     }
 
     [Test]
@@ -110,23 +83,6 @@ public sealed class CombatFormationCodeTests
     }
 
     [Test]
-    public void BuiltInProfile_RegistersTagalongNameAndDescription()
-    {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Tagalong);
-        try
-        {
-            Assert.That(profile.DisplayNameJapanese, Is.EqualTo("便乗屋"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("便乗屋より上にある選択済みの味方"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("便乗対象に設定"));
-        }
-        finally
-        {
-            Object.DestroyImmediate(profile);
-        }
-    }
-
-    [Test]
     public void EncodeAndDecode_SupportsAvengerWithoutChangingEntryShape()
     {
         var entries = new List<CombatFormationCodeEntry>
@@ -143,22 +99,6 @@ public sealed class CombatFormationCodeTests
         Assert.That(data.Entries[0].Selected, Is.True);
         Assert.That(data.Entries[0].Weapon, Is.EqualTo(WeaponKind.Sword));
         Assert.That(data.Entries[0].Personality, Is.EqualTo(CombatAiPersonalityKind.Avenger));
-    }
-
-    [Test]
-    public void BuiltInProfile_RegistersAvengerNameAndDescription()
-    {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Avenger);
-        try
-        {
-            Assert.That(profile.DisplayNameJapanese, Is.EqualTo("復讐鬼"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("攻撃した敵"));
-        }
-        finally
-        {
-            Object.DestroyImmediate(profile);
-        }
     }
 
     [TestCase("ヘ")]
@@ -191,20 +131,82 @@ public sealed class CombatFormationCodeTests
         Assert.That(data.Entries[0].Personality, Is.EqualTo(CombatAiPersonalityKind.HighGround));
     }
 
-    [Test]
-    public void BuiltInProfile_RegistersHighGroundNameAndDescription()
+    [TestCase(CombatAiPersonalityKind.LowPresence)]
+    public void FormationCode_RoundTripsPersonalitySlots(CombatAiPersonalityKind kind)
     {
-        CombatAiPersonalityProfile profile =
-            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.HighGround);
+        string code = CombatFormationCode.Encode(new[]
+        {
+            new CombatFormationCodeEntry(true, WeaponKind.Bible, kind),
+        });
+
+        Assert.That(CombatFormationCode.TryDecode(code, 1, out var data, out string error), Is.True, error);
+        Assert.That(data.Entries[0].Personality, Is.EqualTo(kind));
+        Assert.That(data.Entries[0].Weapon, Is.EqualTo(WeaponKind.Bible));
+    }
+
+    [Test]
+    public void BuiltInProfilesMatchSelectablePersonalities()
+    {
+        var profiles = CombatAiPersonalityProfile.CreateBuiltInProfiles();
         try
         {
-        Assert.That(profile.DisplayNameJapanese, Is.EqualTo("高所好き"));
-            Assert.That(profile.BehaviorDescriptionJapanese, Does.Contain("高所"));
+            foreach (CombatAiPersonalityKind kind in System.Enum.GetValues(typeof(CombatAiPersonalityKind)))
+            {
+                Assert.That(profiles.Exists(profile => profile.Kind == kind), Is.True);
+                Assert.That(CombatAiPersonalityProfile.IsSelectable(kind), Is.True);
+            }
+            Assert.That(CombatAiPersonalityProfile.IsSelectable((CombatAiPersonalityKind)int.MaxValue), Is.False);
         }
         finally
         {
-            Object.DestroyImmediate(profile);
+            profiles.ForEach(profile => Object.DestroyImmediate(profile));
+        }
+    }
+}
+
+public sealed class CombatPersonalitySelectionTests
+{
+    [Test]
+    public void AllBuiltInPersonalitiesCanBeSelectedAndConfirmed()
+    {
+        GameObject panel = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab"));
+        var ally = new GameObject("Ally");
+        var enemy = new GameObject("Enemy");
+        try
+        {
+            CombatCharacterSelection selection = panel.GetComponentInChildren<CombatCharacterSelection>(true);
+            int confirmations = 0;
+            selection.Initialize(new[] { ally.AddComponent<Character>() }, new[] { enemy.AddComponent<Character>() },
+                (_, _) => confirmations++);
+            object row = Read<IList>(selection, "_allyRows")[0];
+            var personalityButton = (Button)row.GetType().GetField("PersonalityButton").GetValue(row);
+            personalityButton.onClick.Invoke();
+            Assert.That(Read<Transform>(selection, "_pickerContent").childCount, Is.EqualTo(12));
+
+            foreach (CombatAiPersonalityKind kind in CombatAiPersonalityProfile.BuiltInKinds)
+            {
+                Read<TMP_InputField>(selection, "_formationCodeInput").text = CombatFormationCode.Encode(new[]
+                {
+                    new CombatFormationCodeEntry(true, WeaponKind.Sword, kind),
+                });
+                Read<Button>(selection, "_formationCodeApplyButton").onClick.Invoke();
+                int index = (int)row.GetType().GetField("PersonalityIndex").GetValue(row);
+                Assert.That(Read<List<CombatAiPersonalityProfile>>(selection, "_personalityOptions")[index].Kind,
+                    Is.EqualTo(kind));
+                typeof(CombatCharacterSelection).GetMethod("ConfirmSelection", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(selection, null);
+            }
+            Assert.That(confirmations, Is.EqualTo(12));
+        }
+        finally
+        {
+            Object.DestroyImmediate(panel);
+            Object.DestroyImmediate(ally);
+            Object.DestroyImmediate(enemy);
         }
     }
 
+    private static T Read<T>(object target, string name) =>
+        (T)target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(target);
 }

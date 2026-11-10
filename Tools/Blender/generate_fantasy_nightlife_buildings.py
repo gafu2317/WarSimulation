@@ -9,7 +9,7 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SOURCE = os.path.join(ROOT, 'ArtSource', 'Blender', 'FantasyNightlifeBuildings.blend')
-REVIEW = os.path.join(ROOT, 'docs', 'Art', 'FantasyNightlifeBuildings')
+REVIEW = os.path.join(ROOT, 'docs', 'Art', 'Records', 'NightlifeBuildings')
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location('fantasy_materials', os.path.join(os.path.dirname(__file__), 'generate_realistic_fantasy_buildings.py'))
 r = importlib.util.module_from_spec(spec)

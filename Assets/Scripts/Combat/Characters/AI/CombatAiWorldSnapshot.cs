@@ -278,6 +278,13 @@ internal static class CombatAiStaticMapCache
     private static Transform _origin;
     private static CombatAiStaticMapSnapshot _snapshot = CombatAiStaticMapSnapshot.Empty;
 
+    public static void Invalidate()
+    {
+        _map = null;
+        _origin = null;
+        _snapshot = CombatAiStaticMapSnapshot.Empty;
+    }
+
     public static CombatAiStaticMapSnapshot Get(CombatMapSystem mapSystem)
     {
         MapData map = mapSystem != null ? mapSystem.CurrentMap : null;

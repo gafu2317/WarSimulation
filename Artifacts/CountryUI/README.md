@@ -30,10 +30,10 @@ UI方針と実ゲームの調査結果は `../../docs/Country/ゲームUI設計.
 
 ## 前デザインへの復帰
 
-全幅HUDは `css/top-band-v8.css` で設計する。時間状態と予算確定後の案内を変える前の画面へ戻す場合は `rollback/time-state-v24/`、資源表示の間隔を詰める前は `rollback/no-turn-panel-v23/`、進行パネルを含む以前の画面へ戻す場合は `rollback/top-band-v8/` のファイルをソースと `dist` に復元する。さらに前の帯レイアウトへ戻す場合は `rollback/top-band-v7/`、浮遊型資源HUDへ戻す場合は `rollback/floating-resource-v4/` を使う。背景画像と基礎CSSは共通で使う。
+全幅HUDは `css/top-band-v8.css` で設計する。旧デザインはGit履歴から対応するソースを取り出し、配信用ファイルを再生成する。`rollback/` の退避コピーはGit管理しない。
 
 操作ごとにlocalStorageへ自動保存する。手動保存は独立した1枠へ保存し、その後の自動保存では上書きしない。手動保存を読み込むと、その時点の資源・日付・工事・計画へ戻る。再読込時は日付進行を停止する。Unityのセーブデータとは連携しない。初期化はこのプロトタイプの自動保存を初期状態に戻し、手動保存を削除する。
 
 ## 配信ファイル
 
-ソースは `index.html`、`css/country.css`、`css/top-band-v8.css`、`js/country.js`。`dist` に同じファイルと既存画像を配置する。依存パッケージとビルド処理は不要。
+ソースは `index.html`、`css/`、`js/`、`assets/`。このディレクトリで `node build.mjs` を実行すると `dist/` に配信用ファイルを配置する。`dist/` はGit管理せず、必要なときに再生成する。HTMLの直接表示には生成処理も依存パッケージも不要。

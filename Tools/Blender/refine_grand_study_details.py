@@ -2,7 +2,7 @@
 import bpy, math, random, ast, json, sys
 from pathlib import Path
 from mathutils import Vector,Matrix
-ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/GrandStudy'
+ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/Records/GrandStudy'
 bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 source=ast.parse((ROOT/'Tools/Blender/generate_grand_study.py').read_text())
 M={m.name:m for m in bpy.data.materials};current=None

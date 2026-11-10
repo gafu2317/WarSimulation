@@ -8,7 +8,7 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SOURCE = os.path.join(ROOT, 'ArtSource', 'Blender', 'FantasyEntertainmentDistrict.blend')
-REVIEW = os.path.join(ROOT, 'docs', 'Art', 'FantasyEntertainmentDistrict')
+REVIEW = os.path.join(ROOT, 'docs', 'Art', 'Records', 'Legacy', 'EntertainmentDistrict')
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location('civic', os.path.join(os.path.dirname(__file__), 'generate_fantasy_civic_facilities.py'))
 m = importlib.util.module_from_spec(spec)

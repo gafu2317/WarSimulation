@@ -125,7 +125,7 @@ public static partial class CombatAiPlanner
             return CombatObjective.Regroup;
         }
 
-        if (personalityKind == CombatAiPersonalityKind.Gatekeeper && context.HasOwnStonePosition)
+        if (personalityKind == CombatAiPersonalityKind.Gatekeeper && CanDefendOwnStone(context))
         {
             reason = CombatAiReasonCode.PersonalityPreference;
             return CombatObjective.DefendOwnStone;
@@ -139,7 +139,8 @@ public static partial class CombatAiPlanner
         }
 
         if (personalityKind == CombatAiPersonalityKind.Tagalong &&
-            CombatAiPersonalityBehavior.TryFindAssignedAllyWithObjective(context, out CombatCharacterIntel leader))
+            CombatAiPersonalityBehavior.TryFindAssignedAllyWithObjective(context, out CombatCharacterIntel leader) &&
+            (leader.Objective != CombatObjective.DefendOwnStone || CanDefendOwnStone(context)))
         {
             reason = CombatAiReasonCode.PersonalityPreference;
             return leader.Objective;
@@ -230,11 +231,22 @@ public static partial class CombatAiPlanner
         return CombatObjective.Search;
     }
 
+    private static bool CanDefendOwnStone(CombatAiContext context)
+    {
+        if (!context.HasOwnStonePosition) return false;
+        if (!context.HasEnemyStonePosition) return true;
+
+        Vector3 position = context.Owner.transform.position;
+        float ownStoneDistanceSquared = (context.OwnStonePosition - position).sqrMagnitude;
+        float enemyStoneDistanceSquared = (context.EnemyStonePosition - position).sqrMagnitude;
+        return ownStoneDistanceSquared < enemyStoneDistanceSquared * 4f;
+    }
+
     private static bool ShouldDefendOwnStone(
         CombatAiContext context,
         CombatAiAssessment assessment)
     {
-        if (!context.HasOwnStonePosition) return false;
+        if (!CanDefendOwnStone(context)) return false;
 
         float distance = HorizontalDistance(
             context.Owner.transform.position,

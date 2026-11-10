@@ -33,4 +33,6 @@ public enum SkillId
     Sword_StrongSlash = 31,
     Shield_IronWall = 32,
     Shield_Taunt = 33,
+    Player_AreaMagic = 34,
+    Player_AllInvulnerable = 35,
 }

@@ -7,7 +7,7 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / 'ArtSource/Blender/FantasySchoolLevels.blend'
-REVIEW = ROOT / 'docs/Art/FantasySchoolLevels'
+REVIEW = ROOT / 'docs/Art/Records/Schools'
 KINDS = ['WarriorAcademy', 'ArcaneAcademy', 'SpiritAcademy']
 PALETTE = {'stone':'B5AA92','trim':'DED1B2','shade':'877D68','wood':'71553A','oak':'B29461',
            'roof':'414752','blue':'315371','green':'365C4D','tile':'476B57','glass':'275C70',

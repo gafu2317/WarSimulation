@@ -1,0 +1,1438 @@
+{
+  "status": "PASS",
+  "blender": "5.0.0",
+  "expected_models": 50,
+  "models": [
+    {
+      "name": "Fence_Panel",
+      "group": "Infrastructure",
+      "display_name": "木柵",
+      "minimum": [
+        0.0,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.14000000059604645,
+        1.6100000143051147
+      ],
+      "mesh_parts": 10,
+      "materials": [
+        "Fantasy_Door",
+        "Fantasy_StoneShade",
+        "Fantasy_Timber"
+      ],
+      "triangles": 1080,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Fence_Panel.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Fence_Post",
+      "group": "Infrastructure",
+      "display_name": "柵の支柱",
+      "minimum": [
+        0.0,
+        -0.14000000059604645,
+        0.0
+      ],
+      "maximum": [
+        0.2800000011920929,
+        0.14000000059604645,
+        1.6100000143051147
+      ],
+      "mesh_parts": 3,
+      "materials": [
+        "Fantasy_Door",
+        "Fantasy_StoneShade",
+        "Fantasy_Timber"
+      ],
+      "triangles": 324,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Fence_Post.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Fence_Gate",
+      "group": "Infrastructure",
+      "display_name": "木の門扉",
+      "minimum": [
+        0.0,
+        -0.19000011682510376,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.14000000059604645,
+        1.6100000143051147
+      ],
+      "mesh_parts": 19,
+      "materials": [
+        "Fantasy_Door",
+        "Fantasy_Iron",
+        "Fantasy_StoneShade",
+        "Fantasy_Timber"
+      ],
+      "triangles": 2052,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Fence_Gate.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Stone_Wall",
+      "group": "Infrastructure",
+      "display_name": "低い石塀",
+      "minimum": [
+        0.0,
+        -0.26499998569488525,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        0.26499998569488525,
+        1.28000009059906
+      ],
+      "mesh_parts": 2,
+      "materials": [
+        "Fantasy_Stone",
+        "Fantasy_StoneTrim"
+      ],
+      "triangles": 24,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Stone_Wall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "group": "Infrastructure",
+      "display_name": "石塀の角",
+      "minimum": [
+        -0.26499998569488525,
+        -0.26499998569488525,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        1.2799999713897705
+      ],
+      "mesh_parts": 2,
+      "materials": [
+        "Fantasy_Stone",
+        "Fantasy_StoneTrim"
+      ],
+      "triangles": 40,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Stone_Wall_Corner.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Crate_Open",
+      "group": "Props",
+      "display_name": "開いた木箱",
+      "minimum": [
+        -0.5600000023841858,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.0299999713897705
+      ],
+      "mesh_parts": 22,
+      "materials": [
+        "Fantasy_Door",
+        "Fantasy_Timber"
+      ],
+      "triangles": 2376,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Crate_Open.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Grain_Sack",
+      "group": "Props",
+      "display_name": "穀物袋",
+      "minimum": [
+        -0.4188990294933319,
+        -0.4188990294933319,
+        0.0
+      ],
+      "maximum": [
+        0.4188990294933319,
+        0.4188990294933319,
+        0.949999988079071
+      ],
+      "mesh_parts": 3,
+      "materials": [
+        "Fantasy_Rope",
+        "Fantasy_Sacking"
+      ],
+      "triangles": 1480,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Grain_Sack.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Produce_Basket",
+      "group": "Props",
+      "display_name": "青果かご",
+      "minimum": [
+        -0.4620000123977661,
+        -0.4620000123977661,
+        0.0
+      ],
+      "maximum": [
+        0.4620000123977661,
+        0.4620000123977661,
+        0.5260000228881836
+      ],
+      "mesh_parts": 30,
+      "materials": [
+        "Fantasy_Apple",
+        "Fantasy_Basket",
+        "Fantasy_Leaf",
+        "Fantasy_Rope"
+      ],
+      "triangles": 8948,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Produce_Basket.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Planter",
+      "group": "Props",
+      "display_name": "花の植木鉢",
+      "minimum": [
+        -1.024999976158142,
+        -1.024999976158142,
+        0.0
+      ],
+      "maximum": [
+        1.024999976158142,
+        1.024999976158142,
+        1.4800000190734863
+      ],
+      "mesh_parts": 4,
+      "materials": [
+        "Fantasy_Foliage",
+        "Fantasy_Soil",
+        "Fantasy_Stone",
+        "Fantasy_StoneTrim"
+      ],
+      "triangles": 432,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Planter.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Drain_Grate",
+      "group": "Props",
+      "display_name": "排水溝の蓋",
+      "minimum": [
+        -0.5850000381469727,
+        -0.3799999952316284,
+        0.0
+      ],
+      "maximum": [
+        0.5850000381469727,
+        0.3799999952316284,
+        0.06599999964237213
+      ],
+      "mesh_parts": 9,
+      "materials": [
+        "Fantasy_Iron"
+      ],
+      "triangles": 972,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Drain_Grate.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Bollard",
+      "group": "Props",
+      "display_name": "車止め",
+      "minimum": [
+        -0.2582066059112549,
+        -0.2582066059112549,
+        0.0
+      ],
+      "maximum": [
+        0.2582066059112549,
+        0.2582066059112549,
+        1.1799999475479126
+      ],
+      "mesh_parts": 4,
+      "materials": [
+        "Fantasy_Brass",
+        "Fantasy_Iron",
+        "Fantasy_StoneShade"
+      ],
+      "triangles": 988,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Bollard.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Bucket",
+      "group": "Props",
+      "display_name": "木のバケツ",
+      "minimum": [
+        -0.31726861000061035,
+        -0.31599998474121094,
+        0.0
+      ],
+      "maximum": [
+        0.31726861000061035,
+        0.31599998474121094,
+        1.0719999074935913
+      ],
+      "mesh_parts": 4,
+      "materials": [
+        "Fantasy_Door",
+        "Fantasy_Iron"
+      ],
+      "triangles": 2248,
+      "origin": "legacy_source_collection",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Bucket.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Fish_Stall",
+      "group": "Market",
+      "display_name": "魚の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 120,
+      "materials": [
+        "Fantasy_BlueCloth",
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Ink",
+        "Fantasy_Iron.001",
+        "Fantasy_Parity_Fish",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 17854,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Fish_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Bread_Stall",
+      "group": "Market",
+      "display_name": "パンの露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 99,
+      "materials": [
+        "Fantasy_Basket.001",
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Parity_Bread",
+        "Fantasy_Parity_BreadCut",
+        "Fantasy_Rope.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 21040,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Bread_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Spice_Stall",
+      "group": "Market",
+      "display_name": "香辛料の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 34,
+      "materials": [
+        "Fantasy_Canvas",
+        "Fantasy_Crimson",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Leaf.001",
+        "Fantasy_Ochre",
+        "Fantasy_Parity_Pottery",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 4028,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Spice_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Flower_Stall",
+      "group": "Market",
+      "display_name": "花の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 117,
+      "materials": [
+        "Fantasy_Canvas",
+        "Fantasy_Crimson",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Leaf.001",
+        "Fantasy_Ochre",
+        "Fantasy_Parity_Pottery",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 37972,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Flower_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Butcher_Stall",
+      "group": "Market",
+      "display_name": "肉の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 34,
+      "materials": [
+        "Fantasy_Canvas",
+        "Fantasy_Crimson",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Parity_Bone",
+        "Fantasy_Parity_Fat",
+        "Fantasy_Parity_Meat",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 5924,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Butcher_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Potion_Stall",
+      "group": "Market",
+      "display_name": "薬の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 64,
+      "materials": [
+        "Fantasy_BlueCloth",
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Ink",
+        "Fantasy_Iron.001",
+        "Fantasy_Ivory",
+        "Fantasy_Parity_PotionBlue",
+        "Fantasy_Parity_PotionGreen",
+        "Fantasy_Parity_PotionPurple",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 7268,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Potion_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Book_Stall",
+      "group": "Market",
+      "display_name": "古書の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 84,
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_BlueCloth",
+        "Fantasy_Brass.001",
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Ivory",
+        "Fantasy_Leaf.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 9268,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Book_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Weapon_Stall",
+      "group": "Market",
+      "display_name": "武器の露店",
+      "minimum": [
+        -1.7799999713897705,
+        -1.3300000429153442,
+        0.0
+      ],
+      "maximum": [
+        1.7799999713897705,
+        1.2999999523162842,
+        2.9392738342285156
+      ],
+      "mesh_parts": 46,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Canvas",
+        "Fantasy_Crimson",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Parity_WarriorRed",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 5992,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Weapon_Stall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Covered_Wagon",
+      "group": "Props",
+      "display_name": "幌馬車",
+      "minimum": [
+        -1.4600000381469727,
+        -3.653515338897705,
+        -0.02499997615814209
+      ],
+      "maximum": [
+        1.4600000381469727,
+        1.899999976158142,
+        2.7850000858306885
+      ],
+      "mesh_parts": 70,
+      "materials": [
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 14780,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Covered_Wagon.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Merchant_Wagon",
+      "group": "Props",
+      "display_name": "商人の荷馬車",
+      "minimum": [
+        -1.4600000381469727,
+        -3.653515338897705,
+        -0.02499997615814209
+      ],
+      "maximum": [
+        1.4600000381469727,
+        1.899999976158142,
+        1.8365000486373901
+      ],
+      "mesh_parts": 150,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 19160,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Merchant_Wagon.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Wheelbarrow",
+      "group": "Props",
+      "display_name": "一輪手押し車",
+      "minimum": [
+        -0.5850000381469727,
+        -1.4049999713897705,
+        -0.02499997615814209
+      ],
+      "maximum": [
+        0.5850000381469727,
+        1.8044886589050293,
+        1.0950000286102295
+      ],
+      "mesh_parts": 19,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 2792,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Wheelbarrow.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Market_Scale",
+      "group": "Props",
+      "display_name": "市場の天秤",
+      "minimum": [
+        -0.9299999475479126,
+        -0.32499998807907104,
+        0.0
+      ],
+      "maximum": [
+        0.9299999475479126,
+        0.32499998807907104,
+        1.600000023841858
+      ],
+      "mesh_parts": 10,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 1400,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Market_Scale.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Basket_Empty",
+      "group": "Props",
+      "display_name": "空のかご",
+      "minimum": [
+        -0.4620000123977661,
+        -0.4620000123977661,
+        0.0
+      ],
+      "maximum": [
+        0.4620000123977661,
+        0.4620000123977661,
+        0.41200000047683716
+      ],
+      "mesh_parts": 17,
+      "materials": [
+        "Fantasy_Basket.001",
+        "Fantasy_Rope.001"
+      ],
+      "triangles": 4556,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Basket_Empty.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Pottery_Jars",
+      "group": "Props",
+      "display_name": "陶器の壺",
+      "minimum": [
+        -0.7000000476837158,
+        -0.36000001430511475,
+        0.0
+      ],
+      "maximum": [
+        0.6499999761581421,
+        0.4700000286102295,
+        0.8999999761581421
+      ],
+      "mesh_parts": 2,
+      "materials": [
+        "Fantasy_Parity_Pottery"
+      ],
+      "triangles": 664,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Pottery_Jars.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Sack_Stack",
+      "group": "Props",
+      "display_name": "積まれた穀物袋",
+      "minimum": [
+        -0.7360641956329346,
+        -0.6060642004013062,
+        0.0
+      ],
+      "maximum": [
+        0.7360641956329346,
+        0.7060641646385193,
+        1.4609999656677246
+      ],
+      "mesh_parts": 12,
+      "materials": [
+        "Fantasy_Rope.001",
+        "Fantasy_Sacking.001"
+      ],
+      "triangles": 5920,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Sack_Stack.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Vegetable_Crate",
+      "group": "Props",
+      "display_name": "野菜の木箱",
+      "minimum": [
+        -0.5600000023841858,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.0449999570846558
+      ],
+      "mesh_parts": 46,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Foliage.001",
+        "Fantasy_Leaf.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 12936,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Vegetable_Crate.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Fish_Crate",
+      "group": "Props",
+      "display_name": "魚の木箱",
+      "minimum": [
+        -0.6100000143051147,
+        -0.5115000605583191,
+        0.0
+      ],
+      "maximum": [
+        0.5600000023841858,
+        0.4599999785423279,
+        1.0750000476837158
+      ],
+      "mesh_parts": 42,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Ink",
+        "Fantasy_Parity_Fish",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 7668,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Fish_Crate.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Bread_Basket",
+      "group": "Props",
+      "display_name": "パンのかご",
+      "minimum": [
+        -0.4620000123977661,
+        -0.4620000123977661,
+        0.0
+      ],
+      "maximum": [
+        0.4620000123977661,
+        0.4620000123977661,
+        0.48499998450279236
+      ],
+      "mesh_parts": 33,
+      "materials": [
+        "Fantasy_Basket.001",
+        "Fantasy_Parity_Bread",
+        "Fantasy_Parity_BreadCut",
+        "Fantasy_Rope.001"
+      ],
+      "triangles": 7612,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Bread_Basket.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Rolled_Fabric",
+      "group": "Props",
+      "display_name": "巻いた布地",
+      "minimum": [
+        -0.5249999761581421,
+        -0.625,
+        0.0
+      ],
+      "maximum": [
+        0.5249999761581421,
+        0.625,
+        0.7050000429153442
+      ],
+      "mesh_parts": 7,
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_BlueCloth",
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Rope.001"
+      ],
+      "triangles": 996,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Rolled_Fabric.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Hanging_Herbs",
+      "group": "Props",
+      "display_name": "干した薬草",
+      "minimum": [
+        -1.1899999380111694,
+        -0.32499998807907104,
+        0.0
+      ],
+      "maximum": [
+        1.1899999380111694,
+        0.32499998807907104,
+        2.1000001430511475
+      ],
+      "mesh_parts": 61,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Leaf.001",
+        "Fantasy_Parity_Herb",
+        "Fantasy_Parity_HerbDark",
+        "Fantasy_Rope.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 8492,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Hanging_Herbs.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Shop_Sign",
+      "group": "Props",
+      "display_name": "吊り看板",
+      "minimum": [
+        -0.6000000238418579,
+        -0.6499999761581421,
+        0.0
+      ],
+      "maximum": [
+        0.6000000238418579,
+        0.4599999785423279,
+        2.799999952316284
+      ],
+      "mesh_parts": 11,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001"
+      ],
+      "triangles": 1188,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Shop_Sign.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Shield_Rack",
+      "group": "Props",
+      "display_name": "盾掛け",
+      "minimum": [
+        -1.0199999809265137,
+        -0.375,
+        0.0
+      ],
+      "maximum": [
+        1.0199999809265137,
+        0.375,
+        1.9200000762939453
+      ],
+      "mesh_parts": 26,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Parity_WarriorRed",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 3504,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Shield_Rack.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Weapon_Rack",
+      "group": "Props",
+      "display_name": "剣掛け",
+      "minimum": [
+        -1.0199999809265137,
+        -0.375,
+        0.0
+      ],
+      "maximum": [
+        1.0199999809265137,
+        0.375,
+        1.9200000762939453
+      ],
+      "mesh_parts": 18,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 2424,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Weapon_Rack.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Training_Dummy",
+      "group": "Props",
+      "display_name": "訓練人形",
+      "minimum": [
+        -0.8999999761581421,
+        -0.5,
+        0.0
+      ],
+      "maximum": [
+        0.8999999761581421,
+        0.5,
+        3.0250000953674316
+      ],
+      "mesh_parts": 5,
+      "materials": [
+        "Fantasy_Parity_OchrePlaster",
+        "Fantasy_Parity_WarriorRed",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 604,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Training_Dummy.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Fountain",
+      "group": "Props",
+      "display_name": "噴水",
+      "minimum": [
+        -3.2273099422454834,
+        -3.228097677230835,
+        0.0
+      ],
+      "maximum": [
+        3.228097677230835,
+        3.228097677230835,
+        3.5799999237060547
+      ],
+      "mesh_parts": 28,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Stone.001",
+        "Fantasy_StoneShade.001",
+        "Fantasy_StoneTrim.001",
+        "Fantasy_Water",
+        "Fantasy_WaterLight"
+      ],
+      "triangles": 13052,
+      "origin": "legacy_recipe",
+      "atlas_size": 1024,
+      "fbx": "Assets/Models/Kingdom/City/Models/Fountain.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Wash_Tub",
+      "group": "Props",
+      "display_name": "洗い桶",
+      "minimum": [
+        -0.7549999952316284,
+        -0.7549999952316284,
+        0.0
+      ],
+      "maximum": [
+        0.7549999952316284,
+        0.7549999952316284,
+        0.5600000023841858
+      ],
+      "mesh_parts": 5,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Timber.001",
+        "Fantasy_Water"
+      ],
+      "triangles": 1956,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Wash_Tub.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Street_Brazier",
+      "group": "Props",
+      "display_name": "街路の火鉢",
+      "minimum": [
+        -0.5,
+        -0.5,
+        0.018405888229608536
+      ],
+      "maximum": [
+        0.5,
+        0.5,
+        0.9000000357627869
+      ],
+      "mesh_parts": 7,
+      "materials": [
+        "Fantasy_Ember",
+        "Fantasy_Iron.001"
+      ],
+      "triangles": 1832,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Street_Brazier.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Hanging_Lantern",
+      "group": "Props",
+      "display_name": "吊りランタン",
+      "minimum": [
+        -0.13500000536441803,
+        -0.125,
+        0.7749999761581421
+      ],
+      "maximum": [
+        0.13500000536441803,
+        0.3499999940395355,
+        1.3075000047683716
+      ],
+      "mesh_parts": 6,
+      "materials": [
+        "Fantasy_Iron.001",
+        "Fantasy_Lantern"
+      ],
+      "triangles": 648,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Hanging_Lantern.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Windmill",
+      "group": "Buildings",
+      "display_name": "風車小屋",
+      "minimum": [
+        -4.629493713378906,
+        -3.8299999237060547,
+        0.0
+      ],
+      "maximum": [
+        4.629493713378906,
+        2.950000047683716,
+        11.979494094848633
+      ],
+      "mesh_parts": 80,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Canvas",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Roof",
+        "Fantasy_Rope.001",
+        "Fantasy_Sacking.001",
+        "Fantasy_Stone.001",
+        "Fantasy_StoneShade.001",
+        "Fantasy_StoneTrim.001",
+        "Fantasy_Timber.001",
+        "Fantasy_Window"
+      ],
+      "triangles": 11552,
+      "origin": "legacy_recipe",
+      "atlas_size": 1024,
+      "fbx": "Assets/Models/Kingdom/City/Models/Windmill.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Watermill",
+      "group": "Buildings",
+      "display_name": "水車小屋",
+      "minimum": [
+        -3.880000114440918,
+        -6.0,
+        -0.05000001937150955
+      ],
+      "maximum": [
+        6.875,
+        6.0,
+        8.110000610351562
+      ],
+      "mesh_parts": 105,
+      "materials": [
+        "Fantasy_Brass.001",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Plaster",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_Rope.001",
+        "Fantasy_Sacking.001",
+        "Fantasy_Stone.001",
+        "Fantasy_StoneShade.001",
+        "Fantasy_StoneTrim.001",
+        "Fantasy_Timber.001",
+        "Fantasy_Water",
+        "Fantasy_Window"
+      ],
+      "triangles": 14048,
+      "origin": "legacy_recipe",
+      "atlas_size": 1024,
+      "fbx": "Assets/Models/Kingdom/City/Models/Watermill.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Market_Hall",
+      "group": "Buildings",
+      "display_name": "市場会館",
+      "minimum": [
+        -9.529999732971191,
+        -7.03000020980835,
+        0.0
+      ],
+      "maximum": [
+        9.529999732971191,
+        7.03000020980835,
+        12.160000801086426
+      ],
+      "mesh_parts": 192,
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_Brass.001",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Plaster",
+        "Fantasy_Roof",
+        "Fantasy_RoofEdge",
+        "Fantasy_StoneShade.001",
+        "Fantasy_StoneTrim.001",
+        "Fantasy_Timber.001",
+        "Fantasy_Window"
+      ],
+      "triangles": 21548,
+      "origin": "legacy_recipe",
+      "atlas_size": 2048,
+      "fbx": "Assets/Models/Kingdom/City/Models/Market_Hall.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Watchtower",
+      "group": "Buildings",
+      "display_name": "見張り塔",
+      "minimum": [
+        -2.444999933242798,
+        -2.9499998092651367,
+        0.0
+      ],
+      "maximum": [
+        2.444999933242798,
+        2.450000047683716,
+        9.960000038146973
+      ],
+      "mesh_parts": 79,
+      "materials": [
+        "Fantasy_Banner",
+        "Fantasy_Brass.001",
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Stone.001",
+        "Fantasy_StoneShade.001",
+        "Fantasy_StoneTrim.001",
+        "Fantasy_Timber.001",
+        "Fantasy_Window"
+      ],
+      "triangles": 9304,
+      "origin": "legacy_recipe",
+      "atlas_size": 1024,
+      "fbx": "Assets/Models/Kingdom/City/Models/Watchtower.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Stone_Bridge",
+      "group": "Infrastructure",
+      "display_name": "石橋",
+      "minimum": [
+        -2.0299999713897705,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        2.0299999713897705,
+        4.0,
+        2.7100000381469727
+      ],
+      "mesh_parts": 5,
+      "materials": [
+        "Fantasy_Stone.001",
+        "Fantasy_StoneShade.001",
+        "Fantasy_StoneTrim.001"
+      ],
+      "triangles": 708,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Stone_Bridge.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Wooden_Bridge",
+      "group": "Infrastructure",
+      "display_name": "木橋",
+      "minimum": [
+        -1.7599999904632568,
+        -4.059999942779541,
+        0.0
+      ],
+      "maximum": [
+        1.7599999904632568,
+        4.059999942779541,
+        1.6423910856246948
+      ],
+      "mesh_parts": 88,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 8048,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Wooden_Bridge.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Dock_Section",
+      "group": "Infrastructure",
+      "display_name": "桟橋",
+      "minimum": [
+        -1.5,
+        -2.5900001525878906,
+        0.0
+      ],
+      "maximum": [
+        1.5,
+        2.5900001525878906,
+        1.2999999523162842
+      ],
+      "mesh_parts": 23,
+      "materials": [
+        "Fantasy_Bark",
+        "Fantasy_Door.001",
+        "Fantasy_Rope.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 5252,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Dock_Section.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Stone_Stairs",
+      "group": "Infrastructure",
+      "display_name": "石の階段",
+      "minimum": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "maximum": [
+        1.0,
+        2.380000114440918,
+        1.2599999904632568
+      ],
+      "mesh_parts": 1,
+      "materials": [
+        "Fantasy_Stone.001"
+      ],
+      "triangles": 60,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Stone_Stairs.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Wooden_Stairs",
+      "group": "Infrastructure",
+      "display_name": "木の階段",
+      "minimum": [
+        -1.0499999523162842,
+        -0.004999995231628418,
+        -0.02841036207973957
+      ],
+      "maximum": [
+        1.0499999523162842,
+        2.384999990463257,
+        2.089974880218506
+      ],
+      "mesh_parts": 19,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Timber.001"
+      ],
+      "triangles": 2052,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Wooden_Stairs.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    },
+    {
+      "name": "Outhouse",
+      "group": "Buildings",
+      "display_name": "屋外便所",
+      "minimum": [
+        -1.1100001335144043,
+        -1.190000057220459,
+        0.0
+      ],
+      "maximum": [
+        1.1100001335144043,
+        1.130947470664978,
+        2.8074910640716553
+      ],
+      "mesh_parts": 21,
+      "materials": [
+        "Fantasy_Door.001",
+        "Fantasy_Iron.001",
+        "Fantasy_Roof",
+        "Fantasy_StoneShade.001",
+        "Fantasy_Timber.001",
+        "Fantasy_Window"
+      ],
+      "triangles": 1860,
+      "origin": "legacy_recipe",
+      "atlas_size": 512,
+      "fbx": "Assets/Models/Kingdom/City/Models/Outhouse.fbx",
+      "source": "ArtSource/Blender/Kingdom/LegacyParityAdditions.blend",
+      "source_sha256": "cdb5249a07062a7d86f0d540137666c5aac5796bd80421622bb32af9b1deaec9"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ import os
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE = os.path.join(ROOT, "ArtSource", "Blender", "FantasyChurchAndBlacksmith.blend")
-REVIEW = os.path.join(ROOT, "docs", "Art", "FantasyChurchAndBlacksmith")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "ChurchAndBlacksmith")
 bpy.ops.wm.open_mainfile(filepath=SOURCE)
 with open(os.path.join(REVIEW, "model_manifest.json")) as handle:
     manifest = json.load(handle)

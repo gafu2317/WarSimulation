@@ -13,6 +13,7 @@ public sealed class CombatCompositionCandidate
 [Serializable]
 public sealed class CombatCompositionSweepConfig
 {
+    public CombatAutoBattleBalanceSettings Balance = new();
     public string[] MapNames;
     public CombatAutoBattleRole[] Enemy;
     public CombatCompositionCandidate[] Candidates;
@@ -87,6 +88,7 @@ public sealed class CombatCompositionScenarioResult
 [Serializable]
 public sealed class CombatCompositionSweepReport
 {
+    public CombatAutoBattleBalanceSettings Balance;
     public int SchemaVersion = CombatAutoBattleReportSchema.CurrentVersion;
     public int CandidateCount;
     public int MatchesPerCandidate;

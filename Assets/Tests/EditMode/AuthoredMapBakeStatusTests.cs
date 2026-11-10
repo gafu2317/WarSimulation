@@ -117,7 +117,9 @@ namespace WarSimulation.Tests.EditMode
             fixture.Host.SetBakedRenderFingerprint(fixture.Definition.ComputeGeometryFingerprint());
             var terrain = new GameObject("GeneratedTerrain");
             terrain.transform.SetParent(fixture.Host.transform, false);
-            fixture.Host.gameObject.AddComponent<FeatureRenderer>().Render(map);
+            var renderer = fixture.Host.gameObject.AddComponent<FeatureRenderer>();
+            CombatEditModeTestUtil.ConfigureNaturalFeaturePrefabs(renderer);
+            renderer.Render(map);
 
             Object.DestroyImmediate(fixture.Host.transform.Find("GeneratedFeatures/Tree_0").gameObject);
             AuthoredMapBakeStatus status = AuthoredMapBakeStatus.Evaluate(

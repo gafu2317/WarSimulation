@@ -1,6 +1,8 @@
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEditor;
+using WarSimulation.Combat.Map;
 
 internal static partial class CombatEditModeTestUtil
 {
@@ -29,6 +31,20 @@ internal static partial class CombatEditModeTestUtil
         }
         Assert.That(property, Is.Not.Null, $"Field or property {fieldName} was not found on {target.GetType().Name}.");
         property.SetValue(target, value);
+    }
+
+    public static void ConfigureNaturalFeaturePrefabs(FeatureRenderer renderer)
+    {
+        const string directory = "Assets/Prefabs/Kingdom/City/Prefabs";
+        var trees = new GameObject[10];
+        for (int i = 0; i < trees.Length; i++)
+            trees[i] = AssetDatabase.LoadAssetAtPath<GameObject>($"{directory}/NaturalTree_{i + 1:00}.prefab");
+        int[] rockIds = { 2, 4, 8, 7, 11 };
+        var rocks = new GameObject[rockIds.Length];
+        for (int i = 0; i < rocks.Length; i++)
+            rocks[i] = AssetDatabase.LoadAssetAtPath<GameObject>($"{directory}/NaturalRock_{rockIds[i]:00}.prefab");
+        SetPrivateField(renderer, "_treePrefabs", trees);
+        SetPrivateField(renderer, "_rockPrefabs", rocks);
     }
 
     public static void WireMapSystem(CombatCharacterSystem system, CombatMapSystem mapSystem)

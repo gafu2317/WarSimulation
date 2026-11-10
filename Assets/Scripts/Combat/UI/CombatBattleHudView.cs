@@ -59,6 +59,25 @@ public sealed class CombatBattleHudView : MonoBehaviour
     private bool _debugUiVisible = true;
     private bool _listenersAttached;
     private bool _isPaused;
+    private bool _controlsVisible;
+    private RectTransform _rockControls;
+    private readonly List<Button> _rockButtons = new();
+    private CombatRockPlacementView _rockPlacementView;
+    private RectTransform _magicControls;
+    private CombatPlayerMagicView _magicView;
+    private CombatPlayerMagicCutInView _magicCutIn;
+    private readonly List<Button> _magicButtons = new();
+    public event Action<CombatPlayerMagicKind> PlayerMagicRequested;
+    public event Action PlayerMagicClosed;
+    public event Action<CombatPlayerMagicRequest> PlayerMagicCastRequested;
+    private MapData _rockMap;
+
+    public CombatRockPlacement? ConfirmedRockPlacement => _rockPlacementView != null
+        ? _rockPlacementView.ConfirmedPlacement : null;
+    public event Action<CombatRockShape> RockPlacementRequested;
+    public event Action RockPlacementClosed;
+    public event Action<CombatRockPlacement, Action<bool, string>> RockPlacementConfirmed;
+    public event Action RockRemovalRequested;
 
     public event Action MenuRequested;
     public event Action ResumeRequested;
@@ -84,6 +103,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     private void OnDisable()
     {
+        ResetRockPlacement();
         DetachListeners();
         CombatPartyFocus.Changed -= RefreshDebugFocusVisuals;
         CombatSkillUseEvents.SkillUsed -= OnDebugSkillUsed;
@@ -92,6 +112,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
     private void Update()
     {
         ApplyDebugPanelVisibility();
+        RefreshRockControls();
         if (_debugUiVisible && _debugPanel != null && _debugPanel.activeSelf)
         {
             RefreshDebugUi();
@@ -108,6 +129,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         DisableUnavailableCommands();
         EnsureTemporaryControls();
         EnsureDebugPanel();
+        EnsureRockControls();
         SetProductionUiVisible(!_debugUiVisible);
         ConfigureTemporaryControls(_debugUiVisible);
         ApplyDebugPanelVisibility();
@@ -121,6 +143,8 @@ public sealed class CombatBattleHudView : MonoBehaviour
     {
         EnsureBuilt();
         _debugUiVisible = visible;
+        if (!visible) ResetRockPlacement();
+        RefreshRockControls();
         SetProductionUiVisible(!visible);
         ConfigureTemporaryControls(visible);
         ApplyDebugPanelVisibility();
@@ -132,6 +156,9 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     public void SetControlsVisible(bool visible)
     {
+        _controlsVisible = visible;
+        if (!visible) ResetRockPlacement();
+        RefreshRockControls();
         if (_debugUiVisible)
         {
             if (_temporaryControls != null)
@@ -871,6 +898,106 @@ public sealed class CombatBattleHudView : MonoBehaviour
         _returnButton = controls.Find("ReturnToSelectionButton")?.GetComponent<Button>();
         _temporarySpeedText = _temporarySpeedButton?.GetComponentInChildren<TMP_Text>();
         _pauseButtonText = _pauseButton?.GetComponentInChildren<TMP_Text>();
+    }
+
+    private void EnsureRockControls()
+    {
+        if (_rockControls != null) return;
+        TMP_FontAsset font = GetComponentInChildren<TMP_Text>(includeInactive: true)?.font;
+        _rockControls = CombatBattleMapView.Rect("RockPlacementControls", _debugPanel.transform);
+        _rockControls.anchorMin = _rockControls.anchorMax = new Vector2(0.5f, 0);
+        _rockControls.pivot = new Vector2(0.5f, 0);
+        _rockControls.anchoredPosition = new Vector2(-212, 24);
+        _rockControls.sizeDelta = new Vector2(680, 64);
+        var layout = _rockControls.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 12;
+        layout.childControlWidth = layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        for (int i = 0; i < 4; i++)
+        {
+            CombatRockShape shape = (CombatRockShape)i;
+            Button button = CombatBattleMapView.Button(_rockControls, "Rock" + shape,
+                CombatRockShapeGraphic.Label(shape), font, () => RockPlacementRequested?.Invoke(shape));
+            RectTransform label = button.transform.Find("Text") as RectTransform;
+            label.offsetMin = new Vector2(48, 0);
+            RectTransform icon = CombatBattleMapView.Rect("Shape", button.transform);
+            icon.anchorMin = icon.anchorMax = new Vector2(0, 0.5f);
+            icon.pivot = new Vector2(0, 0.5f);
+            icon.anchoredPosition = new Vector2(6, 0);
+            icon.sizeDelta = new Vector2(42, 42);
+            var graphic = icon.gameObject.AddComponent<CombatRockShapeGraphic>();
+            graphic.Shape = shape;
+            graphic.raycastTarget = false;
+            graphic.color = new Color(0.85f, 0.9f, 1f);
+            _rockButtons.Add(button);
+        }
+        _magicControls = CombatBattleMapView.Rect("PlayerMagicControls", _debugPanel.transform);
+        _magicControls.anchorMin = _magicControls.anchorMax = new Vector2(.5f, 0);
+        _magicControls.pivot = new Vector2(.5f, 0);
+        _magicControls.anchoredPosition = new Vector2(340, 24);
+        _magicControls.sizeDelta = new Vector2(400, 64);
+        var magicLayout = _magicControls.gameObject.AddComponent<HorizontalLayoutGroup>();
+        magicLayout.spacing = 12; magicLayout.childControlWidth = magicLayout.childControlHeight = true;
+        magicLayout.childForceExpandWidth = true;
+        foreach (CombatPlayerMagicKind kind in Enum.GetValues(typeof(CombatPlayerMagicKind)))
+        {
+            var magicKind = kind;
+            _magicButtons.Add(CombatBattleMapView.Button(_magicControls, kind.ToString(),
+                kind == CombatPlayerMagicKind.Area ? "広範囲魔法" : "全員無敵", font,
+                () => PlayerMagicRequested?.Invoke(magicKind)));
+        }
+        _magicView = CombatPlayerMagicView.Create(transform, font);
+        _magicCutIn = CombatPlayerMagicCutInView.Create(transform, font);
+        _magicView.Closed += () => PlayerMagicClosed?.Invoke();
+        _magicView.CastRequested += request => PlayerMagicCastRequested?.Invoke(request);
+        _rockPlacementView = CombatRockPlacementView.Create(transform, font);
+        _rockPlacementView.Closed += () => RockPlacementClosed?.Invoke();
+        _rockPlacementView.PlacementRequested += (placement, completed) =>
+        {
+            if (RockPlacementConfirmed != null) RockPlacementConfirmed.Invoke(placement, completed);
+            else completed(true, null);
+        };
+        _rockPlacementView.RemovalRequested += () => RockRemovalRequested?.Invoke();
+        RefreshRockControls();
+    }
+
+    private void RefreshRockControls()
+    {
+        if (_rockControls == null) return;
+        CombatMapSystem mapSystem = CombatSceneContext.Instance != null ? CombatSceneContext.Instance.MapSystem : null;
+        MapData map = mapSystem != null ? mapSystem.CurrentMap : null;
+        if (_rockMap != map)
+        {
+            ResetRockPlacement();
+            _rockMap = map;
+        }
+        bool visible = _debugUiVisible && _controlsVisible && CombatBattleFlow.IsRunning;
+        _rockControls.gameObject.SetActive(visible);
+        _magicControls.gameObject.SetActive(visible);
+        foreach (Button button in _magicButtons) button.interactable = map != null;
+        foreach (Button button in _rockButtons) button.interactable = map != null;
+        if (!visible) ResetRockPlacement();
+    }
+
+    public bool OpenRockPlacement(CombatRockShape shape, CombatMapSystem mapSystem, CombatCharacterSystem characters)
+    {
+        if (!_debugUiVisible || !_controlsVisible || !CombatBattleFlow.IsRunning) return false;
+        return _rockPlacementView != null && !_magicView.IsOpen && _rockPlacementView.Open(shape, mapSystem, characters);
+    }
+
+    public void ShowPlayerMagicCutIn(SkillId id) => _magicCutIn.Show(id);
+
+    public bool OpenPlayerMagic(CombatPlayerMagicKind kind, CombatMapSystem map, CombatCharacterSystem characters)
+    {
+        if (!_debugUiVisible || !_controlsVisible || !CombatBattleFlow.IsRunning || _rockPlacementView.IsOpen) return false;
+        return _magicView.Open(kind, map, characters);
+    }
+
+    public void ResetRockPlacement()
+    {
+        if (_rockPlacementView != null) _rockPlacementView.Clear();
+        if (_magicView != null) _magicView.Clear();
+        if (_magicCutIn != null) _magicCutIn.Clear();
     }
 
     private static Button CreateButton(Transform parent, string objectName, string labelValue, TMP_FontAsset font)

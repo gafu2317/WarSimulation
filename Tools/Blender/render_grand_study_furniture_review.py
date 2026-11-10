@@ -7,7 +7,7 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "ArtSource/Blender/GrandStudy/GrandStudy.blend"
-OUTPUT = ROOT / "docs/Art/GrandStudy/FurnitureReview"
+OUTPUT = ROOT / "docs/Art/Records/GrandStudy/FurnitureReview"
 ANGLES = {
     "front": Vector((0, -1, 0.25)),
     "side": Vector((1, 0, 0.2)),

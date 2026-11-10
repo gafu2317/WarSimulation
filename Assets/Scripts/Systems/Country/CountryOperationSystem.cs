@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
 
 public class CountryOperationSystem : MonoBehaviour
 {
@@ -88,7 +87,7 @@ public class CountryOperationSystem : MonoBehaviour
         PlayDataManager.Instance.SaveCountryOperation();
 
         // 時間再開
-        DateManager.Instance.StartFastForwardAsync().Forget();
+        DateManager.Instance.Resume();
     }
 
     public int GetQueueCount(FacilityType type)

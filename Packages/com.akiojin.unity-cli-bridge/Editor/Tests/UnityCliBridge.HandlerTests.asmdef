@@ -1,0 +1,32 @@
+{
+    "name": "UnityCliBridge.HandlerTests",
+    "rootNamespace": "UnityCliBridge.Tests",
+    "references": [
+        "UnityCliBridge.Editor",
+        "UnityCliBridge.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_CLI_BRIDGE_PACKAGE_TESTS",
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "UNITY_INPUT_SYSTEM_PACKAGE"
+        }
+    ]
+}

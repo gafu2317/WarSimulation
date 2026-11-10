@@ -9,7 +9,7 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE = os.path.join(ROOT, "ArtSource", "Blender", "FantasyChurchAndBlacksmith.blend")
-REVIEW = os.path.join(ROOT, "docs", "Art", "FantasyChurchAndBlacksmith")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "ChurchAndBlacksmith")
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location(
     "fantasy_style", os.path.join(os.path.dirname(__file__), "generate_realistic_fantasy_buildings.py")

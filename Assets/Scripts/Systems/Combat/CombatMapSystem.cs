@@ -128,6 +128,27 @@ public class CombatMapSystem : MonoBehaviour
     public event Action StonePositionsChanged;
     public event Action CurrentMapChanged;
 
+    private CombatRuntimeRock _runtimeRock;
+    public CombatRockPlacement? RuntimeRockPlacement => _runtimeRock != null ? _runtimeRock.Placement : null;
+    public bool IsRuntimeRockUpdating => _runtimeRock != null && _runtimeRock.IsUpdating;
+
+    public bool TryPlaceRuntimeRock(CombatRockPlacement placement, CombatCharacterSystem characters,
+        Action<bool, string> completed, out string error)
+    {
+        error = null;
+        if (CurrentMap == null) { error = "マップがありません"; return false; }
+        _runtimeRock ??= MapOrigin.GetComponent<CombatRuntimeRock>();
+        if (_runtimeRock == null) _runtimeRock = MapOrigin.gameObject.AddComponent<CombatRuntimeRock>();
+        return _runtimeRock.TryPlace(this, placement, characters, completed, out error);
+    }
+
+    public void RemoveRuntimeRock()
+    {
+        if (_runtimeRock != null) _runtimeRock.Clear();
+    }
+
+    private void OnDisable() => RemoveRuntimeRock();
+
     private TerrainData _cachedTerrainData;
     private float _cachedTerrainMinimumHeight;
     private float _cachedTerrainMaximumHeight;
@@ -465,6 +486,7 @@ public class CombatMapSystem : MonoBehaviour
     public void SetCurrentMap(MapData map)
     {
         bool isSameMap = map != null && ReferenceEquals(CurrentMap, map);
+        if (!isSameMap) RemoveRuntimeRock();
         CurrentMap = map;
         if (!isSameMap) _isNavMeshReady = false;
         if (!isSameMap)
@@ -878,6 +900,11 @@ public class CombatMapSystem : MonoBehaviour
         if (!TryGetTerrainInfo(worldPosition, out TerrainInfo terrainInfo)) return false;
 
         bool canStand = GetCanStand(terrainInfo, out string blockedReason);
+        if (canStand && _runtimeRock != null && _runtimeRock.Contains(worldPosition))
+        {
+            canStand = false;
+            blockedReason = "RuntimeRock";
+        }
         float speedMultiplier = canStand
             ? GetMoveSpeedMultiplier(terrainInfo, GetMapLocalPosition(worldPosition))
             : 0f;

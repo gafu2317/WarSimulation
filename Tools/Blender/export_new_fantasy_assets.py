@@ -7,23 +7,15 @@ from mathutils import Vector
 
 PROJECT_ROOT = "/Users/fukutomi/Unity/WarSimulation"
 MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets/Models/Kingdom/City/Models")
-REPORT_ROOT = os.path.join(PROJECT_ROOT, "docs/Art/NewFantasyAssets")
+REPORT_ROOT = os.path.join(PROJECT_ROOT, "docs/Art/Records/AdditionalImports")
 
 SOURCES = (
     (
-        "ArtSource/Blender/FantasyChurchAndBlacksmith.blend",
+        "ArtSource/Blender/Kingdom/FantasyChurchAndBlacksmith.blend",
         (("Church", "building"), ("Blacksmith", "building")),
     ),
     (
-        "ArtSource/Blender/FantasySchools.blend",
-        (
-            ("WarriorAcademy", "building"),
-            ("ArcaneAcademy", "building"),
-            ("SpiritAcademy", "building"),
-        ),
-    ),
-    (
-        "ArtSource/Blender/FantasyCityVegetation.blend",
+        "ArtSource/Blender/Kingdom/FantasyCityVegetation.blend",
         (
             ("GroundPlant_GrassShort", "ground_plant"),
             ("GroundPlant_GrassTuft", "ground_plant"),

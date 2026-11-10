@@ -1,7 +1,9 @@
 {
     "name": "PlayModeTests",
     "references": [
-        "WarSimulation.Runtime"
+        "WarSimulation.Runtime",
+        "Unity.AI.Navigation",
+        "Unity.TextMeshPro"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

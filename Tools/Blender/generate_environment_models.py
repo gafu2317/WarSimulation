@@ -8,7 +8,7 @@ from mathutils import Vector
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE_PATH = os.path.join(PROJECT_ROOT, "ArtSource", "Blender", "EnvironmentModels.blend")
 MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets", "Models", "Environment")
-PREVIEW_ROOT = os.path.join(PROJECT_ROOT, "docs", "Art", "EnvironmentModels")
+PREVIEW_ROOT = os.path.join(PROJECT_ROOT, "docs", "Art", "Records", "Environment")
 
 
 def reset_scene():

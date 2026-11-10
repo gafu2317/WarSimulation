@@ -1,7 +1,6 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.InputSystem;
-using Cysharp.Threading.Tasks;
 
 /// <summary>
 /// DateManagerの動作確認用テストスクリプト
@@ -38,18 +37,17 @@ public class TestDateManager : MonoBehaviour
         if (keyboard == null) return;
 
         // [S]キーで早送りを開始
-        // 非同期メソッドを同期メソッド内から呼ぶため、.Forget()で警告を抑制して投げ放しにします
         if (keyboard.sKey.wasPressedThisFrame)
         {
             Debug.Log("早送り開始");
-            DateManager.Instance.StartFastForwardAsync().Forget();
+            DateManager.Instance.Resume();
         }
 
         // [P]キーで一時停止
         if (keyboard.pKey.wasPressedThisFrame)
         {
             Debug.Log("早送り一時停止");
-            DateManager.Instance.PauseFastForward();
+            DateManager.Instance.Pause();
         }
     }
 

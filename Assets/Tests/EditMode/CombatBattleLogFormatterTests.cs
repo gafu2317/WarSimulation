@@ -122,7 +122,7 @@ public sealed class CombatBattleLogFormatterTests
             preserveFixedDeltaTime: "false",
             unityVersion: "6000.4.3f1",
             playerBuildGuid: "build-guid",
-            participants: "A:Ally[剣/慎重]|E:Enemy[杖/攻撃的]");
+            participants: "A:Ally[剣/狡猾]|E:Enemy[杖/攻撃的]");
 
         string header = formatter.FormatBattleHeader("battle.log", metadata);
 
@@ -135,7 +135,7 @@ public sealed class CombatBattleLogFormatterTests
         Assert.That(header, Does.Contain("preserveFixedDeltaTime=false"));
         Assert.That(header, Does.Contain("unityVersion=6000.4.3f1"));
         Assert.That(header, Does.Contain("playerBuildGuid=build-guid"));
-        Assert.That(header, Does.Contain("participants=A:Ally[剣/慎重]|E:Enemy[杖/攻撃的]"));
+        Assert.That(header, Does.Contain("participants=A:Ally[剣/狡猾]|E:Enemy[杖/攻撃的]"));
     }
 
     [Test]

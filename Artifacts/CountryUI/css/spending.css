@@ -1,0 +1,93 @@
+:root { --spend-loss:#f0afa0; --spend-gain:#b5d5bf; --spend-risk:#e6c47b; }
+.resource--funds { --resource-accent:#f0d18f; }
+.resource--wood { --resource-accent:#bcdaad; }
+.resource--ore { --resource-accent:#c1ddeb; }
+.flow-arrow { display:inline-flex; flex:0 0 auto; width:26px; color:#c9dce6; align-items:center; }
+.flow-arrow svg,.spend-timing svg,.cp-icon svg,.change-glyph svg { width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.change-glyph { display:inline-flex; width:18px; height:18px; vertical-align:middle; }
+.change-amount { display:inline-flex; align-items:center; gap:2px; color:var(--spend-loss); font:700 21px/1.3 var(--number-font); }
+.resource-changes { display:grid; gap:14px; }
+.resource-change { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); }
+.resource-change .resource-symbol { width:38px; height:38px; flex:0 0 38px; color:var(--resource-accent); }
+.change-body { flex:1; min-width:0; }
+.change-heading,.change-values { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.change-heading { margin-bottom:6px; }
+.change-heading small { font-size:15px; color:var(--muted); }
+.change-values { justify-content:flex-start; font:500 19px/1.4 var(--number-font); }
+.change-values>b { color:var(--paper); }
+.change-track { display:flex; width:100%; height:12px; overflow:hidden; margin-top:7px; border:1px solid #b9d0dd40; background:#243642; border-radius:3px; }
+.change-track>span { display:block; flex:0 0 auto; height:100%; }
+.change-retained { background:#a4c5d2; }
+.change-used { background:repeating-linear-gradient(135deg,#f0afa0 0 4px,#9d6058 4px 6px); border-left:2px solid #374955; }
+.is-gain .change-amount { color:var(--spend-gain); }
+.is-gain .change-used { background:#b5d5bf; border-left:2px solid #374955; }
+.is-short .change-values>b { color:var(--spend-loss); }
+.short-warning { display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px; flex:0 0 auto; color:#ffe0ad; border:2px solid #e6c47b; clip-path:polygon(50% 0,100% 100%,0 100%); background:#9a5548; font-size:13px; font-weight:800; }
+.spending-preview { display:grid; grid-template-columns:minmax(240px,1.3fr) 34px minmax(190px,1fr); align-items:center; gap:24px; margin:18px 0 24px; }
+#modal:has(.spending-preview) { width:min(820px,calc(100vw - 32px)); }
+.spending-resources h3 { font-size:17px; margin:0 0 8px; color:var(--muted); }
+.spending-arrow { width:34px; color:var(--spend-loss); }
+.spending-result { display:flex; position:relative; flex-direction:column; align-items:center; gap:10px; padding:22px 14px; background:#c1d9e509; border:1px solid #c3d9e52b; border-radius:8px; text-align:center; }
+.spending-result h3 { font-size:21px; margin:0; }
+.result-levels { display:flex; align-items:center; gap:12px; font:600 23px/1.5 var(--number-font); }
+.result-levels>b { color:var(--spend-gain); }
+.result-level-pips { display:flex; gap:5px; height:16px; }
+.result-level-pips i { display:block; width:13px; background:#89a8b8; border:1px solid #b9d3de; }
+.result-level-pips .new-level { height:22px; margin-top:-6px; background:var(--spend-gain); border:2px solid #e0eee4; }
+.spend-timing { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--muted); line-height:1.5; }
+.spend-timing svg { width:22px; height:22px; flex:0 0 22px; color:#dfc58f; }
+.refund-preview .spending-arrow { transform:rotate(180deg); color:var(--spend-gain); }
+.cancel-symbol { position:absolute; width:90px; height:90px; top:26px; border:3px solid #f0afa0; border-radius:50%; }
+.cancel-symbol::after { content:''; position:absolute; top:42px; left:4px; width:76px; height:3px; background:#f0afa0; transform:rotate(-45deg); }
+.construction-cost>div { display:grid; grid-template-columns:24px auto; gap:3px 6px; align-items:center; }
+.construction-cost .resource-symbol { width:24px; height:24px; grid-column:1; grid-row:1; color:var(--resource-accent); }
+.construction-cost small { grid-column:2; grid-row:1; }
+.construction-cost b { display:flex; align-items:center; grid-column:1/-1; color:var(--spend-loss); font-size:23px; }
+.construction-cost .cost-short { outline:1px solid var(--spend-loss); outline-offset:4px; }
+.budget-spending { margin:0 0 8px; padding:0 0 8px; border-bottom:1px solid var(--line); }
+.budget-money-flow { display:flex; flex-wrap:nowrap; align-items:center; gap:7px; margin:8px 0; }
+.budget-money-flow>.resource-symbol { width:24px; height:24px; flex:0 0 24px; color:var(--resource-accent); }
+.budget-money-flow>strong { font:700 21px var(--number-font); color:var(--spend-loss); }
+.budget-recipients { display:flex; flex-wrap:wrap; max-width:78px; gap:4px; }
+.budget-recipients .facility-icon { width:22px; height:22px; font-size:20px; color:var(--spend-gain); }
+.budget-spending>small { color:var(--muted); font-size:13px; }
+.budget-spending .resource-changes { margin-top:12px; }
+.budget-spending .resource-change { gap:8px; border:0; padding:4px 0; }
+.budget-spending .resource-change .resource-symbol { width:26px; height:26px; flex-basis:26px; }
+.cp-change { display:flex; flex-direction:column; min-width:220px; gap:3px; }
+.cp-change-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; font:500 17px var(--number-font); }
+.cp-icon { display:inline-flex; width:26px; height:26px; flex:0 0 26px; color:#dfc58f; }
+.cp-change-heading>b { display:flex; align-items:center; gap:6px; font-size:17px; }
+.cp-change .flow-arrow { width:20px; }
+.cp-change .change-amount { font-size:16px; }
+.change-uncertain { background:repeating-linear-gradient(135deg,#e6c47b 0 4px,#816e4f 4px 6px); border-left:1px solid #e6c47b; }
+.cp-empty-warning { display:flex; align-items:center; gap:6px; color:var(--spend-risk); font-size:12px; }
+.member-exhausted>img { filter:grayscale(1); opacity:.55; }
+@media(max-width:650px) {
+  .spending-preview { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .spending-arrow { transform:rotate(90deg); margin:auto; }
+  .refund-preview .spending-arrow { transform:rotate(-90deg); }
+  .spending-result { display:grid; grid-template-columns:80px minmax(0,1fr); padding:14px; gap:6px 14px; text-align:left; }
+  .spending-result .result-levels,.spending-result .result-level-pips,.spending-result .spend-timing { grid-column:2; }
+  .cancel-symbol { width:60px; height:60px; left:22px; top:16px; }
+  .cancel-symbol::after { width:48px; top:27px; }
+  .mission-member .cp-change { grid-column:1/-1; min-width:0; width:100%; }
+}
+.spending-preview .resource-changes { gap:6px; }
+.spending-preview .resource-change { padding:6px 0; }
+.spending-preview .change-heading { margin-bottom:2px; }
+.spending-preview .change-track { height:10px; margin-top:4px; }
+.spending-building { position:relative; display:block; width:110px; height:90px; }
+.spending-building>svg { width:100%; height:100%; fill:#536d7b; stroke:#c4dbe5; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.spending-building .facility-icon { position:absolute; left:38px; top:50px; width:34px; height:28px; font-size:25px; color:#dfc58f; }
+.refund-preview .spending-building { opacity:.5; }
+#modal:has(.spending-preview,.cp-change) .actions.end { position:sticky; bottom:-28px; padding:14px 0; margin-bottom:-14px; background:#3b4d58; border-top:1px solid var(--line); z-index:1; }
+@media(max-width:650px) { .spending-building { grid-row:1/5; width:80px; height:72px; } .spending-building .facility-icon { display:block; left:23px; top:41px; } }
+.cp-change-heading>b,.cp-change .change-amount { white-space:nowrap; }
+#modal .mission-members:has(.cp-change),#modal.defense-dialog .mission-members:has(.cp-change) { display:grid; grid-template-columns:1fr; gap:10px; }
+#modal .mission-member:has(.cp-change) { display:grid; grid-template-columns:48px minmax(90px,1fr) minmax(250px,1.8fr); align-items:center; gap:12px; }
+@media(max-width:650px) { #modal .mission-member:has(.cp-change) { grid-template-columns:48px minmax(0,1fr); } }
+.budget-money-flow>.flow-arrow { width:22px; }
+.budget-spending .change-heading { margin-bottom:2px; }
+.budget-spending .change-track { height:8px; margin-top:4px; }
+.budget-spending .change-values { font-size:17px; }

@@ -45,6 +45,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     private bool _fixedSeed;
     private bool _preserveFixedDeltaTime;
     private float _previousFixedDeltaTime;
+    private CombatAutoBattleBalanceSettings _balance = new();
 
     public bool IsPreservingFixedDeltaTime => _preserveFixedDeltaTime;
 
@@ -56,6 +57,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         {
             try
             {
+                _balance = sweepConfig.Balance ?? new CombatAutoBattleBalanceSettings();
+                _balance.Validate();
                 if (sweepConfig.TimeoutSeconds > 0f) _timeoutSeconds = sweepConfig.TimeoutSeconds;
                 if (sweepConfig.TimeScale > 0f) _timeScale = sweepConfig.TimeScale;
                 _preserveFixedDeltaTime = sweepConfig.PreserveFixedDeltaTime;
@@ -267,6 +270,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         string reportPath = CombatAutoBattleReportWriter.CreateReportPath("sweep");
         var report = new CombatCompositionSweepReport
         {
+            Balance = _balance,
             CandidateCount = candidates.Count,
             MatchesPerCandidate = matchesPerCandidate,
             CompletedCandidates = 0,
@@ -419,6 +423,18 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
     {
         RestoreRuntimeSettings(previousTimeScale, previousVSync, previousTargetFrameRate, previousRunInBackground);
         Time.fixedDeltaTime = _previousFixedDeltaTime;
+        foreach (Character character in _allyPool)
+        {
+            if (character == null) continue;
+            character.ClearRuntimeStatAdjustments();
+            character.Health.SetReviveDelayOverride(null);
+        }
+        foreach (Character character in _enemyPool)
+        {
+            if (character == null) continue;
+            character.ClearRuntimeStatAdjustments();
+            character.Health.SetReviveDelayOverride(null);
+        }
         CleanupTemporaryObjects();
         _lastAppliedMap = null;
         _running = false;
@@ -537,6 +553,7 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
         string outcome = CombatAutoBattleOutcomes.FromBattleState(endState, timedOut);
         _results.Add(new CombatAutoBattleMatchResult
         {
+            Balance = _balance,
             Index = index,
             Seed = seed,
             MapName = mapDefinition.name,
@@ -562,6 +579,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
 
     private void ApplyConfig(CombatAutoBattleConfig config)
     {
+        _balance = config.Balance ?? new CombatAutoBattleBalanceSettings();
+        _balance.Validate();
         if (config.MapNames != null && config.MapNames.Length > 0)
             _mapCandidates = FilterMapsByName(config.MapNames);
         if (config.Allies != null && config.Allies.Length > 0)
@@ -902,6 +921,8 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
                 throw new InvalidOperationException($"編成の位置{i}がnullです。");
             if (!_weapons.ContainsKey(role.Weapon))
                 throw new InvalidOperationException($"編成の位置{i}で使用する武器 {role.Weapon} のWeaponConfigがありません。");
+            if (!CombatAiPersonalityProfile.IsSelectable(role.Personality))
+                throw new InvalidOperationException($"編成の位置{i}の性格 {role.Personality} は無効です。");
         }
     }
 
@@ -971,11 +992,11 @@ public sealed class CombatAutoBattleRunner : MonoBehaviour
                 ? previousCharacter
                 : null;
 
-            setups.Add(new CombatParticipantSetup(
+            setups.Add(_balance.CreateSetup(
                 pool[i],
                 weapon,
                 personality,
-                tagalongTarget: tagalongTarget));
+                tagalongTarget));
             previousCharacter = pool[i];
         }
 

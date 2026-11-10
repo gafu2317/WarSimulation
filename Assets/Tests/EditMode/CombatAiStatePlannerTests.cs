@@ -546,6 +546,73 @@ public sealed class CombatAiStatePlannerTests
         Assert.That(plan.TransitionReason, Is.EqualTo(CombatAiReasonCode.EnemyStoneKnown));
     }
 
+    [TestCase(19.9f, true)]
+    [TestCase(20f, false)]
+    [TestCase(20.1f, false)]
+    [TestCase(30f, false)]
+    public void Planner_OnlyReturnsForStoneThreatWhenOwnStoneIsLessThanTwiceAsFar(
+        float ownerX, bool shouldDefend)
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(ownerX, 0f, 0f));
+        var enemies = new List<CombatCharacterIntel>();
+        for (int i = 0; i < 3; i++)
+        {
+            enemies.Add(Intel(CreateCharacter("Enemy" + i, new Sword(), Vector3.zero, team: CombatTeam.Enemy)));
+        }
+        CombatAiContext context = Context(owner, enemies: enemies,
+            ownStone: Vector3.zero, enemyStone: new Vector3(30f, 0f, 0f));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, null,
+            previousObjective: CombatObjective.DefendOwnStone);
+
+        Assert.That(plan.Objective, Is.EqualTo(shouldDefend
+            ? CombatObjective.DefendOwnStone : CombatObjective.DestroyEnemyStone));
+    }
+
+    [TestCase(CombatAiPersonalityKind.Gatekeeper)]
+    [TestCase(CombatAiPersonalityKind.Tagalong)]
+    public void Planner_DoesNotReturnToDefendNearEnemyStoneDespitePersonality(
+        CombatAiPersonalityKind personality)
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(20f, 0f, 0f));
+        Character leader = CreateCharacter("Leader", new Shield(), Vector3.zero);
+        CombatAiContext context = Context(owner,
+            allies: new[] { RouteIntel(leader, CombatAiMovementRole.Independent, CombatObjective.DefendOwnStone, "A") },
+            ownStone: Vector3.zero, enemyStone: new Vector3(30f, 0f, 0f), tagalongTarget: leader);
+        CombatAiPersonalityProfile profile = Track(CombatAiPersonalityProfile.CreateBuiltInProfile(personality));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+    }
+
+    [Test]
+    public void Planner_UsesStraightLineDistanceIncludingHeightForDefenseReturn()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), Vector3.zero);
+        CombatAiContext context = Context(owner,
+            ownStone: new Vector3(0f, 20f, 0f), enemyStone: new Vector3(10f, 0f, 0f));
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Gatekeeper));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DestroyEnemyStone));
+    }
+
+    [Test]
+    public void Planner_CanReturnToDefendWhenEnemyStonePositionIsUnknown()
+    {
+        Character owner = CreateCharacter("Owner", new Sword(), new Vector3(20f, 0f, 0f));
+        CombatAiContext context = Context(owner, ownStone: Vector3.zero);
+        CombatAiPersonalityProfile profile = Track(
+            CombatAiPersonalityProfile.CreateBuiltInProfile(CombatAiPersonalityKind.Gatekeeper));
+
+        CombatAiPlan plan = CombatAiPlanner.BuildPlan(context, profile);
+
+        Assert.That(plan.Objective, Is.EqualTo(CombatObjective.DefendOwnStone));
+    }
+
     [Test]
     public void Planner_GatekeeperReturnsToOwnStoneWhenNoThreatIsKnown()
     {

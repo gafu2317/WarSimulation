@@ -10,7 +10,7 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SOURCE = os.path.join(ROOT, 'ArtSource', 'Blender', 'FantasyCivicFacilities.blend')
-REVIEW = os.path.join(ROOT, 'docs', 'Art', 'FantasyCivicFacilities')
+REVIEW = os.path.join(ROOT, 'docs', 'Art', 'Records', 'CivicFacilities')
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location('culture', os.path.join(os.path.dirname(__file__), 'generate_fantasy_culture_facilities.py'))
 c = importlib.util.module_from_spec(spec)

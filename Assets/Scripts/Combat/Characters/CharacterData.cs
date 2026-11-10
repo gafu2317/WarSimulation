@@ -29,13 +29,13 @@ public class CharacterData : ScriptableObject
     // 各性格の発生の基礎確率
     [Header("Personality Probabilities")]
 
-    [Tooltip("陽キャ：キャラの多いところに行きやすい。")]
+    [Tooltip("陽キャ：キャラの多いところに行きやすい。武器・手動補正込みの最大HP・STR・INT・FAI・AGIが常時10%増加する。")]
     [field: SerializeField] public float AttentionSeeker { private set; get; }
 
     [Tooltip("戦闘狂：何があっても敵への攻撃をやめない。")]
     [field: SerializeField] public float BattleJunkie { private set; get; }
 
-    [Tooltip("狡猾：敵の少ないルートを使って魔石に攻撃する。")]
+    [Tooltip("狡猾：敵の少ない進攻ルートを選ぶ。武器・手動補正込みのAGIが常時20%増加する。")]
     [field: SerializeField] public float Cunning { private set; get; }
 
     [Tooltip("献身的：一定範囲内のHPが低い味方のもとへ駆けつける。")]
@@ -44,6 +44,6 @@ public class CharacterData : ScriptableObject
     [Tooltip("寂しがり：他のキャラと一緒に行動する。1人になると行動せず他のキャラを探し続ける。")]
     [field: SerializeField] public float Lonely { private set; get; }
 
-    [Tooltip("猪突猛進：魔石に一直線で向かう。")]
+    [Tooltip("猪突猛進：魔石に一直線で向かう。武器補正込みのAGIが20%減少する。")]
     [field: SerializeField] public float Reckless { private set; get; }
 }

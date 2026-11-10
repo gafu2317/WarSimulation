@@ -11,7 +11,7 @@ import generate_school_levels as s
 
 ROOT=Path(__file__).resolve().parents[2]
 OUTPUT=ROOT/'ArtSource/Blender/GrandRoyalCastle.blend'
-REVIEW=ROOT/'docs/Art/GrandRoyalCastle'
+REVIEW=ROOT/'docs/Art/Records/Castle'
 SOURCE=ROOT/'ArtSource/Blender/KingdomBuildings_RealisticFantasy.blend'
 
 def place(b,recipe,x,y,z=0,angle=0):

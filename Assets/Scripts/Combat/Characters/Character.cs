@@ -305,10 +305,12 @@ public class Character : MonoBehaviour
         Character tagalongTarget = null,
         IReadOnlyDictionary<CombatStat, int> statAdjustments = null)
     {
+        int previousMaxHP = MaxHP;
         _runtimeWeaponConfig = weaponConfig;
         _runtimePersonalityProfile = personalityProfile;
         _runtimeTagalongTarget = tagalongTarget;
         SetRuntimeStatAdjustments(statAdjustments);
+        if (MaxHP != previousMaxHP) Health?.RestoreFull();
         ApplyInitialWeaponFromConfig();
         _body ??= GetComponent<CombatCharacterBody>();
         if (_body != null) _body.MovementSpeedMultiplier = movementSpeedMultiplier;
@@ -317,6 +319,10 @@ public class Character : MonoBehaviour
     public void SetRuntimeStatAdjustments(IReadOnlyDictionary<CombatStat, int> statAdjustments)
     {
         _runtimeStatAdjustments.Clear();
+        Health?.SetMaxHPAdjustment(
+            statAdjustments != null && statAdjustments.TryGetValue(CombatStat.HP, out int hpAdjustment)
+                ? hpAdjustment
+                : 0);
         if (statAdjustments == null) return;
 
         foreach (KeyValuePair<CombatStat, int> adjustment in statAdjustments)
@@ -331,6 +337,8 @@ public class Character : MonoBehaviour
     public void ClearRuntimeStatAdjustments()
     {
         _runtimeStatAdjustments.Clear();
+        Health?.SetMaxHPAdjustment(0);
+        _recklessAgiMultiplierOverride = null;
     }
 
     // 武器装備
@@ -347,6 +355,16 @@ public class Character : MonoBehaviour
         EquippedWeapon = null;
         EquippedWeaponConfig = null;
         RebuildCombatSkills();
+    }
+
+    private float? _recklessAgiMultiplierOverride;
+
+    public void SetRecklessAgiMultiplierOverride(float? multiplier)
+    {
+        if (multiplier.HasValue && (float.IsNaN(multiplier.Value) ||
+            float.IsInfinity(multiplier.Value) || multiplier.Value <= 0f || multiplier.Value > 1f))
+            throw new System.ArgumentOutOfRangeException(nameof(multiplier));
+        _recklessAgiMultiplierOverride = multiplier;
     }
 
     public float GetEffectiveStat(CombatStat stat)
@@ -373,7 +391,13 @@ public class Character : MonoBehaviour
             _ => 0,
         };
         int adjustment = _runtimeStatAdjustments.TryGetValue(stat, out int value) ? value : 0;
-        return Mathf.Max(1, baseValue + weapon.GetStatBonus(stat) + adjustment);
+        int configured = Mathf.Max(1, baseValue + weapon.GetStatBonus(stat) + adjustment);
+        CombatAiPersonalityKind kind = PersonalityProfile?.Kind ?? CombatAiPersonalityKind.Neutral;
+        float multiplier = stat == CombatStat.AGI && kind == CombatAiPersonalityKind.Reckless && _recklessAgiMultiplierOverride.HasValue
+            ? _recklessAgiMultiplierOverride.Value
+            : CombatAiPersonalityProfile.GetStatMultiplier(kind, stat);
+        configured = Mathf.Max(1, Mathf.RoundToInt(configured * multiplier));
+        return configured;
     }
 
     public void SetLearnedSkillIds(IEnumerable<SkillId> skillIds)

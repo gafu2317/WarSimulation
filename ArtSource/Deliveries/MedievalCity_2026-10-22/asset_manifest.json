@@ -1,0 +1,4374 @@
+{
+  "status": "verified",
+  "source_name_count": 91,
+  "added_count": 50,
+  "asset_count": 141,
+  "units": "meters",
+  "up_axis": "+Z",
+  "front_axis": "-Y",
+  "design_basis": "Asset names only; no original meshes, images or modeling recipes read.",
+  "material_policy": "Reusable part PNGs: BaseColor, tangent normal (+Y), roughness. No whole-building projection.",
+  "assets": [
+    {
+      "name": "Anvil",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Anvil.blend",
+      "front": "Previews/Front/Anvil.png",
+      "three_quarter": "Previews/ThreeQuarter/Anvil.png",
+      "triangles": 380,
+      "mesh_parts": 5,
+      "materials": [
+        "Bark",
+        "Iron"
+      ],
+      "minimum": [
+        -0.5,
+        -0.5,
+        0.0
+      ],
+      "maximum": [
+        0.96,
+        0.5,
+        1.19
+      ],
+      "role_identity": "",
+      "display_name": "金床"
+    },
+    {
+      "name": "ArcaneAcademy_Lv1",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/ArcaneAcademy_Lv1.blend",
+      "front": "Previews/Front/ArcaneAcademy_Lv1.png",
+      "three_quarter": "Previews/ThreeQuarter/ArcaneAcademy_Lv1.png",
+      "triangles": 8288,
+      "mesh_parts": 98,
+      "materials": [
+        "Arcane_Trim",
+        "Brass",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Cobble",
+        "Cork",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Limestone",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Paper",
+        "Roof_Slate",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -10.3,
+        -9.1,
+        0.0
+      ],
+      "maximum": [
+        10.7,
+        9.9,
+        16.665
+      ],
+      "role_identity": "Arcane academy level 1: tall freestanding research tower and low lecture hall, growing laboratory campus, supported cupolas, armillary, telescope and reagent workbench",
+      "top": "Previews/Top/ArcaneAcademy_Lv1.png",
+      "display_name": "魔法学校 Lv1"
+    },
+    {
+      "name": "ArcaneAcademy_Lv2",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/ArcaneAcademy_Lv2.blend",
+      "front": "Previews/Front/ArcaneAcademy_Lv2.png",
+      "three_quarter": "Previews/ThreeQuarter/ArcaneAcademy_Lv2.png",
+      "triangles": 9230,
+      "mesh_parts": 124,
+      "materials": [
+        "Arcane_Trim",
+        "Brass",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Cobble",
+        "Cork",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Limestone",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Paper",
+        "Roof_Slate",
+        "Window_Blue",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.3,
+        -9.1,
+        0.0
+      ],
+      "maximum": [
+        10.7,
+        9.9,
+        17.815
+      ],
+      "role_identity": "Arcane academy level 2: tall freestanding research tower and low lecture hall, growing laboratory campus, supported cupolas, armillary, telescope and reagent workbench",
+      "top": "Previews/Top/ArcaneAcademy_Lv2.png",
+      "display_name": "魔法学校 Lv2"
+    },
+    {
+      "name": "ArcaneAcademy_Lv3",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/ArcaneAcademy_Lv3.blend",
+      "front": "Previews/Front/ArcaneAcademy_Lv3.png",
+      "three_quarter": "Previews/ThreeQuarter/ArcaneAcademy_Lv3.png",
+      "triangles": 11426,
+      "mesh_parts": 174,
+      "materials": [
+        "Arcane_Trim",
+        "Brass",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Cobble",
+        "Cork",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Limestone",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Paper",
+        "Roof_Slate",
+        "Window_Blue",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.3,
+        -9.1,
+        0.0
+      ],
+      "maximum": [
+        10.7,
+        9.9,
+        18.965
+      ],
+      "role_identity": "Arcane academy level 3: tall freestanding research tower and low lecture hall, growing laboratory campus, supported cupolas, armillary, telescope and reagent workbench",
+      "top": "Previews/Top/ArcaneAcademy_Lv3.png",
+      "display_name": "魔法学校 Lv3"
+    },
+    {
+      "name": "ArcaneAcademy_Lv4",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/ArcaneAcademy_Lv4.blend",
+      "front": "Previews/Front/ArcaneAcademy_Lv4.png",
+      "three_quarter": "Previews/ThreeQuarter/ArcaneAcademy_Lv4.png",
+      "triangles": 12354,
+      "mesh_parts": 192,
+      "materials": [
+        "Arcane_Trim",
+        "Brass",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Cobble",
+        "Copper",
+        "Cork",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Limestone",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Paper",
+        "Roof_Slate",
+        "Window_Blue",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.3,
+        -9.1,
+        0.0
+      ],
+      "maximum": [
+        10.7,
+        9.9,
+        18.36
+      ],
+      "role_identity": "Arcane academy level 4: tall freestanding research tower and low lecture hall, growing laboratory campus, supported cupolas, armillary, telescope and reagent workbench",
+      "top": "Previews/Top/ArcaneAcademy_Lv4.png",
+      "display_name": "魔法学校 Lv4"
+    },
+    {
+      "name": "ArcaneAcademy_Lv5",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/ArcaneAcademy_Lv5.blend",
+      "front": "Previews/Front/ArcaneAcademy_Lv5.png",
+      "three_quarter": "Previews/ThreeQuarter/ArcaneAcademy_Lv5.png",
+      "triangles": 14536,
+      "mesh_parts": 234,
+      "materials": [
+        "Arcane_Trim",
+        "Brass",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Cobble",
+        "Copper",
+        "Cork",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Limestone",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Paper",
+        "Roof_Slate",
+        "Window_Blue",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.3,
+        -9.1,
+        0.0
+      ],
+      "maximum": [
+        10.7,
+        9.9,
+        19.51
+      ],
+      "role_identity": "Arcane academy level 5: tall freestanding research tower and low lecture hall, growing laboratory campus, supported cupolas, armillary, telescope and reagent workbench",
+      "top": "Previews/Top/ArcaneAcademy_Lv5.png",
+      "display_name": "魔法学校 Lv5"
+    },
+    {
+      "name": "Arena",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Arena.blend",
+      "front": "Previews/Front/Arena.png",
+      "three_quarter": "Previews/ThreeQuarter/Arena.png",
+      "triangles": 8810,
+      "mesh_parts": 84,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Sign_Warrior"
+      ],
+      "minimum": [
+        -10.85,
+        -11.61,
+        -0.0
+      ],
+      "maximum": [
+        10.85,
+        10.85,
+        7.7
+      ],
+      "role_identity": "Open circular amphitheatre with actual perimeter arches, continuous crown walk, tiered spectator benches, entrance aisle, sand arena and heraldic gate",
+      "top": "Previews/Top/Arena.png",
+      "display_name": "闘技場"
+    },
+    {
+      "name": "Bakery",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Bakery.blend",
+      "front": "Previews/Front/Bakery.png",
+      "three_quarter": "Previews/ThreeQuarter/Bakery.png",
+      "triangles": 6535,
+      "mesh_parts": 68,
+      "materials": [
+        "Bread_Crust",
+        "Brick",
+        "Canvas_Gold",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Sign_Bread",
+        "Thatch",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -7.53,
+        -4.51,
+        0.0
+      ],
+      "maximum": [
+        5.05,
+        4.52,
+        6.708
+      ],
+      "role_identity": "Low bakehouse and flour store with large round masonry oven, projecting bread counter, visible loaves and baking peel",
+      "display_name": "パン工房"
+    },
+    {
+      "name": "Barracks",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Barracks.blend",
+      "front": "Previews/Front/Barracks.png",
+      "three_quarter": "Previews/ThreeQuarter/Barracks.png",
+      "triangles": 7623,
+      "mesh_parts": 177,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Sign_Warrior",
+        "Thatch",
+        "Window_Amber",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -9.5,
+        -8.0,
+        0.0
+      ],
+      "maximum": [
+        9.5,
+        9.0,
+        9.505
+      ],
+      "role_identity": "Long two-storey barracks with transverse roof, end watch bastions, dormitory windows, drill square, dummies and military equipment",
+      "display_name": "兵舎"
+    },
+    {
+      "name": "Barrel",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Barrel.blend",
+      "front": "Previews/Front/Barrel.png",
+      "three_quarter": "Previews/ThreeQuarter/Barrel.png",
+      "triangles": 512,
+      "mesh_parts": 4,
+      "materials": [
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -0.486,
+        -0.486,
+        0.0
+      ],
+      "maximum": [
+        0.486,
+        0.486,
+        1.2
+      ],
+      "role_identity": "",
+      "display_name": "樽"
+    },
+    {
+      "name": "Bathhouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Bathhouse.blend",
+      "front": "Previews/Front/Bathhouse.png",
+      "three_quarter": "Previews/ThreeQuarter/Bathhouse.png",
+      "triangles": 7710,
+      "mesh_parts": 77,
+      "materials": [
+        "Brick",
+        "Copper",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Sign_Bath",
+        "Water",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -7.18,
+        -5.375,
+        0.0
+      ],
+      "maximum": [
+        7.18,
+        6.55,
+        8.6
+      ],
+      "role_identity": "Domed communal bathing hall with low changing wings, sheltered stone portico, water basins and furnace chimney",
+      "display_name": "公衆浴場"
+    },
+    {
+      "name": "Bench",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Bench.blend",
+      "front": "Previews/Front/Bench.png",
+      "three_quarter": "Previews/ThreeQuarter/Bench.png",
+      "triangles": 264,
+      "mesh_parts": 6,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -1.0,
+        -0.275,
+        0.0
+      ],
+      "maximum": [
+        1.0,
+        0.285,
+        1.24
+      ],
+      "role_identity": "",
+      "display_name": "ベンチ"
+    },
+    {
+      "name": "Blacksmith",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Blacksmith.blend",
+      "front": "Previews/Front/Blacksmith.png",
+      "three_quarter": "Previews/ThreeQuarter/Blacksmith.png",
+      "triangles": 6024,
+      "mesh_parts": 111,
+      "materials": [
+        "Bark",
+        "Brass",
+        "Brick",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Roof_Slate",
+        "Sign_Smith",
+        "Spice_Red",
+        "Thatch",
+        "Water"
+      ],
+      "minimum": [
+        -6.5,
+        -5.8,
+        0.0
+      ],
+      "maximum": [
+        6.5,
+        4.6,
+        9.4975
+      ],
+      "role_identity": "Open-front forge workshop; sloping industrial roof cut around masonry chimney; working furnace, anvil, bellows, tongs, stock, grindstone and cooling tub",
+      "display_name": "鍛冶屋"
+    },
+    {
+      "name": "Casino",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Casino.blend",
+      "front": "Previews/Front/Casino.png",
+      "three_quarter": "Previews/ThreeQuarter/Casino.png",
+      "triangles": 4586,
+      "mesh_parts": 83,
+      "materials": [
+        "Brass",
+        "Copper",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster_Rose",
+        "Roof_Clay",
+        "Sign_Casino",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -7.5,
+        -6.8,
+        0.0
+      ],
+      "maximum": [
+        7.5,
+        6.85,
+        11.54
+      ],
+      "role_identity": "Octagonal rose-plaster games pavilion with tiered roof, side salons, columned entrance and visible gaming tables and counters",
+      "display_name": "遊戯館"
+    },
+    {
+      "name": "Chapel",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Chapel.blend",
+      "front": "Previews/Front/Chapel.png",
+      "three_quarter": "Previews/ThreeQuarter/Chapel.png",
+      "triangles": 5282,
+      "mesh_parts": 104,
+      "materials": [
+        "Brass",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Roof_Slate",
+        "Sacred_Trim",
+        "Window_Sacred"
+      ],
+      "minimum": [
+        -4.1,
+        -5.08,
+        0.0
+      ],
+      "maximum": [
+        4.1,
+        6.5,
+        11.6
+      ],
+      "role_identity": "Small apsidal chapel; pierced bell gable, bronze bell, rose glass and arched portal",
+      "display_name": "礼拝堂"
+    },
+    {
+      "name": "Church",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Church.blend",
+      "front": "Previews/Front/Church.png",
+      "three_quarter": "Previews/ThreeQuarter/Church.png",
+      "triangles": 14920,
+      "mesh_parts": 324,
+      "materials": [
+        "Brass",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Roof_Slate",
+        "Sacred_Trim",
+        "Window_Amber",
+        "Window_Sacred"
+      ],
+      "minimum": [
+        -8.7103,
+        -8.5103,
+        0.0
+      ],
+      "maximum": [
+        8.7103,
+        13.25,
+        21.67
+      ],
+      "role_identity": "Twin open belfries with bells; high basilica nave, low aisles, clerestory, buttresses, apse and rose window",
+      "display_name": "教会"
+    },
+    {
+      "name": "Clinic",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Clinic.blend",
+      "front": "Previews/Front/Clinic.png",
+      "three_quarter": "Previews/ThreeQuarter/Clinic.png",
+      "triangles": 10222,
+      "mesh_parts": 178,
+      "materials": [
+        "Canvas_Green",
+        "Cork",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glass_Green",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Liquid_Green",
+        "Oak",
+        "Plaster",
+        "Roof_Moss",
+        "Sign_Herb",
+        "Terracotta",
+        "Window_Green"
+      ],
+      "minimum": [
+        -5.78,
+        -4.75,
+        0.0
+      ],
+      "maximum": [
+        5.78,
+        6.12,
+        7.4622
+      ],
+      "role_identity": "Low treatment compound enclosing a medicinal herb court, apothecary bottle counter and sheltered patient waiting bench",
+      "top": "Previews/Top/Clinic.png",
+      "display_name": "診療所"
+    },
+    {
+      "name": "Cloth_Stall",
+      "group": "Market",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Market/Cloth_Stall.blend",
+      "front": "Previews/Front/Cloth_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Cloth_Stall.png",
+      "triangles": 1466,
+      "mesh_parts": 25,
+      "materials": [
+        "Canvas_Blue",
+        "Canvas_Gold",
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Trade"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "布地の露店"
+    },
+    {
+      "name": "Clothesline",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Clothesline.blend",
+      "front": "Previews/Front/Clothesline.png",
+      "three_quarter": "Previews/ThreeQuarter/Clothesline.png",
+      "triangles": 106,
+      "mesh_parts": 6,
+      "materials": [
+        "Linen",
+        "Oak"
+      ],
+      "minimum": [
+        -1.86,
+        -0.06,
+        0.0
+      ],
+      "maximum": [
+        1.86,
+        0.06,
+        2.6
+      ],
+      "role_identity": "",
+      "display_name": "物干し"
+    },
+    {
+      "name": "Crate_Closed",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Crate_Closed.blend",
+      "front": "Previews/Front/Crate_Closed.png",
+      "three_quarter": "Previews/ThreeQuarter/Crate_Closed.png",
+      "triangles": 88,
+      "mesh_parts": 2,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.55,
+        -0.4955,
+        0.0
+      ],
+      "maximum": [
+        0.55,
+        0.44,
+        0.88
+      ],
+      "role_identity": "",
+      "display_name": "蓋付き木箱"
+    },
+    {
+      "name": "CrimsonRowhouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/CrimsonRowhouse.blend",
+      "front": "Previews/Front/CrimsonRowhouse.png",
+      "three_quarter": "Previews/ThreeQuarter/CrimsonRowhouse.png",
+      "triangles": 4343,
+      "mesh_parts": 178,
+      "materials": [
+        "Brick",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster_Rose",
+        "Roof_Clay",
+        "Sign_Wine",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -3.005,
+        -4.585,
+        0.0
+      ],
+      "maximum": [
+        3.7955,
+        5.325,
+        10.665
+      ],
+      "role_identity": "Residential rowhouse; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "赤灯りの町家"
+    },
+    {
+      "name": "Fantasy_House",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Fantasy_House.blend",
+      "front": "Previews/Front/Fantasy_House.png",
+      "three_quarter": "Previews/ThreeQuarter/Fantasy_House.png",
+      "triangles": 4157,
+      "mesh_parts": 148,
+      "materials": [
+        "Brick",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "HalfTimber",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -3.255,
+        -3.985,
+        0.0
+      ],
+      "maximum": [
+        4.123,
+        4.593,
+        8.3525
+      ],
+      "role_identity": "Residential house; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "一般住宅"
+    },
+    {
+      "name": "Firewood_Rack",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Firewood_Rack.blend",
+      "front": "Previews/Front/Firewood_Rack.png",
+      "three_quarter": "Previews/ThreeQuarter/Firewood_Rack.png",
+      "triangles": 296,
+      "mesh_parts": 10,
+      "materials": [
+        "Bark",
+        "DarkTimber"
+      ],
+      "minimum": [
+        -0.96,
+        -0.41,
+        0.0
+      ],
+      "maximum": [
+        0.96,
+        0.41,
+        1.3
+      ],
+      "role_identity": "",
+      "display_name": "薪置き"
+    },
+    {
+      "name": "Flower_Border",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Flower_Border.blend",
+      "front": "Previews/Front/Flower_Border.png",
+      "three_quarter": "Previews/ThreeQuarter/Flower_Border.png",
+      "triangles": 192,
+      "mesh_parts": 36,
+      "materials": [
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card"
+      ],
+      "minimum": [
+        -0.3657,
+        -0.3508,
+        -0.0006
+      ],
+      "maximum": [
+        1.1074,
+        0.6854,
+        0.6913
+      ],
+      "role_identity": "",
+      "display_name": "花の縁取り"
+    },
+    {
+      "name": "Flower_WildPatch",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Flower_WildPatch.blend",
+      "front": "Previews/Front/Flower_WildPatch.png",
+      "three_quarter": "Previews/ThreeQuarter/Flower_WildPatch.png",
+      "triangles": 128,
+      "mesh_parts": 24,
+      "materials": [
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card"
+      ],
+      "minimum": [
+        -0.3657,
+        -0.3635,
+        -0.0006
+      ],
+      "maximum": [
+        1.125,
+        0.3565,
+        0.6912
+      ],
+      "role_identity": "",
+      "display_name": "野花"
+    },
+    {
+      "name": "Forge",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Forge.blend",
+      "front": "Previews/Front/Forge.png",
+      "three_quarter": "Previews/ThreeQuarter/Forge.png",
+      "triangles": 148,
+      "mesh_parts": 3,
+      "materials": [
+        "Brick",
+        "Iron"
+      ],
+      "minimum": [
+        -0.85,
+        -0.85,
+        0.0
+      ],
+      "maximum": [
+        0.85,
+        0.85,
+        3.1
+      ],
+      "role_identity": "",
+      "display_name": "炉"
+    },
+    {
+      "name": "Granary",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Granary.blend",
+      "front": "Previews/Front/Granary.png",
+      "three_quarter": "Previews/ThreeQuarter/Granary.png",
+      "triangles": 3922,
+      "mesh_parts": 58,
+      "materials": [
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Grain",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Sign_Grain",
+        "Thatch"
+      ],
+      "minimum": [
+        -4.53,
+        -6.1675,
+        0.0
+      ],
+      "maximum": [
+        4.53,
+        3.67,
+        9.1562
+      ],
+      "role_identity": "Elevated timber granary on mushroom staddle stones, ventilated grain loft, thatched roof and access stair",
+      "display_name": "穀物庫"
+    },
+    {
+      "name": "Granite_Corner",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Granite_Corner.blend",
+      "front": "Previews/Front/Granite_Corner.png",
+      "three_quarter": "Previews/ThreeQuarter/Granite_Corner.png",
+      "triangles": 348,
+      "mesh_parts": 9,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        3.625,
+        5.025
+      ],
+      "role_identity": "",
+      "display_name": "城壁・角"
+    },
+    {
+      "name": "Granite_Gate",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Granite_Gate.blend",
+      "front": "Previews/Front/Granite_Gate.png",
+      "three_quarter": "Previews/ThreeQuarter/Granite_Gate.png",
+      "triangles": 141,
+      "mesh_parts": 4,
+      "materials": [
+        "Fieldstone",
+        "Iron_Grate",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.65,
+        -0.55,
+        0.0
+      ],
+      "maximum": [
+        2.65,
+        0.55,
+        4.2
+      ],
+      "role_identity": "",
+      "display_name": "城門"
+    },
+    {
+      "name": "Granite_Straight",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Granite_Straight.blend",
+      "front": "Previews/Front/Granite_Straight.png",
+      "three_quarter": "Previews/ThreeQuarter/Granite_Straight.png",
+      "triangles": 264,
+      "mesh_parts": 6,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        0.425,
+        5.025
+      ],
+      "role_identity": "",
+      "display_name": "城壁・直線"
+    },
+    {
+      "name": "GroundPlant_FernPatch",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_FernPatch.blend",
+      "front": "Previews/Front/GroundPlant_FernPatch.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_FernPatch.png",
+      "triangles": 14,
+      "mesh_parts": 7,
+      "materials": [
+        "Fern_Frond"
+      ],
+      "minimum": [
+        -0.6634,
+        -0.6341,
+        0.0
+      ],
+      "maximum": [
+        0.6222,
+        0.6593,
+        0.8207
+      ],
+      "role_identity": "",
+      "display_name": "シダの群生"
+    },
+    {
+      "name": "GroundPlant_GrassShort",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_GrassShort.blend",
+      "front": "Previews/Front/GroundPlant_GrassShort.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_GrassShort.png",
+      "triangles": 48,
+      "mesh_parts": 24,
+      "materials": [
+        "Grass_Tuft"
+      ],
+      "minimum": [
+        -0.2741,
+        -0.2945,
+        0.0
+      ],
+      "maximum": [
+        0.9785,
+        0.2895,
+        0.26
+      ],
+      "role_identity": "",
+      "display_name": "短い草"
+    },
+    {
+      "name": "GroundPlant_GrassTall",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_GrassTall.blend",
+      "front": "Previews/Front/GroundPlant_GrassTall.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_GrassTall.png",
+      "triangles": 48,
+      "mesh_parts": 24,
+      "materials": [
+        "Grass_Tuft"
+      ],
+      "minimum": [
+        -0.4228,
+        -0.4738,
+        0.0
+      ],
+      "maximum": [
+        1.1338,
+        0.4612,
+        0.65
+      ],
+      "role_identity": "",
+      "display_name": "背の高い草"
+    },
+    {
+      "name": "GroundPlant_GrassTuft",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_GrassTuft.blend",
+      "front": "Previews/Front/GroundPlant_GrassTuft.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_GrassTuft.png",
+      "triangles": 48,
+      "mesh_parts": 24,
+      "materials": [
+        "Grass_Tuft"
+      ],
+      "minimum": [
+        -0.2741,
+        -0.2945,
+        0.0
+      ],
+      "maximum": [
+        0.9785,
+        0.2895,
+        0.26
+      ],
+      "role_identity": "",
+      "display_name": "草の株"
+    },
+    {
+      "name": "Guardhouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Guardhouse.blend",
+      "front": "Previews/Front/Guardhouse.png",
+      "three_quarter": "Previews/ThreeQuarter/Guardhouse.png",
+      "triangles": 2895,
+      "mesh_parts": 74,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Oak",
+        "Roof_Slate",
+        "Sign_Guard"
+      ],
+      "minimum": [
+        -5.35,
+        -4.0,
+        -0.0
+      ],
+      "maximum": [
+        5.35,
+        2.925,
+        12.0
+      ],
+      "role_identity": "Asymmetric fortified guard gate, tall watch platform and lower guardroom tower, open arched passage and shield rack",
+      "display_name": "衛兵所"
+    },
+    {
+      "name": "Guildhall",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Guildhall.blend",
+      "front": "Previews/Front/Guildhall.png",
+      "three_quarter": "Previews/ThreeQuarter/Guildhall.png",
+      "triangles": 4712,
+      "mesh_parts": 94,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "DarkTimber",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Parchment",
+        "Plaster",
+        "Roof_Clay",
+        "Roof_Slate",
+        "Sign_Tools",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -6.38,
+        -3.9925,
+        0.0
+      ],
+      "maximum": [
+        6.38,
+        3.87,
+        15.9376
+      ],
+      "role_identity": "Civic guild assembly hall above a five-bay open arcade, exposed upper timber structure, clock tower, guild banners and public commission desk",
+      "display_name": "職人組合会館"
+    },
+    {
+      "name": "Handcart",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Handcart.blend",
+      "front": "Previews/Front/Handcart.png",
+      "three_quarter": "Previews/ThreeQuarter/Handcart.png",
+      "triangles": 992,
+      "mesh_parts": 20,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        -2.9031,
+        0.0
+      ],
+      "maximum": [
+        1.05,
+        1.16,
+        1.89
+      ],
+      "role_identity": "",
+      "display_name": "手押し荷車"
+    },
+    {
+      "name": "Hay_Bale",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Hay_Bale.blend",
+      "front": "Previews/Front/Hay_Bale.png",
+      "three_quarter": "Previews/ThreeQuarter/Hay_Bale.png",
+      "triangles": 68,
+      "mesh_parts": 3,
+      "materials": [
+        "Linen",
+        "Thatch"
+      ],
+      "minimum": [
+        -0.75,
+        -0.5075,
+        0.0
+      ],
+      "maximum": [
+        0.75,
+        0.5075,
+        0.97
+      ],
+      "role_identity": "",
+      "display_name": "干し草束"
+    },
+    {
+      "name": "LanternSpire",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/LanternSpire.blend",
+      "front": "Previews/Front/LanternSpire.png",
+      "three_quarter": "Previews/ThreeQuarter/LanternSpire.png",
+      "triangles": 7237,
+      "mesh_parts": 228,
+      "materials": [
+        "Brick",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Sign_Star",
+        "Weathering",
+        "Window_Amber",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -2.955,
+        -3.585,
+        0.0
+      ],
+      "maximum": [
+        5.55,
+        3.445,
+        15.6
+      ],
+      "role_identity": "Residential spire; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "塔屋付きの館"
+    },
+    {
+      "name": "Library",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Library.blend",
+      "front": "Previews/Front/Library.png",
+      "three_quarter": "Previews/ThreeQuarter/Library.png",
+      "triangles": 7370,
+      "mesh_parts": 204,
+      "materials": [
+        "Canvas_Green",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Paper",
+        "Parchment",
+        "Roof_Clay",
+        "Roof_Slate",
+        "Sign_Book",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -8.4525,
+        -6.97,
+        0.0
+      ],
+      "maximum": [
+        8.41,
+        7.38,
+        13.5
+      ],
+      "role_identity": "Collegiate stepped-gable reading hall; tall grouped reading windows, stair tower, lower archive wing and sheltered book desk",
+      "display_name": "図書館"
+    },
+    {
+      "name": "MerchantHouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/MerchantHouse.blend",
+      "front": "Previews/Front/MerchantHouse.png",
+      "three_quarter": "Previews/ThreeQuarter/MerchantHouse.png",
+      "triangles": 5853,
+      "mesh_parts": 217,
+      "materials": [
+        "Brick",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "HalfTimber_White",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Sign_Trade",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -4.455,
+        -5.465,
+        0.0
+      ],
+      "maximum": [
+        5.695,
+        5.325,
+        11.0547
+      ],
+      "role_identity": "Residential merchant; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "商人邸"
+    },
+    {
+      "name": "Museum",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Museum.blend",
+      "front": "Previews/Front/Museum.png",
+      "three_quarter": "Previews/ThreeQuarter/Museum.png",
+      "triangles": 8978,
+      "mesh_parts": 122,
+      "materials": [
+        "Copper",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Roof_Slate",
+        "Sign_Museum",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -9.5,
+        -8.2575,
+        0.0
+      ],
+      "maximum": [
+        9.5,
+        6.9,
+        12.35
+      ],
+      "role_identity": "Domed civic rotunda with long exhibition wings, full structural colonnaded portico, broad podium stairs and outdoor sculpture exhibits",
+      "display_name": "美術館"
+    },
+    {
+      "name": "NaturalRock_02",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_02.blend",
+      "front": "Previews/Front/NaturalRock_02.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_02.png",
+      "triangles": 380,
+      "mesh_parts": 1,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -1.7777,
+        -1.16,
+        0.0
+      ],
+      "maximum": [
+        1.8734,
+        1.16,
+        2.3334
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 02"
+    },
+    {
+      "name": "NaturalRock_04",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_04.blend",
+      "front": "Previews/Front/NaturalRock_04.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_04.png",
+      "triangles": 624,
+      "mesh_parts": 2,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -1.6935,
+        -1.1365,
+        0.0
+      ],
+      "maximum": [
+        1.876,
+        1.1365,
+        1.9897
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 04"
+    },
+    {
+      "name": "NaturalRock_07",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_07.blend",
+      "front": "Previews/Front/NaturalRock_07.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_07.png",
+      "triangles": 348,
+      "mesh_parts": 1,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -2.0296,
+        -1.3093,
+        0.0
+      ],
+      "maximum": [
+        1.8697,
+        1.3093,
+        2.9504
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 07"
+    },
+    {
+      "name": "NaturalRock_08",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_08.blend",
+      "front": "Previews/Front/NaturalRock_08.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_08.png",
+      "triangles": 656,
+      "mesh_parts": 2,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -2.1967,
+        -1.3476,
+        0.0
+      ],
+      "maximum": [
+        2.2285,
+        1.3476,
+        2.3305
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 08"
+    },
+    {
+      "name": "NaturalRock_11",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_11.blend",
+      "front": "Previews/Front/NaturalRock_11.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_11.png",
+      "triangles": 380,
+      "mesh_parts": 1,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -2.1586,
+        -1.2937,
+        0.0
+      ],
+      "maximum": [
+        2.1579,
+        1.2937,
+        3.0523
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 11"
+    },
+    {
+      "name": "NaturalTree_01",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_01.blend",
+      "front": "Previews/Front/NaturalTree_01.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_01.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.0424,
+        -2.6189,
+        -0.0
+      ],
+      "maximum": [
+        2.7695,
+        2.7874,
+        6.7036
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 01"
+    },
+    {
+      "name": "NaturalTree_02",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_02.blend",
+      "front": "Previews/Front/NaturalTree_02.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_02.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.4994,
+        -3.1827,
+        -0.0
+      ],
+      "maximum": [
+        3.4405,
+        3.4587,
+        6.8651
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 02"
+    },
+    {
+      "name": "NaturalTree_03",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_03.blend",
+      "front": "Previews/Front/NaturalTree_03.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_03.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -2.8989,
+        -2.3903,
+        -0.0
+      ],
+      "maximum": [
+        2.2165,
+        2.4602,
+        7.0266
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 03"
+    },
+    {
+      "name": "NaturalTree_04",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_04.blend",
+      "front": "Previews/Front/NaturalTree_04.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_04.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.8705,
+        -2.6542,
+        -0.0
+      ],
+      "maximum": [
+        2.0431,
+        2.541,
+        7.1881
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 04"
+    },
+    {
+      "name": "NaturalTree_05",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_05.blend",
+      "front": "Previews/Front/NaturalTree_05.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_05.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -1.8414,
+        -2.6044,
+        -0.0
+      ],
+      "maximum": [
+        3.7222,
+        2.6001,
+        7.3496
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 05"
+    },
+    {
+      "name": "NaturalTree_06",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_06.blend",
+      "front": "Previews/Front/NaturalTree_06.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_06.png",
+      "triangles": 4014,
+      "mesh_parts": 83,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.0038,
+        -2.7117,
+        -0.0
+      ],
+      "maximum": [
+        2.8348,
+        2.6535,
+        7.5111
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 06"
+    },
+    {
+      "name": "NaturalTree_07",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_07.blend",
+      "front": "Previews/Front/NaturalTree_07.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_07.png",
+      "triangles": 2182,
+      "mesh_parts": 39,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.2101,
+        -2.7884,
+        -0.0
+      ],
+      "maximum": [
+        3.3232,
+        3.229,
+        7.6726
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 07"
+    },
+    {
+      "name": "NaturalTree_08",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_08.blend",
+      "front": "Previews/Front/NaturalTree_08.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_08.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -1.9177,
+        -2.1759,
+        0.0
+      ],
+      "maximum": [
+        2.0537,
+        1.9173,
+        5.8678
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 08"
+    },
+    {
+      "name": "NaturalTree_09",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_09.blend",
+      "front": "Previews/Front/NaturalTree_09.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_09.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.4345,
+        -3.5057,
+        -0.0
+      ],
+      "maximum": [
+        2.9719,
+        3.1338,
+        9.6008
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 09"
+    },
+    {
+      "name": "NaturalTree_10",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_10.blend",
+      "front": "Previews/Front/NaturalTree_10.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_10.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -2.1276,
+        -2.8735,
+        -0.0
+      ],
+      "maximum": [
+        3.2049,
+        2.7314,
+        8.1571
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 10"
+    },
+    {
+      "name": "Noticeboard",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Noticeboard.blend",
+      "front": "Previews/Front/Noticeboard.png",
+      "three_quarter": "Previews/ThreeQuarter/Noticeboard.png",
+      "triangles": 98,
+      "mesh_parts": 5,
+      "materials": [
+        "DarkTimber",
+        "Oak",
+        "Parchment",
+        "Roof_Clay"
+      ],
+      "minimum": [
+        -1.025,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        1.025,
+        0.35,
+        2.8
+      ],
+      "role_identity": "",
+      "display_name": "掲示板"
+    },
+    {
+      "name": "Observatory",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Observatory.blend",
+      "front": "Previews/Front/Observatory.png",
+      "three_quarter": "Previews/ThreeQuarter/Observatory.png",
+      "triangles": 10134,
+      "mesh_parts": 128,
+      "materials": [
+        "Arcane_Trim",
+        "Brass",
+        "Copper",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Roof_Slate",
+        "Sign_Star",
+        "Window_Amber",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -7.0,
+        -4.5975,
+        0.0
+      ],
+      "maximum": [
+        6.685,
+        6.37,
+        12.8556
+      ],
+      "role_identity": "Octagonal observation tower, copper dome with open observing slit and rim, low calculation wing and courtyard armillary",
+      "display_name": "天文台"
+    },
+    {
+      "name": "Paved_Plot",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Paved_Plot.blend",
+      "front": "Previews/Front/Paved_Plot.png",
+      "three_quarter": "Previews/ThreeQuarter/Paved_Plot.png",
+      "triangles": 24,
+      "mesh_parts": 2,
+      "materials": [
+        "Cobble",
+        "Earth"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.11
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Paved_Plot.png",
+      "display_name": "舗装敷地"
+    },
+    {
+      "name": "Plaza",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Plaza.blend",
+      "front": "Previews/Front/Plaza.png",
+      "three_quarter": "Previews/ThreeQuarter/Plaza.png",
+      "triangles": 2160,
+      "mesh_parts": 58,
+      "materials": [
+        "Cobble",
+        "DarkTimber",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Terracotta",
+        "Water"
+      ],
+      "minimum": [
+        -7.0,
+        -7.0,
+        0.0
+      ],
+      "maximum": [
+        7.0,
+        7.0,
+        3.12
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Plaza.png",
+      "display_name": "噴水広場"
+    },
+    {
+      "name": "Produce_Stall",
+      "group": "Market",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Market/Produce_Stall.blend",
+      "front": "Previews/Front/Produce_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Produce_Stall.png",
+      "triangles": 7600,
+      "mesh_parts": 95,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "Cabbage",
+        "Canvas_Stripe",
+        "Carrot",
+        "DarkTimber",
+        "Foliage",
+        "Iron",
+        "Oak",
+        "Produce",
+        "Sign_Fruit",
+        "Thatch"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "青果の露店"
+    },
+    {
+      "name": "Road_Corner",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_Corner.blend",
+      "front": "Previews/Front/Road_Corner.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_Corner.png",
+      "triangles": 208,
+      "mesh_parts": 6,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_Corner.png",
+      "display_name": "曲がり道"
+    },
+    {
+      "name": "Road_Cross",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_Cross.blend",
+      "front": "Previews/Front/Road_Cross.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_Cross.png",
+      "triangles": 408,
+      "mesh_parts": 10,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_Cross.png",
+      "display_name": "十字路"
+    },
+    {
+      "name": "Road_End",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_End.blend",
+      "front": "Previews/Front/Road_End.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_End.png",
+      "triangles": 1836,
+      "mesh_parts": 40,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_End.png",
+      "display_name": "道路の終端"
+    },
+    {
+      "name": "Road_Straight",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_Straight.blend",
+      "front": "Previews/Front/Road_Straight.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_Straight.png",
+      "triangles": 24,
+      "mesh_parts": 2,
+      "materials": [
+        "Cobble",
+        "Earth"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.11
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_Straight.png",
+      "display_name": "直線道路"
+    },
+    {
+      "name": "Road_T",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_T.blend",
+      "front": "Previews/Front/Road_T.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_T.png",
+      "triangles": 216,
+      "mesh_parts": 6,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_T.png",
+      "display_name": "T字路"
+    },
+    {
+      "name": "Royal_Castle",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Royal_Castle.blend",
+      "front": "Previews/Front/Royal_Castle.png",
+      "three_quarter": "Previews/ThreeQuarter/Royal_Castle.png",
+      "triangles": 16084,
+      "mesh_parts": 364,
+      "materials": [
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Roof_Slate",
+        "Sign_Crown",
+        "Window_Amber",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -14.65,
+        -13.41,
+        0.0
+      ],
+      "maximum": [
+        14.65,
+        13.15,
+        17.62
+      ],
+      "role_identity": "Walled royal citadel; great keep with four corner spires, lower household ranges, open ceremonial gate, wall walks, defensive towers and large crown heraldry",
+      "top": "Previews/Top/Royal_Castle.png",
+      "display_name": "王城"
+    },
+    {
+      "name": "Signpost",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Signpost.blend",
+      "front": "Previews/Front/Signpost.png",
+      "three_quarter": "Previews/ThreeQuarter/Signpost.png",
+      "triangles": 76,
+      "mesh_parts": 3,
+      "materials": [
+        "Oak"
+      ],
+      "minimum": [
+        -0.85,
+        -0.09,
+        0.0
+      ],
+      "maximum": [
+        1.05,
+        0.075,
+        2.8
+      ],
+      "role_identity": "",
+      "display_name": "道標"
+    },
+    {
+      "name": "SpiritAcademy_Lv1",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/SpiritAcademy_Lv1.blend",
+      "front": "Previews/Front/SpiritAcademy_Lv1.png",
+      "three_quarter": "Previews/ThreeQuarter/SpiritAcademy_Lv1.png",
+      "triangles": 7774,
+      "mesh_parts": 182,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Roof_Moss",
+        "Sign_Spirit",
+        "Spirit_Trim",
+        "Terracotta",
+        "Water",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.0,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.0,
+        10.45,
+        12.52
+      ],
+      "role_identity": "Spirit academy level 1: garden-centred cloister compound, polygonal communion hall with green roof lantern, sacred tree, ritual water, rune markers and planted teaching courts",
+      "top": "Previews/Top/SpiritAcademy_Lv1.png",
+      "display_name": "精霊使役学校 Lv1"
+    },
+    {
+      "name": "SpiritAcademy_Lv2",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/SpiritAcademy_Lv2.blend",
+      "front": "Previews/Front/SpiritAcademy_Lv2.png",
+      "three_quarter": "Previews/ThreeQuarter/SpiritAcademy_Lv2.png",
+      "triangles": 9692,
+      "mesh_parts": 227,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Roof_Moss",
+        "Sign_Spirit",
+        "Spirit_Trim",
+        "Terracotta",
+        "Water",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.0,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.0,
+        10.45,
+        12.99
+      ],
+      "role_identity": "Spirit academy level 2: garden-centred cloister compound, polygonal communion hall with green roof lantern, sacred tree, ritual water, rune markers and planted teaching courts",
+      "top": "Previews/Top/SpiritAcademy_Lv2.png",
+      "display_name": "精霊使役学校 Lv2"
+    },
+    {
+      "name": "SpiritAcademy_Lv3",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/SpiritAcademy_Lv3.blend",
+      "front": "Previews/Front/SpiritAcademy_Lv3.png",
+      "three_quarter": "Previews/ThreeQuarter/SpiritAcademy_Lv3.png",
+      "triangles": 11610,
+      "mesh_parts": 272,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Roof_Moss",
+        "Sign_Spirit",
+        "Spirit_Trim",
+        "Terracotta",
+        "Water",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.0,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.0,
+        10.45,
+        13.46
+      ],
+      "role_identity": "Spirit academy level 3: garden-centred cloister compound, polygonal communion hall with green roof lantern, sacred tree, ritual water, rune markers and planted teaching courts",
+      "top": "Previews/Top/SpiritAcademy_Lv3.png",
+      "display_name": "精霊使役学校 Lv3"
+    },
+    {
+      "name": "SpiritAcademy_Lv4",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/SpiritAcademy_Lv4.blend",
+      "front": "Previews/Front/SpiritAcademy_Lv4.png",
+      "three_quarter": "Previews/ThreeQuarter/SpiritAcademy_Lv4.png",
+      "triangles": 12100,
+      "mesh_parts": 282,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Roof_Moss",
+        "Sign_Spirit",
+        "Spirit_Trim",
+        "Terracotta",
+        "Water",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.0,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.0,
+        10.45,
+        13.93
+      ],
+      "role_identity": "Spirit academy level 4: garden-centred cloister compound, polygonal communion hall with green roof lantern, sacred tree, ritual water, rune markers and planted teaching courts",
+      "top": "Previews/Top/SpiritAcademy_Lv4.png",
+      "display_name": "精霊使役学校 Lv4"
+    },
+    {
+      "name": "SpiritAcademy_Lv5",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/SpiritAcademy_Lv5.blend",
+      "front": "Previews/Front/SpiritAcademy_Lv5.png",
+      "three_quarter": "Previews/ThreeQuarter/SpiritAcademy_Lv5.png",
+      "triangles": 12904,
+      "mesh_parts": 302,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Roof_Moss",
+        "Sign_Spirit",
+        "Spirit_Trim",
+        "Terracotta",
+        "Water",
+        "Window_Green"
+      ],
+      "minimum": [
+        -10.0,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.0,
+        10.45,
+        14.4
+      ],
+      "role_identity": "Spirit academy level 5: garden-centred cloister compound, polygonal communion hall with green roof lantern, sacred tree, ritual water, rune markers and planted teaching courts",
+      "top": "Previews/Top/SpiritAcademy_Lv5.png",
+      "display_name": "精霊使役学校 Lv5"
+    },
+    {
+      "name": "Stable",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Stable.blend",
+      "front": "Previews/Front/Stable.png",
+      "three_quarter": "Previews/ThreeQuarter/Stable.png",
+      "triangles": 1662,
+      "mesh_parts": 48,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Oak",
+        "Sign_Stable",
+        "Thatch",
+        "Water"
+      ],
+      "minimum": [
+        -8.0,
+        -5.25,
+        0.0
+      ],
+      "maximum": [
+        8.0,
+        5.25,
+        6.3564
+      ],
+      "role_identity": "Long open stable range under a transverse thatch roof, divided horse stalls with half doors, hay bedding, feed bales, tack and drinking trough",
+      "display_name": "厩舎"
+    },
+    {
+      "name": "Streetlamp",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Streetlamp.blend",
+      "front": "Previews/Front/Streetlamp.png",
+      "three_quarter": "Previews/ThreeQuarter/Streetlamp.png",
+      "triangles": 240,
+      "mesh_parts": 8,
+      "materials": [
+        "Iron",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -0.4525,
+        -0.4525,
+        0.0
+      ],
+      "maximum": [
+        0.4525,
+        0.4525,
+        3.3
+      ],
+      "role_identity": "",
+      "display_name": "街灯"
+    },
+    {
+      "name": "Tavern",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Tavern.blend",
+      "front": "Previews/Front/Tavern.png",
+      "three_quarter": "Previews/ThreeQuarter/Tavern.png",
+      "triangles": 5500,
+      "mesh_parts": 115,
+      "materials": [
+        "Canvas_Gold",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Roof_Slate",
+        "Sign_Tavern",
+        "Terracotta",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -6.28,
+        -6.56,
+        0.0
+      ],
+      "maximum": [
+        6.13,
+        4.87,
+        9.3978
+      ],
+      "role_identity": "Large public feasting hall with tall cross-wing inn, sheltered communal beer terrace, ale barrels and prominent drinking sign",
+      "display_name": "酒場"
+    },
+    {
+      "name": "Tree_AlleyCypress",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Tree_AlleyCypress.blend",
+      "front": "Previews/Front/Tree_AlleyCypress.png",
+      "three_quarter": "Previews/ThreeQuarter/Tree_AlleyCypress.png",
+      "triangles": 780,
+      "mesh_parts": 24,
+      "materials": [
+        "Bark",
+        "Cypress_Card",
+        "Cypress_Foliage"
+      ],
+      "minimum": [
+        -1.05,
+        -1.1017,
+        -0.0
+      ],
+      "maximum": [
+        1.1278,
+        1.0763,
+        7.4045
+      ],
+      "role_identity": "",
+      "display_name": "糸杉"
+    },
+    {
+      "name": "Tree_Shade",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Tree_Shade.blend",
+      "front": "Previews/Front/Tree_Shade.png",
+      "three_quarter": "Previews/ThreeQuarter/Tree_Shade.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.8937,
+        -2.7869,
+        -0.0
+      ],
+      "maximum": [
+        2.0062,
+        2.668,
+        7.549
+      ],
+      "role_identity": "",
+      "display_name": "日陰の大樹"
+    },
+    {
+      "name": "Tree_Street",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Tree_Street.blend",
+      "front": "Previews/Front/Tree_Street.png",
+      "three_quarter": "Previews/ThreeQuarter/Tree_Street.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -2.3616,
+        -1.9123,
+        0.0
+      ],
+      "maximum": [
+        1.8135,
+        1.9682,
+        5.6151
+      ],
+      "role_identity": "",
+      "display_name": "街路樹"
+    },
+    {
+      "name": "VeiledCourtyard",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/VeiledCourtyard.blend",
+      "front": "Previews/Front/VeiledCourtyard.png",
+      "three_quarter": "Previews/ThreeQuarter/VeiledCourtyard.png",
+      "triangles": 7483,
+      "mesh_parts": 260,
+      "materials": [
+        "Brick",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Limestone",
+        "Oak",
+        "Plaster_Rose",
+        "Roof_Moss",
+        "Terracotta",
+        "Water",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -6.205,
+        -5.8525,
+        -0.0
+      ],
+      "maximum": [
+        6.205,
+        6.195,
+        7.435
+      ],
+      "role_identity": "Secluded three-wing residence around a fountain court, supported vaulted gateway and planted entrance",
+      "display_name": "中庭入口の館"
+    },
+    {
+      "name": "VelvetTerrace",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/VelvetTerrace.blend",
+      "front": "Previews/Front/VelvetTerrace.png",
+      "three_quarter": "Previews/ThreeQuarter/VelvetTerrace.png",
+      "triangles": 5595,
+      "mesh_parts": 218,
+      "materials": [
+        "Brick",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "HalfTimber_White",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Sign_Wine",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -4.755,
+        -5.67,
+        0.0
+      ],
+      "maximum": [
+        4.755,
+        4.445,
+        9.556
+      ],
+      "role_identity": "Residential terrace; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "バルコニーの館"
+    },
+    {
+      "name": "Warehouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/Warehouse.blend",
+      "front": "Previews/Front/Warehouse.png",
+      "three_quarter": "Previews/ThreeQuarter/Warehouse.png",
+      "triangles": 2363,
+      "mesh_parts": 67,
+      "materials": [
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Sign_Storage"
+      ],
+      "minimum": [
+        -5.63,
+        -7.9075,
+        0.0
+      ],
+      "maximum": [
+        5.65,
+        4.87,
+        11.3573
+      ],
+      "role_identity": "Freight warehouse with tall double loading doors, loft hatch, supported timber hoist, raised cargo dock and stacked shipping crates",
+      "display_name": "倉庫"
+    },
+    {
+      "name": "WarriorAcademy_Lv1",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/WarriorAcademy_Lv1.blend",
+      "front": "Previews/Front/WarriorAcademy_Lv1.png",
+      "three_quarter": "Previews/ThreeQuarter/WarriorAcademy_Lv1.png",
+      "triangles": 5647,
+      "mesh_parts": 125,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Roof_Clay",
+        "Thatch"
+      ],
+      "minimum": [
+        -10.2,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.2,
+        10.4,
+        8.1744
+      ],
+      "role_identity": "Warrior academy level 1: fortified gate and red-roofed drill compound, open sparring yard, weapons, shields, dummies and archery target",
+      "top": "Previews/Top/WarriorAcademy_Lv1.png",
+      "display_name": "戦士学校 Lv1"
+    },
+    {
+      "name": "WarriorAcademy_Lv2",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/WarriorAcademy_Lv2.blend",
+      "front": "Previews/Front/WarriorAcademy_Lv2.png",
+      "three_quarter": "Previews/ThreeQuarter/WarriorAcademy_Lv2.png",
+      "triangles": 6319,
+      "mesh_parts": 143,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Roof_Clay",
+        "Thatch"
+      ],
+      "minimum": [
+        -10.2,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.2,
+        10.4,
+        8.4044
+      ],
+      "role_identity": "Warrior academy level 2: fortified gate and red-roofed drill compound, open sparring yard, weapons, shields, dummies and archery target",
+      "top": "Previews/Top/WarriorAcademy_Lv2.png",
+      "display_name": "戦士学校 Lv2"
+    },
+    {
+      "name": "WarriorAcademy_Lv3",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/WarriorAcademy_Lv3.blend",
+      "front": "Previews/Front/WarriorAcademy_Lv3.png",
+      "three_quarter": "Previews/ThreeQuarter/WarriorAcademy_Lv3.png",
+      "triangles": 7261,
+      "mesh_parts": 169,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Roof_Clay",
+        "Thatch",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -10.2,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.2,
+        10.4,
+        8.6344
+      ],
+      "role_identity": "Warrior academy level 3: fortified gate and red-roofed drill compound, open sparring yard, weapons, shields, dummies and archery target",
+      "top": "Previews/Top/WarriorAcademy_Lv3.png",
+      "display_name": "戦士学校 Lv3"
+    },
+    {
+      "name": "WarriorAcademy_Lv4",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/WarriorAcademy_Lv4.blend",
+      "front": "Previews/Front/WarriorAcademy_Lv4.png",
+      "three_quarter": "Previews/ThreeQuarter/WarriorAcademy_Lv4.png",
+      "triangles": 9701,
+      "mesh_parts": 221,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Roof_Clay",
+        "Thatch",
+        "Window_Amber",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -10.2,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.2,
+        10.4,
+        8.8644
+      ],
+      "role_identity": "Warrior academy level 4: fortified gate and red-roofed drill compound, open sparring yard, weapons, shields, dummies and archery target",
+      "top": "Previews/Top/WarriorAcademy_Lv4.png",
+      "display_name": "戦士学校 Lv4"
+    },
+    {
+      "name": "WarriorAcademy_Lv5",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Academies/WarriorAcademy_Lv5.blend",
+      "front": "Previews/Front/WarriorAcademy_Lv5.png",
+      "three_quarter": "Previews/ThreeQuarter/WarriorAcademy_Lv5.png",
+      "triangles": 10505,
+      "mesh_parts": 241,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Roof_Clay",
+        "Thatch",
+        "Window_Amber",
+        "Window_Blue"
+      ],
+      "minimum": [
+        -10.2,
+        -9.6,
+        0.0
+      ],
+      "maximum": [
+        10.2,
+        10.4,
+        13.2321
+      ],
+      "role_identity": "Warrior academy level 5: fortified gate and red-roofed drill compound, open sparring yard, weapons, shields, dummies and archery target",
+      "top": "Previews/Top/WarriorAcademy_Lv5.png",
+      "display_name": "戦士学校 Lv5"
+    },
+    {
+      "name": "Water_Trough",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Water_Trough.blend",
+      "front": "Previews/Front/Water_Trough.png",
+      "three_quarter": "Previews/ThreeQuarter/Water_Trough.png",
+      "triangles": 222,
+      "mesh_parts": 6,
+      "materials": [
+        "Fieldstone",
+        "Water"
+      ],
+      "minimum": [
+        -1.18,
+        -0.51,
+        0.0
+      ],
+      "maximum": [
+        1.18,
+        0.51,
+        0.7
+      ],
+      "role_identity": "",
+      "display_name": "水飲み桶"
+    },
+    {
+      "name": "Well",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Well.blend",
+      "front": "Previews/Front/Well.png",
+      "three_quarter": "Previews/ThreeQuarter/Well.png",
+      "triangles": 438,
+      "mesh_parts": 9,
+      "materials": [
+        "DarkTimber",
+        "Fieldstone",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Roof_Clay"
+      ],
+      "minimum": [
+        -1.4,
+        -1.15,
+        0.0
+      ],
+      "maximum": [
+        1.42,
+        1.15,
+        4.0
+      ],
+      "role_identity": "",
+      "display_name": "井戸"
+    },
+    {
+      "name": "WorkshopHouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Buildings/WorkshopHouse.blend",
+      "front": "Previews/Front/WorkshopHouse.png",
+      "three_quarter": "Previews/ThreeQuarter/WorkshopHouse.png",
+      "triangles": 2546,
+      "mesh_parts": 81,
+      "materials": [
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Roof_Slate",
+        "Sign_Tools",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -5.48,
+        -3.5,
+        0.0
+      ],
+      "maximum": [
+        6.75,
+        4.47,
+        9.2495
+      ],
+      "role_identity": "Craftsman dwelling attached to a low open carpentry workshop, sloping supported shed roof, vise workbench, chisels, hand tools and seasoned timber stack",
+      "display_name": "工房付き住宅"
+    },
+    {
+      "name": "Fence_Panel",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Fence_Panel.blend",
+      "front": "Previews/Front/Fence_Panel.png",
+      "three_quarter": "Previews/ThreeQuarter/Fence_Panel.png",
+      "triangles": 200,
+      "mesh_parts": 6,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -2.18,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        2.18,
+        0.18,
+        1.8
+      ],
+      "role_identity": "",
+      "display_name": "木柵"
+    },
+    {
+      "name": "Fence_Post",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Fence_Post.blend",
+      "front": "Previews/Front/Fence_Post.png",
+      "three_quarter": "Previews/ThreeQuarter/Fence_Post.png",
+      "triangles": 56,
+      "mesh_parts": 2,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.18,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        0.18,
+        0.18,
+        1.8
+      ],
+      "role_identity": "",
+      "display_name": "柵の支柱"
+    },
+    {
+      "name": "Fence_Gate",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Fence_Gate.blend",
+      "front": "Previews/Front/Fence_Gate.png",
+      "three_quarter": "Previews/ThreeQuarter/Fence_Gate.png",
+      "triangles": 244,
+      "mesh_parts": 7,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -2.18,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        2.18,
+        0.18,
+        1.8
+      ],
+      "role_identity": "",
+      "display_name": "木の門扉"
+    },
+    {
+      "name": "Stone_Wall",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Wall.blend",
+      "front": "Previews/Front/Stone_Wall.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Wall.png",
+      "triangles": 88,
+      "mesh_parts": 2,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        0.425,
+        1.76
+      ],
+      "role_identity": "",
+      "display_name": "低い石塀"
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Wall_Corner.blend",
+      "front": "Previews/Front/Stone_Wall_Corner.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Wall_Corner.png",
+      "triangles": 40,
+      "mesh_parts": 2,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        3.625,
+        1.76
+      ],
+      "role_identity": "",
+      "display_name": "石塀の角"
+    },
+    {
+      "name": "Crate_Open",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Crate_Open.blend",
+      "front": "Previews/Front/Crate_Open.png",
+      "three_quarter": "Previews/ThreeQuarter/Crate_Open.png",
+      "triangles": 92,
+      "mesh_parts": 5,
+      "materials": [
+        "Oak"
+      ],
+      "minimum": [
+        -0.595,
+        -0.475,
+        0.0
+      ],
+      "maximum": [
+        0.595,
+        0.475,
+        0.88
+      ],
+      "role_identity": "",
+      "display_name": "開いた木箱"
+    },
+    {
+      "name": "Grain_Sack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Grain_Sack.blend",
+      "front": "Previews/Front/Grain_Sack.png",
+      "three_quarter": "Previews/ThreeQuarter/Grain_Sack.png",
+      "triangles": 328,
+      "mesh_parts": 2,
+      "materials": [
+        "Linen"
+      ],
+      "minimum": [
+        -0.4375,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.4375,
+        0.35,
+        1.368
+      ],
+      "role_identity": "",
+      "display_name": "穀物袋"
+    },
+    {
+      "name": "Produce_Basket",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Produce_Basket.blend",
+      "front": "Previews/Front/Produce_Basket.png",
+      "three_quarter": "Previews/ThreeQuarter/Produce_Basket.png",
+      "triangles": 1616,
+      "mesh_parts": 6,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "Thatch"
+      ],
+      "minimum": [
+        -0.45,
+        -0.45,
+        0.0
+      ],
+      "maximum": [
+        0.45,
+        0.45,
+        0.77
+      ],
+      "role_identity": "",
+      "display_name": "青果かご"
+    },
+    {
+      "name": "Planter",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Planter.blend",
+      "front": "Previews/Front/Planter.png",
+      "three_quarter": "Previews/ThreeQuarter/Planter.png",
+      "triangles": 456,
+      "mesh_parts": 21,
+      "materials": [
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card",
+        "Terracotta"
+      ],
+      "minimum": [
+        -0.624,
+        -0.624,
+        0.0
+      ],
+      "maximum": [
+        0.624,
+        0.624,
+        1.4654
+      ],
+      "role_identity": "",
+      "display_name": "花の植木鉢"
+    },
+    {
+      "name": "Drain_Grate",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Drain_Grate.blend",
+      "front": "Previews/Front/Drain_Grate.png",
+      "three_quarter": "Previews/ThreeQuarter/Drain_Grate.png",
+      "triangles": 52,
+      "mesh_parts": 6,
+      "materials": [
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate"
+      ],
+      "minimum": [
+        -0.6,
+        -0.6,
+        0.0
+      ],
+      "maximum": [
+        0.6,
+        0.6,
+        0.096
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Drain_Grate.png",
+      "display_name": "排水溝の蓋"
+    },
+    {
+      "name": "Bollard",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Bollard.blend",
+      "front": "Previews/Front/Bollard.png",
+      "three_quarter": "Previews/ThreeQuarter/Bollard.png",
+      "triangles": 124,
+      "mesh_parts": 1,
+      "materials": [
+        "Limestone"
+      ],
+      "minimum": [
+        -0.24,
+        -0.24,
+        0.0
+      ],
+      "maximum": [
+        0.24,
+        0.24,
+        0.95
+      ],
+      "role_identity": "",
+      "display_name": "車止め"
+    },
+    {
+      "name": "Bucket",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Bucket.blend",
+      "front": "Previews/Front/Bucket.png",
+      "three_quarter": "Previews/ThreeQuarter/Bucket.png",
+      "triangles": 564,
+      "mesh_parts": 19,
+      "materials": [
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -0.3624,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.3624,
+        0.35,
+        0.9624
+      ],
+      "role_identity": "",
+      "display_name": "木のバケツ"
+    },
+    {
+      "name": "Fish_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Fish_Stall.blend",
+      "front": "Previews/Front/Fish_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Fish_Stall.png",
+      "triangles": 2739,
+      "mesh_parts": 54,
+      "materials": [
+        "Canvas_Blue",
+        "DarkTimber",
+        "Fish",
+        "Fish_Skin",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Sign_Fish",
+        "Thatch"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "魚の露店"
+    },
+    {
+      "name": "Bread_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Bread_Stall.blend",
+      "front": "Previews/Front/Bread_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Bread_Stall.png",
+      "triangles": 5908,
+      "mesh_parts": 32,
+      "materials": [
+        "Bread",
+        "Bread_Crust",
+        "Canvas_Gold",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Bread",
+        "Thatch"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "パンの露店"
+    },
+    {
+      "name": "Spice_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Spice_Stall.blend",
+      "front": "Previews/Front/Spice_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Spice_Stall.png",
+      "triangles": 3058,
+      "mesh_parts": 29,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Spice",
+        "Spice_Ochre",
+        "Spice_Red",
+        "Spice_Salt",
+        "Terracotta",
+        "Thatch"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "香辛料の露店"
+    },
+    {
+      "name": "Flower_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Flower_Stall.blend",
+      "front": "Previews/Front/Flower_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Flower_Stall.png",
+      "triangles": 2966,
+      "mesh_parts": 109,
+      "materials": [
+        "Canvas_Green",
+        "DarkTimber",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Oak",
+        "Sign_Flower",
+        "Terracotta"
+      ],
+      "minimum": [
+        -2.1412,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        2.1412,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "花の露店"
+    },
+    {
+      "name": "Butcher_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Butcher_Stall.blend",
+      "front": "Previews/Front/Butcher_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Butcher_Stall.png",
+      "triangles": 3802,
+      "mesh_parts": 33,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Linen",
+        "Meat",
+        "Oak",
+        "Sign_Meat"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "肉の露店"
+    },
+    {
+      "name": "Potion_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Potion_Stall.blend",
+      "front": "Previews/Front/Potion_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Potion_Stall.png",
+      "triangles": 7846,
+      "mesh_parts": 56,
+      "materials": [
+        "Canvas_Blue",
+        "Cork",
+        "DarkTimber",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Sign_Potion"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "薬の露店"
+    },
+    {
+      "name": "Book_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Book_Stall.blend",
+      "front": "Previews/Front/Book_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Book_Stall.png",
+      "triangles": 2014,
+      "mesh_parts": 56,
+      "materials": [
+        "Canvas_Green",
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Sign_Book",
+        "Thatch"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "古書の露店"
+    },
+    {
+      "name": "Weapon_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Blender/Assets/Market/Weapon_Stall.blend",
+      "front": "Previews/Front/Weapon_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Weapon_Stall.png",
+      "triangles": 1310,
+      "mesh_parts": 40,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Smith"
+      ],
+      "minimum": [
+        -1.68,
+        -1.31,
+        0.0
+      ],
+      "maximum": [
+        1.68,
+        1.2,
+        2.94
+      ],
+      "role_identity": "",
+      "display_name": "武器の露店"
+    },
+    {
+      "name": "Covered_Wagon",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Covered_Wagon.blend",
+      "front": "Previews/Front/Covered_Wagon.png",
+      "three_quarter": "Previews/ThreeQuarter/Covered_Wagon.png",
+      "triangles": 1328,
+      "mesh_parts": 29,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Linen",
+        "Oak"
+      ],
+      "minimum": [
+        -1.35,
+        -3.8031,
+        0.0
+      ],
+      "maximum": [
+        1.35,
+        2.06,
+        2.72
+      ],
+      "role_identity": "",
+      "display_name": "幌馬車"
+    },
+    {
+      "name": "Merchant_Wagon",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Merchant_Wagon.blend",
+      "front": "Previews/Front/Merchant_Wagon.png",
+      "three_quarter": "Previews/ThreeQuarter/Merchant_Wagon.png",
+      "triangles": 1516,
+      "mesh_parts": 31,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -1.35,
+        -3.8031,
+        0.0
+      ],
+      "maximum": [
+        1.35,
+        2.06,
+        1.89
+      ],
+      "role_identity": "",
+      "display_name": "商人の荷馬車"
+    },
+    {
+      "name": "Wheelbarrow",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Wheelbarrow.blend",
+      "front": "Previews/Front/Wheelbarrow.png",
+      "three_quarter": "Previews/ThreeQuarter/Wheelbarrow.png",
+      "triangles": 444,
+      "mesh_parts": 14,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.545,
+        -1.04,
+        0.0
+      ],
+      "maximum": [
+        0.545,
+        1.6,
+        1.35
+      ],
+      "role_identity": "",
+      "display_name": "一輪手押し車"
+    },
+    {
+      "name": "Market_Scale",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Market_Scale.blend",
+      "front": "Previews/Front/Market_Scale.png",
+      "three_quarter": "Previews/ThreeQuarter/Market_Scale.png",
+      "triangles": 268,
+      "mesh_parts": 9,
+      "materials": [
+        "Brass",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -0.89,
+        -0.3,
+        0.0
+      ],
+      "maximum": [
+        0.89,
+        0.3,
+        1.5
+      ],
+      "role_identity": "",
+      "display_name": "市場の天秤"
+    },
+    {
+      "name": "Basket_Empty",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Basket_Empty.blend",
+      "front": "Previews/Front/Basket_Empty.png",
+      "three_quarter": "Previews/ThreeQuarter/Basket_Empty.png",
+      "triangles": 236,
+      "mesh_parts": 1,
+      "materials": [
+        "Thatch"
+      ],
+      "minimum": [
+        -0.45,
+        -0.45,
+        0.0
+      ],
+      "maximum": [
+        0.45,
+        0.45,
+        0.61
+      ],
+      "role_identity": "",
+      "display_name": "空のかご"
+    },
+    {
+      "name": "Pottery_Jars",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Pottery_Jars.blend",
+      "front": "Previews/Front/Pottery_Jars.png",
+      "three_quarter": "Previews/ThreeQuarter/Pottery_Jars.png",
+      "triangles": 852,
+      "mesh_parts": 3,
+      "materials": [
+        "Terracotta"
+      ],
+      "minimum": [
+        -0.75,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.64,
+        0.78,
+        0.9
+      ],
+      "role_identity": "",
+      "display_name": "陶器の壺"
+    },
+    {
+      "name": "Sack_Stack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Sack_Stack.blend",
+      "front": "Previews/Front/Sack_Stack.png",
+      "three_quarter": "Previews/ThreeQuarter/Sack_Stack.png",
+      "triangles": 984,
+      "mesh_parts": 6,
+      "materials": [
+        "Linen"
+      ],
+      "minimum": [
+        -0.8375,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.8375,
+        0.45,
+        2.168
+      ],
+      "role_identity": "",
+      "display_name": "積まれた穀物袋"
+    },
+    {
+      "name": "Vegetable_Crate",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Vegetable_Crate.blend",
+      "front": "Previews/Front/Vegetable_Crate.png",
+      "three_quarter": "Previews/ThreeQuarter/Vegetable_Crate.png",
+      "triangles": 1748,
+      "mesh_parts": 11,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "Oak"
+      ],
+      "minimum": [
+        -0.595,
+        -0.475,
+        0.0
+      ],
+      "maximum": [
+        0.595,
+        0.475,
+        1.06
+      ],
+      "role_identity": "",
+      "display_name": "野菜の木箱"
+    },
+    {
+      "name": "Fish_Crate",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Fish_Crate.blend",
+      "front": "Previews/Front/Fish_Crate.png",
+      "three_quarter": "Previews/ThreeQuarter/Fish_Crate.png",
+      "triangles": 418,
+      "mesh_parts": 11,
+      "materials": [
+        "Fish_Skin",
+        "Oak"
+      ],
+      "minimum": [
+        -0.595,
+        -0.475,
+        0.0
+      ],
+      "maximum": [
+        0.595,
+        0.475,
+        1.15
+      ],
+      "role_identity": "",
+      "display_name": "魚の木箱"
+    },
+    {
+      "name": "Bread_Basket",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Bread_Basket.blend",
+      "front": "Previews/Front/Bread_Basket.png",
+      "three_quarter": "Previews/ThreeQuarter/Bread_Basket.png",
+      "triangles": 996,
+      "mesh_parts": 3,
+      "materials": [
+        "Bread_Crust",
+        "Thatch"
+      ],
+      "minimum": [
+        -0.45,
+        -0.45,
+        0.0
+      ],
+      "maximum": [
+        0.45,
+        0.45,
+        0.793
+      ],
+      "role_identity": "",
+      "display_name": "パンのかご"
+    },
+    {
+      "name": "Rolled_Fabric",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Rolled_Fabric.blend",
+      "front": "Previews/Front/Rolled_Fabric.png",
+      "three_quarter": "Previews/ThreeQuarter/Rolled_Fabric.png",
+      "triangles": 228,
+      "mesh_parts": 3,
+      "materials": [
+        "Canvas_Blue",
+        "Canvas_Gold",
+        "Canvas_Red"
+      ],
+      "minimum": [
+        -0.59,
+        -0.19,
+        0.0
+      ],
+      "maximum": [
+        0.59,
+        0.19,
+        1.45
+      ],
+      "role_identity": "",
+      "display_name": "巻いた布地"
+    },
+    {
+      "name": "Hanging_Herbs",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Hanging_Herbs.blend",
+      "front": "Previews/Front/Hanging_Herbs.png",
+      "three_quarter": "Previews/ThreeQuarter/Hanging_Herbs.png",
+      "triangles": 108,
+      "mesh_parts": 19,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Leaf_Card",
+        "Linen"
+      ],
+      "minimum": [
+        -1.2,
+        -0.225,
+        0.0
+      ],
+      "maximum": [
+        1.2,
+        0.3,
+        1.115
+      ],
+      "role_identity": "",
+      "display_name": "干した薬草"
+    },
+    {
+      "name": "Shop_Sign",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Shop_Sign.blend",
+      "front": "Previews/Front/Shop_Sign.png",
+      "three_quarter": "Previews/ThreeQuarter/Shop_Sign.png",
+      "triangles": 58,
+      "mesh_parts": 3,
+      "materials": [
+        "Iron",
+        "Oak",
+        "Sign_Trade"
+      ],
+      "minimum": [
+        -0.55,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        0.55,
+        0.18,
+        2.8
+      ],
+      "role_identity": "",
+      "display_name": "吊り看板"
+    },
+    {
+      "name": "Shield_Rack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Shield_Rack.blend",
+      "front": "Previews/Front/Shield_Rack.png",
+      "three_quarter": "Previews/ThreeQuarter/Shield_Rack.png",
+      "triangles": 141,
+      "mesh_parts": 6,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        -0.1,
+        0.0
+      ],
+      "maximum": [
+        1.05,
+        0.08,
+        2.0
+      ],
+      "role_identity": "",
+      "display_name": "盾掛け"
+    },
+    {
+      "name": "Weapon_Rack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Weapon_Rack.blend",
+      "front": "Previews/Front/Weapon_Rack.png",
+      "three_quarter": "Previews/ThreeQuarter/Weapon_Rack.png",
+      "triangles": 240,
+      "mesh_parts": 12,
+      "materials": [
+        "Brass",
+        "DarkTimber",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        -0.145,
+        0.0
+      ],
+      "maximum": [
+        1.05,
+        0.08,
+        2.0
+      ],
+      "role_identity": "",
+      "display_name": "剣掛け"
+    },
+    {
+      "name": "Training_Dummy",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Training_Dummy.blend",
+      "front": "Previews/Front/Training_Dummy.png",
+      "three_quarter": "Previews/ThreeQuarter/Training_Dummy.png",
+      "triangles": 476,
+      "mesh_parts": 5,
+      "materials": [
+        "DarkTimber",
+        "Linen",
+        "Oak",
+        "Thatch"
+      ],
+      "minimum": [
+        -0.8,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.8,
+        0.35,
+        2.2
+      ],
+      "role_identity": "",
+      "display_name": "訓練人形"
+    },
+    {
+      "name": "Fountain",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Fountain.blend",
+      "front": "Previews/Front/Fountain.png",
+      "three_quarter": "Previews/ThreeQuarter/Fountain.png",
+      "triangles": 676,
+      "mesh_parts": 3,
+      "materials": [
+        "Limestone",
+        "Water"
+      ],
+      "minimum": [
+        -1.5,
+        -1.5,
+        0.0
+      ],
+      "maximum": [
+        1.5,
+        1.5,
+        2.0
+      ],
+      "role_identity": "",
+      "display_name": "噴水"
+    },
+    {
+      "name": "Wash_Tub",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Wash_Tub.blend",
+      "front": "Previews/Front/Wash_Tub.png",
+      "three_quarter": "Previews/ThreeQuarter/Wash_Tub.png",
+      "triangles": 374,
+      "mesh_parts": 4,
+      "materials": [
+        "Iron",
+        "Oak",
+        "Water"
+      ],
+      "minimum": [
+        -0.8,
+        -0.8,
+        0.0
+      ],
+      "maximum": [
+        0.8,
+        0.8,
+        0.55
+      ],
+      "role_identity": "",
+      "display_name": "洗い桶"
+    },
+    {
+      "name": "Street_Brazier",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Street_Brazier.blend",
+      "front": "Previews/Front/Street_Brazier.png",
+      "three_quarter": "Previews/ThreeQuarter/Street_Brazier.png",
+      "triangles": 232,
+      "mesh_parts": 4,
+      "materials": [
+        "Iron"
+      ],
+      "minimum": [
+        -0.5,
+        -0.5,
+        0.0
+      ],
+      "maximum": [
+        0.5,
+        0.5,
+        1.1073
+      ],
+      "role_identity": "",
+      "display_name": "街路の火鉢"
+    },
+    {
+      "name": "Hanging_Lantern",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Hanging_Lantern.blend",
+      "front": "Previews/Front/Hanging_Lantern.png",
+      "three_quarter": "Previews/ThreeQuarter/Hanging_Lantern.png",
+      "triangles": 884,
+      "mesh_parts": 8,
+      "materials": [
+        "Iron",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -0.4525,
+        -0.4525,
+        0.0
+      ],
+      "maximum": [
+        0.4525,
+        0.4525,
+        1.075
+      ],
+      "role_identity": "",
+      "display_name": "吊りランタン"
+    },
+    {
+      "name": "Windmill",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Blender/Assets/Buildings/Windmill.blend",
+      "front": "Previews/Front/Windmill.png",
+      "three_quarter": "Previews/ThreeQuarter/Windmill.png",
+      "triangles": 2678,
+      "mesh_parts": 56,
+      "materials": [
+        "DarkTimber",
+        "Door_Oak",
+        "Iron",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Sign_Grain",
+        "Thatch",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -4.7713,
+        -3.83,
+        0.0
+      ],
+      "maximum": [
+        4.7713,
+        3.25,
+        12.3713
+      ],
+      "role_identity": "Tapering round masonry windmill with rotating thatch cap, shaft bearing, four framed linen sails and grain handling crates",
+      "display_name": "風車小屋"
+    },
+    {
+      "name": "Watermill",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Blender/Assets/Buildings/Watermill.blend",
+      "front": "Previews/Front/Watermill.png",
+      "three_quarter": "Previews/ThreeQuarter/Watermill.png",
+      "triangles": 3728,
+      "mesh_parts": 81,
+      "materials": [
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Sign_Grain",
+        "Thatch",
+        "Water",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -3.88,
+        -6.5,
+        0.0
+      ],
+      "maximum": [
+        6.55,
+        6.5,
+        8.5542
+      ],
+      "role_identity": "Long timber mill hall with connected axle and radial paddle wheel, flowing stone-banked millrace and external bearing pier",
+      "display_name": "水車小屋"
+    },
+    {
+      "name": "Market_Hall",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Blender/Assets/Buildings/Market_Hall.blend",
+      "front": "Previews/Front/Market_Hall.png",
+      "three_quarter": "Previews/ThreeQuarter/Market_Hall.png",
+      "triangles": 18836,
+      "mesh_parts": 163,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "Bread_Crust",
+        "Cabbage",
+        "Canvas_Blue",
+        "Canvas_Gold",
+        "Canvas_Red",
+        "Carrot",
+        "Cobble",
+        "Cork",
+        "DarkTimber",
+        "Foliage",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Limestone",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Roof_Clay",
+        "Sign_Trade"
+      ],
+      "minimum": [
+        -8.4,
+        -5.75,
+        0.0
+      ],
+      "maximum": [
+        8.4,
+        5.75,
+        8.8627
+      ],
+      "role_identity": "Open timber trading hall with real full-span roof trusses, stone-shod posts, four stocked counters, rear cargo aisle and trading crest",
+      "display_name": "市場会館"
+    },
+    {
+      "name": "Watchtower",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Blender/Assets/Buildings/Watchtower.blend",
+      "front": "Previews/Front/Watchtower.png",
+      "three_quarter": "Previews/ThreeQuarter/Watchtower.png",
+      "triangles": 1312,
+      "mesh_parts": 44,
+      "materials": [
+        "DarkTimber",
+        "Fieldstone",
+        "Iron",
+        "Oak",
+        "Roof_Slate",
+        "Sign_Guard"
+      ],
+      "minimum": [
+        -2.53,
+        -4.4418,
+        0.0
+      ],
+      "maximum": [
+        2.53,
+        2.45,
+        10.18
+      ],
+      "role_identity": "Braced timber watchtower on stone footing, accessible lookout ladder, railed observation deck and supported slate canopy",
+      "display_name": "見張り塔"
+    },
+    {
+      "name": "Stone_Bridge",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Bridge.blend",
+      "front": "Previews/Front/Stone_Bridge.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Bridge.png",
+      "triangles": 492,
+      "mesh_parts": 8,
+      "materials": [
+        "Cobble",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.01,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        2.01,
+        4.0,
+        3.165
+      ],
+      "role_identity": "",
+      "display_name": "石橋"
+    },
+    {
+      "name": "Wooden_Bridge",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Wooden_Bridge.blend",
+      "front": "Previews/Front/Wooden_Bridge.png",
+      "three_quarter": "Previews/ThreeQuarter/Wooden_Bridge.png",
+      "triangles": 2664,
+      "mesh_parts": 72,
+      "materials": [
+        "DarkTimber",
+        "Fieldstone",
+        "Oak"
+      ],
+      "minimum": [
+        -1.85,
+        -4.065,
+        0.0
+      ],
+      "maximum": [
+        1.85,
+        4.065,
+        1.84
+      ],
+      "role_identity": "",
+      "display_name": "木橋"
+    },
+    {
+      "name": "Dock_Section",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Dock_Section.blend",
+      "front": "Previews/Front/Dock_Section.png",
+      "three_quarter": "Previews/ThreeQuarter/Dock_Section.png",
+      "triangles": 284,
+      "mesh_parts": 5,
+      "materials": [
+        "Bark",
+        "Oak"
+      ],
+      "minimum": [
+        -1.5,
+        -2.5,
+        0.0
+      ],
+      "maximum": [
+        1.5,
+        2.5,
+        1.3
+      ],
+      "role_identity": "",
+      "display_name": "桟橋"
+    },
+    {
+      "name": "Stone_Stairs",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Stairs.blend",
+      "front": "Previews/Front/Stone_Stairs.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Stairs.png",
+      "triangles": 60,
+      "mesh_parts": 1,
+      "materials": [
+        "Limestone"
+      ],
+      "minimum": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "maximum": [
+        1.0,
+        2.38,
+        1.26
+      ],
+      "role_identity": "",
+      "display_name": "石の階段"
+    },
+    {
+      "name": "Wooden_Stairs",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Wooden_Stairs.blend",
+      "front": "Previews/Front/Wooden_Stairs.png",
+      "three_quarter": "Previews/ThreeQuarter/Wooden_Stairs.png",
+      "triangles": 772,
+      "mesh_parts": 19,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        -0.01,
+        0.0
+      ],
+      "maximum": [
+        1.05,
+        2.39,
+        2.1856
+      ],
+      "role_identity": "",
+      "display_name": "木の階段"
+    },
+    {
+      "name": "Outhouse",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Blender/Assets/Buildings/Outhouse.blend",
+      "front": "Previews/Front/Outhouse.png",
+      "three_quarter": "Previews/ThreeQuarter/Outhouse.png",
+      "triangles": 157,
+      "mesh_parts": 10,
+      "materials": [
+        "Door_Oak",
+        "Fieldstone",
+        "Iron_Grate",
+        "Limestone",
+        "Oak",
+        "Thatch",
+        "Weathering"
+      ],
+      "minimum": [
+        -1.225,
+        -1.485,
+        0.0
+      ],
+      "maximum": [
+        1.225,
+        1.275,
+        3.05
+      ],
+      "role_identity": "Residential outhouse; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "屋外便所"
+    }
+  ]
+}

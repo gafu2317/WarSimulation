@@ -9,7 +9,7 @@ from mathutils import Vector, Matrix
 
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
 SOURCE=os.path.join(ROOT,'ArtSource','Blender','FantasyTownProps.blend')
-REVIEW=os.path.join(ROOT,'docs','Art','FantasyTownProps')
+REVIEW=os.path.join(ROOT,'docs','Art','Records', 'TownProps')
 sys.dont_write_bytecode=True
 spec=importlib.util.spec_from_file_location('civic_props',os.path.join(os.path.dirname(__file__),'generate_fantasy_civic_facilities.py'))
 m=importlib.util.module_from_spec(spec)

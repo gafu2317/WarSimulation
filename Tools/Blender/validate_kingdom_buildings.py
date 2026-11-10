@@ -7,7 +7,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REVIEW = os.path.join(ROOT, "docs/Art/KingdomBuildings")
+REVIEW = os.path.join(ROOT, "docs/Art/Records/Legacy/KingdomBuildings")
 with open(os.path.join(REVIEW, "model_manifest.json")) as handle:
     manifest = json.load(handle)
 results = []

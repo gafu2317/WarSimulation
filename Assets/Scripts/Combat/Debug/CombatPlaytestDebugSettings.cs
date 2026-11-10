@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// プレイテスト用デバッグ表示。既定は表示OFF。編成画面のトグル／詳細設定から切り替える。
+/// プレイテスト用デバッグ表示。既定は表示OFF。
 /// </summary>
 public static class CombatPlaytestDebugSettings
 {

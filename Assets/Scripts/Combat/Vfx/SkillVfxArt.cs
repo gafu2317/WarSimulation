@@ -22,7 +22,8 @@ public static partial class SkillVfxArt
         SkillId.Wand_Bolt => SkillVfxShape.WindSpiral,
         SkillId.Wand_ArcaneBlast => SkillVfxShape.ExplosionCore,
         SkillId.Wand_AreaBlast => SkillVfxShape.ExplosionFlameFront,
-        SkillId.Wand_GodsHand => SkillVfxShape.Hand,
+        SkillId.Wand_GodsHand or SkillId.Player_AreaMagic => SkillVfxShape.Hand,
+        SkillId.Player_AllInvulnerable => SkillVfxShape.Shield,
         SkillId.Grimoire_Bind => SkillVfxShape.Chain,
         SkillId.Grimoire_Poison => SkillVfxShape.Skull,
         SkillId.Grimoire_Stealth => SkillVfxShape.Smoke,
@@ -39,7 +40,8 @@ public static partial class SkillVfxArt
     };
 
     public static float PreviewLead(SkillId id) => id == SkillId.Wand_GodsHand
-        ? CombatSkillFactory.Create(id).CastTimeSeconds : SkillVfxEffect.IsProjectile(id) ? .45f : 0;
+        ? CombatSkillFactory.Create(id).CastTimeSeconds : CombatPlayerMagicSettings.IsPlayerMagic(id)
+            ? CombatPlayerMagicSettings.CastSeconds(id) : SkillVfxEffect.IsProjectile(id) ? .45f : 0;
 
     public static float Duration(SkillId id) => id switch
     {
@@ -47,7 +49,7 @@ public static partial class SkillVfxArt
         SkillId.Sword_StrongSlash => .85f,
         SkillId.Shield_Slash or SkillId.Rosary_Strike or SkillId.Bible_Smite => .75f,
         SkillId.Wand_Bolt or SkillId.Grimoire_Bolt => .8f,
-        SkillId.Wand_ArcaneBlast or SkillId.Wand_AreaBlast or SkillId.Wand_GodsHand => 1.8f,
+        SkillId.Wand_ArcaneBlast or SkillId.Wand_AreaBlast or SkillId.Wand_GodsHand or SkillId.Player_AreaMagic => 1.8f,
         SkillId.Rosary_CloseHeal => 1.65f,
         SkillId.Rosary_SacrificeThunder => 1.8f,
         _ => 1.3f
@@ -66,6 +68,8 @@ public static partial class SkillVfxArt
         SkillId.Wand_ArcaneBlast => new(1f, .18f, .055f),
         SkillId.Wand_AreaBlast => new(1, .34f, .08f),
         SkillId.Wand_GodsHand => new(1, .83f, .42f),
+        SkillId.Player_AreaMagic => CombatPlayerMagicSettings.Default.AreaColor,
+        SkillId.Player_AllInvulnerable => BuffOrange,
         SkillId.Grimoire_Bolt => new(.65f, .22f, .85f),
         SkillId.Grimoire_StrDebuff or SkillId.StatDebuff_INT or SkillId.StatDebuff_FAI or
         SkillId.StatDebuff_AGI or SkillId.Grimoire_Bind or SkillId.Grimoire_Poison => DebuffBluePurple,
@@ -91,20 +95,23 @@ public static partial class SkillVfxArt
             return;
         }
         Vector3 p = self + Vector3.up * 1.2f;
-        if (id == SkillId.Wand_GodsHand)
+        if (id is SkillId.Wand_GodsHand or SkillId.Player_AreaMagic)
         {
+            float extent = id == SkillId.Player_AreaMagic ? radius / 3f : 1;
+            Color tint = id == SkillId.Player_AreaMagic ? c : Gold;
             float scale = .82f
                 + .73f * Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.23f, .33f, u))
                 + 1.05f * Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.50f, .62f, u));
+            scale *= extent;
             float descend = Ease(u - .84f, .08f);
-            Vector3 hand = target + Vector3.up * (3.35f * (1 - descend) + .15f);
+            Vector3 hand = target + Vector3.up * ((3.35f * (1 - descend) + .15f) * extent);
             Fist(m, hand, scale, A(White, Mathf.Clamp01(u * 4)));
-            Halo(m, hand + m.Up * scale * .75f, scale * .58f, A(Gold, .85f));
+            Halo(m, hand + m.Up * scale * .75f, scale * .58f, A(tint, .85f));
             float falling = In(u - .82f, .025f) * Out(u, .92f, .98f);
             if (falling > 0)
                 for (int side = -1; side <= 1; side += 2)
-                    Sprite(m, SkillVfxShape.Ray, target + m.Up * (2.55f + 1.25f * (1 - descend)) + m.Right * side * 1.05f,
-                        .16f, 2.35f, 0, A(Gold, falling * .9f));
+                    Sprite(m, SkillVfxShape.Ray, target + m.Up * ((2.55f + 1.25f * (1 - descend)) * extent) + m.Right * side * 1.05f * extent,
+                        .16f * extent, 2.35f * extent, 0, A(tint, falling * .9f));
             return;
         }
         if (id == SkillId.Wand_Bolt)
@@ -253,7 +260,9 @@ public static partial class SkillVfxArt
             case SkillId.Wand_Bolt: BoltHit(m, p, t, c); break;
             case SkillId.Wand_ArcaneBlast: ArcaneBlast(m, p, target, t, c); break;
             case SkillId.Wand_AreaBlast: AreaBlast(m, point, t, radius, c); break;
-            case SkillId.Wand_GodsHand: GodsHand(m, target, t); break;
+            case SkillId.Wand_GodsHand: GodsHand(m, target, t, Gold); break;
+            case SkillId.Player_AreaMagic: GodsHand(m, point, t, c, radius / 3f); break;
+            case SkillId.Player_AllInvulnerable: Blessing(m, SkillId.Bible_Invulnerable, target, p, t, c); break;
             case SkillId.Grimoire_Bolt:
             case SkillId.Grimoire_StrDebuff:
             case SkillId.StatDebuff_INT:

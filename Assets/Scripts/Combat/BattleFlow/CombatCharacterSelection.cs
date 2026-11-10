@@ -16,6 +16,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private static readonly float[] CameraSpeedMultipliers = { 1f, 2f, 4f };
     private static readonly CombatStat[] AdjustableStats =
     {
+        CombatStat.HP,
         CombatStat.STR,
         CombatStat.INT,
         CombatStat.FAI,
@@ -49,25 +50,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         CombatAiPersonalityKind.Devoted,
     };
 
-    private static readonly EnemyPresetDefinition EnemyStrongPreset = new(
-        "最強編成",
-        new[]
-        {
-            WeaponKind.Sword,
-            WeaponKind.Sword,
-            WeaponKind.Wand,
-            WeaponKind.Wand,
-            WeaponKind.Rosary,
-        },
-        new[]
-        {
-            CombatAiPersonalityKind.Reckless,
-            CombatAiPersonalityKind.Reckless,
-            CombatAiPersonalityKind.Reckless,
-            CombatAiPersonalityKind.Reckless,
-            CombatAiPersonalityKind.Devoted,
-        });
-
     private static readonly EnemyPresetDefinition EnemyStandardPreset = new(
         "テテSnレ",
         new[]
@@ -90,114 +72,70 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private static readonly EnemyPresetDefinition[] EnemyTopPresets =
     {
         new(
-            "0通常",
-            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Rosary },
-            new[]
-            {
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.Lonely,
-            }),
-        new(
-            "0逆",
-            new[] { WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary },
+            "候補1・聖書戦闘狂",
+            new[] { WeaponKind.Sword, WeaponKind.Shield, WeaponKind.Wand, WeaponKind.Bible, WeaponKind.Rosary },
             new[]
             {
                 CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Neutral,
                 CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.Lonely,
-                CombatAiPersonalityKind.Lonely,
+                CombatAiPersonalityKind.Devoted,
             }),
         new(
-            "3通常",
-            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Rosary, WeaponKind.Rosary, WeaponKind.Rosary },
+            "候補2・杖便乗屋",
+            new[] { WeaponKind.Sword, WeaponKind.Shield, WeaponKind.Wand, WeaponKind.Bible, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Tagalong,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "候補3・剣陽キャ",
+            new[] { WeaponKind.Sword, WeaponKind.Shield, WeaponKind.Wand, WeaponKind.Bible, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.AttentionSeeker,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "森林・湿地向け\n復讐鬼＋影薄い",
+            new[] { WeaponKind.Sword, WeaponKind.Shield, WeaponKind.Wand, WeaponKind.Bible, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Devoted,
+                CombatAiPersonalityKind.Avenger,
+                CombatAiPersonalityKind.LowPresence,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "対猪突猛進\n戦闘狂＋便乗屋",
+            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Shield, WeaponKind.Bible, WeaponKind.Rosary },
+            new[]
+            {
+                CombatAiPersonalityKind.BattleJunkie,
+                CombatAiPersonalityKind.Tagalong,
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Neutral,
+                CombatAiPersonalityKind.Devoted,
+            }),
+        new(
+            "平地・丘陵・森林向け\n混合編成",
+            new[] { WeaponKind.Rosary, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Sword, WeaponKind.Wand },
             new[]
             {
                 CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-            }),
-        new(
-            "3逆",
-            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Grimoire, WeaponKind.Grimoire },
-            new[]
-            {
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-            }),
-        new(
-            "5通常",
-            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Bible, WeaponKind.Bible, WeaponKind.Rosary },
-            new[]
-            {
-                CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-            }),
-        new(
-            "5逆",
-            new[] { WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary, WeaponKind.Rosary },
-            new[]
-            {
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-                CombatAiPersonalityKind.Devoted,
-            }),
-        new(
-            "6通常",
-            new[] { WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Sword, WeaponKind.Shield, WeaponKind.Shield },
-            new[]
-            {
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Lonely,
-                CombatAiPersonalityKind.Lonely,
-            }),
-        new(
-            "6逆",
-            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Bible, WeaponKind.Rosary },
-            new[]
-            {
-                CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Lonely,
-                CombatAiPersonalityKind.Devoted,
-            }),
-        new(
-            "9通常",
-            new[] { WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Grimoire, WeaponKind.Rosary },
-            new[]
-            {
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.BattleJunkie,
-                CombatAiPersonalityKind.Lonely,
-                CombatAiPersonalityKind.Lonely,
-            }),
-        new(
-            "9逆",
-            new[] { WeaponKind.Sword, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Wand, WeaponKind.Bible },
-            new[]
-            {
+                CombatAiPersonalityKind.Tagalong,
+                CombatAiPersonalityKind.HighGround,
                 CombatAiPersonalityKind.Reckless,
                 CombatAiPersonalityKind.Cunning,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Reckless,
-                CombatAiPersonalityKind.Devoted,
             }),
     };
 
@@ -213,12 +151,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private readonly List<CombatAiPersonalityProfile> _builtInPersonalityOptions = new();
     private Action<IReadOnlyList<CombatParticipantSetup>, IReadOnlyList<CombatParticipantSetup>> _confirmed;
     private Button _cameraSpeedButton;
-    private Button _bulkWeaponButton;
-    private Button _bulkPersonalityButton;
     private Button _enemyFormationButton;
     private Button _stonePositionButton;
-    private Button _battleUiModeButton;
-    private Button _enemyPresetDefaultButton;
     private Button _enemyPresetNeutralButton;
     private Button _enemyPresetTopButton;
     private Button _formationCodeApplyButton;
@@ -227,21 +161,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     private TMP_InputField _formationCodeInput;
     private TMP_Text _formationCodeStatus;
     private GameObject _enemyPresetRowRoot;
-    private GameObject _debugRowRoot;
-    private Button _debugCharacterRoutesButton;
-    private Button _debugAssaultRoutesButton;
-    private Button _debugAiLabelsButton;
-    private Button _debugVisionButton;
-    private Button _debugCharacterRoutesSettingsButton;
-    private Button _debugAiLabelsSettingsButton;
-    private Button _debugVisionSettingsButton;
     private RectTransform _headerRoot;
-    private enum DebugSettingsKind
-    {
-        CharacterRoutes,
-        AiLabels,
-        Vision,
-    }
     private GameObject _allyColumnRoot;
     private GameObject _enemyColumnRoot;
     private LayoutElement _teamSelectionsLayout;
@@ -456,18 +376,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             _cameraSpeedButton = null;
         }
 
-        if (_bulkWeaponButton != null)
-        {
-            _bulkWeaponButton.onClick.RemoveListener(OpenBulkWeaponPicker);
-            _bulkWeaponButton = null;
-        }
-
-        if (_bulkPersonalityButton != null)
-        {
-            _bulkPersonalityButton.onClick.RemoveListener(OpenBulkPersonalityPicker);
-            _bulkPersonalityButton = null;
-        }
-
         if (_enemyFormationButton != null)
         {
             _enemyFormationButton.onClick.RemoveListener(ToggleEnemyFormation);
@@ -478,18 +386,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             _stonePositionButton.onClick.RemoveListener(ToggleStonePositionReversed);
             _stonePositionButton = null;
-        }
-
-        if (_battleUiModeButton != null)
-        {
-            _battleUiModeButton.onClick.RemoveListener(ToggleBattleUiMode);
-            _battleUiModeButton = null;
-        }
-
-        if (_enemyPresetDefaultButton != null)
-        {
-            _enemyPresetDefaultButton.onClick.RemoveListener(ApplyEnemyPresetDefault);
-            _enemyPresetDefaultButton = null;
         }
 
         if (_enemyPresetNeutralButton != null)
@@ -526,30 +422,9 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _formationCodeStatus = null;
 
         _enemyPresetRowRoot = null;
-        _debugRowRoot = null;
         _teamSelectionsLayout = null;
 
-        ClearDebugToggle(_debugCharacterRoutesButton);
-        ClearDebugToggle(_debugAssaultRoutesButton);
-        ClearDebugToggle(_debugAiLabelsButton);
-        ClearDebugToggle(_debugVisionButton);
-        ClearDebugToggle(_debugCharacterRoutesSettingsButton);
-        ClearDebugToggle(_debugAiLabelsSettingsButton);
-        ClearDebugToggle(_debugVisionSettingsButton);
-        _debugCharacterRoutesButton = null;
-        _debugAssaultRoutesButton = null;
-        _debugAiLabelsButton = null;
-        _debugVisionButton = null;
-        _debugCharacterRoutesSettingsButton = null;
-        _debugAiLabelsSettingsButton = null;
-        _debugVisionSettingsButton = null;
         _headerRoot = null;
-    }
-
-    private static void ClearDebugToggle(Button button)
-    {
-        if (button == null) return;
-        button.onClick.RemoveAllListeners();
     }
 
     private void CreateHeaderControls(RectTransform parent)
@@ -567,31 +442,26 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         headerLayout.childControlHeight = true;
         headerLayout.childForceExpandWidth = true;
         headerLayout.childForceExpandHeight = false;
-        headerObject.GetComponent<LayoutElement>().preferredHeight = 148f;
+        headerObject.GetComponent<LayoutElement>().preferredHeight = 160f;
 
         RectTransform actionRow = CreateHorizontalRow(_headerRoot, "ActionRow", 48f, spacing: 12f);
         _cameraSpeedButton = CreateButton(actionRow, "CameraSpeedButton", 250f, 48f, CycleCameraSpeed);
-        _bulkWeaponButton = CreateButton(actionRow, "BulkWeaponButton", 220f, 48f, OpenBulkWeaponPicker);
-        _bulkPersonalityButton = CreateButton(actionRow, "BulkPersonalityButton", 220f, 48f, OpenBulkPersonalityPicker);
         _stonePositionButton = CreateButton(actionRow, "StonePositionButton", 220f, 48f, ToggleStonePositionReversed);
-        _battleUiModeButton = CreateButton(actionRow, "BattleUiModeButton", 220f, 48f, ToggleBattleUiMode);
         _enemyFormationButton = CreateButton(actionRow, "EnemyFormationButton", 200f, 48f, ToggleEnemyFormation);
         Button audioButton = CreateButton(actionRow, "AudioSettingsButton", 140f, 48f,
             () => CombatAudioSettingsView.Open(GetComponentInParent<Canvas>().transform));
         SetButtonLabel(audioButton, "音設定");
         ConfigureToolbarLabel(audioButton, 24f);
+        Button countryButton = CreateButton(actionRow, "ReturnToCountryButton", 200f, 48f,
+            PlaytestSceneNavigation.OpenCountry);
+        SetButtonLabel(countryButton, "国家へ戻る");
+        ConfigureToolbarLabel(countryButton, 24f);
         RefreshCameraSpeedButton();
-        SetButtonLabel(_bulkWeaponButton, "武器一括変更");
-        SetButtonLabel(_bulkPersonalityButton, "性格一括変更");
         ConfigureToolbarLabel(_cameraSpeedButton, 24f);
-        ConfigureToolbarLabel(_bulkWeaponButton, 24f);
-        ConfigureToolbarLabel(_bulkPersonalityButton, 24f);
         ConfigureToolbarLabel(_enemyFormationButton, 24f);
         ConfigureToolbarLabel(_stonePositionButton, 24f);
-        ConfigureToolbarLabel(_battleUiModeButton, 24f);
         RefreshEnemyFormationButton();
         RefreshStonePositionButton();
-        RefreshBattleUiModeButton();
 
         RectTransform codeRow = CreateHorizontalRow(_headerRoot, "FormationCodeRow", 48f, spacing: 10f);
         _formationCodeInput = CreateFormationCodeInput(codeRow);
@@ -608,7 +478,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         _formationCodeStatus.text = "味方編成コード";
         LayoutElement statusLayout = _formationCodeStatus.gameObject.GetComponent<LayoutElement>() ??
                                       _formationCodeStatus.gameObject.AddComponent<LayoutElement>();
-        statusLayout.preferredWidth = 300f;
+        statusLayout.preferredWidth = 430f;
         SetButtonLabel(_formationCodeApplyButton, "適用");
         SetButtonLabel(_formationCodeCopyButton, "コードコピー");
         SetButtonLabel(_formationCodePasteButton, "ペースト");
@@ -618,106 +488,15 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         RectTransform presetRow = CreateHorizontalRow(_headerRoot, "EnemyPresetRow", 48f, spacing: 12f);
         _enemyPresetRowRoot = presetRow.gameObject;
-        _enemyPresetDefaultButton = CreateButton(
-            presetRow, "EnemyPresetDefaultButton", 0f, 48f, ApplyEnemyPresetDefault, flexibleWidth: 1f);
         _enemyPresetNeutralButton = CreateButton(
             presetRow, "EnemyPresetNeutralButton", 0f, 48f, ApplyEnemyPresetStandard, flexibleWidth: 1f);
         _enemyPresetTopButton = CreateButton(
             presetRow, "EnemyPresetTopButton", 0f, 48f, OpenEnemyTopPresetPicker, flexibleWidth: 1f);
-        SetButtonLabel(_enemyPresetDefaultButton, "最強編成");
         SetButtonLabel(_enemyPresetNeutralButton, EnemyStandardPreset.Label);
-        SetButtonLabel(_enemyPresetTopButton, "マップ別トップ");
-        ConfigureToolbarLabel(_enemyPresetDefaultButton, 24f);
+        SetButtonLabel(_enemyPresetTopButton, "強い編成");
         ConfigureToolbarLabel(_enemyPresetNeutralButton, 24f);
         ConfigureToolbarLabel(_enemyPresetTopButton, 24f);
         _enemyPresetRowRoot.SetActive(true);
-
-        RectTransform debugRow = CreateHorizontalRow(_headerRoot, "DebugRow", 92f, spacing: 10f);
-        _debugRowRoot = debugRow.gameObject;
-        CreateDebugControl(
-            debugRow,
-            "CharacterRoutes",
-            () =>
-            {
-                CombatPlaytestDebugSettings.SetShowCharacterRoutes(!CombatPlaytestDebugSettings.ShowCharacterRoutes);
-                RefreshDebugToggleButtons();
-            },
-            () => OpenDebugSettings(DebugSettingsKind.CharacterRoutes),
-            out _debugCharacterRoutesButton,
-            out _debugCharacterRoutesSettingsButton);
-        CreateDebugControl(
-            debugRow,
-            "AssaultRoutes",
-            () =>
-            {
-                CombatPlaytestDebugSettings.SetShowAssaultRoutes(!CombatPlaytestDebugSettings.ShowAssaultRoutes);
-                RefreshDebugToggleButtons();
-            },
-            null,
-            out _debugAssaultRoutesButton,
-            out _);
-        CreateDebugControl(
-            debugRow,
-            "AiLabels",
-            () =>
-            {
-                CombatPlaytestDebugSettings.SetShowAiLabels(!CombatPlaytestDebugSettings.ShowAiLabels);
-                RefreshDebugToggleButtons();
-            },
-            () => OpenDebugSettings(DebugSettingsKind.AiLabels),
-            out _debugAiLabelsButton,
-            out _debugAiLabelsSettingsButton);
-        CreateDebugControl(
-            debugRow,
-            "Vision",
-            () =>
-            {
-                CombatPlaytestDebugSettings.SetShowVision(!CombatPlaytestDebugSettings.ShowVision);
-                RefreshDebugToggleButtons();
-            },
-            () => OpenDebugSettings(DebugSettingsKind.Vision),
-            out _debugVisionButton,
-            out _debugVisionSettingsButton);
-        RefreshDebugToggleButtons();
-    }
-
-    private void CreateDebugControl(
-        RectTransform parent,
-        string objectName,
-        UnityEngine.Events.UnityAction onToggle,
-        UnityEngine.Events.UnityAction onSettings,
-        out Button toggleButton,
-        out Button settingsButton)
-    {
-        GameObject cellObject = new GameObject(
-            objectName + "Cell",
-            typeof(RectTransform),
-            typeof(VerticalLayoutGroup),
-            typeof(LayoutElement));
-        RectTransform cell = cellObject.GetComponent<RectTransform>();
-        cell.SetParent(parent, false);
-        VerticalLayoutGroup layout = cellObject.GetComponent<VerticalLayoutGroup>();
-        layout.spacing = 4f;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-        LayoutElement cellLayout = cellObject.GetComponent<LayoutElement>();
-        cellLayout.flexibleWidth = 1f;
-        cellLayout.minWidth = 140f;
-
-        float toggleHeight = onSettings != null ? 44f : 84f;
-        toggleButton = CreateButton(cell, objectName + "Toggle", 0f, toggleHeight, onToggle, flexibleWidth: 1f);
-        settingsButton = onSettings != null
-            ? CreateButton(cell, objectName + "Settings", 0f, 36f, onSettings, flexibleWidth: 1f)
-            : null;
-        ConfigureToolbarLabel(toggleButton, 20f);
-        if (settingsButton != null)
-        {
-            SetButtonLabel(settingsButton, "設定");
-            ConfigureToolbarLabel(settingsButton, 20f);
-        }
     }
 
     private static RectTransform CreateHorizontalRow(
@@ -744,173 +523,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         return row;
     }
 
-    private void RefreshDebugToggleButtons()
-    {
-        SetButtonLabel(
-            _debugCharacterRoutesButton,
-            FormatDebugToggle("移動の線", CombatPlaytestDebugSettings.ShowCharacterRoutes));
-        SetButtonLabel(
-            _debugAssaultRoutesButton,
-            FormatDebugToggle("侵攻ルート", CombatPlaytestDebugSettings.ShowAssaultRoutes));
-        SetButtonLabel(
-            _debugAiLabelsButton,
-            FormatDebugToggle("頭上テキスト", CombatPlaytestDebugSettings.ShowAiLabels));
-        SetButtonLabel(
-            _debugVisionButton,
-            FormatDebugToggle("視界表示", CombatPlaytestDebugSettings.ShowVision));
-    }
-
-    private void OpenDebugSettings(DebugSettingsKind kind)
-    {
-        EnsurePicker();
-        SetPickerLayout(twoColumns: false);
-        ClearPickerOptions();
-        RebuildDebugSettingsPicker(kind);
-        ShowPicker();
-    }
-
-    private void RebuildDebugSettingsPicker(DebugSettingsKind kind)
-    {
-        ClearPickerOptions();
-        AddPickerOption(
-            "デフォルトに戻す",
-            () =>
-            {
-                ResetDebugSettingsToDefault(kind);
-                RebuildDebugSettingsPicker(kind);
-                RefreshDebugToggleButtons();
-            },
-            () => SetPickerDescription("この項目の詳細設定だけ、最初の状態に戻します。"));
-
-        switch (kind)
-        {
-            case DebugSettingsKind.CharacterRoutes:
-                SetPickerTitle("移動の線 — 詳細設定");
-                SetPickerDescription("キャラがマップ上でどこへ向かっているかを、線で見られます。");
-                AddDebugBoolOption(
-                    "味方キャラの行き先を線で出す",
-                    CombatPlaytestDebugSettings.CharacterRoutesShowAlly,
-                    "味方一人ひとりが、今向かっている場所までの道を線で描きます。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetCharacterRoutesShowAlly(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "敵キャラの行き先を線で出す",
-                    CombatPlaytestDebugSettings.CharacterRoutesShowEnemy,
-                    "敵一人ひとりが、今向かっている場所までの道を線で描きます。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetCharacterRoutesShowEnemy(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                break;
-
-            case DebugSettingsKind.AiLabels:
-                SetPickerTitle("頭上テキスト — 詳細設定");
-                SetPickerDescription("キャラの頭上に出す文字の種類を選べます。");
-                AddDebugBoolOption(
-                    "AIが今やろうとしていることを出す",
-                    CombatPlaytestDebugSettings.LabelShowObjective,
-                    "攻撃・回復・魔石破壊など、いま選んでいる行動の目的を出します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetLabelShowObjective(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "持っている武器の名前を出す",
-                    CombatPlaytestDebugSettings.LabelShowWeapon,
-                    "剣・杖・盾など、装備している武器を出します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetLabelShowWeapon(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "性格の名前を出す",
-                    CombatPlaytestDebugSettings.LabelShowPersonality,
-                    "標準・戦闘狂など、そのキャラの性格名を出します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetLabelShowPersonality(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                break;
-
-            case DebugSettingsKind.Vision:
-                SetPickerTitle("視界表示 — 詳細設定");
-                SetPickerDescription("誰が何を見えているかを、線や扇形で見られます。");
-                AddDebugBoolOption(
-                    "見えている相手まで線を引く",
-                    CombatPlaytestDebugSettings.VisionShowLines,
-                    "キャラから、いま視認できている相手へ線を引きます。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetVisionShowLines(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "木や壁に視線が遮られるか確認する",
-                    CombatPlaytestDebugSettings.VisionShowObstructionRays,
-                    "障害物で視線が止まるかを短い線で確認します。線が増えるので、普段はOFFのままで大丈夫です。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetVisionShowObstructionRays(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "左右にどれくらい見えているか（扇形）を出す",
-                    CombatPlaytestDebugSettings.VisionShowFieldOfView,
-                    "キャラの正面から、左右どれくらいの範囲が見えるかを扇形で出します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetVisionShowFieldOfView(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                AddDebugBoolOption(
-                    "視界の遮蔽物をログに記録する",
-                    CombatPlaytestDebugSettings.LogVisionObstructions,
-                    "太い視線判定で遮られたColliderを戦闘ログへ集約して記録します。",
-                    value =>
-                    {
-                        CombatPlaytestDebugSettings.SetLogVisionObstructions(value);
-                        RebuildDebugSettingsPicker(kind);
-                    });
-                break;
-        }
-    }
-
-    private static void ResetDebugSettingsToDefault(DebugSettingsKind kind)
-    {
-        switch (kind)
-        {
-            case DebugSettingsKind.CharacterRoutes:
-                CombatPlaytestDebugSettings.ResetCharacterRouteDetailsToDefault();
-                break;
-            case DebugSettingsKind.AiLabels:
-                CombatPlaytestDebugSettings.ResetLabelDetailsToDefault();
-                break;
-            case DebugSettingsKind.Vision:
-                CombatPlaytestDebugSettings.ResetVisionDetailsToDefault();
-                break;
-        }
-    }
-
-    private void AddDebugBoolOption(string label, bool current, string description, Action<bool> setValue)
-    {
-        AddPickerOption(
-            FormatDebugToggle(label, current),
-            () => setValue(!current),
-            () => SetPickerDescription(description));
-    }
-
-    private static string FormatDebugToggle(string label, bool on)
-    {
-        return $"{(on ? "■" : "□")} {label}";
-    }
-
     private void ToggleEnemyFormation()
     {
         SetDetailSettingsOpen(!_detailSettingsOpen);
@@ -922,7 +534,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         if (_allyColumnRoot != null) _allyColumnRoot.SetActive(!open);
         if (_enemyColumnRoot != null) _enemyColumnRoot.SetActive(open);
         if (_enemyPresetRowRoot != null) _enemyPresetRowRoot.SetActive(true);
-        if (_debugRowRoot != null) _debugRowRoot.SetActive(!open);
         RefreshFormationPanelHeights();
         RefreshEnemyFormationButton();
         RefreshFormationCodeContext();
@@ -945,13 +556,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             LayoutElement headerLayout = _headerRoot.GetComponent<LayoutElement>();
             if (headerLayout != null)
             {
-                headerLayout.preferredHeight = _detailSettingsOpen ? 160f : 260f;
+                headerLayout.preferredHeight = 160f;
             }
         }
 
         if (_teamSelectionsLayout != null)
         {
-            _teamSelectionsLayout.preferredHeight = _detailSettingsOpen ? 548f : 448f;
+            _teamSelectionsLayout.preferredHeight = 548f;
         }
     }
 
@@ -979,24 +590,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         SetButtonLabel(_stonePositionButton, $"位置逆転: {(_stonePositionReversed ? "ON" : "OFF")}");
     }
 
-    private void ToggleBattleUiMode()
-    {
-        CombatPlaytestDebugSettings.SetUseDebugBattleUi(!CombatPlaytestDebugSettings.UseDebugBattleUi);
-        RefreshBattleUiModeButton();
-    }
-
-    private void RefreshBattleUiModeButton()
-    {
-        SetButtonLabel(
-            _battleUiModeButton,
-            $"UI:{(CombatPlaytestDebugSettings.UseDebugBattleUi ? "デバッグ" : "本番")}");
-    }
-
-    private void ApplyEnemyPresetDefault()
-    {
-        ApplyEnemyPreset(EnemyStrongPreset);
-    }
-
     private void ApplyEnemyPresetStandard()
     {
         ApplyEnemyPreset(EnemyStandardPreset);
@@ -1007,8 +600,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         EnsurePicker();
         SetPickerLayout(twoColumns: true);
         ClearPickerOptions();
-        SetPickerTitle("マップ別トップ編成");
-        SetPickerDescription("評価結果から選んだ編成です。位置逆転は現在の設定を維持します。");
+        SetPickerTitle("強い編成");
+        SetPickerDescription("比較用の編成を選びます。位置逆転は現在の設定を維持します。");
 
         for (int i = 0; i < EnemyTopPresets.Length; i++)
         {
@@ -1119,7 +712,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         for (int i = 0; i < rows.Count; i++)
         {
-            rows[i]?.Character?.ClearRuntimeStatAdjustments();
+            Character character = rows[i]?.Character;
+            if (character != null) character.ClearRuntimeStatAdjustments();
         }
     }
 
@@ -1176,7 +770,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             ? profile.Kind
             : CombatAiPersonalityKind.Neutral;
         int index = FindPersonalityIndex(kind);
-        return index >= 0 ? index : FindOrAddPersonalityIndex(CombatAiPersonalityKind.Neutral);
+        return index >= 0 ? index : FindOrAddPersonalityIndex(
+            CombatAiPersonalityProfile.IsSelectable(kind) ? kind : CombatAiPersonalityKind.Neutral);
     }
 
     private int FindPersonalityIndex(CombatAiPersonalityKind kind)
@@ -1304,6 +899,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             if (!entries[i].Selected) continue;
 
+            if (!CombatAiPersonalityProfile.IsSelectable(entries[i].Personality))
+            {
+                error = "この性格は選択できない";
+                return false;
+            }
+
             if (FindWeaponIndex(entries[i].Weapon) < 0)
             {
                 error = $"武器「{entries[i].Weapon}」がこの画面で選択できません。";
@@ -1333,6 +934,12 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void CopyFormationCode()
     {
+        if (!ValidateSelectedPersonalities(GetVisibleRows(), out string error))
+        {
+            SetFormationCodeStatus(error);
+            return;
+        }
+
         List<SelectionRow> rows = GetVisibleRows();
         string code = CombatFormationCode.Encode(
             BuildFormationEntries(rows));
@@ -1475,6 +1082,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         WeaponBase weapon = GetSelectedWeapon(row);
         int currentAdjustment = GetStatAdjustment(row, stat);
+        if (delta < 0 && GetConfiguredStatValue(row.Character, weapon, stat, currentAdjustment) <= 1) return;
         int nextAdjustment = currentAdjustment + delta;
         int minimumAdjustment = 1 - GetCharacterStat(row.Character, stat) -
                                 (weapon != null ? weapon.GetStatBonus(stat) : 0);
@@ -1483,25 +1091,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
         row.StatAdjustments[stat] = nextAdjustment;
         RefreshCharacterStatus(row);
-    }
-
-    private void OpenBulkWeaponPicker()
-    {
-        if (_weaponOptions.Count == 0) return;
-
-        List<SelectionRow> rows = GetVisibleRows();
-        OpenWeaponPicker(
-            "武器一括変更",
-            rows.Count > 0 ? rows[0].WeaponIndex : 0,
-            index =>
-            {
-                for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
-                {
-                    rows[rowIndex].WeaponIndex = index;
-                }
-
-                RefreshRows(rows);
-            });
     }
 
     private void OpenWeaponPicker(string title, int selectedIndex, Action<int> onSelected)
@@ -1541,24 +1130,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
             onSelected: index =>
             {
                 row.PersonalityIndex = index;
-                RefreshRow(row);
-            });
-    }
-
-    private void OpenBulkPersonalityPicker()
-    {
-        List<SelectionRow> rows = GetVisibleRows();
-        OpenPersonalityPicker(
-            "性格一括変更",
-            rows.Count > 0 ? rows[0].PersonalityIndex : -1,
-            onSelected: index =>
-            {
-                for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
-                {
-                    rows[rowIndex].PersonalityIndex = index;
-                }
-
-                RefreshRows(rows);
+                Refresh();
             });
     }
 
@@ -1584,14 +1156,21 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             int index = i;
             CombatAiPersonalityProfile personality = _personalityOptions[i];
-            if (personality == null) continue;
+            if (!IsSelectablePersonality(personality)) continue;
 
-            string name = personality.DisplayNameJapanese;
+            string name = GetPersonalityOptionName(personality);
             bool selected = index == selectedIndex;
             AddPickerOption(
                 selected ? "■ " + name : name,
                 () =>
                 {
+                    if (!IsSelectablePersonality(personality))
+                    {
+                        SetFormationCodeStatus("この性格は選択できない");
+                        ClosePicker();
+                        return;
+                    }
+
                     onSelected?.Invoke(index);
                     ClosePicker();
                 });
@@ -2010,7 +1589,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         for (int i = 0; i < _personalityOptions.Count; i++)
         {
             CombatAiPersonalityProfile personality = _personalityOptions[i];
-            if (personality == null) continue;
+            if (!IsSelectablePersonality(personality)) continue;
 
             AddPersonalityDetailRow(personality);
         }
@@ -2087,7 +1666,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         rowObject.GetComponent<LayoutElement>().preferredHeight = StatusValueHeight;
 
         TMP_Text valueLabel = AddPickerDetailText(
-            FormatConfiguredStat(row.Character, weapon, stat, GetStatAdjustment(row, stat)),
+            FormatConfiguredStat(row.Character, weapon, stat, GetStatAdjustment(row, stat),
+                GetOption(_personalityOptions, row.PersonalityIndex)?.Kind ?? CombatAiPersonalityKind.Neutral),
             22f,
             TextAlignmentOptions.Left,
             StatusValueHeight,
@@ -2142,7 +1722,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         Character character,
         WeaponBase weapon,
         CombatStat stat,
-        int manualAdjustment)
+        int manualAdjustment,
+        CombatAiPersonalityKind personality)
     {
         int baseValue = GetCharacterStat(character, stat);
         int bonus = weapon != null ? weapon.GetStatBonus(stat) : 0;
@@ -2153,7 +1734,11 @@ public sealed class CombatCharacterSelection : MonoBehaviour
                 ? $" - {Mathf.Abs(manualAdjustment)}"
                 : $" + {manualAdjustment}";
         int configuredValue = GetConfiguredStatValue(character, weapon, stat, manualAdjustment);
-        return $"{FormatCombatStat(stat)}: {baseValue} {operation}{manualOperation} = " +
+        float personalityMultiplier = CombatAiPersonalityProfile.GetStatMultiplier(personality, stat);
+        configuredValue = Mathf.Max(1, Mathf.RoundToInt(configuredValue * personalityMultiplier));
+        string calculation = $"{baseValue} {operation}{manualOperation}";
+        if (personalityMultiplier != 1f) calculation = $"({calculation}) ×{personalityMultiplier:0.0}";
+        return $"{FormatCombatStat(stat)}: {calculation} = " +
                $"<color={FinalStatColor}>{configuredValue}</color>";
     }
 
@@ -2197,6 +1782,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
     {
         return stat switch
         {
+            CombatStat.HP => character.Health.MaxHPBeforePersonality,
             CombatStat.STR => character.STR,
             CombatStat.INT => character.INT,
             CombatStat.FAI => character.FAI,
@@ -2226,7 +1812,7 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         rowLayout.preferredHeight = -1f;
 
         TMP_Text name = AddPickerDetailText(
-            personality.DisplayNameJapanese,
+            GetPersonalityOptionName(personality),
             24f,
             TextAlignmentOptions.TopLeft,
             52f,
@@ -2416,6 +2002,13 @@ public sealed class CombatCharacterSelection : MonoBehaviour
 
     private void ConfirmSelection()
     {
+        if (!ValidateSelectedPersonalities(_allyRows, out string error) ||
+            !ValidateSelectedPersonalities(_enemyRows, out error))
+        {
+            SetFormationCodeStatus(error);
+            return;
+        }
+
         ClosePicker();
         SetDetailSettingsOpen(false);
         List<CombatParticipantSetup> allies = BuildSetups(_allyRows);
@@ -2460,7 +2053,6 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         RefreshRows(_enemyRows);
         RefreshEnemyFormationButton();
         RefreshStonePositionButton();
-        RefreshDebugToggleButtons();
         RefreshSelectionCountText();
 
         int allyCount = CountSelected(_allyRows);
@@ -2469,6 +2061,8 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         {
             _startBattleButton.interactable = allyCount > 0 && enemyCount > 0 &&
                                               _weaponOptions.Count > 0 && _personalityOptions.Count > 0 &&
+                                              ValidateSelectedPersonalities(_allyRows, out _) &&
+                                              ValidateSelectedPersonalities(_enemyRows, out _) &&
                                               _externalStartAllowed;
         }
     }
@@ -2508,8 +2102,30 @@ public sealed class CombatCharacterSelection : MonoBehaviour
         SetButtonLabel(row.CharacterButton, characterName);
         SetButtonLabel(row.WeaponButton, $"武器: {GetWeaponName(GetOption(_weaponOptions, row.WeaponIndex))}");
         CombatAiPersonalityProfile personality = GetOption(_personalityOptions, row.PersonalityIndex);
-        SetButtonLabel(row.PersonalityButton, $"性格: {(personality != null ? personality.DisplayNameJapanese : "未設定")}");
+        SetButtonLabel(row.PersonalityButton, $"性格: {GetPersonalityOptionName(personality)}");
     }
+
+    private bool ValidateSelectedPersonalities(List<SelectionRow> rows, out string error)
+    {
+        error = string.Empty;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            if (!rows[i].Selected) continue;
+            CombatAiPersonalityProfile personality = GetOption(_personalityOptions, rows[i].PersonalityIndex);
+            if (IsSelectablePersonality(personality)) continue;
+
+            error = "選択できない性格が編成に含まれている";
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsSelectablePersonality(CombatAiPersonalityProfile personality) =>
+        personality != null && CombatAiPersonalityProfile.IsSelectable(personality.Kind);
+
+    private static string GetPersonalityOptionName(CombatAiPersonalityProfile personality) =>
+        personality == null ? "未設定" : personality.DisplayNameJapanese;
 
     private static bool HasStatAdjustments(SelectionRow row)
     {

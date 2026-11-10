@@ -136,6 +136,17 @@ public sealed class CombatAiBrain : MonoBehaviour
         _body?.EndAiNavigationDecision();
     }
 
+    public void InvalidateNavigation()
+    {
+        _hasPreparedDecision = false;
+        _hasRequestedMove = false;
+        _stagnantMoveDecisionCount = 0;
+        _consecutiveMoveFailures = 0;
+        _blockedMoveDestination = default;
+        _blockedMoveUntilDecisionTick = 0;
+        _body?.EndAiNavigationDecision();
+    }
+
     private bool PrepareDecisionCore(
         CombatAiTeamReservations reservations,
         bool perceptionPrepared,

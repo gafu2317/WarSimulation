@@ -5,7 +5,7 @@ from pathlib import Path
 from mathutils import Vector
 root=Path(__file__).resolve().parents[2]
 bpy.ops.wm.open_mainfile(filepath=str(root/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
-manifest=json.loads((root/'docs/Art/GrandStudy/manifest.json').read_text())
+manifest=json.loads((root/'docs/Art/Records/GrandStudy/manifest.json').read_text())
 assert len(manifest['assets'])==73
 assert len(bpy.data.scenes)==3
 checks=[]
@@ -110,6 +110,6 @@ for name in ['Plant_Broadleaf','Plant_Palm','Plant_Croton']:
         if obj.type=='MESH' and obj.name.startswith(('Ficus oval leaf','Croton variegated leaf','Tapered palm leaflet')):
             assert obj.data.uv_layers,obj.name
 report={'art_checks':art_checks,'plant_mesh_bounds_m':plant_bounds,'wallpaper_diamonds':wallpaper_diamonds,'doily_meshes':len(doily_meshes),'globe_continents':len(continents),'reopened':True,'cabinet_top_joints':True,'asset_count':len(checks),'scenes':list(bpy.data.scenes.keys()),'external_image_dependencies':0,'floor_tiles':12,'ceiling_tiles':12,'valid_meshes_and_materials':True,'notes':'Visual review is separate; no claim of exhaustive mesh-intersection testing. Internal construction joints intentionally overlap.'}
-(root/'docs/Art/GrandStudy/manifest.json').write_text(json.dumps(manifest,indent=2))
-(root/'docs/Art/GrandStudy/validation.json').write_text(json.dumps(report,indent=2))
+(root/'docs/Art/Records/GrandStudy/manifest.json').write_text(json.dumps(manifest,indent=2))
+(root/'docs/Art/Records/GrandStudy/validation.json').write_text(json.dumps(report,indent=2))
 print('PASS: 73 asset collections, 3 scenes, finite meshes, assigned materials, no external image dependencies')

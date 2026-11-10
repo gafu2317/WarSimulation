@@ -10,12 +10,12 @@ namespace WarSimulation.Kingdom.NewFantasyAssets
 {
     public static class NewFantasyAssetImporter
     {
-        const string ManifestPath = "docs/Art/NewFantasyAssets/export_manifest.json";
+        const string ManifestPath = "docs/Art/Records/AdditionalImports/export_manifest.json";
         const string ModelRoot = "Assets/Models/Kingdom/City/Models";
         const string AssetRoot = "Assets/Prefabs/Kingdom/City";
         const string MaterialRoot = AssetRoot + "/Materials";
         const string PrefabRoot = AssetRoot + "/Prefabs";
-        const string ValidationPath = "docs/Art/NewFantasyAssets/unity_validation.json";
+        const string ValidationPath = "docs/Art/Records/AdditionalImports/unity_validation.json";
 
         [Serializable]
         class ExportModel

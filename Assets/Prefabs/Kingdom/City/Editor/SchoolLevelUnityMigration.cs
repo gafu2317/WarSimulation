@@ -8,7 +8,6 @@ namespace WarSimulation.Kingdom.Schools
 {
     public static class SchoolLevelUnityMigration
     {
-        const string CountryScenePath = "Assets/Scenes/Country/Country.unity";
         const string CatalogScenePath = "Assets/Scenes/KingdomAssetCatalog.unity";
 
         [MenuItem("WarSim/Kingdom/Replace Schools And Rebuild Catalog")]
@@ -19,10 +18,6 @@ namespace WarSimulation.Kingdom.Schools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-            var country = EditorSceneManager.OpenScene(CountryScenePath, OpenSceneMode.Single);
-            if (!country.IsValid()) throw new InvalidOperationException("Country scene could not be opened.");
-            WarSimulation.Kingdom.City.KingdomCityBuilder.Build();
-
             WarSimulation.Kingdom.EditorOnly.KingdomAssetCatalogBuilder.Build();
             var catalog = SceneManager.GetActiveScene();
             if (!catalog.IsValid() || catalog.path != CatalogScenePath)
@@ -30,7 +25,7 @@ namespace WarSimulation.Kingdom.Schools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            UnityEngine.Debug.Log("School level migration completed: 15 models imported, old school assets removed, Country and catalog rebuilt.");
+            UnityEngine.Debug.Log("School level migration completed: 15 models imported and catalog rebuilt.");
         }
 
         static void DeleteOldSchoolAssets()

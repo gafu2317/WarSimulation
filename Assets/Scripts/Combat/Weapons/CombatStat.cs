@@ -4,4 +4,5 @@ public enum CombatStat
     INT = 1,
     FAI = 2,
     AGI = 3,
+    HP = 4,
 }

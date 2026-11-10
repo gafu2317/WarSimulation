@@ -12,14 +12,14 @@ PREVIEW_PATH = os.path.join(
     PROJECT_ROOT,
     "docs",
     "Art",
-    "EnvironmentModels",
+    "Records", "Environment",
     "NaturalRockVariants_Preview.png",
 )
 TOP_PREVIEW_PATH = os.path.join(
     PROJECT_ROOT,
     "docs",
     "Art",
-    "EnvironmentModels",
+    "Records", "Environment",
     "NaturalRockVariants_TopPreview.png",
 )
 

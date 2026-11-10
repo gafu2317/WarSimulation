@@ -1,0 +1,43 @@
+var type=System.Reflection.Assembly.Load("EditModeTests").GetType("CountryExpeditionPageTests",true);
+var fixture=System.Activator.CreateInstance(type);
+var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+try {
+ type.GetMethod("SetUp").Invoke(fixture,null);
+ var panel=(CountryExpeditionPanel)type.GetField("_panel",flags).GetValue(fixture);
+ var camera=(Camera)type.GetField("_camera",flags).GetValue(fixture);
+ var page=(UnityEngine.UI.ScrollRect)type.GetField("_page",flags).GetValue(fixture);
+ var list=(UnityEngine.UI.ScrollRect)type.GetField("_list",flags).GetValue(fixture);
+ var members=(UnityEngine.UI.ScrollRect)type.GetField("_members",flags).GetValue(fixture);
+ var state=(CountryExpeditionState)type.GetField("_state",flags).GetValue(fixture);
+ int destination=(int)type.GetField("_destination",flags).GetValue(fixture);
+ var raycaster=panel.transform.Find("Window").GetComponent<UnityEngine.UI.GraphicRaycaster>();
+ System.Func<Vector2,System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>> hits=point=>{
+  type.GetMethod("Layout",flags).Invoke(fixture,null);
+  var pointer=new UnityEngine.EventSystems.PointerEventData(null){position=point};
+  var found=new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();raycaster.Raycast(pointer,found);return found;
+ };
+ var plane=(RectTransform)page.content.Find("Map/MapArea/Plane");
+ var regionPoint=RectTransformUtility.WorldToScreenPoint(camera,plane.TransformPoint(plane.rect.min+Vector2.Scale(state.Data.Regions[destination].Center,plane.rect.size)));
+ var mapHits=hits(regionPoint);
+ if(mapHits.Count==0)throw new System.Exception("Map click has no input target");
+ var mapPointer=new UnityEngine.EventSystems.PointerEventData(null){position=regionPoint};
+ UnityEngine.EventSystems.ExecuteEvents.ExecuteHierarchy(mapHits[0].gameObject,mapPointer,UnityEngine.EventSystems.ExecuteEvents.pointerClickHandler);
+ if(panel.Draft.Target!=destination)throw new System.Exception("Map click did not select the destination");
+ page.verticalNormalizedPosition=0;
+ type.GetMethod("AddFirstMember",flags).Invoke(fixture,null);
+ var listPoint=RectTransformUtility.WorldToScreenPoint(camera,list.viewport.TransformPoint(list.viewport.rect.center));
+ var listHits=hits(listPoint);
+ if(listHits.Count==0)throw new System.Exception("Soldier list has no input target");
+ var handler=UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IScrollHandler>(listHits[0].gameObject);
+ if(handler!=list.viewport.gameObject)throw new System.Exception("Soldier list did not route through its viewport");
+ var memberPoint=RectTransformUtility.WorldToScreenPoint(camera,members.viewport.TransformPoint(members.viewport.rect.center));
+ var memberHits=hits(memberPoint);
+ var memberHandler=UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IScrollHandler>(memberHits[0].gameObject);
+ if(memberHandler!=members.viewport.gameObject)throw new System.Exception("Member strip did not route through its viewport");
+ var depart=(UnityEngine.UI.Button)typeof(CountryExpeditionPanel).GetField("_depart",flags).GetValue(panel);
+ depart.onClick.Invoke();
+ var blockedHits=hits(listPoint);
+ if(blockedHits.Any(h=>h.gameObject.transform.IsChildOf(panel.transform.Find("Window/Shell"))))throw new System.Exception("Confirmation did not block the preparation page");
+ var result=new {width=844,height=390,mapClick=true,mapTarget=panel.Draft.Target,soldierScrollHandler=handler.name,memberScrollHandler=memberHandler.name,confirmationBlocksPage=true,method="Rendered real prefabs; GraphicRaycaster and ExecuteEvents in an isolated preview, no physical device"};
+ System.IO.File.WriteAllText("Artifacts/CountryUI/ExpeditionPage-v1/input.json",Newtonsoft.Json.JsonConvert.SerializeObject(result,Newtonsoft.Json.Formatting.Indented));return result;
+} finally {type.GetMethod("TearDown").Invoke(fixture,null);}

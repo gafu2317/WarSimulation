@@ -87,14 +87,14 @@ public sealed class CombatBattleFlow : MonoBehaviour
     {
         if (s_instance == this)
         {
-            CombatAudioPlayer.Instance?.StopBattle();
+            CombatAudioPlayer.Existing?.StopBattle();
             s_instance = null;
         }
     }
 
     public void ResetBattle()
     {
-        CombatAudioPlayer.Instance?.StopBattle();
+        CombatAudioPlayer.Existing?.StopBattle();
         _state = CombatBattleState.WaitingToStart;
     }
 
@@ -108,7 +108,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
             _magicStoneSystem?.Initialize(map);
         }
 
-        CombatAudioPlayer.Instance?.StopBattle();
+        CombatAudioPlayer.Existing?.StopBattle();
         _state = CombatBattleState.WaitingToStart;
     }
 
@@ -193,7 +193,7 @@ public sealed class CombatBattleFlow : MonoBehaviour
         if (outcome != CombatBattleState.Victory && outcome != CombatBattleState.Defeat) return;
 
         _state = outcome;
-        CombatAudioPlayer.Instance?.StopBattle();
+        CombatAudioPlayer.Existing?.StopBattle();
         StopAllCharacters();
         BattleEnded?.Invoke(outcome);
     }

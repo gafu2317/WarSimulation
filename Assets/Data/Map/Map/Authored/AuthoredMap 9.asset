@@ -34,13 +34,11 @@ MonoBehaviour:
   - RouteId: 2b1a63720ed843689b1f4dfc7d7dc0cd
     DisplayName: "\u624B\u52D5\u30EB\u30FC\u30C8 1"
     Source: 1
-    Waypoints: []
-  - RouteId: auto:direct
-    DisplayName: "\u76F4\u9032"
-    Source: 0
-    Waypoints: []
+    Waypoints:
+    - {x: 22.65411, y: 40.736305}
+    - {x: 15.565068, y: 46.38699}
   _bakedPreview: {fileID: 2800000, guid: 94482e0b37db3478392051b50e1b1e92, type: 3}
-  _previewBakeFingerprint: -1551432514
+  _previewBakeFingerprint: -139255259
   _bakedRuntimeScenePath: Assets/Scenes/BakedMaps/AuthoredMap 9_2ec88eef.unity
   _bakedRuntimeSceneFingerprint: -2001756490
   _mountains: []

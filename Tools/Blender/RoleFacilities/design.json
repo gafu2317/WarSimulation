@@ -1,0 +1,612 @@
+{
+  "design": "Purpose-built facilities identified at medium distance by large functional equipment, distinctive silhouettes and individually designed sculptural signs.",
+  "forbidden": [
+    "residential building recipes as a substitute for facility architecture",
+    "the same rectangular pictogram board on every facility",
+    "unsupported or obstructing ornaments"
+  ],
+  "preserve": [
+    "city layout",
+    "city walls and river",
+    "ordinary housing",
+    "old first model set",
+    "three Lv5 schools only"
+  ],
+  "styles": {
+    "CityV2": "Lighter plaster and cut stone, steep articulated tiled roofs, strongly divided wings and open courts."
+  },
+  "assets": [
+    {
+      "name": "Royal_Castle",
+      "label": "城",
+      "plot": {
+        "name": "Royal_Castle",
+        "x": 0,
+        "z": 137,
+        "width": 44,
+        "depth": 39,
+        "yaw": 0,
+        "zone": "Royal precinct"
+      },
+      "placed": true
+    },
+    {
+      "name": "Church",
+      "label": "教会",
+      "plot": {
+        "name": "Church",
+        "x": -32,
+        "z": 43,
+        "width": 21,
+        "depth": 30,
+        "yaw": 0,
+        "zone": "Cathedral close"
+      },
+      "placed": true,
+      "identity": "大きな鐘を見せる双鐘楼と十字架・薔薇窓"
+    },
+    {
+      "name": "Chapel",
+      "label": "礼拝堂",
+      "plot": {
+        "name": "Chapel",
+        "x": -92,
+        "z": -50,
+        "width": 11,
+        "depth": 11,
+        "yaw": 0,
+        "zone": "Residential"
+      },
+      "placed": true,
+      "identity": "鐘楼と十字架"
+    },
+    {
+      "name": "Clinic",
+      "label": "診療所",
+      "plot": {
+        "name": "Clinic",
+        "x": -61,
+        "z": 49,
+        "width": 14,
+        "depth": 13,
+        "yaw": 0,
+        "zone": "Cathedral close"
+      },
+      "placed": true,
+      "identity": "緑の薬師十字と乳鉢・薬草温室"
+    },
+    {
+      "name": "Bathhouse",
+      "label": "浴場",
+      "plot": {
+        "name": "Bathhouse",
+        "x": -88,
+        "z": 25,
+        "width": 17,
+        "depth": 17,
+        "yaw": 0,
+        "zone": "Civic quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Barracks",
+      "label": "兵舎",
+      "plot": {
+        "name": "Barracks",
+        "x": -83,
+        "z": 135,
+        "width": 18,
+        "depth": 14,
+        "yaw": 0,
+        "zone": "Military quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Library",
+      "label": "図書館",
+      "plot": {
+        "name": "Library",
+        "x": 37,
+        "z": 48,
+        "width": 15,
+        "depth": 14,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": true,
+      "identity": "高い閲覧回廊・蔵書・開いた本の立体レリーフ"
+    },
+    {
+      "name": "Museum",
+      "label": "美術館",
+      "plot": {
+        "name": "Museum",
+        "x": 76,
+        "z": 52,
+        "width": 18,
+        "depth": 17,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": true,
+      "identity": "正面柱廊上の翼を広げた大彫刻"
+    },
+    {
+      "name": "Observatory",
+      "label": "天文台",
+      "plot": {
+        "name": "Observatory",
+        "x": 85,
+        "z": 88,
+        "width": 13,
+        "depth": 13,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": true,
+      "identity": "観測ドームと従来の望遠鏡",
+      "preserveIdentity": true
+    },
+    {
+      "name": "Guildhall",
+      "label": "商業組合会館",
+      "plot": {
+        "name": "Guildhall",
+        "x": 28,
+        "z": -11,
+        "width": 16,
+        "depth": 16,
+        "yaw": 0,
+        "zone": "Market quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Tavern",
+      "label": "酒場",
+      "plot": {
+        "name": "Tavern",
+        "x": -33,
+        "z": -57,
+        "width": 13,
+        "depth": 14,
+        "yaw": 0,
+        "zone": "Market quarter"
+      },
+      "placed": true,
+      "identity": "木製ジョッキの吊り看板と醸造設備"
+    },
+    {
+      "name": "Bakery",
+      "label": "パン工房",
+      "plot": {
+        "name": "Bakery",
+        "x": 33,
+        "z": -45,
+        "width": 13,
+        "depth": 13,
+        "yaw": 0,
+        "zone": "Market quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Casino",
+      "label": "カジノ",
+      "plot": {
+        "name": "Casino",
+        "x": 28,
+        "z": -83,
+        "width": 12,
+        "depth": 13,
+        "yaw": 0,
+        "zone": "Entertainment quarter"
+      },
+      "placed": true,
+      "identity": "扇状のトランプと入口の賽子"
+    },
+    {
+      "name": "Blacksmith",
+      "label": "鍛冶場",
+      "plot": {
+        "name": "Blacksmith",
+        "x": 68,
+        "z": -23,
+        "width": 16,
+        "depth": 15,
+        "yaw": 0,
+        "zone": "Craft and freight quarter"
+      },
+      "placed": true,
+      "identity": "中央が開いた鍛冶屋根・炉・鍛鉄の金床と槌"
+    },
+    {
+      "name": "Warehouse",
+      "label": "倉庫",
+      "plot": {
+        "name": "Warehouse",
+        "x": 95,
+        "z": -21,
+        "width": 15,
+        "depth": 15,
+        "yaw": 0,
+        "zone": "Craft and freight quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Stable",
+      "label": "厩舎",
+      "plot": {
+        "name": "Stable",
+        "x": 92,
+        "z": -52,
+        "width": 16,
+        "depth": 14,
+        "yaw": 0,
+        "zone": "Craft and freight quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Granary",
+      "label": "穀物庫",
+      "plot": {
+        "name": "Granary",
+        "x": 72,
+        "z": -48.5,
+        "width": 13,
+        "depth": 14,
+        "yaw": 0,
+        "zone": "Craft and freight quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Guardhouse",
+      "label": "衛兵所",
+      "plot": {
+        "name": "Guardhouse",
+        "x": -15,
+        "z": -90.5,
+        "width": 10,
+        "depth": 10,
+        "yaw": 0,
+        "zone": "Gate ward"
+      },
+      "placed": true,
+      "identity": "城門上の大盾と長槍"
+    },
+    {
+      "name": "Market_Hall",
+      "label": "市場会館",
+      "plot": {
+        "name": "Market_Hall",
+        "x": -33,
+        "z": -30,
+        "width": 17,
+        "depth": 14,
+        "yaw": 0,
+        "zone": "Market quarter"
+      },
+      "placed": true
+    },
+    {
+      "name": "Arena",
+      "label": "闘技場",
+      "plot": {
+        "name": "Arena",
+        "x": -82,
+        "z": -71,
+        "width": 19,
+        "depth": 20,
+        "yaw": 0,
+        "zone": "Tournament quarter"
+      },
+      "placed": true,
+      "identity": "高い大会門・深紅の大幕と観覧天幕"
+    },
+    {
+      "name": "VeiledCourtyard",
+      "label": "歓楽街・中庭館",
+      "plot": {
+        "name": "VeiledCourtyard",
+        "x": 11,
+        "z": -83,
+        "width": 10,
+        "depth": 13,
+        "yaw": 0,
+        "zone": "Entertainment quarter"
+      },
+      "placed": true,
+      "identity": "入口を挟む大きな赤い提灯"
+    },
+    {
+      "name": "VelvetTerrace",
+      "label": "歓楽街・回廊館",
+      "plot": {
+        "name": "VelvetTerrace",
+        "x": 12,
+        "z": -49,
+        "width": 10,
+        "depth": 11,
+        "yaw": 0,
+        "zone": "Entertainment quarter"
+      },
+      "placed": true,
+      "identity": "二層の回廊と大きな提灯・赤い帳"
+    },
+    {
+      "name": "LanternSpire",
+      "label": "歓楽街・灯楼",
+      "plot": {
+        "name": "LanternSpire",
+        "x": 35,
+        "z": -98.8,
+        "width": 7,
+        "depth": 9,
+        "yaw": 0,
+        "zone": "Entertainment quarter"
+      },
+      "placed": true,
+      "identity": "各層の正面に吊るした大提灯"
+    },
+    {
+      "name": "CrimsonRowhouse",
+      "label": "歓楽街・演芸館",
+      "plot": {
+        "name": "CrimsonRowhouse",
+        "x": 10,
+        "z": -99,
+        "width": 9,
+        "depth": 8,
+        "yaw": 0,
+        "zone": "Entertainment quarter"
+      },
+      "placed": true,
+      "identity": "演芸館の竪琴と大きな提灯"
+    },
+    {
+      "name": "Plaza",
+      "label": "広場",
+      "plot": {
+        "width": 14,
+        "depth": 14,
+        "x": 7,
+        "z": 77,
+        "yaw": 0,
+        "zone": "Fountain square"
+      },
+      "placed": true,
+      "identity": "高さのある三段の大噴水"
+    },
+    {
+      "name": "WarriorAcademy_Lv1",
+      "label": "戦士学校 Lv1",
+      "plot": {
+        "name": "WarriorAcademy_Lv5",
+        "x": -80,
+        "z": 107,
+        "width": 24,
+        "depth": 24,
+        "yaw": 0,
+        "zone": "Military quarter"
+      },
+      "placed": false,
+      "identity": "高い訓練門の交差する剣と軍旗"
+    },
+    {
+      "name": "WarriorAcademy_Lv2",
+      "label": "戦士学校 Lv2",
+      "plot": {
+        "name": "WarriorAcademy_Lv5",
+        "x": -80,
+        "z": 107,
+        "width": 24,
+        "depth": 24,
+        "yaw": 0,
+        "zone": "Military quarter"
+      },
+      "placed": false,
+      "identity": "高い訓練門の交差する剣と軍旗"
+    },
+    {
+      "name": "WarriorAcademy_Lv3",
+      "label": "戦士学校 Lv3",
+      "plot": {
+        "name": "WarriorAcademy_Lv5",
+        "x": -80,
+        "z": 107,
+        "width": 24,
+        "depth": 24,
+        "yaw": 0,
+        "zone": "Military quarter"
+      },
+      "placed": false,
+      "identity": "高い訓練門の交差する剣と軍旗"
+    },
+    {
+      "name": "WarriorAcademy_Lv4",
+      "label": "戦士学校 Lv4",
+      "plot": {
+        "name": "WarriorAcademy_Lv5",
+        "x": -80,
+        "z": 107,
+        "width": 24,
+        "depth": 24,
+        "yaw": 0,
+        "zone": "Military quarter"
+      },
+      "placed": false,
+      "identity": "高い訓練門の交差する剣と軍旗"
+    },
+    {
+      "name": "WarriorAcademy_Lv5",
+      "label": "戦士学校 Lv5",
+      "plot": {
+        "name": "WarriorAcademy_Lv5",
+        "x": -80,
+        "z": 107,
+        "width": 24,
+        "depth": 24,
+        "yaw": 0,
+        "zone": "Military quarter"
+      },
+      "placed": true,
+      "identity": "高い訓練門の交差する剣と軍旗"
+    },
+    {
+      "name": "ArcaneAcademy_Lv1",
+      "label": "魔法学校 Lv1",
+      "plot": {
+        "name": "ArcaneAcademy_Lv5",
+        "x": 44,
+        "z": 106,
+        "width": 23,
+        "depth": 25,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "研究塔の屋根を開いた大型魔力結晶と保持環"
+    },
+    {
+      "name": "ArcaneAcademy_Lv2",
+      "label": "魔法学校 Lv2",
+      "plot": {
+        "name": "ArcaneAcademy_Lv5",
+        "x": 44,
+        "z": 106,
+        "width": 23,
+        "depth": 25,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "研究塔の屋根を開いた大型魔力結晶と保持環"
+    },
+    {
+      "name": "ArcaneAcademy_Lv3",
+      "label": "魔法学校 Lv3",
+      "plot": {
+        "name": "ArcaneAcademy_Lv5",
+        "x": 44,
+        "z": 106,
+        "width": 23,
+        "depth": 25,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "研究塔の屋根を開いた大型魔力結晶と保持環"
+    },
+    {
+      "name": "ArcaneAcademy_Lv4",
+      "label": "魔法学校 Lv4",
+      "plot": {
+        "name": "ArcaneAcademy_Lv5",
+        "x": 44,
+        "z": 106,
+        "width": 23,
+        "depth": 25,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "研究塔の屋根を開いた大型魔力結晶と保持環"
+    },
+    {
+      "name": "ArcaneAcademy_Lv5",
+      "label": "魔法学校 Lv5",
+      "plot": {
+        "name": "ArcaneAcademy_Lv5",
+        "x": 44,
+        "z": 106,
+        "width": 23,
+        "depth": 25,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": true,
+      "identity": "研究塔の屋根を開いた大型魔力結晶と保持環"
+    },
+    {
+      "name": "SpiritAcademy_Lv1",
+      "label": "精霊使役学校 Lv1",
+      "plot": {
+        "name": "SpiritAcademy_Lv5",
+        "x": 82,
+        "z": 120,
+        "width": 24,
+        "depth": 26,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "回廊を超える大樹と精霊の灯"
+    },
+    {
+      "name": "SpiritAcademy_Lv2",
+      "label": "精霊使役学校 Lv2",
+      "plot": {
+        "name": "SpiritAcademy_Lv5",
+        "x": 82,
+        "z": 120,
+        "width": 24,
+        "depth": 26,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "回廊を超える大樹と精霊の灯"
+    },
+    {
+      "name": "SpiritAcademy_Lv3",
+      "label": "精霊使役学校 Lv3",
+      "plot": {
+        "name": "SpiritAcademy_Lv5",
+        "x": 82,
+        "z": 120,
+        "width": 24,
+        "depth": 26,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "回廊を超える大樹と精霊の灯"
+    },
+    {
+      "name": "SpiritAcademy_Lv4",
+      "label": "精霊使役学校 Lv4",
+      "plot": {
+        "name": "SpiritAcademy_Lv5",
+        "x": 82,
+        "z": 120,
+        "width": 24,
+        "depth": 26,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": false,
+      "identity": "回廊を超える大樹と精霊の灯"
+    },
+    {
+      "name": "SpiritAcademy_Lv5",
+      "label": "精霊使役学校 Lv5",
+      "plot": {
+        "name": "SpiritAcademy_Lv5",
+        "x": 82,
+        "z": 120,
+        "width": 24,
+        "depth": 26,
+        "yaw": 0,
+        "zone": "Scholars quarter"
+      },
+      "placed": true,
+      "identity": "回廊を超える大樹と精霊の灯"
+    }
+  ],
+  "identityPolicy": "2026-10-30: large identity features and bold building-shape changes are explicitly requested. Signs are allowed; their use and shape must suit each facility."
+}

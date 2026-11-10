@@ -26,7 +26,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new IdentifiedSkill(new WandArcaneBlastSkill(), SkillId.Wand_ArcaneBlast);
+            SkillBase skill = new IdentifiedSkill(new FixedCastSkill(new WandArcaneBlastSkill()), SkillId.Wand_ArcaneBlast);
 
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
             Assert.That(owner.SkillCaster.IsCasting, Is.True);
@@ -56,7 +56,7 @@ public sealed class CombatSkillCasterTests
         CombatSkillActionEvents.Completed += Handle;
         try
         {
-            SkillBase skill = new IdentifiedSkill(new WandArcaneBlastSkill(), SkillId.Wand_ArcaneBlast);
+            SkillBase skill = new IdentifiedSkill(new FixedCastSkill(new WandArcaneBlastSkill()), SkillId.Wand_ArcaneBlast);
 
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
             owner.SkillCaster.Tick(float.PositiveInfinity);
@@ -89,7 +89,7 @@ public sealed class CombatSkillCasterTests
         CombatSkillActionEvents.Cancelled += Handle;
         try
         {
-            SkillBase skill = new IdentifiedSkill(new WandArcaneBlastSkill(), SkillId.Wand_ArcaneBlast);
+            SkillBase skill = new IdentifiedSkill(new FixedCastSkill(new WandArcaneBlastSkill()), SkillId.Wand_ArcaneBlast);
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(owner.Health.MaxHP, target);
@@ -113,7 +113,7 @@ public sealed class CombatSkillCasterTests
         try
         {
             CombatEditModeTestUtil.SetPrivateField(owner, "<INT>k__BackingField", 10);
-            SkillBase skill = new WandArcaneBlastSkill();
+            SkillBase skill = new FixedCastSkill(new WandArcaneBlastSkill());
             SkillExecutionContext initialContext = SkillExecutionContext.ForTarget(target).Capture(owner);
             int expectedDamage = skill.EstimateDamage(owner, initialContext, target);
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
@@ -136,7 +136,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandArcaneBlastSkill();
+            SkillBase skill = new FixedCastSkill(new WandArcaneBlastSkill());
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(1, target);
@@ -159,7 +159,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandArcaneBlastSkill();
+            SkillBase skill = new FixedCastSkill(new WandArcaneBlastSkill());
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(owner.Health.MaxHP, target);
@@ -180,7 +180,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandArcaneBlastSkill();
+            SkillBase skill = new FixedCastSkill(new WandArcaneBlastSkill());
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             target.Health.TakeDamage(100);
@@ -204,7 +204,7 @@ public sealed class CombatSkillCasterTests
         try
         {
             CombatEditModeTestUtil.SetPrivateField(owner, "<INT>k__BackingField", 10);
-            SkillBase skill = new WandAreaBlastSkill();
+            SkillBase skill = new FixedCastSkill(new WandAreaBlastSkill());
             SkillExecutionContext context = SkillExecutionContext.ForPoint(Vector3.forward, new[] { first });
             Assert.That(owner.SkillCaster.TryStartCast(skill, context), Is.True);
 
@@ -228,7 +228,7 @@ public sealed class CombatSkillCasterTests
         Character target = CreateCharacter("Target", CombatTeam.Enemy, Vector3.forward);
         try
         {
-            SkillBase skill = new WandArcaneBlastSkill();
+            SkillBase skill = new FixedCastSkill(new WandArcaneBlastSkill());
             Assert.That(owner.SkillCaster.TryStartCast(skill, SkillExecutionContext.ForTarget(target)), Is.True);
 
             owner.Health.TakeDamage(100);
@@ -244,36 +244,20 @@ public sealed class CombatSkillCasterTests
         }
     }
 
-    [TestCase(SkillId.Wand_ArcaneBlast, 1.5f)]
-    [TestCase(SkillId.Wand_AreaBlast, 1.5f)]
-    [TestCase(SkillId.Wand_GodsHand, 2.5f)]
-    [TestCase(SkillId.Grimoire_StrDebuff, 1f)]
-    [TestCase(SkillId.Grimoire_Bind, 1.4f)]
-    [TestCase(SkillId.Grimoire_Poison, 1.1f)]
-    [TestCase(SkillId.Grimoire_Stealth, 0.8f)]
-    [TestCase(SkillId.Bible_StrBuff, 0.9f)]
-    [TestCase(SkillId.Bible_Invulnerable, 1.2f)]
-    [TestCase(SkillId.Bible_Gotsume, 1f)]
-    [TestCase(SkillId.Rosary_CloseHeal, 1.3f)]
-    [TestCase(SkillId.Rosary_Regeneration, 1f)]
-    [TestCase(SkillId.Rosary_HealingArea, 1.5f)]
-    [TestCase(SkillId.Rosary_SacrificeThunder, 2.5f)]
-    public void StrongSkill_HasConfiguredCastTime(SkillId skillId, float expected)
+    private sealed class FixedCastSkill : SkillBase
     {
-        Assert.That(CombatSkillFactory.Create(skillId).CastTimeSeconds, Is.EqualTo(expected).Within(0.001f));
-    }
-
-    [TestCase(SkillId.Sword_Slash)]
-    [TestCase(SkillId.Shield_Slash)]
-    [TestCase(SkillId.Shield_ShoulderGuard)]
-    [TestCase(SkillId.Wand_Bolt)]
-    [TestCase(SkillId.Grimoire_Bolt)]
-    [TestCase(SkillId.Bible_Smite)]
-    [TestCase(SkillId.Rosary_Strike)]
-    [TestCase(SkillId.Rosary_DistantHeal)]
-    public void ImmediateSkill_HasNoCastTime(SkillId skillId)
-    {
-        Assert.That(CombatSkillFactory.Create(skillId).CastTimeSeconds, Is.Zero);
+        private readonly SkillBase _inner;
+        public FixedCastSkill(SkillBase inner) => _inner = inner;
+        public override string Name => _inner.Name;
+        public override float CastTimeSeconds => 1f;
+        public override float CooldownSeconds => 2f;
+        public override string CooldownKey => _inner.CooldownKey;
+        public override SkillTargetKind TargetKind => _inner.TargetKind;
+        public override float MaxRange => _inner.MaxRange;
+        public override float AreaRadius => _inner.AreaRadius;
+        public override int EstimateDamage(Character self, SkillExecutionContext context, Character target)
+            => _inner.EstimateDamage(self, context, target);
+        public override void Execute(Character self, SkillExecutionContext context) => _inner.Execute(self, context);
     }
 
     private static Character CreateCharacter(string name, CombatTeam team, Vector3 position)

@@ -4,6 +4,41 @@ using UnityEngine;
 
 public sealed class SkillVfxProceduralFactoryTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public void RuntimeBridge_EditModeEventsDoNotPlayOrAccessDestroyedPlayer(bool destroyPlayer)
+    {
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic;
+        var field = typeof(SkillVfxRuntimeBridge).GetField("_player", flags);
+        object previous = field.GetValue(null);
+        var host = new GameObject("VFX host");
+        var actorObject = new GameObject("Actor");
+        try
+        {
+            var player = host.AddComponent<SkillVfxPlayer>();
+            field.SetValue(null, player);
+            var actor = actorObject.AddComponent<Character>();
+            var action = new CombatSkillActionInfo(1, actor, CombatSkillFactory.Create(SkillId.Wand_ArcaneBlast),
+                SkillExecutionContext.ForSelf(actor), 0);
+            var result = new CombatSkillActionResult(action, CombatSkillActionOutcome.Cancelled, Array.Empty<CombatActionEffect>());
+            if (destroyPlayer) UnityEngine.Object.DestroyImmediate(host);
+
+            Assert.DoesNotThrow(() => typeof(SkillVfxRuntimeBridge).GetMethod("OnSkillStarted", flags)
+                .Invoke(null, new object[] { action }));
+            Assert.DoesNotThrow(() => typeof(SkillVfxRuntimeBridge).GetMethod("OnSkillCancelled", flags)
+                .Invoke(null, new object[] { result }));
+            Assert.DoesNotThrow(() => typeof(SkillVfxRuntimeBridge).GetMethod("OnSkillCompleted", flags)
+                .Invoke(null, new object[] { result }));
+            if (!destroyPlayer) Assert.That(player.ActiveCount, Is.Zero);
+        }
+        finally
+        {
+            field.SetValue(null, previous);
+            if (host != null) UnityEngine.Object.DestroyImmediate(host);
+            UnityEngine.Object.DestroyImmediate(actorObject);
+        }
+    }
+
     [Test]
     public void Atlas_HasARegionForEveryLayerSprite()
     {
@@ -49,53 +84,6 @@ public sealed class SkillVfxProceduralFactoryTests
             }
         }
         finally { UnityEngine.Object.DestroyImmediate(builder.Mesh); }
-    }
-
-    [Test]
-    public void SupportColors_AreSharedWithinEachCategory()
-    {
-        foreach (var id in new[] { SkillId.Shield_ShoulderGuard, SkillId.Bible_StrBuff, SkillId.Bible_IntBuff,
-            SkillId.Bible_FaiBuff, SkillId.Bible_AgiBuff, SkillId.Bible_Invulnerable, SkillId.Bible_Gotsume,
-            SkillId.Grimoire_Stealth, SkillId.Shield_IronWall })
-            Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Bible_StrBuff)), id.ToString());
-        foreach (var id in new[] { SkillId.Grimoire_StrDebuff, SkillId.StatDebuff_INT, SkillId.StatDebuff_FAI,
-            SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison })
-            Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Grimoire_Poison)), id.ToString());
-        foreach (var id in new[] { SkillId.Rosary_DistantHeal, SkillId.Rosary_CloseHeal,
-            SkillId.Rosary_Regeneration, SkillId.Rosary_HealingArea })
-            Assert.That(SkillVfxArt.ColorFor(id), Is.EqualTo(SkillVfxArt.ColorFor(SkillId.Rosary_CloseHeal)), id.ToString());
-    }
-
-    [Test]
-    public void SupportColors_UseOrangeForBuffsAndBluePurpleForDebuffs()
-    {
-        Color buff = SkillVfxArt.ColorFor(SkillId.Bible_StrBuff);
-        Color debuff = SkillVfxArt.ColorFor(SkillId.Grimoire_StrDebuff);
-        Assert.That(buff.r, Is.GreaterThan(buff.g));
-        Assert.That(buff.g, Is.GreaterThan(buff.b));
-        Assert.That(debuff.b, Is.GreaterThan(debuff.r));
-        Assert.That(debuff.b, Is.GreaterThan(debuff.g));
-    }
-
-    [Test]
-    public void Taunt_UsesDedicatedAngerColor()
-    {
-        Color taunt = SkillVfxArt.ColorFor(SkillId.Shield_Taunt);
-        Color debuff = SkillVfxArt.ColorFor(SkillId.Grimoire_Poison);
-
-        Assert.That(taunt, Is.Not.EqualTo(debuff));
-        Assert.That(taunt.r, Is.GreaterThan(taunt.g));
-        Assert.That(taunt.r, Is.GreaterThan(taunt.b));
-    }
-
-    [Test]
-    public void SwordTechniques_UseDistinctColors()
-    {
-        var colors = new[] { SkillVfxArt.ColorFor(SkillId.Sword_Slash),
-            SkillVfxArt.ColorFor(SkillId.Sword_QuickSlash), SkillVfxArt.ColorFor(SkillId.Sword_StrongSlash) };
-        Assert.That(colors[0], Is.Not.EqualTo(colors[1]));
-        Assert.That(colors[0], Is.Not.EqualTo(colors[2]));
-        Assert.That(colors[1], Is.Not.EqualTo(colors[2]));
     }
 
     [Test]

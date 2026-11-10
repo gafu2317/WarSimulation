@@ -13,8 +13,61 @@ public sealed class CombatAutoBattleRole
 }
 
 [Serializable]
+public sealed class CombatAutoBattleBalanceSettings
+{
+    public float RecklessHPMultiplier = 1f;
+    public float RecklessSTRMultiplier = 1f;
+    public float RecklessINTMultiplier = 1f;
+    public float RecklessFAIMultiplier = 1f;
+    public float RecklessAGIMultiplier = -1f;
+    public float ReviveDelayAfterArrivalSeconds = -1f;
+
+    public void Validate()
+    {
+        foreach (float multiplier in new[] { RecklessHPMultiplier, RecklessSTRMultiplier,
+                     RecklessINTMultiplier, RecklessFAIMultiplier })
+            if (float.IsNaN(multiplier) || float.IsInfinity(multiplier) || multiplier <= 0f || multiplier > 1f)
+                throw new ArgumentOutOfRangeException(nameof(multiplier), "猪突猛進の倍率は0より大きく1以下にします。");
+        if (RecklessAGIMultiplier != -1f && (float.IsNaN(RecklessAGIMultiplier) ||
+            float.IsInfinity(RecklessAGIMultiplier) || RecklessAGIMultiplier <= 0f || RecklessAGIMultiplier > 1f))
+            throw new ArgumentOutOfRangeException(nameof(RecklessAGIMultiplier));
+        if (float.IsNaN(ReviveDelayAfterArrivalSeconds) || float.IsInfinity(ReviveDelayAfterArrivalSeconds) ||
+            ReviveDelayAfterArrivalSeconds < 0f && ReviveDelayAfterArrivalSeconds != -1f)
+            throw new ArgumentOutOfRangeException(nameof(ReviveDelayAfterArrivalSeconds));
+    }
+
+    public CombatParticipantSetup CreateSetup(Character character, WeaponConfig weapon,
+        CombatAiPersonalityProfile personality, Character tagalongTarget = null)
+    {
+        character.ClearRuntimeStatAdjustments();
+        character.Health.SetReviveDelayOverride(
+            ReviveDelayAfterArrivalSeconds < 0f ? null : ReviveDelayAfterArrivalSeconds);
+        character.SetRecklessAgiMultiplierOverride(
+            RecklessAGIMultiplier < 0f ? null : RecklessAGIMultiplier);
+        var adjustments = new Dictionary<CombatStat, int>();
+        if (personality != null && personality.Kind == CombatAiPersonalityKind.Reckless)
+        {
+            WeaponBase equipped = weapon.CreateWeapon();
+            AddAdjustment(CombatStat.HP, character.MaxHP, RecklessHPMultiplier);
+            AddAdjustment(CombatStat.STR, character.STR + equipped.GetStatBonus(CombatStat.STR), RecklessSTRMultiplier);
+            AddAdjustment(CombatStat.INT, character.INT + equipped.GetStatBonus(CombatStat.INT), RecklessINTMultiplier);
+            AddAdjustment(CombatStat.FAI, character.FAI + equipped.GetStatBonus(CombatStat.FAI), RecklessFAIMultiplier);
+        }
+        return new CombatParticipantSetup(character, weapon, personality,
+            tagalongTarget: tagalongTarget, statAdjustments: adjustments);
+
+        void AddAdjustment(CombatStat stat, int original, float multiplier)
+        {
+            int adjustment = Mathf.Max(1, Mathf.RoundToInt(original * multiplier)) - original;
+            if (adjustment != 0) adjustments.Add(stat, adjustment);
+        }
+    }
+}
+
+[Serializable]
 public sealed class CombatAutoBattleConfig
 {
+    public CombatAutoBattleBalanceSettings Balance = new();
     public string[] MapNames;
     public CombatAutoBattleRole[] Allies;
     public CombatAutoBattleRole[] Enemies;
@@ -30,6 +83,7 @@ public sealed class CombatAutoBattleConfig
 [Serializable]
 public sealed class CombatAutoBattleMatchResult
 {
+    public CombatAutoBattleBalanceSettings Balance;
     public int Index;
     public int Seed;
     public string MapName;
@@ -139,6 +193,7 @@ public static class CombatAutoBattleReportWriter
     [Serializable]
     private sealed class Report
     {
+        public CombatAutoBattleBalanceSettings Balance;
         public int SchemaVersion = CombatAutoBattleReportSchema.CurrentVersion;
         public int MatchCount;
         public int Wins;
@@ -201,6 +256,7 @@ public static class CombatAutoBattleReportWriter
         if (matches.Count > 0)
         {
             CombatAutoBattleMatchResult first = matches[0];
+            report.Balance = first.Balance;
             report.TimeScale = first.TimeScale;
             report.FixedDeltaTime = first.FixedDeltaTime;
             report.PreserveFixedDeltaTime = first.PreserveFixedDeltaTime;

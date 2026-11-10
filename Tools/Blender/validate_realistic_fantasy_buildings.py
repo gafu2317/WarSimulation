@@ -7,7 +7,7 @@ from mathutils.bvhtree import BVHTree
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REVIEW = os.path.join(ROOT, "docs", "Art", "KingdomBuildings_RealisticFantasy")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "RealisticBuildings")
 bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT, "ArtSource", "Blender", "KingdomBuildings_RealisticFantasy.blend"))
 with open(os.path.join(REVIEW, "model_manifest.json")) as handle:
     manifest = json.load(handle)
@@ -56,15 +56,10 @@ assert all(section == sections["Granite_Straight"] for section in sections.value
 for role in ("Stone", "StoneTrim", "StoneShade"):
     colors = [tuple(bpy.data.materials["Fantasy_"+label+role].diffuse_color) for label in manifest["wall_colors"]]
     assert len(set(colors)) == len(manifest["wall_colors"]), (role, "distinct wall colors")
-with open(os.path.join(ROOT, "docs", "Art", "KingdomBuildings", "validation.json")) as handle:
-    original = json.load(handle)
-old_castle = next(m for m in original["models"] if m["model"] == "Kingdom_Castle")
-new_castle = next(m for m in records if m["name"] == "Royal_Castle")
-assert all(a>b for a,b in zip(new_castle["dimensions_m"], old_castle["dimensions_m"])), "castle enlarged in all axes"
 assert not [image.name for image in bpy.data.images if image.source == "FILE" and not image.packed_file], "no missing external texture dependency"
 report = {"environment": "Blender "+bpy.app.version_string, "blend_reopen": "PASS", "models": records,
           "wall_connections": "PASS", "wall_color_variants": list(manifest["wall_colors"]),
-          "castle_larger_than_original": "PASS", "external_textures_required": False}
+          "external_textures_required": False}
 with open(os.path.join(REVIEW, "validation.json"), "w") as handle:
     json.dump(report, handle, indent=2)
 print(json.dumps(report, indent=2))

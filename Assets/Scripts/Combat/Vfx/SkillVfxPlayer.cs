@@ -11,6 +11,7 @@ public sealed class SkillVfxPlayer : MonoBehaviour
     private readonly List<SkillVfxEffect> _active = new(Capacity);
     private readonly Stack<SkillVfxEffect> _pool = new(Capacity);
     private bool _wasCombatRunning;
+    private long _nextPlayerCastId = -1;
     public int ActiveCount => _active.Count;
     public int PooledCount => _pool.Count;
     public int PeakActiveCount { get; private set; }
@@ -29,6 +30,14 @@ public sealed class SkillVfxPlayer : MonoBehaviour
     {
         if (skillId == SkillId.None) { message = "未定義のスキル"; return false; }
         SkillBase skill = CombatSkillFactory.Create(skillId);
+        if (CombatPlayerMagicSettings.IsPlayerMagic(skillId))
+        {
+            Vector3 position = skillId == SkillId.Player_AllInvulnerable ? selfPosition : pointPosition ?? targetPosition ?? selfPosition;
+            var preview = Play(skillId, position, position, position, SkillVfxEffect.Phase.Preview,
+                radius: CombatPlayerMagicSettings.Default.AreaRadius);
+            message = preview != null ? CombatPlayerMagicSettings.Label(skillId) : "VFX同時表示上限";
+            return preview != null;
+        }
         if (skill == null) { message = "未定義のスキル"; return false; }
         bool targetsSelf = skill.TargetKind == SkillTargetKind.Self;
         Vector3 previewTarget = targetsSelf ? selfPosition : targetPosition ?? selfPosition;
@@ -37,6 +46,37 @@ public sealed class SkillVfxPlayer : MonoBehaviour
             SkillVfxEffect.Phase.Preview, 0, skill.AreaRadius);
         message = effect != null ? $"{skillId} / 画像併用" : "VFX同時表示上限";
         return effect != null;
+    }
+
+    public long BeginPlayerMagicCast(CombatPlayerMagicRequest request)
+    {
+        float seconds = CombatPlayerMagicSettings.CastSeconds(request.SkillId);
+        if (seconds <= 0) return 0;
+        var effect = Play(request.SkillId, request.Center, request.Center, request.Center,
+            SkillVfxEffect.Phase.Cast, seconds, request.Radius);
+        if (effect == null) return 0;
+        effect.ActionId = _nextPlayerCastId--;
+        return effect.ActionId;
+    }
+
+    public void CancelPlayerMagicCast(long id) { if (id < 0) RemoveCast(id); }
+
+    public void PlayPlayerMagic(CombatPlayerMagicRequest request, IReadOnlyList<Character> targets)
+    {
+        if (request.Kind == CombatPlayerMagicKind.Area)
+        {
+            Play(request.SkillId, request.Center, request.Center, request.Center, SkillVfxEffect.Phase.Impact, radius: request.Radius);
+            return;
+        }
+        foreach (Character character in targets)
+        {
+            if (character == null) continue;
+            for (int i = _active.Count - 1; i >= 0; i--)
+                if (_active[i].Skill == request.SkillId && _active[i].FollowCharacter == character) Release(i);
+            Vector3 point = SkillVfxEffect.FootPosition(character.transform);
+            var effect = Play(request.SkillId, point, point, point, SkillVfxEffect.Phase.Impact);
+            if (effect != null) effect.Bind(null, character, CombatPlayerMagicSystem.InvulnerableKey);
+        }
     }
 
     public void PlayCast(CombatSkillActionInfo action)

@@ -14,7 +14,7 @@ import export_block as shared
 
 
 OUTPUT = ROOT / "Assets/Models/Kingdom/City"
-REVIEW = ROOT / "docs/Art/KingdomCity"
+REVIEW = ROOT / "docs/Art/Records/City"
 SOURCES = {
     "KingdomBuildings_RealisticFantasy": ["Royal_Castle", "Granite_Straight", "Granite_Gate", "Granite_Corner"],
     "FantasyTownFacilities": ["Tavern", "Clinic", "Guardhouse"],

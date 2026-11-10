@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
 
 public class CountryOperationTestUI : MonoBehaviour
 {
@@ -180,7 +179,7 @@ public class CountryOperationTestUI : MonoBehaviour
         GUILayout.Space(20);
         if (GUILayout.Button("時間を早送りする (手動用)", GUILayout.Height(30)))
         {
-             DateManager.Instance?.StartFastForwardAsync().Forget();
+             DateManager.Instance?.Resume();
         }
 
         GUILayout.EndScrollView();

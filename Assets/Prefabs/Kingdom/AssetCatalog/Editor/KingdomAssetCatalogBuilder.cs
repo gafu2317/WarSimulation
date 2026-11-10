@@ -16,7 +16,7 @@ namespace WarSimulation.Kingdom.EditorOnly
     {
         const string ScenePath = "Assets/Scenes/KingdomAssetCatalog.unity";
         const string MaterialRoot = "Assets/Materials/Kingdom";
-        const string ValidationPath = "docs/Art/KingdomAssetCatalog/validation.json";
+        const string ValidationPath = "docs/Art/Records/Catalog/validation.json";
         const string FontPath = "Assets/Fonts/Noto_Sans_JP/static/NotoSansJP-Regular SDF.asset";
 
         static readonly string[] PrefabRoots =

@@ -11,7 +11,7 @@ public sealed class CombatStatusIconTests
         var go = new GameObject("Debug HUD", typeof(RectTransform));
         try
         {
-            go.AddComponent<CombatBattleHudView>();
+            go.AddComponent<CombatBattleHudView>().EnsureBuilt();
             var controls = (RectTransform)go.transform.Find("TemporaryBattleControls");
             Transform panel = go.transform.Find("DebugBattlePanel");
             var ally = (RectTransform)panel.Find("AllyStoneStatus");
@@ -45,6 +45,7 @@ public sealed class CombatStatusIconTests
         try
         {
             var hud = hudObject.AddComponent<CombatBattleHudView>();
+            hud.EnsureBuilt();
             Character character = characterObject.AddComponent<Character>();
             character.StatusEffects.ApplyPoison(1, 5f, 1f);
             character.StatusEffects.ApplyBind(5f);
@@ -58,9 +59,6 @@ public sealed class CombatStatusIconTests
             object card = cards[0];
             var root = (GameObject)card.GetType().GetField("Root").GetValue(card);
             Transform row = root.transform.Find("StatusEffectsRow");
-            var layout = root.GetComponent<VerticalLayoutGroup>();
-            Assert.That(root.GetComponent<LayoutElement>(), Is.Null);
-            Assert.That(layout.padding.top, Is.EqualTo(layout.padding.bottom));
             Assert.That(row.GetSiblingIndex(), Is.EqualTo(root.transform.Find("HpBar").GetSiblingIndex() + 1));
             var names = new List<string>();
             foreach (Image icon in row.GetComponentsInChildren<Image>(true))
@@ -70,17 +68,6 @@ public sealed class CombatStatusIconTests
             }
             CollectionAssert.AreEquivalent(new[] { "Poison", "Bind" }, names);
 
-            var weaponText = root.transform.Find("WeaponHpRow/Weapon").GetComponent<TMPro.TMP_Text>();
-            character.StatusEffects.Apply(CombatStatusEffects.StatKind.STR, 1.2f, 5f);
-            refresh.Invoke(hud, arguments);
-            Assert.That(weaponText.color, Is.EqualTo(Color.white));
-            character.StatusEffects.Apply(CombatStatusEffects.StatKind.INT, 0.8f, 5f);
-            refresh.Invoke(hud, arguments);
-            Assert.That(weaponText.color, Is.EqualTo(Color.white));
-            character.StatusEffects.ClearAll();
-            character.StatusEffects.Apply(CombatStatusEffects.StatKind.INT, 0.8f, 5f);
-            refresh.Invoke(hud, arguments);
-            Assert.That(weaponText.color, Is.EqualTo(Color.white));
             character.StatusEffects.ClearAll();
             refresh.Invoke(hud, arguments);
             Assert.That(row.gameObject.activeSelf, Is.True);

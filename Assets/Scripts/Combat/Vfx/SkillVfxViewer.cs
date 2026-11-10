@@ -265,7 +265,7 @@ public sealed class SkillVfxViewer : MonoBehaviour
             var label = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
             label.font = _skillText.font;
             label.fontSharedMaterial = _skillText.fontSharedMaterial;
-            label.text = CombatSkillFactory.Create(id)?.Name ?? id.ToString();
+            label.text = CombatSkillFactory.Create(id)?.Name ?? (CombatPlayerMagicSettings.IsPlayerMagic(id) ? CombatPlayerMagicSettings.Label(id) : id.ToString());
             label.alignment = TextAlignmentOptions.Center;
             label.enableAutoSizing = true;
             label.fontSizeMin = 10;
@@ -490,8 +490,8 @@ public sealed class SkillVfxViewer : MonoBehaviour
             {
                 SkillId id = _skillIds[_index];
                 SkillBase skill = CombatSkillFactory.Create(id);
-                string skillName = skill != null ? skill.Name : id.ToString();
-                string weaponName = WeaponDisplayName(ResolveWeaponKind(id));
+                string skillName = skill != null ? skill.Name : CombatPlayerMagicSettings.IsPlayerMagic(id) ? CombatPlayerMagicSettings.Label(id) : id.ToString();
+                string weaponName = CombatPlayerMagicSettings.IsPlayerMagic(id) ? "プレイヤー魔法" : WeaponDisplayName(ResolveWeaponKind(id));
                 _skillText.text =
                     $"武器: {weaponName}\nスキル: {skillName}  [{_index + 1}/{_skillIds.Length}]";
             }

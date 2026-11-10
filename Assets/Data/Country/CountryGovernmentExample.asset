@@ -1,0 +1,141 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d0019c62f4d74229855e00522cd5f13, type: 3}
+  m_Name: CountryGovernmentExample
+  m_EditorClassIdentifier: WarSimulation.Runtime::CountryGovernmentData
+  Facilities:
+  - Name: "\u6226\u58EB\u5B66\u6821"
+    EffectName: "\u8A13\u7DF4\u52B9\u679C"
+    InitialLevel: 1
+    Minimum: 100
+    Funding: 200
+    TrainingSchool: 1
+    Construction:
+      Money: 350
+      Wood: 120
+      Ore: 60
+      Months: 2
+      Effect: "\u3053\u306E\u5B66\u6821\u3067\u30E1\u30F3\u30D0\u30FC\u3092\u8A13\u7DF4\u3067\u304D\u308B"
+    Upgrade:
+      Money: 550
+      Wood: 100
+      Ore: 80
+      Months: 1
+      Effect: "\u8A13\u7DF4\u52B9\u679C 100% \u2192 120%"
+  - Name: "\u9B54\u6CD5\u5B66\u6821"
+    EffectName: "\u8A13\u7DF4\u52B9\u679C"
+    InitialLevel: 1
+    Minimum: 80
+    Funding: 150
+    TrainingSchool: 1
+    Construction:
+      Money: 400
+      Wood: 110
+      Ore: 80
+      Months: 2
+      Effect: "\u3053\u306E\u5B66\u6821\u3067\u30E1\u30F3\u30D0\u30FC\u3092\u8A13\u7DF4\u3067\u304D\u308B"
+    Upgrade:
+      Money: 600
+      Wood: 90
+      Ore: 100
+      Months: 1
+      Effect: "\u8A13\u7DF4\u52B9\u679C 100% \u2192 120%"
+  - Name: "\u6559\u4F1A"
+    EffectName: "\u8A13\u7DF4\u52B9\u679C"
+    InitialLevel: 1
+    Minimum: 60
+    Funding: 100
+    TrainingSchool: 1
+    Construction:
+      Money: 300
+      Wood: 100
+      Ore: 50
+      Months: 2
+      Effect: "\u3053\u306E\u5B66\u6821\u3067\u30E1\u30F3\u30D0\u30FC\u3092\u8A13\u7DF4\u3067\u304D\u308B"
+    Upgrade:
+      Money: 500
+      Wood: 80
+      Ore: 70
+      Months: 1
+      Effect: "\u8A13\u7DF4\u52B9\u679C 100% \u2192 120%"
+  - Name: "\u7CBE\u970A\u4F7F\u5F79\u5B66\u6821"
+    EffectName: "\u65BD\u8A2D\u52B9\u679C"
+    InitialLevel: 1
+    Minimum: 90
+    Funding: 150
+    TrainingSchool: 0
+    Construction:
+      Money: 450
+      Wood: 130
+      Ore: 90
+      Months: 2
+      Effect: "\u30B9\u30C6\u30FC\u30BF\u30B9\u3092\u4E0A\u6607\u3055\u305B\u308B"
+    Upgrade:
+      Money: 650
+      Wood: 110
+      Ore: 110
+      Months: 1
+      Effect: "\u7CBE\u970A\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5F37\u5316\u3059\u308B"
+  - Name: "\u935B\u51B6\u5834"
+    EffectName: "\u6B66\u5668\u88FD\u4F5C\u306E\u54C1\u8CEA"
+    InitialLevel: 1
+    Minimum: 70
+    Funding: 100
+    TrainingSchool: 0
+    Construction:
+      Money: 380
+      Wood: 100
+      Ore: 80
+      Months: 2
+      Effect: "\u6B66\u5668\u3092\u88FD\u4F5C\u3067\u304D\u308B"
+    Upgrade:
+      Money: 580
+      Wood: 80
+      Ore: 100
+      Months: 1
+      Effect: "\u88FD\u4F5C\u3067\u304D\u308B\u6B66\u5668\u306E\u54C1\u8CEA\u304C\u4E0A\u304C\u308B"
+  - Name: "\u56F3\u66F8\u9928"
+    EffectName: "\u65BD\u8A2D\u52B9\u679C"
+    InitialLevel: 0
+    Minimum: 80
+    Funding: 0
+    TrainingSchool: 0
+    Construction:
+      Money: 420
+      Wood: 120
+      Ore: 60
+      Months: 2
+      Effect: "\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5229\u7528\u3067\u304D\u308B"
+    Upgrade:
+      Money: 620
+      Wood: 120
+      Ore: 60
+      Months: 1
+      Effect: "\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5F37\u5316\u3059\u308B"
+  - Name: "\u5929\u6587\u53F0"
+    EffectName: "\u65BD\u8A2D\u52B9\u679C"
+    InitialLevel: 0
+    Minimum: 80
+    Funding: 0
+    TrainingSchool: 0
+    Construction:
+      Money: 480
+      Wood: 100
+      Ore: 100
+      Months: 2
+      Effect: "\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5229\u7528\u3067\u304D\u308B"
+    Upgrade:
+      Money: 680
+      Wood: 100
+      Ore: 100
+      Months: 1
+      Effect: "\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5F37\u5316\u3059\u308B"

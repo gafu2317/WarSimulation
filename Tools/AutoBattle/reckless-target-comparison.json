@@ -1,0 +1,165 @@
+{
+  "Candidates": [
+    {
+      "Name": "魔石速攻",
+      "Roles": [
+        {
+          "Weapon": 1,
+          "Personality": 19
+        },
+        {
+          "Weapon": 1,
+          "Personality": 19
+        },
+        {
+          "Weapon": 3,
+          "Personality": 19
+        },
+        {
+          "Weapon": 3,
+          "Personality": 19
+        },
+        {
+          "Weapon": 6,
+          "Personality": 9
+        }
+      ]
+    },
+    {
+      "Name": "聖書戦闘狂の混成",
+      "Roles": [
+        {
+          "Weapon": 1,
+          "Personality": 2
+        },
+        {
+          "Weapon": 2,
+          "Personality": 9
+        },
+        {
+          "Weapon": 3,
+          "Personality": 0
+        },
+        {
+          "Weapon": 5,
+          "Personality": 2
+        },
+        {
+          "Weapon": 6,
+          "Personality": 9
+        }
+      ]
+    },
+    {
+      "Name": "杖便乗屋の混成",
+      "Roles": [
+        {
+          "Weapon": 1,
+          "Personality": 2
+        },
+        {
+          "Weapon": 3,
+          "Personality": 21
+        },
+        {
+          "Weapon": 2,
+          "Personality": 9
+        },
+        {
+          "Weapon": 5,
+          "Personality": 9
+        },
+        {
+          "Weapon": 6,
+          "Personality": 9
+        }
+      ]
+    }
+  ],
+  "Enemies": [
+    {
+      "Name": "聖書戦闘狂の混成",
+      "Roles": [
+        {
+          "Weapon": 1,
+          "Personality": 2
+        },
+        {
+          "Weapon": 2,
+          "Personality": 9
+        },
+        {
+          "Weapon": 3,
+          "Personality": 0
+        },
+        {
+          "Weapon": 5,
+          "Personality": 2
+        },
+        {
+          "Weapon": 6,
+          "Personality": 9
+        }
+      ]
+    },
+    {
+      "Name": "杖便乗屋の混成",
+      "Roles": [
+        {
+          "Weapon": 1,
+          "Personality": 2
+        },
+        {
+          "Weapon": 3,
+          "Personality": 21
+        },
+        {
+          "Weapon": 2,
+          "Personality": 9
+        },
+        {
+          "Weapon": 5,
+          "Personality": 9
+        },
+        {
+          "Weapon": 6,
+          "Personality": 9
+        }
+      ]
+    }
+  ],
+  "Scenarios": [
+    {
+      "MapName": "AuthoredMap",
+      "StonePositionsReversed": false
+    },
+    {
+      "MapName": "AuthoredMap",
+      "StonePositionsReversed": true
+    },
+    {
+      "MapName": "AuthoredMap 3",
+      "StonePositionsReversed": false
+    },
+    {
+      "MapName": "AuthoredMap 3",
+      "StonePositionsReversed": true
+    }
+  ],
+  "ScreenMatches": 1,
+  "FinalMatches": 1,
+  "FinalCandidates": 3,
+  "LeagueMatches": 2,
+  "LeagueCandidates": 3,
+  "BaseSeed": 202610110,
+  "TimeoutSeconds": 600,
+  "TimeScale": 6,
+  "PreserveFixedDeltaTime": true,
+  "DisableDiagnostics": true,
+  "Batch": {
+    "Executable": ".unity/CombatAutoBattleSearch/CombatAutoBattleSearch.app",
+    "ParallelProcesses": 4,
+    "MatchesPerJob": 1,
+    "JobWorkerCount": 1
+  }
+}

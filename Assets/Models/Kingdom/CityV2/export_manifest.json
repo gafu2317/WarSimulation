@@ -1,0 +1,6423 @@
+{
+  "assets": [
+    {
+      "name": "Anvil",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Anvil.blend",
+      "front": "Previews/Front/Anvil.png",
+      "three_quarter": "Previews/ThreeQuarter/Anvil.png",
+      "triangles": 380,
+      "mesh_parts": 5,
+      "materials": [
+        "Bark",
+        "Iron"
+      ],
+      "minimum": [
+        -0.5,
+        -0.5,
+        0.0
+      ],
+      "maximum": [
+        0.96,
+        0.5,
+        1.19
+      ],
+      "role_identity": "",
+      "display_name": "金床",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Anvil.fbx"
+    },
+    {
+      "name": "ArcaneAcademy_Lv1",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 20161,
+      "mesh_parts": 29,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Crystal",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -8.188,
+        0.0,
+        -8.9
+      ],
+      "maximum": [
+        8.188,
+        14.05,
+        8.9
+      ],
+      "role_identity": "AlchemyWorkstations; ArcaneLectureHall; ArcaneLectureHall_Roof; BuiltRitualBasin; ContinuousFoundation; Landmark_TowerCrownSpellCrystal; OpenPracticalMagicCourt; PracticalSpellFocus; ResearchTurret; ResearchTurret_Roof",
+      "display_name": "魔法学校 Lv1",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/ArcaneAcademy_Lv1.fbx",
+      "style": "CityV2",
+      "label": "魔法学校 Lv1",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/ArcaneAcademy_Lv1.fbx",
+      "min": [
+        -8.188,
+        0.0,
+        -8.9
+      ],
+      "max": [
+        8.188,
+        14.05,
+        8.9
+      ],
+      "vertices": 39799,
+      "faces": 9413,
+      "features": [
+        "AlchemyWorkstations",
+        "ArcaneLectureHall",
+        "ArcaneLectureHall_Roof",
+        "BuiltRitualBasin",
+        "ContinuousFoundation",
+        "Landmark_TowerCrownSpellCrystal",
+        "OpenPracticalMagicCourt",
+        "PracticalSpellFocus",
+        "ResearchTurret",
+        "ResearchTurret_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -8.9
+        ]
+      },
+      "geometryHash": "f340a03b6c28967563dfdd2ec665920143032e192432d559e6d96a35320afb94",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "TowerCrownSpellCrystal"
+      ]
+    },
+    {
+      "name": "ArcaneAcademy_Lv2",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 24048,
+      "mesh_parts": 31,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Crystal",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -9.016,
+        0.0,
+        -9.8
+      ],
+      "maximum": [
+        9.016,
+        14.65,
+        9.8
+      ],
+      "role_identity": "AlchemyWorkstations; ArcaneLectureHall; ArcaneLectureHall_Roof; BuiltRitualBasin; ContinuousFoundation; Landmark_TowerCrownSpellCrystal; OpenPracticalMagicCourt; PracticalSpellFocus; ResearchTurret; ResearchTurret_Roof",
+      "display_name": "魔法学校 Lv2",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/ArcaneAcademy_Lv2.fbx",
+      "style": "CityV2",
+      "label": "魔法学校 Lv2",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/ArcaneAcademy_Lv2.fbx",
+      "min": [
+        -9.016,
+        0.0,
+        -9.8
+      ],
+      "max": [
+        9.016,
+        14.65,
+        9.8
+      ],
+      "vertices": 47818,
+      "faces": 11408,
+      "features": [
+        "AlchemyWorkstations",
+        "ArcaneLectureHall",
+        "ArcaneLectureHall_Roof",
+        "BuiltRitualBasin",
+        "ContinuousFoundation",
+        "Landmark_TowerCrownSpellCrystal",
+        "OpenPracticalMagicCourt",
+        "PracticalSpellFocus",
+        "ResearchTurret",
+        "ResearchTurret_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -9.8
+        ]
+      },
+      "geometryHash": "2a4f26797fdbf6c97f57fd956b2c22c865fa2c96f0d2b562249c30986785704f",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "TowerCrownSpellCrystal"
+      ]
+    },
+    {
+      "name": "ArcaneAcademy_Lv3",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 24048,
+      "mesh_parts": 31,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Crystal",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -9.844,
+        0.0,
+        -10.7
+      ],
+      "maximum": [
+        9.844,
+        15.25,
+        10.7
+      ],
+      "role_identity": "AlchemyWorkstations; ArcaneLectureHall; ArcaneLectureHall_Roof; BuiltRitualBasin; ContinuousFoundation; Landmark_TowerCrownSpellCrystal; OpenPracticalMagicCourt; PracticalSpellFocus; ResearchTurret; ResearchTurret_Roof",
+      "display_name": "魔法学校 Lv3",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/ArcaneAcademy_Lv3.fbx",
+      "style": "CityV2",
+      "label": "魔法学校 Lv3",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/ArcaneAcademy_Lv3.fbx",
+      "min": [
+        -9.844,
+        0.0,
+        -10.7
+      ],
+      "max": [
+        9.844,
+        15.25,
+        10.7
+      ],
+      "vertices": 47818,
+      "faces": 11408,
+      "features": [
+        "AlchemyWorkstations",
+        "ArcaneLectureHall",
+        "ArcaneLectureHall_Roof",
+        "BuiltRitualBasin",
+        "ContinuousFoundation",
+        "Landmark_TowerCrownSpellCrystal",
+        "OpenPracticalMagicCourt",
+        "PracticalSpellFocus",
+        "ResearchTurret",
+        "ResearchTurret_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -10.7
+        ]
+      },
+      "geometryHash": "a3adea6c924791e67e8bd8e7847d7ab66812c3490fd4e91a71fb9d3281a876e5",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "TowerCrownSpellCrystal"
+      ]
+    },
+    {
+      "name": "ArcaneAcademy_Lv4",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 26360,
+      "mesh_parts": 31,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Crystal",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -10.672,
+        0.0,
+        -11.6
+      ],
+      "maximum": [
+        10.672,
+        18.42256,
+        11.6
+      ],
+      "role_identity": "AlchemyWorkstations; ArcaneLectureHall; ArcaneLectureHall_Roof; BuiltRitualBasin; ContinuousFoundation; Landmark_TowerCrownSpellCrystal; OpenPracticalMagicCourt; PracticalSpellFocus; ResearchTurret; ResearchTurret_Roof",
+      "display_name": "魔法学校 Lv4",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/ArcaneAcademy_Lv4.fbx",
+      "style": "CityV2",
+      "label": "魔法学校 Lv4",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/ArcaneAcademy_Lv4.fbx",
+      "min": [
+        -10.672,
+        0.0,
+        -11.6
+      ],
+      "max": [
+        10.672,
+        18.42256,
+        11.6
+      ],
+      "vertices": 52378,
+      "faces": 12532,
+      "features": [
+        "AlchemyWorkstations",
+        "ArcaneLectureHall",
+        "ArcaneLectureHall_Roof",
+        "BuiltRitualBasin",
+        "ContinuousFoundation",
+        "Landmark_TowerCrownSpellCrystal",
+        "OpenPracticalMagicCourt",
+        "PracticalSpellFocus",
+        "ResearchTurret",
+        "ResearchTurret_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -11.6
+        ]
+      },
+      "geometryHash": "181bff219a7ad7bb4d84cec073d4a83894c28767c79be1d9fd48eb295ede7681",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "TowerCrownSpellCrystal"
+      ]
+    },
+    {
+      "name": "ArcaneAcademy_Lv5",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_ArcaneAcademy_Lv5.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_ArcaneAcademy_Lv5.png",
+      "triangles": 28695,
+      "mesh_parts": 31,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Crystal",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -11.5,
+        0.0,
+        -12.5
+      ],
+      "maximum": [
+        11.5,
+        19.52,
+        12.5
+      ],
+      "role_identity": "AlchemyWorkstations; ArcaneLectureHall; ArcaneLectureHall_Roof; BuiltRitualBasin; ContinuousFoundation; Landmark_TowerCrownSpellCrystal; OpenPracticalMagicCourt; PracticalSpellFocus; ResearchTurret; ResearchTurret_Roof",
+      "display_name": "魔法学校 Lv5",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/ArcaneAcademy_Lv5.fbx",
+      "style": "CityV2",
+      "label": "魔法学校 Lv5",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/ArcaneAcademy_Lv5.fbx",
+      "min": [
+        -11.5,
+        0.0,
+        -12.5
+      ],
+      "max": [
+        11.5,
+        19.52,
+        12.5
+      ],
+      "vertices": 57601,
+      "faces": 13815,
+      "features": [
+        "AlchemyWorkstations",
+        "ArcaneLectureHall",
+        "ArcaneLectureHall_Roof",
+        "BuiltRitualBasin",
+        "ContinuousFoundation",
+        "Landmark_TowerCrownSpellCrystal",
+        "OpenPracticalMagicCourt",
+        "PracticalSpellFocus",
+        "ResearchTurret",
+        "ResearchTurret_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -12.5
+        ]
+      },
+      "geometryHash": "3013650809751be646aefa65b0058021d35b3a98b177486c71b9780c43bb4c72",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "TowerCrownSpellCrystal"
+      ]
+    },
+    {
+      "name": "Arena",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Arena.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Arena.png",
+      "triangles": 7480,
+      "mesh_parts": 15,
+      "materials": [
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Earth",
+        "Fieldstone",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -9.5,
+        0.0,
+        -10.0
+      ],
+      "maximum": [
+        9.5,
+        7.65,
+        10.0
+      ],
+      "role_identity": "ArenaEntryTunnel; ContinuousFoundation; Landmark_TournamentGateAndBanners; OpenArenaFloor; SpectatorCanopy; SupportedArenaArcades; TieredSpectatorSeating; TournamentEquipment",
+      "display_name": "闘技場",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Arena.fbx",
+      "style": "CityV2",
+      "label": "闘技場",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Arena.fbx",
+      "min": [
+        -9.5,
+        0.0,
+        -10.0
+      ],
+      "max": [
+        9.5,
+        7.65,
+        10.0
+      ],
+      "vertices": 16034,
+      "faces": 3954,
+      "features": [
+        "ArenaEntryTunnel",
+        "ContinuousFoundation",
+        "Landmark_TournamentGateAndBanners",
+        "OpenArenaFloor",
+        "SpectatorCanopy",
+        "SupportedArenaArcades",
+        "TieredSpectatorSeating",
+        "TournamentEquipment"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -10.0
+        ]
+      },
+      "geometryHash": "bc3bb5c5e40139e1e8fb3125e45f59d453bcdd9bae92128360376e01b39bf97a",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "TournamentGateAndBanners"
+      ]
+    },
+    {
+      "name": "Bakery",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Bakery.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Bakery.png",
+      "triangles": 4674,
+      "mesh_parts": 25,
+      "materials": [
+        "Bread_Crust",
+        "Brick",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -6.5,
+        0.0,
+        -6.5
+      ],
+      "maximum": [
+        6.5,
+        8.2694,
+        6.5
+      ],
+      "role_identity": "Bakehouse; Bakehouse_Roof; BreadCounterAndTrays; ContinuousFoundation; MasonryBreadOvens; OpenBreadCounter; OpenBreadCounter_ShelterRoof",
+      "display_name": "パン工房",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bakery.fbx",
+      "style": "CityV2",
+      "label": "パン工房",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Bakery.fbx",
+      "min": [
+        -6.5,
+        0.0,
+        -6.5
+      ],
+      "max": [
+        6.5,
+        8.2694,
+        6.5
+      ],
+      "vertices": 9820,
+      "faces": 2516,
+      "features": [
+        "Bakehouse",
+        "Bakehouse_Roof",
+        "BreadCounterAndTrays",
+        "ContinuousFoundation",
+        "MasonryBreadOvens",
+        "OpenBreadCounter",
+        "OpenBreadCounter_ShelterRoof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -6.5
+        ]
+      },
+      "geometryHash": "f7a90d854ec2432cbbcb1827fd92fc2c1303dc4c9eb01cd5366819700f7dd30b",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Barracks",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Barracks.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Barracks.png",
+      "triangles": 3928,
+      "mesh_parts": 20,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -9.0,
+        0.0,
+        -7.0
+      ],
+      "maximum": [
+        9.0,
+        7.8974,
+        7.0
+      ],
+      "role_identity": "BarracksDrillYard; ContinuousFoundation; SoldiersDormitory; SoldiersDormitory_Roof; SoldiersDrillEquipment",
+      "display_name": "兵舎",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Barracks.fbx",
+      "style": "CityV2",
+      "label": "兵舎",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Barracks.fbx",
+      "min": [
+        -9.0,
+        0.0,
+        -7.0
+      ],
+      "max": [
+        9.0,
+        7.8974,
+        7.0
+      ],
+      "vertices": 8044,
+      "faces": 1978,
+      "features": [
+        "BarracksDrillYard",
+        "ContinuousFoundation",
+        "SoldiersDormitory",
+        "SoldiersDormitory_Roof",
+        "SoldiersDrillEquipment"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "78f2273f8329025547906e0ef5641211b740e6f4e52060346d0bbcbd13630f41",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Barrel",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Barrel.png",
+      "three_quarter": "Previews/ThreeQuarter/Barrel.png",
+      "triangles": 512,
+      "mesh_parts": 4,
+      "materials": [
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -0.485999972,
+        0,
+        -0.485999972
+      ],
+      "maximum": [
+        0.485999972,
+        1.2,
+        0.485999972
+      ],
+      "role_identity": "",
+      "display_name": "樽",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Barrel.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Barrel.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Bathhouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Bathhouse.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Bathhouse.png",
+      "triangles": 6964,
+      "mesh_parts": 25,
+      "materials": [
+        "Architectural_Glass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Water"
+      ],
+      "minimum": [
+        -8.5,
+        0.0,
+        -8.5
+      ],
+      "maximum": [
+        8.5,
+        8.865001,
+        8.5
+      ],
+      "role_identity": "BathHallRoofShoulders; BathPoolsAndBenches; BathingDome; BathingHall; BathingHallRoofLantern; ContinuousFoundation; OpenBathCourt; OpenBathCourt_ShelterRoof",
+      "display_name": "公衆浴場",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bathhouse.fbx",
+      "style": "CityV2",
+      "label": "浴場",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Bathhouse.fbx",
+      "min": [
+        -8.5,
+        0.0,
+        -8.5
+      ],
+      "max": [
+        8.5,
+        8.865001,
+        8.5
+      ],
+      "vertices": 14174,
+      "faces": 3460,
+      "features": [
+        "BathHallRoofShoulders",
+        "BathPoolsAndBenches",
+        "BathingDome",
+        "BathingHall",
+        "BathingHallRoofLantern",
+        "ContinuousFoundation",
+        "OpenBathCourt",
+        "OpenBathCourt_ShelterRoof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -8.5
+        ]
+      },
+      "geometryHash": "aecf811d8c0fc8ab7180b1b1b2d231892763208dff3d684f909fbd2becdbf897",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Bench",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Bench.png",
+      "three_quarter": "Previews/ThreeQuarter/Bench.png",
+      "triangles": 308,
+      "mesh_parts": 7,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -1.0,
+        0,
+        -0.280000031
+      ],
+      "maximum": [
+        1.0,
+        1.24,
+        0.280000031
+      ],
+      "role_identity": "",
+      "display_name": "ベンチ",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bench.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Bench.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Blacksmith",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Blacksmith.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Blacksmith.png",
+      "triangles": 5716,
+      "mesh_parts": 48,
+      "materials": [
+        "Brick",
+        "Carved_Limestone",
+        "Coal",
+        "Cobble",
+        "DarkTimber",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Glowing_Coals",
+        "Identity_Steel",
+        "Iron",
+        "Leather",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Water"
+      ],
+      "minimum": [
+        -8.0,
+        0.0,
+        -7.5
+      ],
+      "maximum": [
+        8.0,
+        8.95,
+        7.5
+      ],
+      "role_identity": "AnvilsAndForgeTools; BellowsAndQuenchingTub; CoalAndIronStocks; ContinuousFoundation; GrindingWheel; IronStockStore; IronStockStore_Roof; Landmark_ForgedAnvilAndHammer; OpenForgeWorkshop; SeparatedForgeShelterRoofs; ToolStoreAndBellowsRoom; ToolStoreAndBellowsRoom_Roof; WorkingHearthAndMasonryFlue",
+      "display_name": "鍛冶屋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Blacksmith.fbx",
+      "style": "CityV2",
+      "label": "鍛冶場",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Blacksmith.fbx",
+      "min": [
+        -8.0,
+        0.0,
+        -7.5
+      ],
+      "max": [
+        8.0,
+        8.95,
+        7.5
+      ],
+      "vertices": 11906,
+      "faces": 3002,
+      "features": [
+        "AnvilsAndForgeTools",
+        "BellowsAndQuenchingTub",
+        "CoalAndIronStocks",
+        "ContinuousFoundation",
+        "GrindingWheel",
+        "IronStockStore",
+        "IronStockStore_Roof",
+        "Landmark_ForgedAnvilAndHammer",
+        "OpenForgeWorkshop",
+        "SeparatedForgeShelterRoofs",
+        "ToolStoreAndBellowsRoom",
+        "ToolStoreAndBellowsRoom_Roof",
+        "WorkingHearthAndMasonryFlue"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.5
+        ]
+      },
+      "geometryHash": "8215b6337ec84a8ad7dd2b06655afc9f4203e35f31381f81866a3f053cde2c29",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "ForgedAnvilAndHammer"
+      ]
+    },
+    {
+      "name": "Casino",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Casino.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Casino.png",
+      "triangles": 5960,
+      "mesh_parts": 41,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Plum",
+        "Identity_Ink",
+        "Identity_Ivory",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -6.0,
+        0.0,
+        -6.5
+      ],
+      "maximum": [
+        6.0,
+        10.891,
+        6.5
+      ],
+      "role_identity": "BroadGamingSaloon; ContinuousFoundation; EntranceLanterns; GamingHallMansard; Landmark_FanOfGamingCards; OpenGamingArcade; OpenGamingArcade_ShelterRoof; RealCardTablesAndChips; RoofLantern; RoofLantern_Roof",
+      "display_name": "遊戯館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Casino.fbx",
+      "style": "CityV2",
+      "label": "カジノ",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Casino.fbx",
+      "min": [
+        -6.0,
+        0.0,
+        -6.5
+      ],
+      "max": [
+        6.0,
+        10.891,
+        6.5
+      ],
+      "vertices": 11706,
+      "faces": 2768,
+      "features": [
+        "BroadGamingSaloon",
+        "ContinuousFoundation",
+        "EntranceLanterns",
+        "GamingHallMansard",
+        "Landmark_FanOfGamingCards",
+        "OpenGamingArcade",
+        "OpenGamingArcade_ShelterRoof",
+        "RealCardTablesAndChips",
+        "RoofLantern",
+        "RoofLantern_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -6.5
+        ]
+      },
+      "geometryHash": "b34be3ce6ce3c61e503e2e375d5a0a90330e06fb7e939b49ade02a2068fb95e4",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "FanOfGamingCards"
+      ]
+    },
+    {
+      "name": "Chapel",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Chapel.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Chapel.png",
+      "triangles": 10123,
+      "mesh_parts": 33,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta",
+        "Window_Sacred"
+      ],
+      "minimum": [
+        -5.5,
+        0.0,
+        -5.5
+      ],
+      "maximum": [
+        5.5,
+        14.0,
+        5.5
+      ],
+      "role_identity": "BellTower; BellTower_Top; CongregationEntrance; ContinuousFoundation; HighNave; HighNave_Roof; Landmark_GreatOpenBelfryAndCross; RoundedApse",
+      "display_name": "礼拝堂",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Chapel.fbx",
+      "style": "CityV2",
+      "label": "礼拝堂",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Chapel.fbx",
+      "min": [
+        -5.5,
+        0.0,
+        -5.5
+      ],
+      "max": [
+        5.5,
+        14.0,
+        5.5
+      ],
+      "vertices": 22051,
+      "faces": 5557,
+      "features": [
+        "BellTower",
+        "BellTower_Top",
+        "CongregationEntrance",
+        "ContinuousFoundation",
+        "HighNave",
+        "HighNave_Roof",
+        "Landmark_GreatOpenBelfryAndCross",
+        "RoundedApse"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -5.5
+        ]
+      },
+      "geometryHash": "6a3e9429adf44c204bd00810444ca8f56af54648c29f832cc5f3c482d9e20ba4",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GreatOpenBelfryAndCross"
+      ]
+    },
+    {
+      "name": "Church",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Church.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Church.png",
+      "triangles": 25071,
+      "mesh_parts": 56,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta",
+        "Window_Sacred"
+      ],
+      "minimum": [
+        -10.5,
+        0.0,
+        -15.0
+      ],
+      "maximum": [
+        10.5,
+        18.6,
+        15.0
+      ],
+      "role_identity": "BellTower; BellTower_Top; CongregationEntrance; ContinuousFoundation; HighNave; HighNave_Roof; Landmark_CathedralRoseWindow; Landmark_GreatOpenBelfryAndCross; RoundedApse; SideAisle; SideAisle_Roof; TransverseChapel; TransverseChapel_Roof",
+      "display_name": "教会",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Church.fbx",
+      "style": "CityV2",
+      "label": "教会",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Church.fbx",
+      "min": [
+        -10.5,
+        0.0,
+        -15.0
+      ],
+      "max": [
+        10.5,
+        18.6,
+        15.0
+      ],
+      "vertices": 53953,
+      "faces": 13501,
+      "features": [
+        "BellTower",
+        "BellTower_Top",
+        "CongregationEntrance",
+        "ContinuousFoundation",
+        "HighNave",
+        "HighNave_Roof",
+        "Landmark_CathedralRoseWindow",
+        "Landmark_GreatOpenBelfryAndCross",
+        "RoundedApse",
+        "SideAisle",
+        "SideAisle_Roof",
+        "TransverseChapel",
+        "TransverseChapel_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -15.0
+        ]
+      },
+      "geometryHash": "6a8a7e9f35eb6cbcca87c1f80e3266e796dc5724182110148b4462f4bd75b3af",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CathedralRoseWindow",
+        "GreatOpenBelfryAndCross"
+      ]
+    },
+    {
+      "name": "Clinic",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Clinic.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Clinic.png",
+      "triangles": 12556,
+      "mesh_parts": 51,
+      "materials": [
+        "Architectural_Glass",
+        "Bronze_Fittings",
+        "Canvas_Green",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Sage",
+        "Identity_Healing",
+        "Identity_Ivory",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -7.0,
+        0.0,
+        -6.5
+      ],
+      "maximum": [
+        7.16,
+        8.43,
+        6.5
+      ],
+      "role_identity": "ApothecaryShelves; ContinuousFoundation; HerbConservatory; InfirmaryWard; InfirmaryWard_Roof; Landmark_ApothecaryCrossAndMortar; MedicinalHerbBeds; OpenRecoveryVeranda; OpenRecoveryVeranda_ShelterRoof; TreatmentSuppliesTable; TreatmentWing; TreatmentWing_Roof; VisibleRecoveryBeds",
+      "display_name": "診療所",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Clinic.fbx",
+      "style": "CityV2",
+      "label": "診療所",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Clinic.fbx",
+      "min": [
+        -7.0,
+        0.0,
+        -6.5
+      ],
+      "max": [
+        7.16,
+        8.43,
+        6.5
+      ],
+      "vertices": 25230,
+      "faces": 6170,
+      "features": [
+        "ApothecaryShelves",
+        "ContinuousFoundation",
+        "HerbConservatory",
+        "InfirmaryWard",
+        "InfirmaryWard_Roof",
+        "Landmark_ApothecaryCrossAndMortar",
+        "MedicinalHerbBeds",
+        "OpenRecoveryVeranda",
+        "OpenRecoveryVeranda_ShelterRoof",
+        "TreatmentSuppliesTable",
+        "TreatmentWing",
+        "TreatmentWing_Roof",
+        "VisibleRecoveryBeds"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -6.5
+        ]
+      },
+      "geometryHash": "7694a8f686876288ec73b042f11b28719356da7f2622770894eafd5f319928c6",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "ApothecaryCrossAndMortar"
+      ]
+    },
+    {
+      "name": "Cloth_Stall",
+      "group": "Market",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Cloth_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Cloth_Stall.png",
+      "triangles": 1850,
+      "mesh_parts": 57,
+      "materials": [
+        "Canvas_Blue",
+        "Canvas_Gold",
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Trade"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "布地の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Cloth_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Cloth_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Clothesline",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Clothesline.png",
+      "three_quarter": "Previews/ThreeQuarter/Clothesline.png",
+      "triangles": 220,
+      "mesh_parts": 12,
+      "materials": [
+        "Linen",
+        "Oak"
+      ],
+      "minimum": [
+        -1.8599999,
+        0,
+        -0.06
+      ],
+      "maximum": [
+        1.8599999,
+        2.6,
+        0.06
+      ],
+      "role_identity": "",
+      "display_name": "物干し",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Clothesline.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Clothesline.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Crate_Closed",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Crate_Closed.png",
+      "three_quarter": "Previews/ThreeQuarter/Crate_Closed.png",
+      "triangles": 360,
+      "mesh_parts": 30,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.5849999,
+        0,
+        -0.527
+      ],
+      "maximum": [
+        0.5849999,
+        0.914999962,
+        0.527
+      ],
+      "role_identity": "",
+      "display_name": "蓋付き木箱",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Crate_Closed.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Crate_Closed.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "CrimsonRowhouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_CrimsonRowhouse.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_CrimsonRowhouse.png",
+      "triangles": 5184,
+      "mesh_parts": 35,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Lantern",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -4.5,
+        0.0,
+        -4.0
+      ],
+      "maximum": [
+        4.5,
+        10.1062,
+        4.0
+      ],
+      "role_identity": "ContinuousFoundation; CurtainedPerformancePorch; CurtainedPerformancePorch_ShelterRoof; Landmark_EntertainmentLanternsAndDrapery; Landmark_GildedPerformanceLyre; LuteAndDrum; RearPerformanceHall; RearPerformanceHall_Roof; SmallRaisedStage",
+      "display_name": "赤灯りの町家",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/CrimsonRowhouse.fbx",
+      "style": "CityV2",
+      "label": "歓楽街・演芸館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/CrimsonRowhouse.fbx",
+      "min": [
+        -4.5,
+        0.0,
+        -4.0
+      ],
+      "max": [
+        4.5,
+        10.1062,
+        4.0
+      ],
+      "vertices": 10420,
+      "faces": 2542,
+      "features": [
+        "ContinuousFoundation",
+        "CurtainedPerformancePorch",
+        "CurtainedPerformancePorch_ShelterRoof",
+        "Landmark_EntertainmentLanternsAndDrapery",
+        "Landmark_GildedPerformanceLyre",
+        "LuteAndDrum",
+        "RearPerformanceHall",
+        "RearPerformanceHall_Roof",
+        "SmallRaisedStage"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -4.0
+        ]
+      },
+      "geometryHash": "97d795556048bf045f7487c7d9d2fac3815ab71b983ec3a0b9f5d636f20754c0",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "EntertainmentLanternsAndDrapery",
+        "GildedPerformanceLyre"
+      ]
+    },
+    {
+      "name": "Fantasy_House",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Fantasy_House.png",
+      "three_quarter": "Previews/ThreeQuarter/Fantasy_House.png",
+      "triangles": 4157,
+      "mesh_parts": 148,
+      "materials": [
+        "Brick",
+        "Carved_Limestone",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "HalfTimber",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -3.68900061,
+        0,
+        -4.28899956
+      ],
+      "maximum": [
+        3.68900061,
+        8.352501,
+        4.28899956
+      ],
+      "role_identity": "Residential house; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "一般住宅",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fantasy_House.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Fantasy_House.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Firewood_Rack",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Firewood_Rack.png",
+      "three_quarter": "Previews/ThreeQuarter/Firewood_Rack.png",
+      "triangles": 536,
+      "mesh_parts": 22,
+      "materials": [
+        "Bark",
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.96,
+        0,
+        -0.41
+      ],
+      "maximum": [
+        0.96,
+        1.3,
+        0.41
+      ],
+      "role_identity": "",
+      "display_name": "薪置き",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Firewood_Rack.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Firewood_Rack.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Flower_Border",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Flower_Border.blend",
+      "front": "Previews/Front/Flower_Border.png",
+      "three_quarter": "Previews/ThreeQuarter/Flower_Border.png",
+      "triangles": 192,
+      "mesh_parts": 36,
+      "materials": [
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card"
+      ],
+      "minimum": [
+        -0.3657,
+        -0.3508,
+        -0.0006
+      ],
+      "maximum": [
+        1.1074,
+        0.6854,
+        0.6913
+      ],
+      "role_identity": "",
+      "display_name": "花の縁取り",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Flower_Border.fbx"
+    },
+    {
+      "name": "Flower_WildPatch",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Flower_WildPatch.blend",
+      "front": "Previews/Front/Flower_WildPatch.png",
+      "three_quarter": "Previews/ThreeQuarter/Flower_WildPatch.png",
+      "triangles": 128,
+      "mesh_parts": 24,
+      "materials": [
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card"
+      ],
+      "minimum": [
+        -0.3657,
+        -0.3635,
+        -0.0006
+      ],
+      "maximum": [
+        1.125,
+        0.3565,
+        0.6912
+      ],
+      "role_identity": "",
+      "display_name": "野花",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Flower_WildPatch.fbx"
+    },
+    {
+      "name": "Forge",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Forge.png",
+      "three_quarter": "Previews/ThreeQuarter/Forge.png",
+      "triangles": 1904,
+      "mesh_parts": 17,
+      "materials": [
+        "Brick",
+        "Coal",
+        "Glowing_Coals",
+        "Iron"
+      ],
+      "minimum": [
+        -0.849999964,
+        0,
+        -0.849999964
+      ],
+      "maximum": [
+        0.849999964,
+        3.1,
+        0.849999964
+      ],
+      "role_identity": "",
+      "display_name": "炉",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Forge.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Forge.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Granary",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Granary.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Granary.png",
+      "triangles": 2998,
+      "mesh_parts": 17,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -6.5,
+        0.0,
+        -7.0
+      ],
+      "maximum": [
+        6.5,
+        10.4749994,
+        7.0
+      ],
+      "role_identity": "ContinuousFoundation; GrainLoadingChute; RaisedRatProofGranary; VentilatedGrainStore; VentilatedGrainStore_Roof",
+      "display_name": "穀物庫",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Granary.fbx",
+      "style": "CityV2",
+      "label": "穀物庫",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Granary.fbx",
+      "min": [
+        -6.5,
+        0.0,
+        -7.0
+      ],
+      "max": [
+        6.5,
+        10.474999,
+        7.0
+      ],
+      "vertices": 6182,
+      "faces": 1516,
+      "features": [
+        "ContinuousFoundation",
+        "GrainLoadingChute",
+        "RaisedRatProofGranary",
+        "VentilatedGrainStore",
+        "VentilatedGrainStore_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "d16ef5d49c5628cf66cac96b521eea5125b0dc29f71efbdd0488a65cc0b1224e",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Granite_Corner",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Granite_Corner.blend",
+      "front": "Previews/Front/Granite_Corner.png",
+      "three_quarter": "Previews/ThreeQuarter/Granite_Corner.png",
+      "triangles": 348,
+      "mesh_parts": 9,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        3.625,
+        5.025
+      ],
+      "role_identity": "",
+      "display_name": "城壁・角",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Granite_Corner.fbx"
+    },
+    {
+      "name": "Granite_Gate",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Granite_Gate.blend",
+      "front": "Previews/Front/Granite_Gate.png",
+      "three_quarter": "Previews/ThreeQuarter/Granite_Gate.png",
+      "triangles": 141,
+      "mesh_parts": 4,
+      "materials": [
+        "Fieldstone",
+        "Iron_Grate",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.65,
+        -0.55,
+        0.0
+      ],
+      "maximum": [
+        2.65,
+        0.55,
+        4.2
+      ],
+      "role_identity": "",
+      "display_name": "城門",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Granite_Gate.fbx"
+    },
+    {
+      "name": "Granite_Straight",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Granite_Straight.blend",
+      "front": "Previews/Front/Granite_Straight.png",
+      "three_quarter": "Previews/ThreeQuarter/Granite_Straight.png",
+      "triangles": 264,
+      "mesh_parts": 6,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        0.425,
+        5.025
+      ],
+      "role_identity": "",
+      "display_name": "城壁・直線",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Granite_Straight.fbx"
+    },
+    {
+      "name": "GroundPlant_FernPatch",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_FernPatch.blend",
+      "front": "Previews/Front/GroundPlant_FernPatch.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_FernPatch.png",
+      "triangles": 14,
+      "mesh_parts": 7,
+      "materials": [
+        "Fern_Frond"
+      ],
+      "minimum": [
+        -0.6634,
+        -0.6341,
+        0.0
+      ],
+      "maximum": [
+        0.6222,
+        0.6593,
+        0.8207
+      ],
+      "role_identity": "",
+      "display_name": "シダの群生",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/GroundPlant_FernPatch.fbx"
+    },
+    {
+      "name": "GroundPlant_GrassShort",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_GrassShort.blend",
+      "front": "Previews/Front/GroundPlant_GrassShort.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_GrassShort.png",
+      "triangles": 48,
+      "mesh_parts": 24,
+      "materials": [
+        "Grass_Tuft"
+      ],
+      "minimum": [
+        -0.2741,
+        -0.2945,
+        0.0
+      ],
+      "maximum": [
+        0.9785,
+        0.2895,
+        0.26
+      ],
+      "role_identity": "",
+      "display_name": "短い草",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/GroundPlant_GrassShort.fbx"
+    },
+    {
+      "name": "GroundPlant_GrassTall",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_GrassTall.blend",
+      "front": "Previews/Front/GroundPlant_GrassTall.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_GrassTall.png",
+      "triangles": 48,
+      "mesh_parts": 24,
+      "materials": [
+        "Grass_Tuft"
+      ],
+      "minimum": [
+        -0.4228,
+        -0.4738,
+        0.0
+      ],
+      "maximum": [
+        1.1338,
+        0.4612,
+        0.65
+      ],
+      "role_identity": "",
+      "display_name": "背の高い草",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/GroundPlant_GrassTall.fbx"
+    },
+    {
+      "name": "GroundPlant_GrassTuft",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/GroundPlant_GrassTuft.blend",
+      "front": "Previews/Front/GroundPlant_GrassTuft.png",
+      "three_quarter": "Previews/ThreeQuarter/GroundPlant_GrassTuft.png",
+      "triangles": 48,
+      "mesh_parts": 24,
+      "materials": [
+        "Grass_Tuft"
+      ],
+      "minimum": [
+        -0.2741,
+        -0.2945,
+        0.0
+      ],
+      "maximum": [
+        0.9785,
+        0.2895,
+        0.26
+      ],
+      "role_identity": "",
+      "display_name": "草の株",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/GroundPlant_GrassTuft.fbx"
+    },
+    {
+      "name": "Guardhouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Guardhouse.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Guardhouse.png",
+      "triangles": 5466,
+      "mesh_parts": 22,
+      "materials": [
+        "Brass",
+        "Canvas_Blue",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Steel",
+        "Iron",
+        "Oak",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -5.0,
+        0.0,
+        -5.0
+      ],
+      "maximum": [
+        5.0,
+        9.1,
+        5.0
+      ],
+      "role_identity": "ArrowSlitParapet; ContinuousFoundation; CoveredGuardWatchRooms; GateWalkway; GuardGateBastion; GuardGateBastion_Top; GuardedEntryPassage; Landmark_GateShieldAndPolearms; PatrolEquipmentRacks",
+      "display_name": "衛兵所",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Guardhouse.fbx",
+      "style": "CityV2",
+      "label": "衛兵所",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Guardhouse.fbx",
+      "min": [
+        -5.0,
+        0.0,
+        -5.0
+      ],
+      "max": [
+        5.0,
+        9.1,
+        5.0
+      ],
+      "vertices": 11268,
+      "faces": 2772,
+      "features": [
+        "ArrowSlitParapet",
+        "ContinuousFoundation",
+        "CoveredGuardWatchRooms",
+        "GateWalkway",
+        "GuardGateBastion",
+        "GuardGateBastion_Top",
+        "GuardedEntryPassage",
+        "Landmark_GateShieldAndPolearms",
+        "PatrolEquipmentRacks"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -5.0
+        ]
+      },
+      "geometryHash": "96865123dc79160b8bb4fcc02b68593e2384614e05c218de162c1c9a2aa140fa",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GateShieldAndPolearms"
+      ]
+    },
+    {
+      "name": "Guildhall",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Guildhall.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Guildhall.png",
+      "triangles": 6550,
+      "mesh_parts": 25,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -8.0,
+        0.0,
+        -8.0
+      ],
+      "maximum": [
+        8.0,
+        11.075,
+        8.0
+      ],
+      "role_identity": "ContinuousFoundation; MerchantsAssemblyHall; MerchantsAssemblyHall_Roof; OpenTradingLoggia; OpenTradingLoggia_ShelterRoof; TradeDesksAndGoodsScales",
+      "display_name": "職人組合会館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Guildhall.fbx",
+      "style": "CityV2",
+      "label": "商業組合会館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Guildhall.fbx",
+      "min": [
+        -8.0,
+        0.0,
+        -8.0
+      ],
+      "max": [
+        8.0,
+        11.075,
+        8.0
+      ],
+      "vertices": 13516,
+      "faces": 3348,
+      "features": [
+        "ContinuousFoundation",
+        "MerchantsAssemblyHall",
+        "MerchantsAssemblyHall_Roof",
+        "OpenTradingLoggia",
+        "OpenTradingLoggia_ShelterRoof",
+        "TradeDesksAndGoodsScales"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -8.0
+        ]
+      },
+      "geometryHash": "470cdce14286de26d6e6c8158e6f3d399d4ff6bb0056e653174ea95c5a92dd75",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Handcart",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Handcart.png",
+      "three_quarter": "Previews/ThreeQuarter/Handcart.png",
+      "triangles": 1428,
+      "mesh_parts": 59,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        0,
+        -2.03152537
+      ],
+      "maximum": [
+        1.05,
+        1.92000008,
+        2.03152537
+      ],
+      "role_identity": "",
+      "display_name": "手押し荷車",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Handcart.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Handcart.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Hay_Bale",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Hay_Bale.blend",
+      "front": "Previews/Front/Hay_Bale.png",
+      "three_quarter": "Previews/ThreeQuarter/Hay_Bale.png",
+      "triangles": 68,
+      "mesh_parts": 3,
+      "materials": [
+        "Linen",
+        "Thatch"
+      ],
+      "minimum": [
+        -0.75,
+        -0.5075,
+        0.0
+      ],
+      "maximum": [
+        0.75,
+        0.5075,
+        0.97
+      ],
+      "role_identity": "",
+      "display_name": "干し草束",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Hay_Bale.fbx"
+    },
+    {
+      "name": "LanternSpire",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_LanternSpire.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_LanternSpire.png",
+      "triangles": 7654,
+      "mesh_parts": 15,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Cobble",
+        "DarkTimber",
+        "Fieldstone",
+        "Identity_Lantern",
+        "Iron",
+        "Oak",
+        "Roof_Slate",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -3.5,
+        0.0,
+        -4.5
+      ],
+      "maximum": [
+        3.5,
+        10.405,
+        4.5
+      ],
+      "role_identity": "ContinuousFoundation; ContinuousSpiralStair; Landmark_EntertainmentLanternsAndDrapery; OpenLanternPavilionTier; PavilionBalustrade; StairwellOpening",
+      "display_name": "塔屋付きの館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/LanternSpire.fbx",
+      "style": "CityV2",
+      "label": "歓楽街・灯楼",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/LanternSpire.fbx",
+      "min": [
+        -3.5,
+        0.0,
+        -4.5
+      ],
+      "max": [
+        3.5,
+        10.405,
+        4.5
+      ],
+      "vertices": 14926,
+      "faces": 3636,
+      "features": [
+        "ContinuousFoundation",
+        "ContinuousSpiralStair",
+        "Landmark_EntertainmentLanternsAndDrapery",
+        "OpenLanternPavilionTier",
+        "PavilionBalustrade",
+        "StairwellOpening"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -4.5
+        ]
+      },
+      "geometryHash": "49734d9364de48a0384a710fd88266c2a0927897fb18247a0d553165cd9410e0",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "EntertainmentLanternsAndDrapery"
+      ]
+    },
+    {
+      "name": "Library",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Library.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Library.png",
+      "triangles": 17195,
+      "mesh_parts": 51,
+      "materials": [
+        "Architectural_Glass",
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Blue",
+        "Canvas_Green",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Amber",
+        "Identity_Ink",
+        "Identity_Ivory",
+        "Iron",
+        "Leather",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -7.5,
+        0.0,
+        -7.0
+      ],
+      "maximum": [
+        7.5,
+        11.845,
+        7.0
+      ],
+      "role_identity": "ArchiveWing; ArchiveWing_LeanRoof; ContinuousFoundation; GlazedClerestory; InteriorReadingFurniture; Landmark_CarvedOpenBookOverReadingHall; OpenReadingLoggia; OpenReadingLoggia_ShelterRoof; OutdoorReadingDesks; TallReadingHall; VisibleBookStacks",
+      "display_name": "図書館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Library.fbx",
+      "style": "CityV2",
+      "label": "図書館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Library.fbx",
+      "min": [
+        -7.5,
+        0.0,
+        -7.0
+      ],
+      "max": [
+        7.5,
+        11.845,
+        7.0
+      ],
+      "vertices": 35853,
+      "faces": 8875,
+      "features": [
+        "ArchiveWing",
+        "ArchiveWing_LeanRoof",
+        "ContinuousFoundation",
+        "GlazedClerestory",
+        "InteriorReadingFurniture",
+        "Landmark_CarvedOpenBookOverReadingHall",
+        "OpenReadingLoggia",
+        "OpenReadingLoggia_ShelterRoof",
+        "OutdoorReadingDesks",
+        "TallReadingHall",
+        "VisibleBookStacks"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "6107ecadd45b1591c09c9d33f8286eb8966f2cfcc286e36f9a3f7f42e22845ab",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CarvedOpenBookOverReadingHall"
+      ]
+    },
+    {
+      "name": "MerchantHouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/MerchantHouse.png",
+      "three_quarter": "Previews/ThreeQuarter/MerchantHouse.png",
+      "triangles": 5839,
+      "mesh_parts": 215,
+      "materials": [
+        "Brick",
+        "Carved_Limestone",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "HalfTimber_White",
+        "Iron",
+        "Limestone",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Weathering",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -5.075001,
+        0,
+        -5.3949995
+      ],
+      "maximum": [
+        5.075001,
+        11.0546608,
+        5.3949995
+      ],
+      "role_identity": "Residential merchant; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "商人邸",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/MerchantHouse.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/MerchantHouse.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Museum",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Museum.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Museum.png",
+      "triangles": 12847,
+      "mesh_parts": 30,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -9.0,
+        0.0,
+        -8.5
+      ],
+      "maximum": [
+        9.0,
+        11.8038,
+        8.5
+      ],
+      "role_identity": "ContinuousFoundation; HighCentralGallery; HighCentralGallery_Roof; Landmark_MonumentalGallerySculpture; SculptureCourt; SculpturePortico; SculptureTerraceRoof; SideExhibitionGallery; SideGallery_LeanRoof",
+      "display_name": "美術館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Museum.fbx",
+      "style": "CityV2",
+      "label": "美術館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Museum.fbx",
+      "min": [
+        -9.0,
+        0.0,
+        -8.5
+      ],
+      "max": [
+        9.0,
+        11.8038,
+        8.5
+      ],
+      "vertices": 27195,
+      "faces": 6685,
+      "features": [
+        "ContinuousFoundation",
+        "HighCentralGallery",
+        "HighCentralGallery_Roof",
+        "Landmark_MonumentalGallerySculpture",
+        "SculptureCourt",
+        "SculpturePortico",
+        "SculptureTerraceRoof",
+        "SideExhibitionGallery",
+        "SideGallery_LeanRoof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -8.5
+        ]
+      },
+      "geometryHash": "7407ab28f997f85864f21fc80d2f8cc9f93327712028f72ad7dc5f7fcb6643f9",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "MonumentalGallerySculpture"
+      ]
+    },
+    {
+      "name": "NaturalRock_02",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_02.blend",
+      "front": "Previews/Front/NaturalRock_02.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_02.png",
+      "triangles": 380,
+      "mesh_parts": 1,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -1.7777,
+        -1.16,
+        0.0
+      ],
+      "maximum": [
+        1.8734,
+        1.16,
+        2.3334
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 02",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalRock_02.fbx"
+    },
+    {
+      "name": "NaturalRock_04",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_04.blend",
+      "front": "Previews/Front/NaturalRock_04.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_04.png",
+      "triangles": 624,
+      "mesh_parts": 2,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -1.6935,
+        -1.1365,
+        0.0
+      ],
+      "maximum": [
+        1.876,
+        1.1365,
+        1.9897
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 04",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalRock_04.fbx"
+    },
+    {
+      "name": "NaturalRock_07",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_07.blend",
+      "front": "Previews/Front/NaturalRock_07.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_07.png",
+      "triangles": 348,
+      "mesh_parts": 1,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -2.0296,
+        -1.3093,
+        0.0
+      ],
+      "maximum": [
+        1.8697,
+        1.3093,
+        2.9504
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 07",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalRock_07.fbx"
+    },
+    {
+      "name": "NaturalRock_08",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_08.blend",
+      "front": "Previews/Front/NaturalRock_08.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_08.png",
+      "triangles": 656,
+      "mesh_parts": 2,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -2.1967,
+        -1.3476,
+        0.0
+      ],
+      "maximum": [
+        2.2285,
+        1.3476,
+        2.3305
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 08",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalRock_08.fbx"
+    },
+    {
+      "name": "NaturalRock_11",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalRock_11.blend",
+      "front": "Previews/Front/NaturalRock_11.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalRock_11.png",
+      "triangles": 380,
+      "mesh_parts": 1,
+      "materials": [
+        "Rock"
+      ],
+      "minimum": [
+        -2.1586,
+        -1.2937,
+        0.0
+      ],
+      "maximum": [
+        2.1579,
+        1.2937,
+        3.0523
+      ],
+      "role_identity": "",
+      "display_name": "自然岩 11",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalRock_11.fbx"
+    },
+    {
+      "name": "NaturalTree_01",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_01.blend",
+      "front": "Previews/Front/NaturalTree_01.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_01.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.0424,
+        -2.6189,
+        0.0
+      ],
+      "maximum": [
+        2.7695,
+        2.7874,
+        6.7036
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 01",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_01.fbx"
+    },
+    {
+      "name": "NaturalTree_02",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_02.blend",
+      "front": "Previews/Front/NaturalTree_02.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_02.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.4994,
+        -3.1827,
+        0.0
+      ],
+      "maximum": [
+        3.4405,
+        3.4587,
+        6.8651
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 02",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_02.fbx"
+    },
+    {
+      "name": "NaturalTree_03",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_03.blend",
+      "front": "Previews/Front/NaturalTree_03.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_03.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -2.8989,
+        -2.3903,
+        0.0
+      ],
+      "maximum": [
+        2.2165,
+        2.4602,
+        7.0266
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 03",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_03.fbx"
+    },
+    {
+      "name": "NaturalTree_04",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_04.blend",
+      "front": "Previews/Front/NaturalTree_04.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_04.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.8705,
+        -2.6542,
+        0.0
+      ],
+      "maximum": [
+        2.0431,
+        2.541,
+        7.1881
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 04",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_04.fbx"
+    },
+    {
+      "name": "NaturalTree_05",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_05.blend",
+      "front": "Previews/Front/NaturalTree_05.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_05.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -1.8414,
+        -2.6044,
+        0.0
+      ],
+      "maximum": [
+        3.7222,
+        2.6001,
+        7.3496
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 05",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_05.fbx"
+    },
+    {
+      "name": "NaturalTree_06",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_06.blend",
+      "front": "Previews/Front/NaturalTree_06.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_06.png",
+      "triangles": 4014,
+      "mesh_parts": 83,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.0038,
+        -2.7117,
+        0.0
+      ],
+      "maximum": [
+        2.8348,
+        2.6535,
+        7.5111
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 06",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_06.fbx"
+    },
+    {
+      "name": "NaturalTree_07",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_07.blend",
+      "front": "Previews/Front/NaturalTree_07.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_07.png",
+      "triangles": 2182,
+      "mesh_parts": 39,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.2101,
+        -2.7884,
+        0.0
+      ],
+      "maximum": [
+        3.3232,
+        3.229,
+        7.6726
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 07",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_07.fbx"
+    },
+    {
+      "name": "NaturalTree_08",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_08.blend",
+      "front": "Previews/Front/NaturalTree_08.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_08.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -1.9177,
+        -2.1759,
+        0.0
+      ],
+      "maximum": [
+        2.0537,
+        1.9173,
+        5.8678
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 08",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_08.fbx"
+    },
+    {
+      "name": "NaturalTree_09",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_09.blend",
+      "front": "Previews/Front/NaturalTree_09.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_09.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.4345,
+        -3.5057,
+        0.0
+      ],
+      "maximum": [
+        2.9719,
+        3.1338,
+        9.6008
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 09",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_09.fbx"
+    },
+    {
+      "name": "NaturalTree_10",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/NaturalTree_10.blend",
+      "front": "Previews/Front/NaturalTree_10.png",
+      "three_quarter": "Previews/ThreeQuarter/NaturalTree_10.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -2.1276,
+        -2.8735,
+        0.0
+      ],
+      "maximum": [
+        3.2049,
+        2.7314,
+        8.1571
+      ],
+      "role_identity": "",
+      "display_name": "自然樹木 10",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/NaturalTree_10.fbx"
+    },
+    {
+      "name": "Noticeboard",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Noticeboard.blend",
+      "front": "Previews/Front/Noticeboard.png",
+      "three_quarter": "Previews/ThreeQuarter/Noticeboard.png",
+      "triangles": 98,
+      "mesh_parts": 5,
+      "materials": [
+        "DarkTimber",
+        "Oak",
+        "Parchment",
+        "Roof_Clay"
+      ],
+      "minimum": [
+        -1.025,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        1.025,
+        0.35,
+        2.8
+      ],
+      "role_identity": "",
+      "display_name": "掲示板",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Noticeboard.fbx"
+    },
+    {
+      "name": "Observatory",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Observatory.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Observatory.png",
+      "triangles": 11850,
+      "mesh_parts": 44,
+      "materials": [
+        "Architectural_Glass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -6.5,
+        0.0,
+        -6.5
+      ],
+      "maximum": [
+        6.5,
+        11.3688974,
+        6.5
+      ],
+      "role_identity": "AstronomersEntrance; ChartArchive; ChartArchive_LeadFlashedRoof; ContinuousFoundation; FramedGlassObservationDome; InstrumentPorch; InstrumentPorch_ShelterRoof; InstrumentWorkshop; InstrumentWorkshop_LeadFlashedRoof; ObservationDeck; ObservationDomeRibsAndTrack; ObservatoryDrum; OutdoorQuadrant; WorkingSlitTelescope",
+      "display_name": "天文台",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Observatory.fbx",
+      "style": "CityV2",
+      "label": "天文台",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Observatory.fbx",
+      "min": [
+        -6.5,
+        0.0,
+        -6.5
+      ],
+      "max": [
+        6.5,
+        11.368897,
+        6.5
+      ],
+      "vertices": 23576,
+      "faces": 5728,
+      "features": [
+        "AstronomersEntrance",
+        "ChartArchive",
+        "ChartArchive_LeadFlashedRoof",
+        "ContinuousFoundation",
+        "FramedGlassObservationDome",
+        "InstrumentPorch",
+        "InstrumentPorch_ShelterRoof",
+        "InstrumentWorkshop",
+        "InstrumentWorkshop_LeadFlashedRoof",
+        "ObservationDeck",
+        "ObservationDomeRibsAndTrack",
+        "ObservatoryDrum",
+        "OutdoorQuadrant",
+        "WorkingSlitTelescope"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -6.5
+        ]
+      },
+      "geometryHash": "4f872649bc64ae964809482b72118aaad3a314a00b65e5364f02a93ff93afb2f",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Paved_Plot",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Paved_Plot.blend",
+      "front": "Previews/Front/Paved_Plot.png",
+      "three_quarter": "Previews/ThreeQuarter/Paved_Plot.png",
+      "triangles": 24,
+      "mesh_parts": 2,
+      "materials": [
+        "Cobble",
+        "Earth"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.11
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Paved_Plot.png",
+      "display_name": "舗装敷地",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Paved_Plot.fbx"
+    },
+    {
+      "name": "Plaza",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Plaza.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Plaza.png",
+      "triangles": 8192,
+      "mesh_parts": 12,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Oak",
+        "Terracotta",
+        "Water"
+      ],
+      "minimum": [
+        -7.0,
+        0.0,
+        -7.0
+      ],
+      "maximum": [
+        7.0,
+        5.33,
+        7.0
+      ],
+      "role_identity": "CivicSeatingAndPlanting; ContinuousFoundation; Landmark_GrandTieredPublicFountain; PublicGatheringSteps",
+      "display_name": "噴水広場",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Plaza.fbx",
+      "style": "CityV2",
+      "label": "広場",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Plaza.fbx",
+      "min": [
+        -7.0,
+        0.0,
+        -7.0
+      ],
+      "max": [
+        7.0,
+        5.33,
+        7.0
+      ],
+      "vertices": 16648,
+      "faces": 4228,
+      "features": [
+        "CivicSeatingAndPlanting",
+        "ContinuousFoundation",
+        "Landmark_GrandTieredPublicFountain",
+        "PublicGatheringSteps"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "d49599758b12c35ba079daf235648f74b4604930de7bb6baff29e27017994525",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GrandTieredPublicFountain"
+      ]
+    },
+    {
+      "name": "Produce_Stall",
+      "group": "Market",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Produce_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Produce_Stall.png",
+      "triangles": 9176,
+      "mesh_parts": 152,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "Cabbage",
+        "Canvas_Stripe",
+        "Carrot",
+        "DarkTimber",
+        "Foliage",
+        "Iron",
+        "Oak",
+        "Produce",
+        "Sign_Fruit",
+        "Wicker"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "青果の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Produce_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Produce_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Road_Corner",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_Corner.blend",
+      "front": "Previews/Front/Road_Corner.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_Corner.png",
+      "triangles": 208,
+      "mesh_parts": 6,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_Corner.png",
+      "display_name": "曲がり道",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Road_Corner.fbx"
+    },
+    {
+      "name": "Road_Cross",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Road_Cross.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_Cross.png",
+      "triangles": 408,
+      "mesh_parts": 10,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        0,
+        -4.0
+      ],
+      "maximum": [
+        4.0,
+        0.19500038,
+        4.0
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_Cross.png",
+      "display_name": "十字路",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Road_Cross.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Road_Cross.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Road_End",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_End.blend",
+      "front": "Previews/Front/Road_End.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_End.png",
+      "triangles": 1836,
+      "mesh_parts": 40,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_End.png",
+      "display_name": "道路の終端",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Road_End.fbx"
+    },
+    {
+      "name": "Road_Straight",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_Straight.blend",
+      "front": "Previews/Front/Road_Straight.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_Straight.png",
+      "triangles": 24,
+      "mesh_parts": 2,
+      "materials": [
+        "Cobble",
+        "Earth"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.11
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_Straight.png",
+      "display_name": "直線道路",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Road_Straight.fbx"
+    },
+    {
+      "name": "Road_T",
+      "group": "Infrastructure",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Infrastructure/Road_T.blend",
+      "front": "Previews/Front/Road_T.png",
+      "three_quarter": "Previews/ThreeQuarter/Road_T.png",
+      "triangles": 216,
+      "mesh_parts": 6,
+      "materials": [
+        "Cobble",
+        "Earth",
+        "Limestone"
+      ],
+      "minimum": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        4.0,
+        4.0,
+        0.195
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Road_T.png",
+      "display_name": "T字路",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Road_T.fbx"
+    },
+    {
+      "name": "Royal_Castle",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Royal_Castle.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Royal_Castle.png",
+      "triangles": 44140,
+      "mesh_parts": 45,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -22.0,
+        0.0,
+        -19.5
+      ],
+      "maximum": [
+        22.0,
+        22.019001,
+        19.5
+      ],
+      "role_identity": "CentralRoyalKeep; CentralRoyalKeep_Top; ContinuousFoundation; CornerKeep; CornerKeep_Roof; CurtainWall; FortifiedInnerWard; GatehouseFlank; GatehouseFlank_Top; OpenGatehousePassage; RoyalGreatHall; RoyalGreatHall_Roof; RoyalGuardCourt; WallWalkAndCrenellations",
+      "display_name": "王城",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Royal_Castle.fbx",
+      "style": "CityV2",
+      "label": "城",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Royal_Castle.fbx",
+      "min": [
+        -22.0,
+        0.0,
+        -19.5
+      ],
+      "max": [
+        22.0,
+        22.019001,
+        19.5
+      ],
+      "vertices": 94984,
+      "faces": 23502,
+      "features": [
+        "CentralRoyalKeep",
+        "CentralRoyalKeep_Top",
+        "ContinuousFoundation",
+        "CornerKeep",
+        "CornerKeep_Roof",
+        "CurtainWall",
+        "FortifiedInnerWard",
+        "GatehouseFlank",
+        "GatehouseFlank_Top",
+        "OpenGatehousePassage",
+        "RoyalGreatHall",
+        "RoyalGreatHall_Roof",
+        "RoyalGuardCourt",
+        "WallWalkAndCrenellations"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -19.5
+        ]
+      },
+      "geometryHash": "06a2b1cc18530484b3a50364875432c5d7ea5d1eb7522846a0a20ef9ced7f467",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Signpost",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Signpost.blend",
+      "front": "Previews/Front/Signpost.png",
+      "three_quarter": "Previews/ThreeQuarter/Signpost.png",
+      "triangles": 76,
+      "mesh_parts": 3,
+      "materials": [
+        "Oak"
+      ],
+      "minimum": [
+        -0.85,
+        -0.09,
+        0.0
+      ],
+      "maximum": [
+        1.05,
+        0.075,
+        2.8
+      ],
+      "role_identity": "",
+      "display_name": "道標",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Signpost.fbx"
+    },
+    {
+      "name": "SpiritAcademy_Lv1",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 16766,
+      "mesh_parts": 33,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "Cypress_Foliage",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Identity_SpiritLeaf",
+        "Identity_SpiritLight",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -8.544,
+        0.0,
+        -9.256
+      ],
+      "maximum": [
+        8.544,
+        11.902,
+        9.256
+      ],
+      "role_identity": "ContinuousFoundation; HerbTeachingBeds; Landmark_GreatSpiritTreeAndWisps; OpenNatureCloister; OpenNatureCloister_ShelterRoof; SacredPlantedCourt; SpiritInstructionHall; SpiritInstructionHall_Roof; StandingStoneCircle",
+      "display_name": "精霊使役学校 Lv1",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/SpiritAcademy_Lv1.fbx",
+      "style": "CityV2",
+      "label": "精霊使役学校 Lv1",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/SpiritAcademy_Lv1.fbx",
+      "min": [
+        -8.544,
+        0.0,
+        -9.256
+      ],
+      "max": [
+        8.544,
+        11.902,
+        9.256
+      ],
+      "vertices": 35374,
+      "faces": 8884,
+      "features": [
+        "ContinuousFoundation",
+        "HerbTeachingBeds",
+        "Landmark_GreatSpiritTreeAndWisps",
+        "OpenNatureCloister",
+        "OpenNatureCloister_ShelterRoof",
+        "SacredPlantedCourt",
+        "SpiritInstructionHall",
+        "SpiritInstructionHall_Roof",
+        "StandingStoneCircle"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -9.256
+        ]
+      },
+      "geometryHash": "488029bf555e965c88e0aa50757855bb16db482ab477e862ed676eab969f3c82",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GreatSpiritTreeAndWisps"
+      ]
+    },
+    {
+      "name": "SpiritAcademy_Lv2",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 18129,
+      "mesh_parts": 33,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "Cypress_Foliage",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Identity_SpiritLeaf",
+        "Identity_SpiritLight",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -9.408,
+        0.0,
+        -10.192
+      ],
+      "maximum": [
+        9.408,
+        12.804,
+        10.192
+      ],
+      "role_identity": "ContinuousFoundation; HerbTeachingBeds; Landmark_GreatSpiritTreeAndWisps; OpenNatureCloister; OpenNatureCloister_ShelterRoof; SacredPlantedCourt; SpiritInstructionHall; SpiritInstructionHall_Roof; StandingStoneCircle",
+      "display_name": "精霊使役学校 Lv2",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/SpiritAcademy_Lv2.fbx",
+      "style": "CityV2",
+      "label": "精霊使役学校 Lv2",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/SpiritAcademy_Lv2.fbx",
+      "min": [
+        -9.408,
+        0.0,
+        -10.192
+      ],
+      "max": [
+        9.408,
+        12.804,
+        10.192
+      ],
+      "vertices": 38257,
+      "faces": 9571,
+      "features": [
+        "ContinuousFoundation",
+        "HerbTeachingBeds",
+        "Landmark_GreatSpiritTreeAndWisps",
+        "OpenNatureCloister",
+        "OpenNatureCloister_ShelterRoof",
+        "SacredPlantedCourt",
+        "SpiritInstructionHall",
+        "SpiritInstructionHall_Roof",
+        "StandingStoneCircle"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -10.192
+        ]
+      },
+      "geometryHash": "abaa80a89f931a17bac7fd5d1e2f30ac7253a09b5090c13eb9b77b66bf2936f3",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GreatSpiritTreeAndWisps"
+      ]
+    },
+    {
+      "name": "SpiritAcademy_Lv3",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 18129,
+      "mesh_parts": 33,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "Cypress_Foliage",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Identity_SpiritLeaf",
+        "Identity_SpiritLight",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -10.272,
+        0.0,
+        -11.128
+      ],
+      "maximum": [
+        10.272,
+        13.706,
+        11.128
+      ],
+      "role_identity": "ContinuousFoundation; HerbTeachingBeds; Landmark_GreatSpiritTreeAndWisps; OpenNatureCloister; OpenNatureCloister_ShelterRoof; SacredPlantedCourt; SpiritInstructionHall; SpiritInstructionHall_Roof; StandingStoneCircle",
+      "display_name": "精霊使役学校 Lv3",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/SpiritAcademy_Lv3.fbx",
+      "style": "CityV2",
+      "label": "精霊使役学校 Lv3",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/SpiritAcademy_Lv3.fbx",
+      "min": [
+        -10.272,
+        0.0,
+        -11.128
+      ],
+      "max": [
+        10.272,
+        13.706,
+        11.128
+      ],
+      "vertices": 38257,
+      "faces": 9571,
+      "features": [
+        "ContinuousFoundation",
+        "HerbTeachingBeds",
+        "Landmark_GreatSpiritTreeAndWisps",
+        "OpenNatureCloister",
+        "OpenNatureCloister_ShelterRoof",
+        "SacredPlantedCourt",
+        "SpiritInstructionHall",
+        "SpiritInstructionHall_Roof",
+        "StandingStoneCircle"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -11.128
+        ]
+      },
+      "geometryHash": "5e138279c0409f14134a37bf1430edae3a7d11eb10a8117f386ca9c817b434df",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GreatSpiritTreeAndWisps"
+      ]
+    },
+    {
+      "name": "SpiritAcademy_Lv4",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 18183,
+      "mesh_parts": 33,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "Cypress_Foliage",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Identity_SpiritLeaf",
+        "Identity_SpiritLight",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -11.136,
+        0.0,
+        -12.064
+      ],
+      "maximum": [
+        11.136,
+        14.608,
+        12.064
+      ],
+      "role_identity": "ContinuousFoundation; HerbTeachingBeds; Landmark_GreatSpiritTreeAndWisps; OpenNatureCloister; OpenNatureCloister_ShelterRoof; SacredPlantedCourt; SpiritInstructionHall; SpiritInstructionHall_Roof; StandingStoneCircle",
+      "display_name": "精霊使役学校 Lv4",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/SpiritAcademy_Lv4.fbx",
+      "style": "CityV2",
+      "label": "精霊使役学校 Lv4",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/SpiritAcademy_Lv4.fbx",
+      "min": [
+        -11.136,
+        0.0,
+        -12.064
+      ],
+      "max": [
+        11.136,
+        14.608,
+        12.064
+      ],
+      "vertices": 38425,
+      "faces": 9613,
+      "features": [
+        "ContinuousFoundation",
+        "HerbTeachingBeds",
+        "Landmark_GreatSpiritTreeAndWisps",
+        "OpenNatureCloister",
+        "OpenNatureCloister_ShelterRoof",
+        "SacredPlantedCourt",
+        "SpiritInstructionHall",
+        "SpiritInstructionHall_Roof",
+        "StandingStoneCircle"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -12.064
+        ]
+      },
+      "geometryHash": "126554a6e7f4f89aeff730e3b002af67ff3aa3d980119fb6eb60e4679eba0dd6",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GreatSpiritTreeAndWisps"
+      ]
+    },
+    {
+      "name": "SpiritAcademy_Lv5",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_SpiritAcademy_Lv5.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_SpiritAcademy_Lv5.png",
+      "triangles": 20084,
+      "mesh_parts": 33,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "Cypress_Foliage",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Identity_SpiritLeaf",
+        "Identity_SpiritLight",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -12.0,
+        0.0,
+        -13.0
+      ],
+      "maximum": [
+        12.0,
+        15.51,
+        13.0
+      ],
+      "role_identity": "ContinuousFoundation; HerbTeachingBeds; Landmark_GreatSpiritTreeAndWisps; OpenNatureCloister; OpenNatureCloister_ShelterRoof; SacredPlantedCourt; SpiritInstructionHall; SpiritInstructionHall_Roof; StandingStoneCircle",
+      "display_name": "精霊使役学校 Lv5",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/SpiritAcademy_Lv5.fbx",
+      "style": "CityV2",
+      "label": "精霊使役学校 Lv5",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/SpiritAcademy_Lv5.fbx",
+      "min": [
+        -12.0,
+        0.0,
+        -13.0
+      ],
+      "max": [
+        12.0,
+        15.51,
+        13.0
+      ],
+      "vertices": 42430,
+      "faces": 10574,
+      "features": [
+        "ContinuousFoundation",
+        "HerbTeachingBeds",
+        "Landmark_GreatSpiritTreeAndWisps",
+        "OpenNatureCloister",
+        "OpenNatureCloister_ShelterRoof",
+        "SacredPlantedCourt",
+        "SpiritInstructionHall",
+        "SpiritInstructionHall_Roof",
+        "StandingStoneCircle"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -13.0
+        ]
+      },
+      "geometryHash": "8c28b471389db00aba6f0eaa5ea1e5876f46500589ffa9c4d01e82451ab3b97c",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "GreatSpiritTreeAndWisps"
+      ]
+    },
+    {
+      "name": "Stable",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Stable.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Stable.png",
+      "triangles": 4436,
+      "mesh_parts": 19,
+      "materials": [
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Thatch"
+      ],
+      "minimum": [
+        -8.0,
+        0.0,
+        -7.0
+      ],
+      "maximum": [
+        8.0,
+        9.474999,
+        7.0
+      ],
+      "role_identity": "ContinuousFoundation; HayLoftAndTackRoom; HayLoftAndTackRoom_Roof; OpenHorseStalls; OpenHorseStalls_ShelterRoof; StallPartitionsAndFeedTroughs",
+      "display_name": "厩舎",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Stable.fbx",
+      "style": "CityV2",
+      "label": "厩舎",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Stable.fbx",
+      "min": [
+        -8.0,
+        0.0,
+        -7.0
+      ],
+      "max": [
+        8.0,
+        9.474999,
+        7.0
+      ],
+      "vertices": 9340,
+      "faces": 2336,
+      "features": [
+        "ContinuousFoundation",
+        "HayLoftAndTackRoom",
+        "HayLoftAndTackRoom_Roof",
+        "OpenHorseStalls",
+        "OpenHorseStalls_ShelterRoof",
+        "StallPartitionsAndFeedTroughs"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "48828cf1c6f576ccbfdf8df20a0f8d1c49a4d4aaadd80bc3f9085da088480ced",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Streetlamp",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Props/Streetlamp.blend",
+      "front": "Previews/Front/Streetlamp.png",
+      "three_quarter": "Previews/ThreeQuarter/Streetlamp.png",
+      "triangles": 240,
+      "mesh_parts": 8,
+      "materials": [
+        "Iron",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -0.4525,
+        -0.4525,
+        0.0
+      ],
+      "maximum": [
+        0.4525,
+        0.4525,
+        3.3
+      ],
+      "role_identity": "",
+      "display_name": "街灯",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Streetlamp.fbx"
+    },
+    {
+      "name": "Tavern",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Tavern.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Tavern.png",
+      "triangles": 10550,
+      "mesh_parts": 44,
+      "materials": [
+        "Brass",
+        "Brick",
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Amber",
+        "Identity_Ivory",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta"
+      ],
+      "minimum": [
+        -6.5,
+        0.0,
+        -7.26
+      ],
+      "maximum": [
+        6.5,
+        10.7422,
+        7.0
+      ],
+      "role_identity": "AleCasksAndTap; BrewingFlue; BrewingHall; BrewingHall_Roof; ContinuousFoundation; GuestRoomWing; GuestRoomWing_Roof; Landmark_SuspendedAleTankard; OutdoorTrestleTables; ShelteredDrinkingPorch; ShelteredDrinkingPorch_ShelterRoof",
+      "display_name": "酒場",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Tavern.fbx",
+      "style": "CityV2",
+      "label": "酒場",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Tavern.fbx",
+      "min": [
+        -6.5,
+        0.0,
+        -7.26
+      ],
+      "max": [
+        6.5,
+        10.7422,
+        7.0
+      ],
+      "vertices": 21298,
+      "faces": 5260,
+      "features": [
+        "AleCasksAndTap",
+        "BrewingFlue",
+        "BrewingHall",
+        "BrewingHall_Roof",
+        "ContinuousFoundation",
+        "GuestRoomWing",
+        "GuestRoomWing_Roof",
+        "Landmark_SuspendedAleTankard",
+        "OutdoorTrestleTables",
+        "ShelteredDrinkingPorch",
+        "ShelteredDrinkingPorch_ShelterRoof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "c68712fc983420203b943802418a6d947a5c98f98edbc7ee6f099e96a9e4bca5",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "SuspendedAleTankard"
+      ]
+    },
+    {
+      "name": "Tree_AlleyCypress",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Tree_AlleyCypress.blend",
+      "front": "Previews/Front/Tree_AlleyCypress.png",
+      "three_quarter": "Previews/ThreeQuarter/Tree_AlleyCypress.png",
+      "triangles": 780,
+      "mesh_parts": 24,
+      "materials": [
+        "Bark",
+        "Cypress_Card",
+        "Cypress_Foliage"
+      ],
+      "minimum": [
+        -1.05,
+        -1.1017,
+        0.0
+      ],
+      "maximum": [
+        1.1278,
+        1.0763,
+        7.4045
+      ],
+      "role_identity": "",
+      "display_name": "糸杉",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Tree_AlleyCypress.fbx"
+    },
+    {
+      "name": "Tree_Shade",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Tree_Shade.blend",
+      "front": "Previews/Front/Tree_Shade.png",
+      "three_quarter": "Previews/ThreeQuarter/Tree_Shade.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -3.8937,
+        -2.7869,
+        0.0
+      ],
+      "maximum": [
+        2.0062,
+        2.668,
+        7.549
+      ],
+      "role_identity": "",
+      "display_name": "日陰の大樹",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Tree_Shade.fbx"
+    },
+    {
+      "name": "Tree_Street",
+      "group": "Nature",
+      "origin": "existing_name",
+      "blend": "Blender/Assets/Nature/Tree_Street.blend",
+      "front": "Previews/Front/Tree_Street.png",
+      "three_quarter": "Previews/ThreeQuarter/Tree_Street.png",
+      "triangles": 3098,
+      "mesh_parts": 61,
+      "materials": [
+        "Bark",
+        "Canopy_Card",
+        "Foliage"
+      ],
+      "minimum": [
+        -2.3616,
+        -1.9123,
+        0.0
+      ],
+      "maximum": [
+        1.8135,
+        1.9682,
+        5.6151
+      ],
+      "role_identity": "",
+      "display_name": "街路樹",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Tree_Street.fbx"
+    },
+    {
+      "name": "VeiledCourtyard",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_VeiledCourtyard.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_VeiledCourtyard.png",
+      "triangles": 9266,
+      "mesh_parts": 38,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Earth",
+        "Fieldstone",
+        "Foliage",
+        "Glazing_Blue",
+        "Identity_Lantern",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Terracotta",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -5.0,
+        0.0,
+        -6.5
+      ],
+      "maximum": [
+        5.0,
+        7.763,
+        6.5
+      ],
+      "role_identity": "ContinuousFoundation; CurtainedOpenBays; EnclosingLoungeWing; EnclosingLoungeWing_Roof; Landmark_EntertainmentLanternsAndDrapery; PrivateInnerCourt; RearCourtyardLounge; RearCourtyardLounge_Roof; VeiledCourtEntrance; VeiledCourtEntrance_ShelterRoof",
+      "display_name": "中庭入口の館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/VeiledCourtyard.fbx",
+      "style": "CityV2",
+      "label": "歓楽街・中庭館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/VeiledCourtyard.fbx",
+      "min": [
+        -5.0,
+        0.0,
+        -6.5
+      ],
+      "max": [
+        5.0,
+        7.763,
+        6.5
+      ],
+      "vertices": 19192,
+      "faces": 4792,
+      "features": [
+        "ContinuousFoundation",
+        "CurtainedOpenBays",
+        "EnclosingLoungeWing",
+        "EnclosingLoungeWing_Roof",
+        "Landmark_EntertainmentLanternsAndDrapery",
+        "PrivateInnerCourt",
+        "RearCourtyardLounge",
+        "RearCourtyardLounge_Roof",
+        "VeiledCourtEntrance",
+        "VeiledCourtEntrance_ShelterRoof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -6.5
+        ]
+      },
+      "geometryHash": "f8177247a0d55090cc80a51a8c151b7a01cb384d32947c94e3078471d5b3578e",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "EntertainmentLanternsAndDrapery"
+      ]
+    },
+    {
+      "name": "VelvetTerrace",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_VelvetTerrace.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_VelvetTerrace.png",
+      "triangles": 4724,
+      "mesh_parts": 27,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Lantern",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -5.0,
+        0.0,
+        -5.5
+      ],
+      "maximum": [
+        5.0,
+        10.4749994,
+        5.5
+      ],
+      "role_identity": "ContinuousFoundation; Landmark_EntertainmentLanternsAndDrapery; OpenLoungeTerrace; RearLounge; RearLounge_Roof; TerraceCanopy; TerraceFrontBalustrade; TerraceInternalStair",
+      "display_name": "バルコニーの館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/VelvetTerrace.fbx",
+      "style": "CityV2",
+      "label": "歓楽街・回廊館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/VelvetTerrace.fbx",
+      "min": [
+        -5.0,
+        0.0,
+        -5.5
+      ],
+      "max": [
+        5.0,
+        10.474999,
+        5.5
+      ],
+      "vertices": 9460,
+      "faces": 2306,
+      "features": [
+        "ContinuousFoundation",
+        "Landmark_EntertainmentLanternsAndDrapery",
+        "OpenLoungeTerrace",
+        "RearLounge",
+        "RearLounge_Roof",
+        "TerraceCanopy",
+        "TerraceFrontBalustrade",
+        "TerraceInternalStair"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -5.5
+        ]
+      },
+      "geometryHash": "309e1876307ab80d258129dde70060b89592303b33f44178753ff83f09050015",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "EntertainmentLanternsAndDrapery"
+      ]
+    },
+    {
+      "name": "Warehouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Warehouse.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Warehouse.png",
+      "triangles": 5490,
+      "mesh_parts": 17,
+      "materials": [
+        "Bronze_Fittings",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -7.5,
+        0.0,
+        -7.5
+      ],
+      "maximum": [
+        7.5,
+        11.575,
+        7.5
+      ],
+      "role_identity": "ContinuousFoundation; HoistAndLoadingPlatform; TallGoodsWarehouse; TallGoodsWarehouse_Roof; WideGoodsLoadingDoors",
+      "display_name": "倉庫",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Warehouse.fbx",
+      "style": "CityV2",
+      "label": "倉庫",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Warehouse.fbx",
+      "min": [
+        -7.5,
+        0.0,
+        -7.5
+      ],
+      "max": [
+        7.5,
+        11.575,
+        7.5
+      ],
+      "vertices": 11438,
+      "faces": 2840,
+      "features": [
+        "ContinuousFoundation",
+        "HoistAndLoadingPlatform",
+        "TallGoodsWarehouse",
+        "TallGoodsWarehouse_Roof",
+        "WideGoodsLoadingDoors"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.5
+        ]
+      },
+      "geometryHash": "0b545a649a9427943aa2d835f705569c275ee0026ffba4dcdbcef7541a787328",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "WarriorAcademy_Lv1",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 6948,
+      "mesh_parts": 38,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Steel",
+        "Iron",
+        "Leather",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -8.544,
+        0.0,
+        -8.544
+      ],
+      "maximum": [
+        8.544,
+        10.6847477,
+        8.544
+      ],
+      "role_identity": "ContinuousFoundation; CourtEntry; DrillHall; DrillHall_Roof; Landmark_CrossedTrainingSwords; OpenSparringCourt; PracticeEquipment; TrainingWing; TrainingWing_Roof",
+      "display_name": "戦士学校 Lv1",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/WarriorAcademy_Lv1.fbx",
+      "style": "CityV2",
+      "label": "戦士学校 Lv1",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/WarriorAcademy_Lv1.fbx",
+      "min": [
+        -8.544,
+        0.0,
+        -8.544
+      ],
+      "max": [
+        8.544,
+        10.684748,
+        8.544
+      ],
+      "vertices": 14406,
+      "faces": 3574,
+      "features": [
+        "ContinuousFoundation",
+        "CourtEntry",
+        "DrillHall",
+        "DrillHall_Roof",
+        "Landmark_CrossedTrainingSwords",
+        "OpenSparringCourt",
+        "PracticeEquipment",
+        "TrainingWing",
+        "TrainingWing_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -8.544
+        ]
+      },
+      "geometryHash": "fd6a4e6d6e0ec22f665e3b1656647beab0c730256b204a9a26a78dde0d1988a4",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CrossedTrainingSwords"
+      ]
+    },
+    {
+      "name": "WarriorAcademy_Lv2",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 8192,
+      "mesh_parts": 38,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Steel",
+        "Iron",
+        "Leather",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -9.408,
+        0.0,
+        -9.408
+      ],
+      "maximum": [
+        9.408,
+        11.2177706,
+        9.408
+      ],
+      "role_identity": "ContinuousFoundation; CourtEntry; DrillHall; DrillHall_Roof; Landmark_CrossedTrainingSwords; OpenSparringCourt; PracticeEquipment; TrainingWing; TrainingWing_Roof",
+      "display_name": "戦士学校 Lv2",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/WarriorAcademy_Lv2.fbx",
+      "style": "CityV2",
+      "label": "戦士学校 Lv2",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/WarriorAcademy_Lv2.fbx",
+      "min": [
+        -9.408,
+        0.0,
+        -9.408
+      ],
+      "max": [
+        9.408,
+        11.217771,
+        9.408
+      ],
+      "vertices": 17070,
+      "faces": 4240,
+      "features": [
+        "ContinuousFoundation",
+        "CourtEntry",
+        "DrillHall",
+        "DrillHall_Roof",
+        "Landmark_CrossedTrainingSwords",
+        "OpenSparringCourt",
+        "PracticeEquipment",
+        "TrainingWing",
+        "TrainingWing_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -9.408000000000001
+        ]
+      },
+      "geometryHash": "a568c9d9249c021538d8d984a8ed3b2d63c61d4d60a5f74951dc154fc62e3e8b",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CrossedTrainingSwords"
+      ]
+    },
+    {
+      "name": "WarriorAcademy_Lv3",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 13458,
+      "mesh_parts": 45,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Steel",
+        "Iron",
+        "Leather",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -10.272,
+        0.0,
+        -10.272
+      ],
+      "maximum": [
+        10.272,
+        11.4577713,
+        10.272
+      ],
+      "role_identity": "ContinuousFoundation; CourtEntry; DrillHall; DrillHall_Roof; GateFlank; GateFlank_Top; Landmark_CrossedTrainingSwords; OpenSparringCourt; PracticeEquipment; TrainingWing; TrainingWing_Roof",
+      "display_name": "戦士学校 Lv3",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/WarriorAcademy_Lv3.fbx",
+      "style": "CityV2",
+      "label": "戦士学校 Lv3",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/WarriorAcademy_Lv3.fbx",
+      "min": [
+        -10.272,
+        0.0,
+        -10.272
+      ],
+      "max": [
+        10.272,
+        11.457771,
+        10.272
+      ],
+      "vertices": 28354,
+      "faces": 7062,
+      "features": [
+        "ContinuousFoundation",
+        "CourtEntry",
+        "DrillHall",
+        "DrillHall_Roof",
+        "GateFlank",
+        "GateFlank_Top",
+        "Landmark_CrossedTrainingSwords",
+        "OpenSparringCourt",
+        "PracticeEquipment",
+        "TrainingWing",
+        "TrainingWing_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -10.272
+        ]
+      },
+      "geometryHash": "12114b293331b39af9593e6a6310830a29fbadd71ec022a459990d4e28ef3ebc",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CrossedTrainingSwords"
+      ]
+    },
+    {
+      "name": "WarriorAcademy_Lv4",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "",
+      "three_quarter": "",
+      "triangles": 13978,
+      "mesh_parts": 45,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Steel",
+        "Iron",
+        "Leather",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -11.136,
+        0.0,
+        -11.136
+      ],
+      "maximum": [
+        11.136,
+        11.6977711,
+        11.136
+      ],
+      "role_identity": "ContinuousFoundation; CourtEntry; DrillHall; DrillHall_Roof; GateFlank; GateFlank_Top; Landmark_CrossedTrainingSwords; OpenSparringCourt; PracticeEquipment; TrainingWing; TrainingWing_Roof",
+      "display_name": "戦士学校 Lv4",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/WarriorAcademy_Lv4.fbx",
+      "style": "CityV2",
+      "label": "戦士学校 Lv4",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/WarriorAcademy_Lv4.fbx",
+      "min": [
+        -11.136,
+        0.0,
+        -11.136
+      ],
+      "max": [
+        11.136,
+        11.697771,
+        11.136
+      ],
+      "vertices": 29482,
+      "faces": 7344,
+      "features": [
+        "ContinuousFoundation",
+        "CourtEntry",
+        "DrillHall",
+        "DrillHall_Roof",
+        "GateFlank",
+        "GateFlank_Top",
+        "Landmark_CrossedTrainingSwords",
+        "OpenSparringCourt",
+        "PracticeEquipment",
+        "TrainingWing",
+        "TrainingWing_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -11.136
+        ]
+      },
+      "geometryHash": "15286f2529f812f78aef915488b2a78878332bdf3dbecec209c107d9272ab75a",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CrossedTrainingSwords"
+      ]
+    },
+    {
+      "name": "WarriorAcademy_Lv5",
+      "group": "Academies",
+      "origin": "existing_name",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_WarriorAcademy_Lv5.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_WarriorAcademy_Lv5.png",
+      "triangles": 17768,
+      "mesh_parts": 45,
+      "materials": [
+        "Brass",
+        "Bronze_Fittings",
+        "Canvas_Red",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Door_Oak",
+        "Earth",
+        "Fieldstone",
+        "Glazing_Blue",
+        "Identity_Ivory",
+        "Identity_Steel",
+        "Iron",
+        "Leather",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -12.0,
+        0.0,
+        -12.0
+      ],
+      "maximum": [
+        12.0,
+        11.9377708,
+        12.0
+      ],
+      "role_identity": "ContinuousFoundation; CourtEntry; DrillHall; DrillHall_Roof; GateFlank; GateFlank_Top; Landmark_CrossedTrainingSwords; OpenSparringCourt; PracticeEquipment; TrainingWing; TrainingWing_Roof",
+      "display_name": "戦士学校 Lv5",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/WarriorAcademy_Lv5.fbx",
+      "style": "CityV2",
+      "label": "戦士学校 Lv5",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/WarriorAcademy_Lv5.fbx",
+      "min": [
+        -12.0,
+        0.0,
+        -12.0
+      ],
+      "max": [
+        12.0,
+        11.937771,
+        12.0
+      ],
+      "vertices": 37522,
+      "faces": 9354,
+      "features": [
+        "ContinuousFoundation",
+        "CourtEntry",
+        "DrillHall",
+        "DrillHall_Roof",
+        "GateFlank",
+        "GateFlank_Top",
+        "Landmark_CrossedTrainingSwords",
+        "OpenSparringCourt",
+        "PracticeEquipment",
+        "TrainingWing",
+        "TrainingWing_Roof"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -12.0
+        ]
+      },
+      "geometryHash": "73459756720dedd1302bcf1c8d813d5ce0b82edd0544be70b46f9507ef3fd48d",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": [
+        "CrossedTrainingSwords"
+      ]
+    },
+    {
+      "name": "Water_Trough",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Water_Trough.png",
+      "three_quarter": "Previews/ThreeQuarter/Water_Trough.png",
+      "triangles": 222,
+      "mesh_parts": 6,
+      "materials": [
+        "Carved_Limestone",
+        "Fieldstone",
+        "Water"
+      ],
+      "minimum": [
+        -1.17999983,
+        0,
+        -0.51
+      ],
+      "maximum": [
+        1.17999983,
+        0.6999999,
+        0.51
+      ],
+      "role_identity": "",
+      "display_name": "水飲み桶",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Water_Trough.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Water_Trough.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Well",
+      "group": "Props",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Well.png",
+      "three_quarter": "Previews/ThreeQuarter/Well.png",
+      "triangles": 626,
+      "mesh_parts": 10,
+      "materials": [
+        "DarkTimber",
+        "Fieldstone",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Roof_Clay",
+        "Water"
+      ],
+      "minimum": [
+        -1.41,
+        0,
+        -1.15
+      ],
+      "maximum": [
+        1.41,
+        3.99999976,
+        1.15
+      ],
+      "role_identity": "",
+      "display_name": "井戸",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Well.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Well.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "WorkshopHouse",
+      "group": "Buildings",
+      "origin": "existing_name",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/WorkshopHouse.png",
+      "three_quarter": "Previews/ThreeQuarter/WorkshopHouse.png",
+      "triangles": 2532,
+      "mesh_parts": 79,
+      "materials": [
+        "Carved_Limestone",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Roof_Slate",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -6.115,
+        0,
+        -3.98500013
+      ],
+      "maximum": [
+        6.115,
+        9.249497,
+        3.98500013
+      ],
+      "role_identity": "Craftsman dwelling attached to a low open carpentry workshop, sloping supported shed roof, vise workbench, chisels, hand tools and seasoned timber stack",
+      "display_name": "工房付き住宅",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/WorkshopHouse.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/WorkshopHouse.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Fence_Panel",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Fence_Panel.blend",
+      "front": "Previews/Front/Fence_Panel.png",
+      "three_quarter": "Previews/ThreeQuarter/Fence_Panel.png",
+      "triangles": 200,
+      "mesh_parts": 6,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -2.18,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        2.18,
+        0.18,
+        1.8
+      ],
+      "role_identity": "",
+      "display_name": "木柵",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fence_Panel.fbx"
+    },
+    {
+      "name": "Fence_Post",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Fence_Post.blend",
+      "front": "Previews/Front/Fence_Post.png",
+      "three_quarter": "Previews/ThreeQuarter/Fence_Post.png",
+      "triangles": 56,
+      "mesh_parts": 2,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.18,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        0.18,
+        0.18,
+        1.8
+      ],
+      "role_identity": "",
+      "display_name": "柵の支柱",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fence_Post.fbx"
+    },
+    {
+      "name": "Fence_Gate",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Fence_Gate.png",
+      "three_quarter": "Previews/ThreeQuarter/Fence_Gate.png",
+      "triangles": 280,
+      "mesh_parts": 10,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -2.18,
+        0,
+        -0.179999992
+      ],
+      "maximum": [
+        2.18,
+        1.8,
+        0.179999992
+      ],
+      "role_identity": "",
+      "display_name": "木の門扉",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fence_Gate.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Fence_Gate.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Stone_Wall",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Wall.blend",
+      "front": "Previews/Front/Stone_Wall.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Wall.png",
+      "triangles": 88,
+      "mesh_parts": 2,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        0.425,
+        1.76
+      ],
+      "role_identity": "",
+      "display_name": "低い石塀",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Stone_Wall.fbx"
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Wall_Corner.blend",
+      "front": "Previews/Front/Stone_Wall_Corner.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Wall_Corner.png",
+      "triangles": 40,
+      "mesh_parts": 2,
+      "materials": [
+        "Fieldstone",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.075,
+        -0.425,
+        0.0
+      ],
+      "maximum": [
+        2.075,
+        3.625,
+        1.76
+      ],
+      "role_identity": "",
+      "display_name": "石塀の角",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Stone_Wall_Corner.fbx"
+    },
+    {
+      "name": "Crate_Open",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Crate_Open.png",
+      "three_quarter": "Previews/ThreeQuarter/Crate_Open.png",
+      "triangles": 288,
+      "mesh_parts": 24,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.5849999,
+        0,
+        -0.475
+      ],
+      "maximum": [
+        0.5849999,
+        0.88,
+        0.475
+      ],
+      "role_identity": "",
+      "display_name": "開いた木箱",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Crate_Open.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Crate_Open.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Grain_Sack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Grain_Sack.png",
+      "three_quarter": "Previews/ThreeQuarter/Grain_Sack.png",
+      "triangles": 432,
+      "mesh_parts": 4,
+      "materials": [
+        "Leather",
+        "Linen"
+      ],
+      "minimum": [
+        -0.437486,
+        0,
+        -0.3499888
+      ],
+      "maximum": [
+        0.437486,
+        1.368,
+        0.3499888
+      ],
+      "role_identity": "",
+      "display_name": "穀物袋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Grain_Sack.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Grain_Sack.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Produce_Basket",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Produce_Basket.png",
+      "three_quarter": "Previews/ThreeQuarter/Produce_Basket.png",
+      "triangles": 2738,
+      "mesh_parts": 31,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "Wicker"
+      ],
+      "minimum": [
+        -0.465136319,
+        0,
+        -0.465136319
+      ],
+      "maximum": [
+        0.465136319,
+        0.77,
+        0.465136319
+      ],
+      "role_identity": "",
+      "display_name": "青果かご",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Produce_Basket.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Produce_Basket.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Planter",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Planter.blend",
+      "front": "Previews/Front/Planter.png",
+      "three_quarter": "Previews/ThreeQuarter/Planter.png",
+      "triangles": 456,
+      "mesh_parts": 21,
+      "materials": [
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Leaf_Card",
+        "Terracotta"
+      ],
+      "minimum": [
+        -0.624,
+        -0.624,
+        0.0
+      ],
+      "maximum": [
+        0.624,
+        0.624,
+        1.4654
+      ],
+      "role_identity": "",
+      "display_name": "花の植木鉢",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Planter.fbx"
+    },
+    {
+      "name": "Drain_Grate",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Drain_Grate.blend",
+      "front": "Previews/Front/Drain_Grate.png",
+      "three_quarter": "Previews/ThreeQuarter/Drain_Grate.png",
+      "triangles": 52,
+      "mesh_parts": 6,
+      "materials": [
+        "Fieldstone",
+        "Iron",
+        "Iron_Grate"
+      ],
+      "minimum": [
+        -0.6,
+        -0.6,
+        0.0
+      ],
+      "maximum": [
+        0.6,
+        0.6,
+        0.096
+      ],
+      "role_identity": "",
+      "top": "Previews/Top/Drain_Grate.png",
+      "display_name": "排水溝の蓋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Drain_Grate.fbx"
+    },
+    {
+      "name": "Bollard",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Bollard.png",
+      "three_quarter": "Previews/ThreeQuarter/Bollard.png",
+      "triangles": 124,
+      "mesh_parts": 1,
+      "materials": [
+        "Carved_Limestone"
+      ],
+      "minimum": [
+        -0.24,
+        0,
+        -0.24
+      ],
+      "maximum": [
+        0.24,
+        0.95,
+        0.24
+      ],
+      "role_identity": "",
+      "display_name": "車止め",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bollard.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Bollard.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Bucket",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Bucket.blend",
+      "front": "Previews/Front/Bucket.png",
+      "three_quarter": "Previews/ThreeQuarter/Bucket.png",
+      "triangles": 564,
+      "mesh_parts": 19,
+      "materials": [
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -0.3624,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.3624,
+        0.35,
+        0.9624
+      ],
+      "role_identity": "",
+      "display_name": "木のバケツ",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bucket.fbx"
+    },
+    {
+      "name": "Fish_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Fish_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Fish_Stall.png",
+      "triangles": 4315,
+      "mesh_parts": 111,
+      "materials": [
+        "Canvas_Blue",
+        "DarkTimber",
+        "Fish",
+        "Fish_Skin",
+        "Iron",
+        "Linen",
+        "Oak",
+        "Sign_Fish",
+        "Wicker"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "魚の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fish_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Fish_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Bread_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Bread_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Bread_Stall.png",
+      "triangles": 7484,
+      "mesh_parts": 89,
+      "materials": [
+        "Bread",
+        "Bread_Crust",
+        "Canvas_Gold",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Bread",
+        "Wicker"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "パンの露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bread_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Bread_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Spice_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Spice_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Spice_Stall.png",
+      "triangles": 8210,
+      "mesh_parts": 161,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Sign_Spice",
+        "Spice_Ochre",
+        "Spice_Red",
+        "Spice_Salt",
+        "Terracotta",
+        "Wicker"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "香辛料の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Spice_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Spice_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Flower_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Flower_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Flower_Stall.png",
+      "triangles": 3350,
+      "mesh_parts": 141,
+      "materials": [
+        "Canvas_Green",
+        "DarkTimber",
+        "Earth",
+        "Flower_Card_Gold",
+        "Flower_Card_Pink",
+        "Foliage",
+        "Iron",
+        "Leaf_Card",
+        "Oak",
+        "Sign_Flower",
+        "Terracotta"
+      ],
+      "minimum": [
+        -2.1412,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        2.1412,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "花の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Flower_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Flower_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Butcher_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Butcher_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Butcher_Stall.png",
+      "triangles": 4186,
+      "mesh_parts": 65,
+      "materials": [
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Linen",
+        "Meat",
+        "Oak",
+        "Sign_Meat"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "肉の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Butcher_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Butcher_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Potion_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Potion_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Potion_Stall.png",
+      "triangles": 8230,
+      "mesh_parts": 88,
+      "materials": [
+        "Canvas_Blue",
+        "Cork",
+        "DarkTimber",
+        "Glass_Green",
+        "Glass_Purple",
+        "Iron",
+        "Liquid_Green",
+        "Liquid_Purple",
+        "Oak",
+        "Sign_Potion"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "薬の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Potion_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Potion_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Book_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Book_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Book_Stall.png",
+      "triangles": 3590,
+      "mesh_parts": 113,
+      "materials": [
+        "Canvas_Green",
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Oak",
+        "Paper",
+        "Sign_Book",
+        "Wicker"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "古書の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Book_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Book_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Weapon_Stall",
+      "group": "Market",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Weapon_Stall.png",
+      "three_quarter": "Previews/ThreeQuarter/Weapon_Stall.png",
+      "triangles": 2654,
+      "mesh_parts": 84,
+      "materials": [
+        "Brass",
+        "Canvas_Red",
+        "DarkTimber",
+        "Iron",
+        "Leather",
+        "Oak",
+        "Sign_Smith"
+      ],
+      "minimum": [
+        -1.68,
+        0,
+        -1.262583
+      ],
+      "maximum": [
+        1.68,
+        2.94,
+        1.262583
+      ],
+      "role_identity": "",
+      "display_name": "武器の露店",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Weapon_Stall.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Weapon_Stall.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Covered_Wagon",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Covered_Wagon.png",
+      "three_quarter": "Previews/ThreeQuarter/Covered_Wagon.png",
+      "triangles": 2648,
+      "mesh_parts": 139,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Linen",
+        "Oak"
+      ],
+      "minimum": [
+        -1.35,
+        0,
+        -2.93152523
+      ],
+      "maximum": [
+        1.35,
+        2.72000027,
+        2.93152523
+      ],
+      "role_identity": "",
+      "display_name": "幌馬車",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Covered_Wagon.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Covered_Wagon.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Merchant_Wagon",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Merchant_Wagon.png",
+      "three_quarter": "Previews/ThreeQuarter/Merchant_Wagon.png",
+      "triangles": 1908,
+      "mesh_parts": 69,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -1.35,
+        0,
+        -2.93152523
+      ],
+      "maximum": [
+        1.35,
+        1.8900001,
+        2.93152523
+      ],
+      "role_identity": "",
+      "display_name": "商人の荷馬車",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Merchant_Wagon.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Merchant_Wagon.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Wheelbarrow",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Wheelbarrow.png",
+      "three_quarter": "Previews/ThreeQuarter/Wheelbarrow.png",
+      "triangles": 640,
+      "mesh_parts": 33,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.535,
+        0,
+        -1.31999993
+      ],
+      "maximum": [
+        0.535,
+        1.35,
+        1.31999993
+      ],
+      "role_identity": "",
+      "display_name": "一輪手押し車",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Wheelbarrow.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Wheelbarrow.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Market_Scale",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Market_Scale.blend",
+      "front": "Previews/Front/Market_Scale.png",
+      "three_quarter": "Previews/ThreeQuarter/Market_Scale.png",
+      "triangles": 268,
+      "mesh_parts": 9,
+      "materials": [
+        "Brass",
+        "Iron",
+        "Oak"
+      ],
+      "minimum": [
+        -0.89,
+        -0.3,
+        0.0
+      ],
+      "maximum": [
+        0.89,
+        0.3,
+        1.5
+      ],
+      "role_identity": "",
+      "display_name": "市場の天秤",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Market_Scale.fbx"
+    },
+    {
+      "name": "Basket_Empty",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Basket_Empty.png",
+      "three_quarter": "Previews/ThreeQuarter/Basket_Empty.png",
+      "triangles": 1428,
+      "mesh_parts": 26,
+      "materials": [
+        "Wicker"
+      ],
+      "minimum": [
+        -0.465136319,
+        0,
+        -0.465136319
+      ],
+      "maximum": [
+        0.465136319,
+        0.61,
+        0.465136319
+      ],
+      "role_identity": "",
+      "display_name": "空のかご",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Basket_Empty.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Basket_Empty.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Pottery_Jars",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Pottery_Jars.blend",
+      "front": "Previews/Front/Pottery_Jars.png",
+      "three_quarter": "Previews/ThreeQuarter/Pottery_Jars.png",
+      "triangles": 852,
+      "mesh_parts": 3,
+      "materials": [
+        "Terracotta"
+      ],
+      "minimum": [
+        -0.75,
+        -0.35,
+        0.0
+      ],
+      "maximum": [
+        0.64,
+        0.78,
+        0.9
+      ],
+      "role_identity": "",
+      "display_name": "陶器の壺",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Pottery_Jars.fbx"
+    },
+    {
+      "name": "Sack_Stack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Sack_Stack.png",
+      "three_quarter": "Previews/ThreeQuarter/Sack_Stack.png",
+      "triangles": 1296,
+      "mesh_parts": 12,
+      "materials": [
+        "Leather",
+        "Linen"
+      ],
+      "minimum": [
+        -0.837485969,
+        0,
+        -0.39998877
+      ],
+      "maximum": [
+        0.837485969,
+        2.16799974,
+        0.39998877
+      ],
+      "role_identity": "",
+      "display_name": "積まれた穀物袋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Sack_Stack.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Sack_Stack.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Vegetable_Crate",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Vegetable_Crate.png",
+      "three_quarter": "Previews/ThreeQuarter/Vegetable_Crate.png",
+      "triangles": 1944,
+      "mesh_parts": 30,
+      "materials": [
+        "Apple_Green",
+        "Apple_Red",
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -0.5849999,
+        0,
+        -0.475
+      ],
+      "maximum": [
+        0.5849999,
+        1.06,
+        0.475
+      ],
+      "role_identity": "",
+      "display_name": "野菜の木箱",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Vegetable_Crate.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Vegetable_Crate.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Fish_Crate",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Fish_Crate.png",
+      "three_quarter": "Previews/ThreeQuarter/Fish_Crate.png",
+      "triangles": 614,
+      "mesh_parts": 30,
+      "materials": [
+        "DarkTimber",
+        "Fish_Skin",
+        "Oak"
+      ],
+      "minimum": [
+        -0.5849999,
+        0,
+        -0.475
+      ],
+      "maximum": [
+        0.5849999,
+        1.15,
+        0.475
+      ],
+      "role_identity": "",
+      "display_name": "魚の木箱",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fish_Crate.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Fish_Crate.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Bread_Basket",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Bread_Basket.png",
+      "three_quarter": "Previews/ThreeQuarter/Bread_Basket.png",
+      "triangles": 2188,
+      "mesh_parts": 28,
+      "materials": [
+        "Bread_Crust",
+        "Wicker"
+      ],
+      "minimum": [
+        -0.465136319,
+        0,
+        -0.465136319
+      ],
+      "maximum": [
+        0.465136319,
+        0.793,
+        0.465136319
+      ],
+      "role_identity": "",
+      "display_name": "パンのかご",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Bread_Basket.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Bread_Basket.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Rolled_Fabric",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Rolled_Fabric.png",
+      "three_quarter": "Previews/ThreeQuarter/Rolled_Fabric.png",
+      "triangles": 2244,
+      "mesh_parts": 171,
+      "materials": [
+        "Canvas_Blue",
+        "Canvas_Gold",
+        "Canvas_Red",
+        "Linen"
+      ],
+      "minimum": [
+        -0.59,
+        0,
+        -0.19
+      ],
+      "maximum": [
+        0.59,
+        1.45600009,
+        0.19
+      ],
+      "role_identity": "",
+      "display_name": "巻いた布地",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Rolled_Fabric.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Rolled_Fabric.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Hanging_Herbs",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Hanging_Herbs.blend",
+      "front": "Previews/Front/Hanging_Herbs.png",
+      "three_quarter": "Previews/ThreeQuarter/Hanging_Herbs.png",
+      "triangles": 108,
+      "mesh_parts": 19,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Leaf_Card",
+        "Linen"
+      ],
+      "minimum": [
+        -1.2,
+        -0.225,
+        0.0
+      ],
+      "maximum": [
+        1.2,
+        0.3,
+        1.115
+      ],
+      "role_identity": "",
+      "display_name": "干した薬草",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Hanging_Herbs.fbx"
+    },
+    {
+      "name": "Shop_Sign",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Shop_Sign.blend",
+      "front": "Previews/Front/Shop_Sign.png",
+      "three_quarter": "Previews/ThreeQuarter/Shop_Sign.png",
+      "triangles": 58,
+      "mesh_parts": 3,
+      "materials": [
+        "Iron",
+        "Oak",
+        "Sign_Trade"
+      ],
+      "minimum": [
+        -0.55,
+        -0.18,
+        0.0
+      ],
+      "maximum": [
+        0.55,
+        0.18,
+        2.8
+      ],
+      "role_identity": "",
+      "display_name": "吊り看板",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Shop_Sign.fbx"
+    },
+    {
+      "name": "Shield_Rack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Shield_Rack.png",
+      "three_quarter": "Previews/ThreeQuarter/Shield_Rack.png",
+      "triangles": 1140,
+      "mesh_parts": 33,
+      "materials": [
+        "DarkTimber",
+        "Iron",
+        "Leather",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        0,
+        -0.274999976
+      ],
+      "maximum": [
+        1.05,
+        2.0,
+        0.274999976
+      ],
+      "role_identity": "",
+      "display_name": "盾掛け",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Shield_Rack.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Shield_Rack.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Weapon_Rack",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Weapon_Rack.png",
+      "three_quarter": "Previews/ThreeQuarter/Weapon_Rack.png",
+      "triangles": 1200,
+      "mesh_parts": 24,
+      "materials": [
+        "Brass",
+        "DarkTimber",
+        "Iron",
+        "Leather",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        0,
+        -0.25
+      ],
+      "maximum": [
+        1.05,
+        2.0,
+        0.25
+      ],
+      "role_identity": "",
+      "display_name": "剣掛け",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Weapon_Rack.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Weapon_Rack.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Training_Dummy",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Training_Dummy.png",
+      "three_quarter": "Previews/ThreeQuarter/Training_Dummy.png",
+      "triangles": 476,
+      "mesh_parts": 5,
+      "materials": [
+        "DarkTimber",
+        "Linen",
+        "Oak",
+        "Thatch"
+      ],
+      "minimum": [
+        -0.799999952,
+        0,
+        -0.35
+      ],
+      "maximum": [
+        0.799999952,
+        2.19999981,
+        0.35
+      ],
+      "role_identity": "",
+      "display_name": "訓練人形",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Training_Dummy.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Training_Dummy.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Fountain",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Fountain.png",
+      "three_quarter": "Previews/ThreeQuarter/Fountain.png",
+      "triangles": 676,
+      "mesh_parts": 3,
+      "materials": [
+        "Carved_Limestone",
+        "Water"
+      ],
+      "minimum": [
+        -1.5,
+        0,
+        -1.5
+      ],
+      "maximum": [
+        1.5,
+        2.0,
+        1.5
+      ],
+      "role_identity": "",
+      "display_name": "噴水",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Fountain.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Fountain.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Wash_Tub",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Wash_Tub.blend",
+      "front": "Previews/Front/Wash_Tub.png",
+      "three_quarter": "Previews/ThreeQuarter/Wash_Tub.png",
+      "triangles": 374,
+      "mesh_parts": 4,
+      "materials": [
+        "Iron",
+        "Oak",
+        "Water"
+      ],
+      "minimum": [
+        -0.8,
+        -0.8,
+        0.0
+      ],
+      "maximum": [
+        0.8,
+        0.8,
+        0.55
+      ],
+      "role_identity": "",
+      "display_name": "洗い桶",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Wash_Tub.fbx"
+    },
+    {
+      "name": "Street_Brazier",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Street_Brazier.png",
+      "three_quarter": "Previews/ThreeQuarter/Street_Brazier.png",
+      "triangles": 1632,
+      "mesh_parts": 14,
+      "materials": [
+        "Coal",
+        "Glowing_Coals",
+        "Iron"
+      ],
+      "minimum": [
+        -0.5,
+        0,
+        -0.5
+      ],
+      "maximum": [
+        0.5,
+        1.10733366,
+        0.5
+      ],
+      "role_identity": "",
+      "display_name": "街路の火鉢",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Street_Brazier.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Street_Brazier.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Hanging_Lantern",
+      "group": "Props",
+      "origin": "added",
+      "blend": "Blender/Assets/Props/Hanging_Lantern.blend",
+      "front": "Previews/Front/Hanging_Lantern.png",
+      "three_quarter": "Previews/ThreeQuarter/Hanging_Lantern.png",
+      "triangles": 884,
+      "mesh_parts": 8,
+      "materials": [
+        "Iron",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -0.4525,
+        -0.4525,
+        0.0
+      ],
+      "maximum": [
+        0.4525,
+        0.4525,
+        1.075
+      ],
+      "role_identity": "",
+      "display_name": "吊りランタン",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Hanging_Lantern.fbx"
+    },
+    {
+      "name": "Windmill",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Windmill.png",
+      "three_quarter": "Previews/ThreeQuarter/Windmill.png",
+      "triangles": 3208,
+      "mesh_parts": 110,
+      "materials": [
+        "Carved_Limestone",
+        "DarkTimber",
+        "Door_Oak",
+        "Iron",
+        "Limestone",
+        "Linen",
+        "Oak",
+        "Plaster",
+        "Thatch",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -4.77134228,
+        0,
+        -3.54
+      ],
+      "maximum": [
+        4.77134228,
+        12.3713417,
+        3.54
+      ],
+      "role_identity": "Tapering round masonry windmill with rotating thatch cap, shaft bearing, four framed linen sails and grain handling crates",
+      "display_name": "風車小屋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Windmill.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Windmill.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Watermill",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Watermill.png",
+      "three_quarter": "Previews/ThreeQuarter/Watermill.png",
+      "triangles": 6482,
+      "mesh_parts": 130,
+      "materials": [
+        "Carved_Limestone",
+        "DarkTimber",
+        "Door_Oak",
+        "Fieldstone",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Clay",
+        "Water",
+        "Wicker",
+        "Window_Amber"
+      ],
+      "minimum": [
+        -5.21500063,
+        0,
+        -6.5
+      ],
+      "maximum": [
+        5.21500063,
+        8.55424,
+        6.5
+      ],
+      "role_identity": "Long timber mill hall with connected axle and radial paddle wheel, flowing stone-banked millrace and external bearing pier",
+      "display_name": "水車小屋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Watermill.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Watermill.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Market_Hall",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
+      "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Market_Hall.png",
+      "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Market_Hall.png",
+      "triangles": 3850,
+      "mesh_parts": 12,
+      "materials": [
+        "Bread_Crust",
+        "Carved_Limestone",
+        "Cobble",
+        "DarkTimber",
+        "Fieldstone",
+        "Iron",
+        "Oak",
+        "Plaster",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -8.5,
+        0.0,
+        -7.0
+      ],
+      "maximum": [
+        8.5,
+        5.815,
+        7.0
+      ],
+      "role_identity": "ContinuousFoundation; CoveredPublicMarketHall; CoveredPublicMarketHall_ShelterRoof; PublicGoodsCounters",
+      "display_name": "市場会館",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Market_Hall.fbx",
+      "style": "CityV2",
+      "label": "市場会館",
+      "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Market_Hall.fbx",
+      "min": [
+        -8.5,
+        0.0,
+        -7.0
+      ],
+      "max": [
+        8.5,
+        5.815,
+        7.0
+      ],
+      "vertices": 7862,
+      "faces": 2006,
+      "features": [
+        "ContinuousFoundation",
+        "CoveredPublicMarketHall",
+        "CoveredPublicMarketHall_ShelterRoof",
+        "PublicGoodsCounters"
+      ],
+      "markers": {
+        "Entrance": [
+          0,
+          0.23,
+          -7.0
+        ]
+      },
+      "geometryHash": "7487a26cfc632f5ce954b56bf61775e632952407f0db5c29daa143dee2adcc6b",
+      "fromScratch": true,
+      "rolePlacards": false,
+      "sourceInputs": [
+        "facility function",
+        "plot dimensions",
+        "style brief",
+        "distance-readable identity"
+      ],
+      "coordinateSystem": "X right, Y up, Z back",
+      "landmarks": []
+    },
+    {
+      "name": "Watchtower",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Watchtower.png",
+      "three_quarter": "Previews/ThreeQuarter/Watchtower.png",
+      "triangles": 1298,
+      "mesh_parts": 42,
+      "materials": [
+        "DarkTimber",
+        "Fieldstone",
+        "Oak",
+        "Roof_Slate"
+      ],
+      "minimum": [
+        -2.53000045,
+        0,
+        -3.44587851
+      ],
+      "maximum": [
+        2.53000045,
+        10.1799984,
+        3.44587851
+      ],
+      "role_identity": "Braced timber watchtower on stone footing, accessible lookout ladder, railed observation deck and supported slate canopy",
+      "display_name": "見張り塔",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Watchtower.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Watchtower.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Stone_Bridge",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Blender/Assets/Infrastructure/Stone_Bridge.blend",
+      "front": "Previews/Front/Stone_Bridge.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Bridge.png",
+      "triangles": 492,
+      "mesh_parts": 8,
+      "materials": [
+        "Cobble",
+        "Limestone"
+      ],
+      "minimum": [
+        -2.01,
+        -4.0,
+        0.0
+      ],
+      "maximum": [
+        2.01,
+        4.0,
+        3.165
+      ],
+      "role_identity": "",
+      "display_name": "石橋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Stone_Bridge.fbx"
+    },
+    {
+      "name": "Wooden_Bridge",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Wooden_Bridge.png",
+      "three_quarter": "Previews/ThreeQuarter/Wooden_Bridge.png",
+      "triangles": 2664,
+      "mesh_parts": 72,
+      "materials": [
+        "DarkTimber",
+        "Fieldstone",
+        "Oak"
+      ],
+      "minimum": [
+        -1.8499999,
+        0,
+        -4.065
+      ],
+      "maximum": [
+        1.8499999,
+        1.83999193,
+        4.065
+      ],
+      "role_identity": "",
+      "display_name": "木橋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Wooden_Bridge.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Wooden_Bridge.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Dock_Section",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Dock_Section.png",
+      "three_quarter": "Previews/ThreeQuarter/Dock_Section.png",
+      "triangles": 944,
+      "mesh_parts": 20,
+      "materials": [
+        "Bark",
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -1.5,
+        0,
+        -2.493
+      ],
+      "maximum": [
+        1.5,
+        1.3,
+        2.493
+      ],
+      "role_identity": "",
+      "display_name": "桟橋",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Dock_Section.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Dock_Section.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Stone_Stairs",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Stone_Stairs.png",
+      "three_quarter": "Previews/ThreeQuarter/Stone_Stairs.png",
+      "triangles": 60,
+      "mesh_parts": 1,
+      "materials": [
+        "Carved_Limestone"
+      ],
+      "minimum": [
+        -1.0,
+        0,
+        -1.19
+      ],
+      "maximum": [
+        1.0,
+        1.26,
+        1.19
+      ],
+      "role_identity": "",
+      "display_name": "石の階段",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Stone_Stairs.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Stone_Stairs.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Wooden_Stairs",
+      "group": "Infrastructure",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Wooden_Stairs.png",
+      "three_quarter": "Previews/ThreeQuarter/Wooden_Stairs.png",
+      "triangles": 772,
+      "mesh_parts": 19,
+      "materials": [
+        "DarkTimber",
+        "Oak"
+      ],
+      "minimum": [
+        -1.05,
+        0,
+        -1.2
+      ],
+      "maximum": [
+        1.05,
+        2.18559313,
+        1.2
+      ],
+      "role_identity": "",
+      "display_name": "木の階段",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Wooden_Stairs.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Wooden_Stairs.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    },
+    {
+      "name": "Outhouse",
+      "group": "Buildings",
+      "origin": "added",
+      "blend": "Art/CityV2Quality/CityV2_Support.blend",
+      "front": "Previews/Front/Outhouse.png",
+      "three_quarter": "Previews/ThreeQuarter/Outhouse.png",
+      "triangles": 157,
+      "mesh_parts": 10,
+      "materials": [
+        "Door_Oak",
+        "Fieldstone",
+        "Iron_Grate",
+        "Limestone",
+        "Oak",
+        "Thatch",
+        "Weathering"
+      ],
+      "minimum": [
+        -1.225,
+        0,
+        -1.38
+      ],
+      "maximum": [
+        1.225,
+        3.05,
+        1.38
+      ],
+      "role_identity": "Residential outhouse; coherent timber construction, framed windows, fitted doors and functional extensions",
+      "display_name": "屋外便所",
+      "fbx": "Assets/Models/Kingdom/CityV2/Models/Outhouse.fbx",
+      "staged": "Artifacts/CityV2Quality20261030/Generated/Support/Outhouse.fbx",
+      "coordinateSystem": "Unity X right, Y up, front -Z"
+    }
+  ]
+}

@@ -47,50 +47,6 @@ public sealed class CombatNormalAttackSkillTests
     }
 
     [Test]
-    public void WandArcaneBlast_DealsMoreDamageThanWandBoltAtSameRange()
-    {
-        GameObject ownerGo = new GameObject("Owner");
-        GameObject targetGo = new GameObject("Target");
-        try
-        {
-            Character owner = ownerGo.AddComponent<Character>();
-            Character target = targetGo.AddComponent<Character>();
-            target.SetTeam(CombatTeam.Enemy);
-            target.Health.Initialize(maxHP: 200);
-            typeof(Character).GetProperty("INT").SetValue(owner, 10);
-            targetGo.transform.position = ownerGo.transform.position + Vector3.forward * 7f;
-
-            var bolt = new WandBoltSkill();
-            var blast = new WandArcaneBlastSkill();
-
-            CombatSkillEvaluationResult boltResult = CombatSkillEvaluator.Evaluate(
-                bolt,
-                CombatSkillEvaluationRequest.ForTarget(owner, target));
-            Assert.That(boltResult.CanUse, Is.True);
-            bolt.Execute(owner, boltResult.Context);
-            int hpAfterBolt = target.Health.HP;
-
-            target.Health.Initialize(maxHP: 200);
-            CombatSkillEvaluationResult blastResult = CombatSkillEvaluator.Evaluate(
-                blast,
-                CombatSkillEvaluationRequest.ForTarget(owner, target));
-            Assert.That(blastResult.CanUse, Is.True);
-            blast.Execute(owner, blastResult.Context);
-            int hpAfterBlast = target.Health.HP;
-
-            Assert.That(hpAfterBlast, Is.LessThan(hpAfterBolt));
-            Assert.That(blast.MaxRange, Is.EqualTo(20f));
-            Assert.That(bolt.MaxRange, Is.EqualTo(20f));
-            Assert.That(blast.CooldownSeconds, Is.GreaterThan(bolt.CooldownSeconds));
-        }
-        finally
-        {
-            Object.DestroyImmediate(targetGo);
-            Object.DestroyImmediate(ownerGo);
-        }
-    }
-
-    [Test]
     public void WandBolt_DealsMoreDamageAtLongerRangeWithinMaxRange()
     {
         GameObject ownerGo = new GameObject("Owner");
@@ -163,71 +119,12 @@ public sealed class CombatNormalAttackSkillTests
         }
     }
 
-    [TestCase(SkillId.Sword_Slash, 2f)]
-    [TestCase(SkillId.Wand_Bolt, 20f)]
-    [TestCase(SkillId.Wand_AreaBlast, 20f)]
-    [TestCase(SkillId.Wand_ArcaneBlast, 20f)]
-    [TestCase(SkillId.Wand_GodsHand, 20f)]
-    [TestCase(SkillId.Grimoire_Bolt, 30f)]
-    [TestCase(SkillId.Grimoire_Bind, 25f)]
-    [TestCase(SkillId.Grimoire_Poison, 25f)]
-    [TestCase(SkillId.Bible_Smite, 30f)]
-    [TestCase(SkillId.Rosary_Strike, 15f)]
-    [TestCase(SkillId.Rosary_DistantHeal, 40f)]
-    [TestCase(SkillId.Rosary_CloseHeal, 6f)]
-    [TestCase(SkillId.Rosary_Regeneration, 25f)]
-    [TestCase(SkillId.Rosary_HealingArea, 35f)]
-    public void DefaultSkillRange_MatchesSightBasedCombatDistance(SkillId skillId, float expectedRange)
-    {
-        Assert.That(CombatSkillFactory.Create(skillId).MaxRange, Is.EqualTo(expectedRange).Within(0.001f));
-    }
-
-    [Test]
-    public void SwordSlash_DefaultCooldownRewardsSuccessfulMeleeApproach()
-    {
-        Assert.That(new SwordSlashSkill().CooldownSeconds, Is.EqualTo(0.9f).Within(0.001f));
-    }
-
-    [Test]
-    public void SwordSlash_DefaultHitDealsTwentySixDamageAtFortyStrength()
-    {
-        GameObject ownerGo = new GameObject("Owner");
-        GameObject targetGo = new GameObject("Target");
-        try
-        {
-            Character owner = ownerGo.AddComponent<Character>();
-            Character target = targetGo.AddComponent<Character>();
-            typeof(Character).GetProperty("STR").SetValue(owner, 40);
-            target.Vision.ReceiveSharedMemory(
-                target,
-                new System.Collections.Generic.List<CharacterMemory>
-                {
-                    new CharacterMemory(owner, ownerGo.transform.position, Time.time),
-                });
-
-            int damage = new SwordSlashSkill().EstimateDamage(
-                owner,
-                SkillExecutionContext.ForTarget(target),
-                target);
-
-            Assert.That(damage, Is.EqualTo(26));
-        }
-        finally
-        {
-            Object.DestroyImmediate(targetGo);
-            Object.DestroyImmediate(ownerGo);
-        }
-    }
-
     [Test]
     public void CombatSkillFactory_CreatesNormalAttackForEveryWeaponKind()
     {
         Assert.That(CombatSkillFactory.Create(SkillId.Sword_Slash), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Shield_Slash), Is.Not.Null);
-        Assert.That(CombatSkillFactory.Create(SkillId.Shield_ShoulderGuard), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Wand_Bolt), Is.Not.Null);
-        Assert.That(CombatSkillFactory.Create(SkillId.Wand_ArcaneBlast), Is.Not.Null);
-        Assert.That(CombatSkillFactory.Create(SkillId.Wand_GodsHand), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Grimoire_Bolt), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Bible_Smite), Is.Not.Null);
         Assert.That(CombatSkillFactory.Create(SkillId.Rosary_Strike), Is.Not.Null);

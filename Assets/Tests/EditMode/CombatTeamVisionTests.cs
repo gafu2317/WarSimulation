@@ -271,7 +271,7 @@ public sealed class CombatTeamVisionTests
     }
 
     [Test]
-    public void CombatVision_SightRangeScalesFrom30To100WithTerrainHeight()
+    public void CombatVision_SightRangeScalesWithTerrainHeight()
     {
         GameObject mapSystemGo = new GameObject("CombatMapSystem");
         GameObject observerGo = new GameObject("Observer");
@@ -287,6 +287,8 @@ public sealed class CombatTeamVisionTests
 
             Character observer = observerGo.AddComponent<Character>();
             Character target = targetGo.AddComponent<Character>();
+            CombatEditModeTestUtil.SetPrivateField(observer.Vision, "_minimumSightRange", 30f);
+            CombatEditModeTestUtil.SetPrivateField(observer.Vision, "_maximumSightRange", 100f);
             observerGo.transform.position = Vector3.zero;
             targetGo.transform.position = new Vector3(0f, 0f, 30f);
             Physics.SyncTransforms();

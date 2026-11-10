@@ -211,7 +211,7 @@ namespace WarSimulation.Combat.Map
             return mesh;
         }
 
-        private static Vector2 GetFlowUv(Vector2 point, Vector2[] path, float[] distances)
+        public static Vector2 GetFlowUv(Vector2 point, Vector2[] path, float[] distances)
         {
             float nearest = float.PositiveInfinity;
             Vector2 uv = Vector2.zero;

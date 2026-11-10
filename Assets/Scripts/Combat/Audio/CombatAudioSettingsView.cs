@@ -5,9 +5,24 @@ using UnityEngine.UI;
 
 public sealed class CombatAudioSettingsView : MonoBehaviour
 {
+    public static bool IsOpen { get; private set; }
+
+    private CombatAudioPlayer _player;
+    private Button _previewButton;
+    private GameObject _sePage;
+    private GameObject _bgmPage;
+    private Transform _bgmRows;
+    private Button _seTab;
+    private Button _bgmTab;
+    private bool _showBgm;
+    private GridLayoutGroup _skillGrid;
+    private GridLayoutGroup _libraryGrid;
     private CombatAudioSettings _settings;
     private RectTransform _panel;
     private TMP_FontAsset _font;
+    private Transform _library;
+    private GameObject _emptyLibraryHint;
+    private CombatBrowserAudioImport _browserImport;
     private readonly List<SkillDefinition> _definitions = new();
 
     public static void Open(Transform parent)
@@ -18,34 +33,66 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
         host.AddComponent<CombatAudioSettingsView>().Build();
     }
 
+    private void OnEnable() => IsOpen = true;
+    private void OnDisable() => IsOpen = false;
+
     private void Build()
     {
-        _settings = CombatAudioPlayer.Instance.Settings;
+        _player = CombatAudioPlayer.Instance;
+        _settings = _player.Settings;
         if (_settings == null) { Destroy(gameObject); return; }
         _font = _settings.Font;
         _panel = (RectTransform)transform;
         _panel.anchorMin = Vector2.zero;
         _panel.anchorMax = Vector2.one;
         _panel.offsetMin = _panel.offsetMax = Vector2.zero;
-        gameObject.AddComponent<Image>().color = new Color(0.055f, 0.07f, 0.10f, 0.99f);
+        gameObject.AddComponent<Image>().color = new Color(0.055f, 0.07f, 0.10f, 1f);
         var layout = gameObject.AddComponent<VerticalLayoutGroup>();
         layout.padding = new RectOffset(20, 20, 14, 14);
         layout.spacing = 8;
         layout.childControlHeight = layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         var header = Row(transform, 42);
-        Label(header, "戦闘の音設定", 26);
-        Button(header, "試聴停止", () => CombatAudioPlayer.Instance.StopPreview(), 110);
+        Label(header, "音設定", 26);
         Button(header, "閉じる", () => Destroy(gameObject), 80);
-        Label(Row(transform, 28), "音素材を各欄へドラッグ＆ドロップ ・ ▶ 試聴 ・ × 削除 ・ 設定は自動保存", 17);
-        Slot(Row(transform, 42), SkillId.None, "戦闘中BGM（ループ）");
-        var volume = Row(transform, 28);
-        Volume(volume, "BGM音量", true);
-        Volume(volume, "SE音量", false);
+        var importRow = Row(transform, 36);
+        _browserImport = gameObject.AddComponent<CombatBrowserAudioImport>();
+        var status = Label(importRow, "PCの音声を各欄へドロップ / 一覧からドラッグ ・ ▶ 試聴 / ■ 停止 ・ × 削除", 17);
+        _browserImport.StatusChanged = message => status.text = message;
+        _browserImport.Imported = clip =>
+        {
+            _settings.Library.Add(clip);
+            AddLibraryClip(clip);
+        };
+        Button(importRow, "音声ファイル追加", _browserImport.SelectFiles, 150);
+        var tabs = Row(transform, 38);
+        _seTab = Button(tabs, "SE", () => SelectTab(false), 140);
+        _bgmTab = Button(tabs, "BGM", () => SelectTab(true), 140);
+        _seTab.gameObject.name = "SETab";
+        _bgmTab.gameObject.name = "BGMTab";
+        _sePage = Page("SE");
+        Volume(Row(_sePage.transform, 28), "SE音量", false);
+        _bgmPage = Page("BGM");
+        Volume(Row(_bgmPage.transform, 28), "BGM音量", true);
+        var bgmHeader = Row(_bgmPage.transform, 36);
+        Label(bgmHeader, "場面ごとのBGM（ループ試聴）", 18);
+        _bgmRows = Scroll(_bgmPage.transform, false);
+        _bgmRows.parent.GetComponent<LayoutElement>().preferredHeight = 260;
+        var bgmLayout = _bgmRows.gameObject.AddComponent<VerticalLayoutGroup>();
+        bgmLayout.spacing = 6;
+        bgmLayout.childControlWidth = bgmLayout.childControlHeight = true;
+        bgmLayout.childForceExpandHeight = false;
+        BgmSlot(CombatAudioSettings.BgmScene.Formation, "編成");
+        BgmSlot(CombatAudioSettings.BgmScene.Battle, "戦闘中");
+        BgmSlot(CombatAudioSettings.BgmScene.Victory, "勝利");
+        BgmSlot(CombatAudioSettings.BgmScene.Defeat, "敗北");
+        Label(Row(_bgmPage.transform, 28), "戦闘中以外は設定・試聴用。場面での自動再生は今後追加", 16);
+        _settings.InitializePlayerMagicSounds();
         var catalog = CombatSkillCatalog.CreateDefaultRuntimeCatalog();
         _definitions.AddRange(catalog.Definitions);
-        var table = Scroll(transform, true);
+        var table = Scroll(_sePage.transform, false);
         var grid = table.gameObject.AddComponent<GridLayoutGroup>();
+        _skillGrid = grid;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = 3;
         grid.spacing = new Vector2(8, 5);
@@ -53,12 +100,17 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
         grid.cellSize = new Vector2(Mathf.Max(250, (_panel.rect.width - 64) / 3), 43);
         foreach (var definition in _definitions)
             Slot(Row(table, 43), definition.SkillId, definition.DisplayName);
+        Slot(Row(table, 43), SkillId.Player_AreaMagic, "広範囲魔法");
+        Slot(Row(table, 43), SkillId.Player_AllInvulnerable, "全員無敵");
         Destroy(catalog);
         Label(Row(transform, 26), "音素材一覧（ドラッグして配置 / クリックで試聴）", 18);
-        var library = Scroll(transform, false);
-        var libraryLayout = library.gameObject.AddComponent<VerticalLayoutGroup>();
-        libraryLayout.childControlHeight = libraryLayout.childControlWidth = true;
-        libraryLayout.childForceExpandHeight = false;
+        table.parent.GetComponent<LayoutElement>().preferredHeight = Mathf.Ceil((_definitions.Count + 2) / 3f) * 48 - 5;
+        var library = Scroll(transform, true);
+        _library = library;
+        _libraryGrid = library.gameObject.AddComponent<GridLayoutGroup>();
+        _libraryGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        _libraryGrid.constraintCount = 4;
+        _libraryGrid.spacing = new Vector2(8, 6);
         var clips = new List<AudioClip>(_settings.Library);
 #if UNITY_EDITOR
         foreach (string guid in UnityEditor.AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets" }))
@@ -68,19 +120,115 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
         }
 #endif
         clips.Sort((a, b) => string.Compare(a != null ? a.name : "", b != null ? b.name : "", System.StringComparison.Ordinal));
-        if (clips.Count == 0) Label(Row(library, 30), "音素材がない場合は Assets に wav / ogg / mp3 を追加して開き直す", 17);
+        if (clips.Count == 0)
+        {
+            var hint = Row(library, 36);
+            _emptyLibraryHint = hint.gameObject;
+            Label(hint, "音声ファイル追加、またはPCからドロップ（EditorではAssetsに追加）", 17);
+        }
         foreach (var clip in clips)
         {
             if (clip == null) continue;
-            var button = Button(Row(library, 30), clip.name, () => CombatAudioPlayer.Instance.Preview(clip, false));
-            button.gameObject.AddComponent<CombatAudioDrag>().Clip = clip;
+            AddLibraryClip(clip);
         }
+        Canvas.ForceUpdateCanvases();
+        SelectTab(false);
+    }
+
+    private GameObject Page(string title)
+    {
+        var page = new GameObject(title + "Page", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+        page.transform.SetParent(transform, false);
+        var layout = page.GetComponent<VerticalLayoutGroup>();
+        layout.spacing = 8;
+        layout.childControlWidth = layout.childControlHeight = true;
+        layout.childForceExpandHeight = false;
+        return page;
+    }
+
+    private void SelectTab(bool bgm)
+    {
+        _player.StopPreview();
+        ClearPreviewButton();
+        _showBgm = bgm;
+        _sePage.SetActive(!bgm);
+        _bgmPage.SetActive(bgm);
+        _seTab.interactable = bgm;
+        _bgmTab.interactable = !bgm;
+        Canvas.ForceUpdateCanvases();
+        RefreshGridWidths();
+    }
+
+    private void BgmSlot(CombatAudioSettings.BgmScene scene, string title)
+    {
+        var row = Row(_bgmRows, 43);
+        Label(row, title, 16, 120);
+        AudioClip Current() => _settings.GetBgm(scene);
+        var target = Button(row, Current() != null ? Current().name : "ここにドロップ", () => { });
+        var drag = target.gameObject.AddComponent<CombatAudioDrag>();
+        drag.Assign = clip =>
+        {
+            _settings.SetBgm(scene, clip);
+            target.GetComponentInChildren<TMP_Text>().text = clip != null ? clip.name : "ここにドロップ";
+        };
+        VolumeSlider(row, "個別音量", _settings.GetBgmVolume(scene), value => _settings.SetBgmVolume(scene, value), 100);
+        Button preview = null;
+        preview = Button(row, "▶", () => TogglePreview(preview, Current(), true, scene: scene), 32);
+        Button(row, "×", () => { drag.Assign(null); _player.StopPreview(); ClearPreviewButton(); }, 32);
+    }
+
+    private void LateUpdate()
+    {
+        if (_previewButton != null && (_player == null || !_player.IsPreviewPlaying)) ClearPreviewButton();
+    }
+
+    private void OnRectTransformDimensionsChange() => RefreshGridWidths();
+
+    private void RefreshGridWidths()
+    {
+        if (_skillGrid != null)
+            _skillGrid.cellSize = new Vector2((((RectTransform)_skillGrid.transform.parent).rect.width - 16) / 3, 43);
+        if (_libraryGrid != null)
+            _libraryGrid.cellSize = new Vector2((((RectTransform)_libraryGrid.transform.parent).rect.width - 24) / 4, 36);
+    }
+
+    private void ClearPreviewButton()
+    {
+        if (_previewButton != null) _previewButton.GetComponentInChildren<TMP_Text>().text = "▶";
+        _previewButton = null;
+    }
+
+    private void TogglePreview(Button button, AudioClip clip, bool bgm, SkillId? skill = null, CombatAudioSettings.BgmScene? scene = null)
+    {
+        bool stop = _previewButton == button && _player.IsPreviewPlaying;
+        _player.StopPreview();
+        ClearPreviewButton();
+        if (stop || clip == null) return;
+        _player.Preview(clip, bgm, skill, scene);
+        _previewButton = button;
+        button.GetComponentInChildren<TMP_Text>().text = "■";
+    }
+
+    private void AddLibraryClip(AudioClip clip)
+    {
+        if (_emptyLibraryHint != null)
+        {
+            _emptyLibraryHint.SetActive(false);
+            Destroy(_emptyLibraryHint);
+            _emptyLibraryHint = null;
+        }
+        var row = Row(_library, 36);
+        Button preview = null;
+        var button = Button(row, clip.name, () => TogglePreview(preview, clip, _showBgm));
+        button.gameObject.AddComponent<CombatAudioDrag>().Clip = clip;
+        VolumeSlider(row, "素材音量", _settings.GetClipVolume(clip), value => _settings.SetClipVolume(clip, value), 65);
+        preview = Button(row, "▶", () => TogglePreview(preview, clip, _showBgm), 32);
     }
 
     private void Slot(Transform row, SkillId skill, string title)
     {
         if (skill != SkillId.None) CreateSkillIcon(row, skill);
-        Label(row, title, 16, 120);
+        Label(row, title, 16, skill == SkillId.None ? 190 : 120);
         AudioClip Current() => skill == SkillId.None ? _settings.BattleBgm : _settings.GetClip(skill);
         var target = Button(row, Current() != null ? Current().name : "ここにドロップ", () => { });
         var drag = target.gameObject.AddComponent<CombatAudioDrag>();
@@ -89,8 +237,10 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
             _settings.SetClip(skill, clip);
             target.GetComponentInChildren<TMP_Text>().text = clip != null ? clip.name : "ここにドロップ";
         };
-        Button(row, "▶", () => CombatAudioPlayer.Instance.Preview(Current(), skill == SkillId.None), 30);
-        Button(row, "×", () => { drag.Assign(null); CombatAudioPlayer.Instance.StopPreview(); }, 30);
+        VolumeSlider(row, "個別音量", _settings.GetVolume(skill), value => _settings.SetVolume(skill, value), 65);
+        Button preview = null;
+        preview = Button(row, "▶", () => TogglePreview(preview, Current(), skill == SkillId.None, skill), 30);
+        Button(row, "×", () => { drag.Assign(null); _player.StopPreview(); ClearPreviewButton(); }, 30);
     }
 
     private static void CreateSkillIcon(Transform row, SkillId skill)
@@ -116,22 +266,34 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
     private void Volume(Transform row, string title, bool bgm)
     {
         Label(row, title, 16, 95);
-        var sliderObject = new GameObject(title, typeof(RectTransform), typeof(Image), typeof(Slider), typeof(LayoutElement));
-        sliderObject.transform.SetParent(row, false);
-        sliderObject.GetComponent<Image>().color = new Color(0.18f, 0.23f, 0.30f);
-        sliderObject.GetComponent<LayoutElement>().flexibleWidth = 1;
-        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
-        handle.transform.SetParent(sliderObject.transform, false);
-        var handleRect = (RectTransform)handle.transform;
-        handleRect.sizeDelta = new Vector2(14, 24);
-        var slider = sliderObject.GetComponent<Slider>();
-        slider.handleRect = handleRect;
-        slider.targetGraphic = handle.GetComponent<Image>();
-        slider.value = bgm ? _settings.BgmVolume : _settings.SeVolume;
-        slider.onValueChanged.AddListener(value =>
+        VolumeSlider(row, title, bgm ? _settings.BgmVolume : _settings.SeVolume, value =>
         {
             if (bgm) _settings.BgmVolume = value; else _settings.SeVolume = value;
             _settings.Save();
+        });
+    }
+
+    private void VolumeSlider(Transform row, string title, float value, System.Action<float> changed, float width = 0)
+    {
+        var sliderObject = new GameObject(title, typeof(RectTransform), typeof(Image), typeof(Slider), typeof(LayoutElement));
+        sliderObject.transform.SetParent(row, false);
+        sliderObject.GetComponent<Image>().color = new Color(0.18f, 0.23f, 0.30f);
+        var element = sliderObject.GetComponent<LayoutElement>();
+        if (width > 0) element.minWidth = element.preferredWidth = width; else element.flexibleWidth = 1;
+        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handle.transform.SetParent(sliderObject.transform, false);
+        var handleRect = (RectTransform)handle.transform;
+        handleRect.sizeDelta = new Vector2(10, 22);
+        var slider = sliderObject.GetComponent<Slider>();
+        slider.handleRect = handleRect;
+        slider.targetGraphic = handle.GetComponent<Image>();
+        slider.value = value;
+        var percentage = Label(row, $"{Mathf.RoundToInt(value * 100)}%", 13, 37);
+        slider.onValueChanged.AddListener(volume =>
+        {
+            changed(volume);
+            percentage.text = $"{Mathf.RoundToInt(volume * 100)}%";
+            _player.RefreshVolumes();
         });
     }
 
@@ -141,8 +303,8 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
         obj.transform.SetParent(parent, false);
         obj.GetComponent<Image>().color = new Color(0.09f, 0.11f, 0.15f);
         var element = obj.GetComponent<LayoutElement>();
-        element.minHeight = expand ? 130 : 100;
-        element.preferredHeight = expand ? 500 : 120;
+        element.minHeight = expand ? 100 : 130;
+        element.preferredHeight = expand ? 120 : 500;
         element.flexibleHeight = expand ? 1 : 0;
         var content = new GameObject("Content", typeof(RectTransform), typeof(ContentSizeFitter));
         content.transform.SetParent(obj.transform, false);
@@ -169,7 +331,9 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
         layout.spacing = 5;
         layout.childControlWidth = layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        obj.GetComponent<LayoutElement>().preferredHeight = height;
+        var element = obj.GetComponent<LayoutElement>();
+        element.minHeight = element.preferredHeight = height;
+        element.flexibleHeight = 0;
         return obj.transform;
     }
 
@@ -184,6 +348,7 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
         label.fontSize = size;
         label.alignment = TextAlignmentOptions.MidlineLeft;
         label.overflowMode = TextOverflowModes.Ellipsis;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
         label.raycastTarget = false;
         var element = obj.GetComponent<LayoutElement>();
         if (width > 0) element.preferredWidth = width; else element.flexibleWidth = 1;
@@ -210,7 +375,7 @@ public sealed class CombatAudioSettingsView : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (CombatAudioPlayer.Instance != null) CombatAudioPlayer.Instance.StopPreview();
+        if (_player != null) _player.StopPreview();
         foreach (var definition in _definitions) if (definition != null) Destroy(definition);
     }
 }

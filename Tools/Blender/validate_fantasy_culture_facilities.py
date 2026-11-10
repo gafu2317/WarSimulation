@@ -8,7 +8,7 @@ from mathutils.bvhtree import BVHTree
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REVIEW = os.path.join(ROOT, "docs", "Art", "FantasyCultureFacilities")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "CultureFacilities")
 bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT, "ArtSource", "Blender", "FantasyCultureFacilities.blend"))
 with open(os.path.join(REVIEW, "model_manifest.json")) as handle:
     manifest = json.load(handle)

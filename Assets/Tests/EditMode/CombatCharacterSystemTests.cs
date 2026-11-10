@@ -258,8 +258,10 @@ public sealed class CombatCharacterSystemTests
             typeof(Character).GetProperty("INT").SetValue(ally, 20);
             typeof(Character).GetProperty("FAI").SetValue(ally, 20);
             typeof(Character).GetProperty("AGI").SetValue(ally, 20);
+            ally.Health.Initialize(100);
             var adjustments = new Dictionary<CombatStat, int>
             {
+                [CombatStat.HP] = 50,
                 [CombatStat.STR] = 3,
                 [CombatStat.INT] = 4,
                 [CombatStat.FAI] = 5,
@@ -280,6 +282,11 @@ public sealed class CombatCharacterSystemTests
             Assert.That(setup.StatAdjustments[CombatStat.INT], Is.EqualTo(4));
             Assert.That(setup.StatAdjustments[CombatStat.FAI], Is.EqualTo(5));
             Assert.That(setup.StatAdjustments[CombatStat.AGI], Is.EqualTo(6));
+            Assert.That(ally.MaxHP, Is.EqualTo(150));
+            Assert.That(ally.HP, Is.EqualTo(150));
+            ally.Health.TakeDamage(70);
+            ally.Health.Heal(1000);
+            Assert.That(ally.HP, Is.EqualTo(150));
             Assert.That(ally.STR, Is.EqualTo(20));
             Assert.That(ally.INT, Is.EqualTo(20));
             Assert.That(ally.FAI, Is.EqualTo(20));
@@ -297,6 +304,12 @@ public sealed class CombatCharacterSystemTests
                     [CombatStat.STR] = -100,
                 });
             Assert.That(ally.GetEffectiveStat(CombatStat.STR), Is.EqualTo(1f));
+            Assert.That(ally.MaxHP, Is.EqualTo(100));
+            ally.SetRuntimeStatAdjustments(new Dictionary<CombatStat, int> { [CombatStat.HP] = -200 });
+            Assert.That(ally.MaxHP, Is.EqualTo(1));
+            Assert.That(ally.HP, Is.EqualTo(1));
+            ally.ClearRuntimeStatAdjustments();
+            Assert.That(ally.MaxHP, Is.EqualTo(100));
         }
         finally
         {
@@ -543,6 +556,7 @@ public sealed class CombatCharacterSystemTests
             map.AddFeature(new PlacedFeature(FeatureType.Rock, Vector3.zero));
 
             FeatureRenderer renderer = mapObject.AddComponent<FeatureRenderer>();
+            CombatEditModeTestUtil.ConfigureNaturalFeaturePrefabs(renderer);
             renderer.Render(map);
 
             Transform rock = mapObject.transform.Find("GeneratedFeatures/Rock_0");

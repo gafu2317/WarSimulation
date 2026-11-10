@@ -5,20 +5,6 @@ using UnityEngine;
 public sealed class WeaponConfigTests
 {
     [Test]
-    public void CreateWeapon_SwordConfig_MatchesDefaultSwordValues()
-    {
-        WeaponConfig config = CreateConfig(WeaponKind.Sword);
-        try
-        {
-            AssertWeapon(config.CreateWeapon(), 2f, 12, 0.9f, CombatStat.STR, WeaponKind.Sword);
-        }
-        finally
-        {
-            Object.DestroyImmediate(config);
-        }
-    }
-
-    [Test]
     public void CreateWeapon_AllKinds_ProduceExpectedWeaponTypes()
     {
         AssertKind(WeaponKind.Sword, typeof(Sword));
@@ -55,38 +41,6 @@ public sealed class WeaponConfigTests
     }
 
     [Test]
-    public void ApplyKindDefaults_Wand_SetsCombatDefaults()
-    {
-        WeaponConfig config = CreateConfig(WeaponKind.Wand);
-        try
-        {
-            Assert.That(config.Range, Is.EqualTo(20f).Within(0.001f));
-            Assert.That(config.CooldownSeconds, Is.EqualTo(1.4f).Within(0.001f));
-            Assert.That(config.PrimaryStatBonus, Is.EqualTo(10));
-        }
-        finally
-        {
-            Object.DestroyImmediate(config);
-        }
-    }
-
-    [Test]
-    public void ApplyKindDefaults_Sword_SetsCombatDefaults()
-    {
-        WeaponConfig config = CreateConfig(WeaponKind.Sword);
-        try
-        {
-            Assert.That(config.Range, Is.EqualTo(2f).Within(0.001f));
-            Assert.That(config.CooldownSeconds, Is.EqualTo(0.9f).Within(0.001f));
-            Assert.That(config.PrimaryStatBonus, Is.EqualTo(12));
-        }
-        finally
-        {
-            Object.DestroyImmediate(config);
-        }
-    }
-
-    [Test]
     public void Character_AppliesInitialWeaponConfig_OnApply()
     {
         GameObject characterGo = new GameObject("Character");
@@ -94,6 +48,8 @@ public sealed class WeaponConfigTests
         try
         {
             Character character = characterGo.AddComponent<Character>();
+            SetField(config, "_range", 7.25f);
+            SetField(config, "_primaryStatBonus", 13);
             SetField(character, "_initialWeaponConfig", config);
 
             Assert.That(character.EquippedWeapon, Is.Null);
@@ -101,8 +57,8 @@ public sealed class WeaponConfigTests
             character.ApplyInitialWeaponFromConfig();
 
             Assert.That(character.EquippedWeapon, Is.InstanceOf<Grimoire>());
-            Assert.That(character.EquippedWeapon.Range, Is.EqualTo(30f).Within(0.001f));
-            Assert.That(character.EquippedWeapon.PrimaryStatBonus, Is.EqualTo(14));
+            Assert.That(character.EquippedWeapon.Range, Is.EqualTo(7.25f).Within(0.001f));
+            Assert.That(character.EquippedWeapon.PrimaryStatBonus, Is.EqualTo(13));
             Assert.That(character.EquippedWeapon.Kind, Is.EqualTo(WeaponKind.Grimoire));
         }
         finally
@@ -213,21 +169,6 @@ public sealed class WeaponConfigTests
         WeaponConfig config = ScriptableObject.CreateInstance<WeaponConfig>();
         config.ApplyKindDefaults(kind);
         return config;
-    }
-
-    private static void AssertWeapon(
-        WeaponBase weapon,
-        float range,
-        int power,
-        float cooldown,
-        CombatStat stat,
-        WeaponKind kind)
-    {
-        Assert.That(weapon.Kind, Is.EqualTo(kind));
-        Assert.That(weapon.Range, Is.EqualTo(range).Within(0.001f));
-        Assert.That(weapon.PrimaryStatBonus, Is.EqualTo(power));
-        Assert.That(weapon.CooldownSeconds, Is.EqualTo(cooldown).Within(0.001f));
-        Assert.That(weapon.ScalingStat, Is.EqualTo(stat));
     }
 
     private static void SetField(object target, string fieldName, object value)

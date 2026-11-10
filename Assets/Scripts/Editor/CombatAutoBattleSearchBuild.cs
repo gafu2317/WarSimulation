@@ -11,8 +11,8 @@ using WarSimulation.Combat.Map;
 
 public static class CombatAutoBattleSearchBuild
 {
-    private const string SourceScene = "Assets/Scenes/Combat/GafuTest.unity";
-    private const string SearchScene = "Assets/Scenes/Combat/AutoBattleSearch.unity";
+    private const string SourceScene = "Assets/Scenes/GafuTest.unity";
+    private const string SearchScene = "Assets/_Recovery/AutoBattleBalanceSearch.unity";
     private const string BuildDirectory = ".unity/CombatAutoBattleSearch";
     private const string MapDirectory = "Assets/Data/Map/Map/Authored";
 
@@ -34,6 +34,8 @@ public static class CombatAutoBattleSearchBuild
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new InvalidOperationException("Play Mode中は探索Playerをビルドできません。");
 
+            Directory.CreateDirectory(Path.GetDirectoryName(SearchScene));
+            AssetDatabase.Refresh();
             Scene source = EditorSceneManager.OpenScene(SourceScene, OpenSceneMode.Single);
             if (!EditorSceneManager.SaveScene(source, SearchScene, saveAsCopy: true))
                 throw new InvalidOperationException("探索用シーンの複製に失敗しました。");

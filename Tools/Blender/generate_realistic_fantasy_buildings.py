@@ -9,7 +9,7 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE = os.path.join(ROOT, "ArtSource", "Blender", "KingdomBuildings_RealisticFantasy.blend")
-REVIEW = os.path.join(ROOT, "docs", "Art", "KingdomBuildings_RealisticFantasy")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "RealisticBuildings")
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location("building_geometry", os.path.join(os.path.dirname(__file__), "generate_kingdom_buildings.py"))
 g = importlib.util.module_from_spec(spec)

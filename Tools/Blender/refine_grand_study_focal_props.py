@@ -4,7 +4,7 @@ from pathlib import Path
 import bpy
 from mathutils import Vector, Matrix
 ROOT=Path(__file__).resolve().parents[2]
-OUT=ROOT/'docs/Art/GrandStudy'
+OUT=ROOT/'docs/Art/Records/GrandStudy'
 bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 M={m.name:m for m in bpy.data.materials};current=None
 for node in ast.parse((ROOT/'Tools/Blender/generate_grand_study.py').read_text()).body:

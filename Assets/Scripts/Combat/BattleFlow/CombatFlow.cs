@@ -4,6 +4,7 @@ using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using WarSimulation.Combat.Map;
 
 public sealed class CombatFlow : MonoBehaviour
@@ -30,15 +31,34 @@ public sealed class CombatFlow : MonoBehaviour
     private CombatBattleHudView _battleHudView;
     private float _selectedBattleSpeed = 1f;
     private bool _isPaused;
+    private bool _mapModalOpen;
+    private CombatPlayerMagicSystem _playerMagicSystem;
+    private sealed class PlayerMagicCast
+    {
+        public Coroutine Routine;
+        public long VisualId;
+    }
+    private readonly List<PlayerMagicCast> _playerMagicCasts = new();
+    private bool _rockNavigationUpdating;
+    private EditorStyleCameraController _placementCamera;
+    private bool _placementCameraWasEnabled;
+    public CombatRockPlacement? ConfirmedRockPlacement => _battleHudView != null
+        ? _battleHudView.ConfirmedRockPlacement : null;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void ActivateCombatCanvases()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RegisterSceneActivation()
+    {
+        SceneManager.sceneLoaded -= ActivateCombatCanvases;
+        SceneManager.sceneLoaded += ActivateCombatCanvases;
+    }
+
+    private static void ActivateCombatCanvases(Scene scene, LoadSceneMode mode)
     {
         CombatFlow[] flows = Resources.FindObjectsOfTypeAll<CombatFlow>();
         for (int i = 0; i < flows.Length; i++)
         {
             CombatFlow flow = flows[i];
-            if (flow == null || !flow.gameObject.scene.IsValid()) continue;
+            if (flow == null || flow.gameObject.scene != scene) continue;
 
             Canvas canvas = flow.GetComponentInParent<Canvas>(includeInactive: true);
             if (canvas == null) continue;
@@ -75,6 +95,11 @@ public sealed class CombatFlow : MonoBehaviour
         ShowSelection();
     }
 
+    private void OnDisable()
+    {
+        ResetRockPlacement();
+    }
+
     private void OnDestroy()
     {
         if (_battleFlow != null)
@@ -105,6 +130,7 @@ public sealed class CombatFlow : MonoBehaviour
         IReadOnlyList<CombatParticipantSetup> selectedAllies,
         IReadOnlyList<CombatParticipantSetup> selectedEnemies)
     {
+        ResetRockPlacement();
         CombatMapAvailability availability = CombatMapAvailability.Evaluate(
             _mapSelectionView.SelectedMap,
             _characterSelection.IsStonePositionReversed);
@@ -171,6 +197,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ShowResult(CombatBattleState outcome)
     {
+        ResetRockPlacement();
         CombatBattleResult result = _battleResultRecorder?.Complete(outcome);
         _battleResultView?.Show(result);
 
@@ -215,6 +242,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ShowSelectionInternal(bool clearMapFailure)
     {
+        ResetRockPlacement();
         RestoreNormalSpeed();
         SetPauseMenuVisible(false);
         _battleResultRecorder?.Clear();
@@ -251,6 +279,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void OnMapSelectionChanged()
     {
+        ResetRockPlacement();
         _characterSelection.SetStonePositionReversedState(false);
         _mapSelectionView.SetStonePositionsReversed(false);
         BeginMapPreparation();
@@ -381,6 +410,25 @@ public sealed class CombatFlow : MonoBehaviour
         }
 
         _battleHudView.EnsureBuilt();
+        if (_mapSystem != null)
+        {
+            _mapSystem.CurrentMapChanged -= ResetRockPlacement;
+            _mapSystem.CurrentMapChanged += ResetRockPlacement;
+        }
+        _battleHudView.RockPlacementConfirmed -= PlaceRock;
+        _battleHudView.RockRemovalRequested -= RemoveRock;
+        _battleHudView.RockPlacementRequested -= OpenRockPlacement;
+        _battleHudView.RockPlacementConfirmed += PlaceRock;
+        _battleHudView.RockRemovalRequested += RemoveRock;
+        _battleHudView.RockPlacementRequested += OpenRockPlacement;
+        _battleHudView.RockPlacementClosed -= CloseMapModal;
+        _battleHudView.RockPlacementClosed += CloseMapModal;
+        _battleHudView.PlayerMagicRequested -= OpenPlayerMagic;
+        _battleHudView.PlayerMagicRequested += OpenPlayerMagic;
+        _battleHudView.PlayerMagicClosed -= CloseMapModal;
+        _battleHudView.PlayerMagicClosed += CloseMapModal;
+        _battleHudView.PlayerMagicCastRequested -= CastPlayerMagic;
+        _battleHudView.PlayerMagicCastRequested += CastPlayerMagic;
         _battleHudView.MenuRequested -= OpenPauseMenu;
         _battleHudView.MenuRequested += OpenPauseMenu;
         _battleHudView.ResumeRequested -= ResumeBattle;
@@ -409,6 +457,98 @@ public sealed class CombatFlow : MonoBehaviour
         return null;
     }
 
+    private bool BeginMapModal()
+    {
+        if (_mapModalOpen || _rockNavigationUpdating || _battleFlow == null || _battleFlow.State != CombatBattleState.Running ||
+            _mapSystem == null || _mapSystem.CurrentMap == null) return false;
+        _mapModalOpen = true;
+        ApplyEffectiveTimeScale();
+        _placementCamera = Camera.main != null ? Camera.main.GetComponent<EditorStyleCameraController>() : null;
+        _placementCameraWasEnabled = _placementCamera != null && _placementCamera.enabled;
+        if (_placementCamera != null) _placementCamera.enabled = false;
+        return true;
+    }
+
+    private void OpenRockPlacement(CombatRockShape shape)
+    {
+        if (BeginMapModal() && !_battleHudView.OpenRockPlacement(shape, _mapSystem, _characterSystem)) CloseMapModal();
+    }
+
+    private void OpenPlayerMagic(CombatPlayerMagicKind kind)
+    {
+        if (BeginMapModal() && !_battleHudView.OpenPlayerMagic(kind, _mapSystem, _characterSystem)) CloseMapModal();
+    }
+
+    private void CastPlayerMagic(CombatPlayerMagicRequest request)
+    {
+        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || !request.IsValid) return;
+        _battleHudView.ShowPlayerMagicCutIn(request.SkillId);
+        float seconds = CombatPlayerMagicSettings.CastSeconds(request.SkillId);
+        if (seconds <= 0) { ApplyPlayerMagic(request); return; }
+        var cast = new PlayerMagicCast { VisualId = SkillVfxRuntimeBridge.BeginPlayerMagicCast(request) };
+        _playerMagicCasts.Add(cast);
+        cast.Routine = StartCoroutine(CompletePlayerMagicCast(cast, request, seconds));
+    }
+
+    private IEnumerator CompletePlayerMagicCast(PlayerMagicCast cast, CombatPlayerMagicRequest request, float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        _playerMagicCasts.Remove(cast);
+        SkillVfxRuntimeBridge.CancelPlayerMagicCast(cast.VisualId);
+        if (_battleFlow != null && _battleFlow.State == CombatBattleState.Running) ApplyPlayerMagic(request);
+    }
+
+    private void ApplyPlayerMagic(CombatPlayerMagicRequest request)
+    {
+        _playerMagicSystem ??= new CombatPlayerMagicSystem(_characterSystem);
+        CombatAudioPlayer.Instance?.PlayPlayerMagicSound(request.SkillId);
+        List<Character> targets = _playerMagicSystem.Execute(request);
+        SkillVfxRuntimeBridge.PlayPlayerMagic(request, targets);
+    }
+
+    private void PlaceRock(CombatRockPlacement placement, System.Action<bool, string> completed)
+    {
+        _rockNavigationUpdating = true;
+        ApplyEffectiveTimeScale();
+        if (!_mapSystem.TryPlaceRuntimeRock(placement, _characterSystem, (success, error) =>
+            {
+                _rockNavigationUpdating = false;
+                completed(success, error);
+                ApplyEffectiveTimeScale();
+            }, out string failure))
+        {
+            _rockNavigationUpdating = false;
+            completed(false, failure);
+            ApplyEffectiveTimeScale();
+        }
+    }
+
+    private void RemoveRock() => _mapSystem?.RemoveRuntimeRock();
+
+    private void CloseMapModal()
+    {
+        if (!_mapModalOpen) return;
+        _mapModalOpen = false;
+        if (_placementCamera != null) _placementCamera.enabled = _placementCameraWasEnabled;
+        _placementCamera = null;
+        ApplyEffectiveTimeScale();
+    }
+
+    private void ResetRockPlacement()
+    {
+        foreach (PlayerMagicCast cast in _playerMagicCasts)
+        {
+            if (cast.Routine != null) StopCoroutine(cast.Routine);
+            SkillVfxRuntimeBridge.CancelPlayerMagicCast(cast.VisualId);
+        }
+        _playerMagicCasts.Clear();
+        _mapSystem?.RemoveRuntimeRock();
+        _playerMagicSystem?.Clear();
+        _rockNavigationUpdating = false;
+        _battleHudView?.ResetRockPlacement();
+        CloseMapModal();
+    }
+
     private void SetBattleSpeed(float speed)
     {
         _selectedBattleSpeed = speed;
@@ -419,7 +559,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void CycleBattleSpeed()
     {
-        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || _isPaused) return;
+        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || _isPaused || _mapModalOpen) return;
 
         int currentIndex = System.Array.IndexOf(BattleSpeedOptions, _selectedBattleSpeed);
         int nextIndex = currentIndex >= 0 ? (currentIndex + 1) % BattleSpeedOptions.Length : 0;
@@ -428,7 +568,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void OpenPauseMenu()
     {
-        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || _isPaused) return;
+        if (_battleFlow == null || _battleFlow.State != CombatBattleState.Running || _isPaused || _mapModalOpen) return;
 
         _isPaused = true;
         ApplyEffectiveTimeScale();
@@ -437,7 +577,7 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ResumeBattle()
     {
-        if (!_isPaused) return;
+        if (!_isPaused || _mapModalOpen) return;
 
         _isPaused = false;
         SetPauseMenuVisible(false);
@@ -461,7 +601,7 @@ public sealed class CombatFlow : MonoBehaviour
     {
         if (_battleFlow != null && _battleFlow.State == CombatBattleState.Running)
         {
-            Time.timeScale = _isPaused ? 0f : _selectedBattleSpeed;
+            Time.timeScale = _isPaused || _mapModalOpen || _rockNavigationUpdating ? 0f : _selectedBattleSpeed;
             return;
         }
 
@@ -492,11 +632,19 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ClearBattleControlListeners()
     {
+        if (_mapSystem != null) _mapSystem.CurrentMapChanged -= ResetRockPlacement;
         if (_battleHudView == null)
         {
             return;
         }
 
+        _battleHudView.RockPlacementConfirmed -= PlaceRock;
+        _battleHudView.RockRemovalRequested -= RemoveRock;
+        _battleHudView.RockPlacementRequested -= OpenRockPlacement;
+        _battleHudView.RockPlacementClosed -= CloseMapModal;
+        _battleHudView.PlayerMagicRequested -= OpenPlayerMagic;
+        _battleHudView.PlayerMagicClosed -= CloseMapModal;
+        _battleHudView.PlayerMagicCastRequested -= CastPlayerMagic;
         _battleHudView.MenuRequested -= OpenPauseMenu;
         _battleHudView.ResumeRequested -= ResumeBattle;
         _battleHudView.ReturnToSelectionRequested -= ReturnToSelection;

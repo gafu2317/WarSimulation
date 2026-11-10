@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// 戦闘中の詠唱・完了・キャンセルをVFXへ接続する。
@@ -34,18 +35,42 @@ public static class SkillVfxRuntimeBridge
 
     private static void OnSkillStarted(CombatSkillActionInfo action)
     {
+        if (!Application.isPlaying) return;
+
         EnsurePlayer();
-        _player?.PlayCast(action);
+        if (_player != null) _player.PlayCast(action);
     }
 
-    private static void OnSkillCancelled(CombatSkillActionResult result) => _player?.CancelCast(result);
+    private static void OnSkillCancelled(CombatSkillActionResult result)
+    {
+        if (Application.isPlaying && _player != null) _player.CancelCast(result);
+    }
 
     private static void OnSkillCompleted(CombatSkillActionResult result)
     {
         if (!Application.isPlaying) return;
 
         EnsurePlayer();
-        _player?.PlayAction(result);
+        if (_player != null) _player.PlayAction(result);
+    }
+
+    public static long BeginPlayerMagicCast(CombatPlayerMagicRequest request)
+    {
+        if (!Application.isPlaying) return 0;
+        EnsurePlayer();
+        return _player != null ? _player.BeginPlayerMagicCast(request) : 0;
+    }
+
+    public static void CancelPlayerMagicCast(long id)
+    {
+        if (_player != null) _player.CancelPlayerMagicCast(id);
+    }
+
+    public static void PlayPlayerMagic(CombatPlayerMagicRequest request, IReadOnlyList<Character> targets)
+    {
+        if (!Application.isPlaying) return;
+        EnsurePlayer();
+        if (_player != null) _player.PlayPlayerMagic(request, targets);
     }
 
     private static void EnsurePlayer()

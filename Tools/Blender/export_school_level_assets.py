@@ -8,7 +8,7 @@ from mathutils import Vector
 PROJECT_ROOT = "/Users/fukutomi/Unity/WarSimulation"
 SOURCE = os.path.join(PROJECT_ROOT, "ArtSource/Blender/FantasySchoolLevels.blend")
 MODEL_ROOT = os.path.join(PROJECT_ROOT, "Assets/Models/Kingdom/City/Models")
-REPORT_ROOT = os.path.join(PROJECT_ROOT, "docs/Art/SchoolLevelUnity")
+REPORT_ROOT = os.path.join(PROJECT_ROOT, "docs/Art/Records/Schools")
 SCHOOLS = ("WarriorAcademy", "ArcaneAcademy", "SpiritAcademy")
 
 

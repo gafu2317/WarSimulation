@@ -6,7 +6,7 @@ import os
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-REVIEW = os.path.join(ROOT, "docs", "Art", "FantasyTownFacilities")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "TownFacilities")
 bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT, "ArtSource", "Blender", "FantasyTownFacilities.blend"))
 with open(os.path.join(REVIEW, "model_manifest.json")) as handle:
     manifest = json.load(handle)

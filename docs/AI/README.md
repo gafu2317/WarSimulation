@@ -28,3 +28,5 @@ AIは「目的を1つ選ぶ → 移動とスキルを1つの計画にする → 
 - 判断: `CombatCharacterSystem.TickAiDecisionsNow`
 - 計画: `CombatAiBrain` / `CombatAiPlanner`
 - ログ: `CombatBattleEventLogger`
+
+自動戦闘の探索基準は4並列・6倍速、物理の時間刻みを維持する。短時間測定では完全な再現性は得られず、有望な条件は複数シードで再確認する。

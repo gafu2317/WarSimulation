@@ -87,6 +87,7 @@ public class EditorStyleCameraController : MonoBehaviour
     private void Update()
     {
         UpdateTouchControls();
+        if (CombatAudioSettingsView.IsOpen) return;
         ReadTouchInput();
         HandleRotationAndMovement();
         HandlePanning();
@@ -298,7 +299,7 @@ public class EditorStyleCameraController : MonoBehaviour
 
     private void UpdateTouchControls()
     {
-        bool touchAvailable = Touchscreen.current != null;
+        bool touchAvailable = Touchscreen.current != null && !CombatAudioSettingsView.IsOpen;
         if (!touchAvailable)
         {
             if (_touchControlsRoot != null) _touchControlsRoot.SetActive(false);

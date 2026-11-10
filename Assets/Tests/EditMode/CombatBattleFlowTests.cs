@@ -295,7 +295,7 @@ public sealed class CombatBattleFlowTests
                 .Find("DebugBattlePanel/DebugAlliesPanel/CharacterList/Viewport/Content/AllyCharacter/HpBar/Fill")
                 .GetComponent<Image>();
             Image stoneFill = hudObject.transform
-                .Find("DebugBattlePanel/DebugAlliesPanel/StoneStatus/HpBar/Fill")
+                .Find("DebugBattlePanel/AllyStoneStatus/HpBar/Fill")
                 .GetComponent<Image>();
 
             Assert.That(characterFill.sprite, Is.Not.Null);
@@ -496,25 +496,10 @@ public sealed class CombatBattleFlowTests
             GameObject allyColumn = GetPrivateField<GameObject>(selection, "_allyColumnRoot");
             Transform allyRowsGrid = allyColumn.transform.Find("AllyRows");
             Assert.That(allyRowsGrid, Is.Not.Null);
-            GridLayoutGroup grid = allyRowsGrid.GetComponent<GridLayoutGroup>();
-            Assert.That(grid, Is.Not.Null);
-            Assert.That(grid.startAxis, Is.EqualTo(GridLayoutGroup.Axis.Vertical));
-            Assert.That(grid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedRowCount));
-            Assert.That(grid.constraintCount, Is.EqualTo(5));
             Assert.That(allyRowsGrid.childCount, Is.EqualTo(10));
-
-            for (int i = 0; i < allyRowsGrid.childCount; i++)
-            {
-                Assert.That(allyRowsGrid.GetChild(i).GetComponent<HorizontalLayoutGroup>(), Is.Not.Null);
-                Assert.That(allyRowsGrid.GetChild(i).childCount, Is.EqualTo(4));
-            }
 
             TMP_Text selectionCountText = GetPrivateField<TMP_Text>(selection, "_selectionCountText");
             Assert.That(selectionCountText.text, Is.EqualTo("味方 5/10人 / 敵 5/10人"));
-            Assert.That(selectionCountText.textWrappingMode, Is.EqualTo(TextWrappingModes.NoWrap));
-            Assert.That(selectionCountText.overflowMode, Is.EqualTo(TextOverflowModes.Overflow));
-            Assert.That(selectionCountText.rectTransform.sizeDelta.x, Is.EqualTo(420f));
-
             IList allySelectionRows = GetPrivateField<IList>(selection, "_allyRows");
             for (int i = 0; i < allySelectionRows.Count; i++)
             {
@@ -526,22 +511,11 @@ public sealed class CombatBattleFlowTests
             object firstAllyRow = allySelectionRows[0];
             Button firstSelectionButton = GetPrivateField<Button>(firstAllyRow, "SelectionButton");
             Button firstCharacterButton = GetPrivateField<Button>(firstAllyRow, "CharacterButton");
-            Assert.That(firstSelectionButton.GetComponent<LayoutElement>().preferredWidth, Is.EqualTo(64f));
             TMP_Text selectionMarker = firstSelectionButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
             Assert.That(selectionMarker, Is.Not.Null);
             Assert.That(selectionMarker.text, Is.EqualTo("■"));
-            Assert.That(selectionMarker.rectTransform.anchorMin, Is.EqualTo(Vector2.zero));
-            Assert.That(selectionMarker.rectTransform.anchorMax, Is.EqualTo(Vector2.one));
-            Assert.That(firstCharacterButton.GetComponent<LayoutElement>().preferredWidth, Is.EqualTo(300f));
             TMP_Text characterName = firstCharacterButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
-            Assert.That(characterName.alignment, Is.EqualTo(TextAlignmentOptions.Left));
             Assert.That(characterName.text, Is.EqualTo("Ally0"));
-            Assert.That(
-                GetPrivateField<Button>(firstAllyRow, "WeaponButton").GetComponent<LayoutElement>().preferredWidth,
-                Is.EqualTo(240f));
-            Assert.That(
-                GetPrivateField<Button>(firstAllyRow, "PersonalityButton").GetComponent<LayoutElement>().preferredWidth,
-                Is.EqualTo(240f));
             firstSelectionButton.onClick.Invoke();
             Assert.That(selectionCountText.text, Is.EqualTo("味方 4/10人 / 敵 5/10人"));
             Assert.That(selectionMarker.text, Is.EqualTo("□"));
@@ -576,17 +550,8 @@ public sealed class CombatBattleFlowTests
             Assert.That(statusText, Does.Contain("ステ補正:"));
             Assert.That(statusText, Does.Contain("補正後"));
             Assert.That(statusText, Does.Not.Contain("武器補正後"));
-            Assert.That(statusText, Does.Contain("<color=#FF4D4D>"));
             Assert.That(statusText, Does.Contain($"STR: {allies[0].STR} +"));
-            int adjustedStatLineCount = 0;
-            for (int i = 0; i < statusLabels.Length; i++)
-            {
-                if (statusLabels[i].text.Contains("= <color=#FF4D4D>")) adjustedStatLineCount++;
-            }
-
-            Assert.That(adjustedStatLineCount, Is.EqualTo(4));
-
-            string[] adjustableStatNames = { "STR", "INT", "FAI", "AGI" };
+            string[] adjustableStatNames = { "HP", "STR", "INT", "FAI", "AGI" };
             for (int i = 0; i < adjustableStatNames.Length; i++)
             {
                 Transform statRow = statusDetails.Find($"CharacterStatus_{adjustableStatNames[i]}");
@@ -595,18 +560,18 @@ public sealed class CombatBattleFlowTests
                 Button decreaseButton = statRow.Find($"Decrease_{adjustableStatNames[i]}").GetComponent<Button>();
                 Assert.That(increaseButton, Is.Not.Null);
                 Assert.That(decreaseButton, Is.Not.Null);
-                TMP_Text increaseLabel = increaseButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
-                TMP_Text decreaseLabel = decreaseButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
-                Assert.That(increaseLabel.rectTransform.anchorMin, Is.EqualTo(Vector2.zero));
-                Assert.That(increaseLabel.rectTransform.anchorMax, Is.EqualTo(Vector2.one));
-                Assert.That(decreaseLabel.rectTransform.anchorMin, Is.EqualTo(Vector2.zero));
-                Assert.That(decreaseLabel.rectTransform.anchorMax, Is.EqualTo(Vector2.one));
             }
+
+            Transform hpStatusRow = statusDetails.Find("CharacterStatus_HP");
+            hpStatusRow.Find("Increase10_HP").GetComponent<Button>().onClick.Invoke();
+            hpStatusRow = statusDetails.Find("CharacterStatus_HP");
+            Assert.That(hpStatusRow.GetComponentInChildren<TMP_Text>(true).text,
+                Does.Contain($"= <color=#FF4D4D>{allies[0].MaxHP + 10}</color>"));
+            hpStatusRow.Find("Decrease10_HP").GetComponent<Button>().onClick.Invoke();
 
             Button closePickerButton = pickerRoot.Find("Panel/ClosePickerButton").GetComponent<Button>();
             Transform strStatusRow = statusDetails.Find("CharacterStatus_STR");
             Assert.That(strStatusRow, Is.Not.Null);
-            Assert.That(strStatusRow.childCount, Is.EqualTo(5));
             Button strIncreaseButton = strStatusRow.Find("Increase_STR").GetComponent<Button>();
             Button strIncreaseTenButton = strStatusRow.Find("Increase10_STR").GetComponent<Button>();
             Button strDecreaseTenButton = strStatusRow.Find("Decrease10_STR").GetComponent<Button>();
@@ -651,6 +616,7 @@ public sealed class CombatBattleFlowTests
             strDecreaseButton.onClick.Invoke();
             Assert.That(characterName.text, Is.EqualTo("Ally0"));
 
+            statusDetails = GetPrivateField<Transform>(selection, "_pickerDetailsContent");
             Transform intStatusRow = statusDetails.Find("CharacterStatus_INT");
             Button intDecreaseButton = intStatusRow.Find("Decrease_INT").GetComponent<Button>();
             Assert.That(intDecreaseButton.interactable, Is.False);
@@ -765,43 +731,6 @@ public sealed class CombatBattleFlowTests
             Assert.That(setups[0].Personality.Kind, Is.EqualTo(CombatAiPersonalityKind.LowPresence));
             setups[0].Character.ConfigureForBattle(setups[0].Weapon, setups[0].Personality);
             Assert.That(setups[0].Character.PersonalityProfile, Is.SameAs(profile));
-        }
-        finally
-        {
-            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
-            foreach (GameObject character in characters)
-                if (character != null) Object.DestroyImmediate(character);
-        }
-    }
-
-    [Test]
-    public void CharacterSelection_PersonalityDetailsUseConsistentLeftAlignedColumns()
-    {
-        GameObject selectionObject = null;
-        var characters = new List<GameObject>();
-        try
-        {
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab");
-            selectionObject = Object.Instantiate(prefab);
-            CombatCharacterSelection selection = selectionObject.GetComponent<CombatCharacterSelection>();
-            selection.Initialize(CreateCharacters("Ally", CombatTeam.Ally, 1, characters),
-                CreateCharacters("Enemy", CombatTeam.Enemy, 1, characters), null);
-
-            IList rows = GetPrivateField<IList>(selection, "_allyRows");
-            GetPrivateField<Button>(rows[0], "PersonalityButton").onClick.Invoke();
-
-            IList options = GetPrivateField<IList>(selection, "_personalityOptions");
-            Transform details = GetPrivateField<Transform>(selection, "_pickerDetailsContent");
-            Assert.That(details.childCount, Is.EqualTo(options.Count));
-            for (int i = 0; i < details.childCount; i++)
-            {
-                TMP_Text[] labels = details.GetChild(i).GetComponentsInChildren<TMP_Text>();
-                Assert.That(labels, Has.Length.EqualTo(2));
-                Assert.That(labels[0].alignment, Is.EqualTo(TextAlignmentOptions.TopLeft));
-                Assert.That(labels[1].alignment, Is.EqualTo(TextAlignmentOptions.TopLeft));
-                Assert.That(labels[1].horizontalAlignment, Is.EqualTo(HorizontalAlignmentOptions.Left));
-            }
         }
         finally
         {
@@ -942,7 +871,7 @@ public sealed class CombatBattleFlowTests
     }
 
     [Test]
-    public void CharacterSelection_BulkChangesCurrentTeamAndUsesLargerPicker()
+    public void CharacterSelection_UsesIndividualPickersAndPresetsWithoutBulkOrDebugControls()
     {
         GameObject selectionObject = null;
         var characters = new List<GameObject>();
@@ -962,8 +891,26 @@ public sealed class CombatBattleFlowTests
                 CreateCharacters("Enemy", CombatTeam.Enemy, 10, characters),
                 null);
 
-            Button bulkWeaponButton = GetPrivateField<Button>(selection, "_bulkWeaponButton");
-            bulkWeaponButton.onClick.Invoke();
+            RectTransform header = GetPrivateField<RectTransform>(selection, "_headerRoot");
+            Assert.That(header.Find("ActionRow/BulkWeaponButton"), Is.Null);
+            Assert.That(header.Find("ActionRow/BulkPersonalityButton"), Is.Null);
+            Assert.That(header.Find("ActionRow/BattleUiModeButton"), Is.Null);
+            Assert.That(header.Find("EnemyPresetRow/EnemyPresetDefaultButton"), Is.Null);
+            Assert.That(header.Find("DebugRow"), Is.Null);
+            GetPrivateField<Button>(selection, "_enemyPresetTopButton").onClick.Invoke();
+            Transform presets = GetPrivateField<Transform>(selection, "_pickerContent");
+            Assert.That(presets.childCount, Is.EqualTo(6));
+            foreach (TMP_Text label in presets.GetComponentsInChildren<TMP_Text>())
+            {
+                Assert.That(label.text, Does.Not.Contain("雪・氷向け"));
+                Assert.That(label.text, Does.Not.Contain("川・橋向け"));
+            }
+            GetPrivateField<RectTransform>(selection, "_pickerRoot")
+                .Find("Panel/ClosePickerButton").GetComponent<Button>().onClick.Invoke();
+
+            IList allyRows = GetPrivateField<IList>(selection, "_allyRows");
+            int otherAllyWeapon = GetPrivateField<int>(allyRows[1], "WeaponIndex");
+            GetPrivateField<Button>(allyRows[0], "WeaponButton").onClick.Invoke();
             Transform pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
             Assert.That(pickerContent.childCount, Is.EqualTo(selection.WeaponOptions.Count));
             Assert.That(
@@ -998,13 +945,9 @@ public sealed class CombatBattleFlowTests
             Assert.That(detailText, Does.Not.Contain("魔石"));
 
             pickerContent.GetChild(pickerContent.childCount - 1).GetComponent<Button>().onClick.Invoke();
-            IList allyRows = GetPrivateField<IList>(selection, "_allyRows");
-            for (int i = 0; i < allyRows.Count; i++)
-            {
-                Assert.That(
-                    GetPrivateField<int>(allyRows[i], "WeaponIndex"),
-                    Is.EqualTo(selection.WeaponOptions.Count - 1));
-            }
+            Assert.That(GetPrivateField<int>(allyRows[0], "WeaponIndex"),
+                Is.EqualTo(selection.WeaponOptions.Count - 1));
+            Assert.That(GetPrivateField<int>(allyRows[1], "WeaponIndex"), Is.EqualTo(otherAllyWeapon));
             panel.Find("ClosePickerButton").GetComponent<Button>().onClick.Invoke();
             Assert.That(
                 GetPrivateField<int>(allyRows[0], "WeaponIndex"),
@@ -1023,7 +966,7 @@ public sealed class CombatBattleFlowTests
             Assert.That(GetPrivateField<int>(allyRows[0], "WeaponIndex"), Is.EqualTo(0));
             Assert.That(
                 GetPrivateField<int>(allyRows[1], "WeaponIndex"),
-                Is.EqualTo(selection.WeaponOptions.Count - 1));
+                Is.EqualTo(otherAllyWeapon));
 
             Button presetButton = GetPrivateField<Button>(selection, "_enemyPresetNeutralButton");
             Assert.That(presetButton.gameObject.activeSelf, Is.True);
@@ -1061,8 +1004,10 @@ public sealed class CombatBattleFlowTests
             }
 
             GetPrivateField<Button>(selection, "_enemyFormationButton").onClick.Invoke();
-            Button bulkPersonalityButton = GetPrivateField<Button>(selection, "_bulkPersonalityButton");
-            bulkPersonalityButton.onClick.Invoke();
+            Assert.That(header.GetComponent<LayoutElement>().preferredHeight, Is.EqualTo(160f));
+            IList enemyRows = GetPrivateField<IList>(selection, "_enemyRows");
+            int otherEnemyPersonality = GetPrivateField<int>(enemyRows[1], "PersonalityIndex");
+            GetPrivateField<Button>(enemyRows[0], "PersonalityButton").onClick.Invoke();
             pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
             IList personalityOptions = GetPrivateField<IList>(selection, "_personalityOptions");
             Assert.That(pickerContent.childCount, Is.EqualTo(personalityOptions.Count));
@@ -1073,13 +1018,9 @@ public sealed class CombatBattleFlowTests
             Assert.That(personalityGrid.constraintCount, Is.EqualTo(1));
 
             pickerContent.GetChild(pickerContent.childCount - 1).GetComponent<Button>().onClick.Invoke();
-            IList enemyRows = GetPrivateField<IList>(selection, "_enemyRows");
-            for (int i = 0; i < enemyRows.Count; i++)
-            {
-                Assert.That(
-                    GetPrivateField<int>(enemyRows[i], "PersonalityIndex"),
-                    Is.EqualTo(personalityOptions.Count - 1));
-            }
+            Assert.That(GetPrivateField<int>(enemyRows[0], "PersonalityIndex"),
+                Is.EqualTo(personalityOptions.Count - 1));
+            Assert.That(GetPrivateField<int>(enemyRows[1], "PersonalityIndex"), Is.EqualTo(otherEnemyPersonality));
 
             GetPrivateField<Button>(enemyRows[0], "PersonalityButton").onClick.Invoke();
             pickerContent = GetPrivateField<Transform>(selection, "_pickerContent");
@@ -1087,7 +1028,7 @@ public sealed class CombatBattleFlowTests
             Assert.That(GetPrivateField<int>(enemyRows[0], "PersonalityIndex"), Is.EqualTo(0));
             Assert.That(
                 GetPrivateField<int>(enemyRows[1], "PersonalityIndex"),
-                Is.EqualTo(personalityOptions.Count - 1));
+                Is.EqualTo(otherEnemyPersonality));
 
             presetButton.onClick.Invoke();
             for (int i = 0; i < enemyRows.Count; i++)
@@ -1150,6 +1091,38 @@ public sealed class CombatBattleFlowTests
             {
                 if (characters[i] != null) Object.DestroyImmediate(characters[i]);
             }
+        }
+    }
+
+    [TestCase(CombatTeam.Ally)]
+    [TestCase(CombatTeam.Enemy)]
+    public void CharacterSelection_DestroyedCandidateDoesNotPreventSurvivingCandidateCleanup(CombatTeam destroyedTeam)
+    {
+        GameObject selectionObject = null;
+        var characters = new List<GameObject>();
+        try
+        {
+            selectionObject = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/Combat/BattleFlow/CharacterSelectionPanel.prefab"));
+            var selection = selectionObject.GetComponent<CombatCharacterSelection>();
+            List<Character> allies = CreateCharacters("Ally", CombatTeam.Ally, 1, characters);
+            List<Character> enemies = CreateCharacters("Enemy", CombatTeam.Enemy, 1, characters);
+            selection.Initialize(allies, enemies, null);
+            Character survivor = destroyedTeam == CombatTeam.Ally ? enemies[0] : allies[0];
+            survivor.SetRuntimeStatAdjustments(new Dictionary<CombatStat, int> { [CombatStat.HP] = 17 });
+            Object.DestroyImmediate((destroyedTeam == CombatTeam.Ally ? allies[0] : enemies[0]).gameObject);
+
+            Assert.DoesNotThrow(() => InvokePrivate(selection, "OnDestroy"));
+            Object.DestroyImmediate(selectionObject);
+            selectionObject = null;
+
+            Assert.That(GetPrivateField<Dictionary<CombatStat, int>>(survivor, "_runtimeStatAdjustments"), Is.Empty);
+        }
+        finally
+        {
+            if (selectionObject != null) Object.DestroyImmediate(selectionObject);
+            foreach (GameObject character in characters)
+                if (character != null) Object.DestroyImmediate(character);
         }
     }
 

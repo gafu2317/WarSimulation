@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public static class CombatPlaytestWebGLPlayer
 {
     private const string BuildDirectory = ".unity/CombatPlaytestWebGL";
     private const long GitFileLimitBytes = 100L * 1024L * 1024L;
 
-    [MenuItem("Tools/War Simulation/Combat Playtest/Build WebGL")]
+    [MenuItem("Tools/War Simulation/Web Playtest/Build WebGL")]
     public static void Build()
     {
         if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
@@ -25,48 +25,9 @@ public static class CombatPlaytestWebGLPlayer
             return;
         }
 
-        Scene scene = SceneManager.GetActiveScene();
-        if (!scene.IsValid() || string.IsNullOrEmpty(scene.path))
-        {
-            EditorUtility.DisplayDialog(
-                "シーンがありません",
-                "ビルドする戦闘シーン（例: GafuTest）を開いてください。",
-                "閉じる");
-            return;
-        }
-
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-
-        string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-        string buildDirectory = Path.Combine(projectRoot, BuildDirectory);
-        if (Directory.Exists(buildDirectory))
-            Directory.Delete(buildDirectory, recursive: true);
-        Directory.CreateDirectory(buildDirectory);
-
-        WebGLCompressionFormat previousCompression = PlayerSettings.WebGL.compressionFormat;
-        bool previousFallback = PlayerSettings.WebGL.decompressionFallback;
-        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
-        // GitHub Pages は Content-Encoding を付けないため、フォールバック必須。
-        PlayerSettings.WebGL.decompressionFallback = true;
-
-        BuildReport report;
-        try
-        {
-            // Development だと wasm が大きく、Gzip も付かないことが多い。
-            // 100MB/ファイル制限（git・LFSなし）向けに Release + Gzip で出す。
-            report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
-            {
-                scenes = GetBuildScenePaths(scene.path),
-                locationPathName = buildDirectory,
-                target = BuildTarget.WebGL,
-                options = BuildOptions.None,
-            });
-        }
-        finally
-        {
-            PlayerSettings.WebGL.compressionFormat = previousCompression;
-            PlayerSettings.WebGL.decompressionFallback = previousFallback;
-        }
+        BuildReport report = BuildPlayer();
+        string buildDirectory = Path.GetFullPath(BuildDirectory);
 
         if (report.summary.result != BuildResult.Succeeded)
         {
@@ -98,19 +59,124 @@ public static class CombatPlaytestWebGLPlayer
             : "Pages向け展開後サイズは全ファイル 100MB 未満です。gh-pages（GitHub Pages）で配布できます。";
 
         Debug.Log(
-            $"[Combat Playtest WebGL] ビルド完了: {buildDirectory}\n" +
+            $"[Web Playtest] ビルド完了: {buildDirectory}\n" +
             $"最大ファイル(Pages判定): {relativeLargest} ({sizeLabel})\n{guidance}",
             null);
 
         EditorUtility.DisplayDialog(
-            "Combat Playtest WebGL",
+            "Web Playtest",
             $"出力: {BuildDirectory}\n\n最大ファイル(Pages判定):\n{relativeLargest}\n{sizeLabel}\n\n{guidance}\n\n手順: docs/Webプレイテスト.md",
             "閉じる");
     }
 
-    private static string[] GetBuildScenePaths(string activeScenePath)
+    public static BuildReport BuildPlayer()
     {
-        var paths = new List<string> { activeScenePath };
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
+            throw new InvalidOperationException("Switch the existing Editor to WebGL before building.");
+        string[] scenes = GetBuildScenePaths();
+        string buildDirectory = Path.GetFullPath(BuildDirectory);
+        Directory.CreateDirectory(buildDirectory);
+        WebGLCompressionFormat previousCompression = PlayerSettings.WebGL.compressionFormat;
+        bool previousFallback = PlayerSettings.WebGL.decompressionFallback;
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        PlayerSettings.WebGL.decompressionFallback = true;
+        try
+        {
+            BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = scenes,
+                locationPathName = buildDirectory,
+                target = BuildTarget.WebGL,
+                options = BuildOptions.None,
+            });
+            if (report.summary.result == BuildResult.Succeeded) PackageForItch();
+            return report;
+        }
+        finally
+        {
+            PlayerSettings.WebGL.compressionFormat = previousCompression;
+            PlayerSettings.WebGL.decompressionFallback = previousFallback;
+        }
+    }
+
+    [MenuItem("Tools/War Simulation/Web Playtest/Package itch.io Files")]
+    public static void PackageForItch()
+    {
+        string directory = Path.GetFullPath(BuildDirectory);
+        string index = Path.Combine(directory, "index.html");
+        string html = ResponsivePage(File.ReadAllText(index));
+        const string append = "document.body.appendChild(script);";
+        const string ready = ".then((unityInstance) => {";
+        const string failed = ".catch((message) => {";
+        if (!html.Contains("playtestDataParts"))
+        {
+            if (!html.Contains(append) || !html.Contains(ready) || !html.Contains(failed))
+                throw new InvalidOperationException("The WebGL template does not contain the expected loader.");
+            const string load = @"fetch('Build/PlaytestData.json', { cache: 'no-store' })
+        .then(response => { if (!response.ok) throw new Error(response.status); return response.json(); })
+        .then(paths => Promise.all(paths.map(async path => {
+          const response = await fetch(path);
+          if (!response.ok) throw new Error(response.status);
+          return response.blob();
+        })))
+        .then(playtestDataParts => {
+          config.dataUrl = URL.createObjectURL(new Blob(playtestDataParts, { type: 'application/octet-stream' }));
+          config.cacheControl = url => /\.bundle/.test(url) ? 'must-revalidate' : 'no-store';
+          document.body.appendChild(script);
+        }).catch(error => { console.error(error); unityShowBanner('ゲームデータを読み込めませんでした。ページを再読み込みしてください。', 'error'); });";
+            html = html.Replace(append, load)
+                .Replace(ready, ready + "\n                URL.revokeObjectURL(config.dataUrl);")
+                .Replace(failed, failed + "\n                URL.revokeObjectURL(config.dataUrl);");
+        }
+
+        string build = Path.Combine(directory, "Build");
+        string[] dataFiles = Directory.GetFiles(build, "*.data.unityweb");
+        if (dataFiles.Length > 0)
+        {
+            string data = dataFiles[0];
+            foreach (string old in Directory.GetFiles(build, "*.data.unityweb.part*")) File.Delete(old);
+            foreach (string old in Directory.GetFiles(build, "PlaytestData.part*.bin")) File.Delete(old);
+            var parts = new List<string>();
+            using (var reader = new BinaryReader(new GZipStream(File.OpenRead(data), CompressionMode.Decompress)))
+            {
+                byte[] bytes;
+                while ((bytes = reader.ReadBytes(128 * 1024 * 1024)).Length > 0)
+                {
+                    string part = Path.Combine(build, "PlaytestData.part" + parts.Count + ".bin");
+                    File.WriteAllBytes(part, bytes);
+                    parts.Add("\"Build/" + Path.GetFileName(part) + "\"");
+                }
+            }
+            File.WriteAllText(Path.Combine(build, "PlaytestData.json"), "[" + string.Join(",", parts) + "]");
+            File.WriteAllText(index, html);
+            File.Delete(data);
+        }
+        if (!File.Exists(Path.Combine(build, "PlaytestData.json")))
+            throw new InvalidOperationException("WebGL data is missing.");
+        File.WriteAllText(index, html);
+        foreach (string file in Directory.GetFiles(directory, "*", SearchOption.AllDirectories))
+            if (new FileInfo(file).Length > 200L * 1024 * 1024)
+                throw new InvalidOperationException("itch.io HTML file limit exceeded: " + file);
+        Debug.Log("Uncompressed WebGL data packaged in 128 MiB parts for itch.io.");
+    }
+
+    public static string ResponsivePage(string html)
+    {
+        const string style = @"<style id=""playtest-responsive"">
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+#unity-container { position: fixed !important; inset: 0 !important; width: 100% !important; height: 100% !important; transform: none !important; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+#unity-canvas { display: block; flex: 1 1 0; min-height: 0; max-height: 56.25vw; width: 100% !important; height: 0 !important; }
+#unity-footer { flex: 0 0 38px; width: 100%; }
+@media (max-height: 480px), (max-width: 600px) { #unity-footer { display: none; } }
+</style>";
+        return html.Contains("id=\"playtest-responsive\"")
+            ? System.Text.RegularExpressions.Regex.Replace(html, "<style id=\"playtest-responsive\">[\\s\\S]*?</style>", style)
+            : html.Replace("</head>", style + "\n</head>");
+    }
+
+    public static string[] GetBuildScenePaths()
+    {
+        var paths = new List<string> { PlaytestSceneNavigation.CountryScene, PlaytestSceneNavigation.CombatScene };
         EditorBuildSettingsScene[] buildSettingsScenes = EditorBuildSettings.scenes;
         for (int i = 0; i < buildSettingsScenes.Length; i++)
         {
@@ -122,6 +188,9 @@ public static class CombatPlaytestWebGLPlayer
             paths.Add(buildSettingsScene.path);
         }
 
+        foreach (string path in paths)
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
+                throw new InvalidOperationException("Build scene does not exist: " + path);
         return paths.ToArray();
     }
 

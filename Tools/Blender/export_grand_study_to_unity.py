@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "ArtSource/Blender/GrandStudy/GrandStudy.blend"
 MODEL_ROOT = ROOT / "Assets/Models/GrandStudy/Models"
 TEXTURE_ROOT = ROOT / "Assets/Models/GrandStudy/Textures"
-REPORT_ROOT = ROOT / "docs/Art/GrandStudy"
+REPORT_ROOT = ROOT / "docs/Art/Records/GrandStudy"
 PROCEDURAL_MATERIALS = {
     "Walnut",
     "Dark wood",

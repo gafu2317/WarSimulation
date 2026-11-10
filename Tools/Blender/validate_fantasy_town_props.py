@@ -8,7 +8,7 @@ from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
-REVIEW=os.path.join(ROOT,'docs','Art','FantasyTownProps')
+REVIEW=os.path.join(ROOT,'docs','Art','Records', 'TownProps')
 bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT,'ArtSource','Blender','FantasyTownProps.blend'))
 with open(os.path.join(REVIEW,'model_manifest.json')) as f:
     manifest=json.load(f)

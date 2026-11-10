@@ -38,9 +38,8 @@ def parse_args():
 
 
 def candidate_key(roles):
-    return "|".join(f"{role['Weapon']}:{role['Personality']}" for role in sorted(
-        roles, key=lambda role: (role["Weapon"], role["Personality"])
-    ))
+    values = sorted(roles, key=lambda role: (role["Weapon"], role["Personality"]))
+    return "|".join(f"{role['Weapon']}:{role['Personality']}" for role in values)
 
 
 def table_text(value):
@@ -117,11 +116,15 @@ def normalize_config(config, args):
         ("DisableDiagnostics", True),
     )}
     settings.update({
-        "ParallelProcesses": args.parallel if args.parallel is not None else batch.get("ParallelProcesses", 5),
+        "ParallelProcesses": args.parallel if args.parallel is not None else batch.get("ParallelProcesses", 4),
         "MatchesPerJob": batch.get("MatchesPerJob", 5),
         "JobWorkerCount": batch.get("JobWorkerCount", 1),
         "Executable": str(args.executable or batch.get("Executable", batch_battles.DEFAULT_EXECUTABLE)),
     })
+    if "CandidateBatchSize" in batch:
+        if type(batch["CandidateBatchSize"]) is not int or batch["CandidateBatchSize"] < 1:
+            raise ValueError("CandidateBatchSize must be positive.")
+        settings["CandidateBatchSize"] = batch["CandidateBatchSize"]
     for field in ("ScreenMatches", "FinalMatches", "FinalCandidates", "LeagueMatches", "LeagueCandidates",
                   "ParallelProcesses", "MatchesPerJob", "JobWorkerCount"):
         if type(settings[field]) is not int or settings[field] < 1:
@@ -140,6 +143,22 @@ def normalize_config(config, args):
     for field in ("PreserveFixedDeltaTime", "DisableDiagnostics"):
         if type(settings[field]) is not bool:
             raise ValueError(f"{field} must be boolean.")
+    if "Balance" in config:
+        balance = config["Balance"]
+        defaults = {f"Reckless{stat}Multiplier": 1.0 for stat in ("HP", "STR", "INT", "FAI", "AGI")}
+        defaults["RecklessAGIMultiplier"] = -1.0
+        defaults["ReviveDelayAfterArrivalSeconds"] = -1.0
+        if not isinstance(balance, dict) or set(balance) - set(defaults):
+            raise ValueError("Balance contains unknown settings.")
+        balance = {**defaults, **balance}
+        for field, value in balance.items():
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError(f"Balance.{field} must be finite.")
+            if field.endswith("Multiplier") and not (0 < value <= 1 or field == "RecklessAGIMultiplier" and value == -1):
+                raise ValueError(f"Balance.{field} must be greater than zero and at most one.")
+            if field == "ReviveDelayAfterArrivalSeconds" and value < 0 and value != -1:
+                raise ValueError("Revive delay must be non-negative or -1 for the prefab default.")
+        settings["Balance"] = balance
     return {"Candidates": candidates, "Enemies": enemies, "Scenarios": scenarios, "ScreenScenarios": screen_scenarios, **settings}
 
 
@@ -176,27 +195,41 @@ def build_jobs(protocol, candidates, opponents, stage, matches, seed_offset, lea
     for scenario_index, scenario in enumerate(protocol["Scenarios"]):
         for enemy_index, enemy in enumerate(opponents):
             allies = [candidate for candidate in candidates if not league or candidate["CandidateKey"] != enemy["CandidateKey"]]
-            for offset in range(0, matches, protocol["MatchesPerJob"]):
-                count = min(protocol["MatchesPerJob"], matches - offset)
-                jobs.append({
-                    "id": f"s{scenario_index:03d}_e{enemy_index:03d}_m{offset:05d}_{offset + count:05d}",
-                    "stage": stage, "scenario": scenario, "enemy": enemy, "candidates": allies, "match_count": count,
-                    "config": {
-                        "MapNames": [scenario["MapName"]],
-                        "Enemy": enemy["Roles"], "Candidates": [{"Roles": candidate["Roles"]} for candidate in allies],
-                        "MatchesPerCandidate": count, "BaseSeed": protocol["BaseSeed"] + seed_offset,
-                        "MatchOffset": offset, "TotalMatchesPerCandidate": matches,
-                        "MinPartySize": 1, "MaxPartySize": 10,
-                        "UseCommonSeeds": True, "UseFixedStonePosition": True, "EvaluateBothStonePositions": False,
-                        "StonePositionsReversed": scenario["StonePositionsReversed"],
-                        **{field: protocol[field] for field in ("TimeoutSeconds", "TimeScale", "PreserveFixedDeltaTime", "DisableDiagnostics")},
-                    },
-                })
+            chunks = [allies]
+            if protocol.get("CandidateBatchSize"):
+                size = protocol["CandidateBatchSize"]
+                chunks = [allies[start:start + size] for start in range(0, len(allies), size)]
+            for chunk_index, chunk in enumerate(chunks):
+                for offset in range(0, matches, protocol["MatchesPerJob"]):
+                    count = min(protocol["MatchesPerJob"], matches - offset)
+                    jobs.append({
+                        "id": f"s{scenario_index:03d}_e{enemy_index:03d}_m{offset:05d}_{offset + count:05d}" +
+                              (f"_c{chunk_index:04d}" if protocol.get("CandidateBatchSize") else ""),
+                        "stage": stage, "scenario": scenario, "enemy": enemy, "candidates": chunk, "match_count": count,
+                        "config": {
+                            "MapNames": [scenario["MapName"]],
+                            "Enemy": enemy["Roles"], "Candidates": [{"Roles": candidate["Roles"]} for candidate in chunk],
+                            "MatchesPerCandidate": count, "BaseSeed": protocol["BaseSeed"] + seed_offset,
+                            "MatchOffset": offset, "TotalMatchesPerCandidate": matches,
+                            "MinPartySize": 1, "MaxPartySize": 10,
+                            "UseCommonSeeds": True, "UseFixedStonePosition": True, "EvaluateBothStonePositions": False,
+                            "StonePositionsReversed": scenario["StonePositionsReversed"],
+                            **{field: protocol[field] for field in ("TimeoutSeconds", "TimeScale", "PreserveFixedDeltaTime", "DisableDiagnostics")},
+                            **({"Balance": protocol["Balance"]} if "Balance" in protocol else {}),
+                        },
+                    })
     return jobs
 
 
 def validate_report(report, job):
     batch_battles.validate_report(report, job["match_count"], 1)
+    if "Balance" in job["config"]:
+        actual = report.get("Balance")
+        if not isinstance(actual, dict) or any(
+            type(actual.get(field)) not in (int, float) or not math.isclose(actual[field], value, rel_tol=1e-6)
+            for field, value in job["config"]["Balance"].items()
+        ):
+            raise ValueError("Report Balance differs from the requested settings; rebuild the Player.")
     expected = {candidate["CandidateKey"]: candidate for candidate in job["candidates"]}
     ranking = report.get("Ranking", [])
     if len(ranking) != len(expected) or {row.get("CandidateKey") for row in ranking} != set(expected):
@@ -242,6 +275,11 @@ def validate_report(report, job):
     return metadata
 
 
+def reverse_result(row):
+    result = {**row, "Wins": row["Losses"], "Losses": row["Wins"]}
+    return result
+
+
 def same_metadata(first, second):
     return all(math.isclose(first[field], second[field], rel_tol=1e-6) if field in ("TimeScale", "FixedDeltaTime")
                else first[field] == second[field] for field in METADATA_FIELDS)
@@ -270,7 +308,7 @@ def aggregate_results(protocol, candidates, opponents, results, matches, league=
         for row in report["Ranking"]:
             add_cell(job, row, row["CandidateKey"], job["enemy"]["CandidateKey"], "Ally")
             if league:
-                reverse = {**row, "Wins": row["Losses"], "Losses": row["Wins"]}
+                reverse = reverse_result(row)
                 add_cell(job, reverse, job["enemy"]["CandidateKey"], row["CandidateKey"], "Enemy")
     ranking = []
     for candidate in candidates:

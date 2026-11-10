@@ -201,13 +201,12 @@ public sealed class CombatStatusEffects : MonoBehaviour
         });
     }
 
-    public void ApplyInvulnerable(float durationSeconds, string key = null, Character source = null)
+    public void ApplyInvulnerable(float durationSeconds, string key = null, Character source = null) =>
+        ApplyInvulnerable(durationSeconds, key, CombatEffectSource.Capture(source));
+
+    public void ApplyInvulnerable(float durationSeconds, string key, CombatEffectSource source)
     {
-        ApplySimpleEffect(
-            EffectType.Invulnerable,
-            durationSeconds,
-            ResolveEffectKey(EffectType.Invulnerable, key),
-            CombatEffectSource.Capture(source));
+        ApplySimpleEffect(EffectType.Invulnerable, durationSeconds, ResolveEffectKey(EffectType.Invulnerable, key), source);
     }
 
     public void ApplyBind(float durationSeconds, string key = null, Character source = null)

@@ -9,7 +9,7 @@ from mathutils import Vector
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE = os.path.join(ROOT, "ArtSource", "Blender", "KingdomBuildings.blend")
 MODELS = os.path.join(ROOT, "Assets", "Models", "Kingdom", "Buildings")
-REVIEW = os.path.join(ROOT, "docs", "Art", "KingdomBuildings")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "Legacy", "KingdomBuildings")
 PALETTE = {
     "Stone": "BEB6A1",
     "StoneTrim": "DDD3BA",

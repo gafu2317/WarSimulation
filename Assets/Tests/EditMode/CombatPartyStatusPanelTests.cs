@@ -108,13 +108,13 @@ public sealed class CombatPartyStatusPanelTests
         var viewObject = CreateMemberViewObject("MemberView");
         var view = viewObject.GetComponent<CombatPartyMemberView>();
         var profile = ScriptableObject.CreateInstance<CombatAiPersonalityProfile>();
-        CombatEditModeTestUtil.SetPrivateField(profile, "_displayNameJapanese", "慎重");
+        CombatEditModeTestUtil.SetPrivateField(profile, "_displayNameJapanese", "狡猾");
 
         view.Bind(character, CombatCharacterAppearanceView.Facing.FrontLeft);
         CombatEditModeTestUtil.SetPrivateField(character, "_personalityProfile", profile);
         view.Tick(0f);
 
-        Assert.That(view.CurrentPersonalityText, Is.EqualTo("慎重"));
+        Assert.That(view.CurrentPersonalityText, Is.EqualTo("狡猾"));
 
         Object.DestroyImmediate(profile);
         Object.DestroyImmediate(viewObject);

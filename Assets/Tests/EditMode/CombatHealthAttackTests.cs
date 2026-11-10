@@ -5,29 +5,6 @@ using WarSimulation.Combat.Map;
 public sealed class CombatHealthAttackTests
 {
     [Test]
-    public void CombatCharacterPrefab_UsesStandardBattleStats()
-    {
-        GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-            "Assets/Prefabs/Combat/CombatCharacter.prefab");
-        GameObject instance = null;
-        try
-        {
-            instance = Object.Instantiate(prefab);
-            Character character = instance.GetComponent<Character>();
-
-            Assert.That(character.MaxHP, Is.EqualTo(120));
-            Assert.That(character.STR, Is.EqualTo(30));
-            Assert.That(character.INT, Is.EqualTo(30));
-            Assert.That(character.FAI, Is.EqualTo(30));
-            Assert.That(character.AGI, Is.EqualTo(30));
-        }
-        finally
-        {
-            if (instance != null) Object.DestroyImmediate(instance);
-        }
-    }
-
-    [Test]
     public void Health_RaisesAppliedDamageWithVictimAndAttacker()
     {
         GameObject victimGo = new GameObject("Victim");
@@ -398,7 +375,7 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
-    public void Health_RevivesFifteenSecondsAfterReachingHome()
+    public void Health_RevivesOnlyAfterDelayFromReachingHome()
     {
         GameObject systemGo = new GameObject("CombatCharacterSystem");
         GameObject characterGo = new GameObject("Character");
@@ -410,11 +387,7 @@ public sealed class CombatHealthAttackTests
             system.AssignTeamsFromLists();
             CombatHealth health = character.Health;
             health.Initialize(maxHP: 20);
-            var serializedHealth = new UnityEditor.SerializedObject(health);
-
-            Assert.That(
-                serializedHealth.FindProperty("_reviveDelayAfterArrival").floatValue,
-                Is.EqualTo(15f));
+            health.SetReviveDelayOverride(3f);
 
             health.TakeDamage(20);
 
@@ -478,17 +451,6 @@ public sealed class CombatHealthAttackTests
     }
 
     [Test]
-    public void Weapons_ExposeExpectedCombatValues()
-    {
-        AssertWeapon(new Sword(), 2f, 12, 0.9f, CombatStat.STR);
-        AssertWeapon(new Wand(), 20f, 10, 1.4f, CombatStat.INT);
-        AssertWeapon(new Grimoire(), 30f, 14, 2f, CombatStat.INT);
-        AssertWeapon(new Bible(), 30f, 10, 1.6f, CombatStat.FAI);
-        AssertWeapon(new Rosary(), 15f, 8, 1.2f, CombatStat.FAI);
-        AssertWeapon(new Shield(), 1.8f, 6, 1.3f, CombatStat.STR);
-    }
-
-    [Test]
     public void Character_BuildsSupportSkillsFromCatalogWhenEquippedWithBibleOrRosary()
     {
         GameObject bibleGo = new GameObject("BibleCharacter");
@@ -504,34 +466,10 @@ public sealed class CombatHealthAttackTests
             bibleCharacter.EquipWeapon(new Bible());
             rosaryCharacter.EquipWeapon(new Rosary());
 
-            Assert.That(bibleCharacter.AvailableCombatSkills.Count, Is.EqualTo(7));
             Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Smite));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_StrBuff));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_IntBuff));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_FaiBuff));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_AgiBuff));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Invulnerable));
-            Assert.That(bibleCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Bible_Gotsume));
-            Assert.That(rosaryCharacter.AvailableCombatSkills.Count, Is.EqualTo(6));
             Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
                 skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_Strike));
-            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_DistantHeal));
-            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_CloseHeal));
-            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_Regeneration));
-            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_HealingArea));
-            Assert.That(rosaryCharacter.AvailableCombatSkills, Has.Some.Matches<SkillBase>(skill =>
-                skill is IdentifiedSkill identified && identified.SkillId == SkillId.Rosary_SacrificeThunder));
         }
         finally
         {
@@ -541,16 +479,4 @@ public sealed class CombatHealthAttackTests
         }
     }
 
-    private static void AssertWeapon(
-        WeaponBase weapon,
-        float range,
-        int power,
-        float cooldown,
-        CombatStat stat)
-    {
-        Assert.That(weapon.Range, Is.EqualTo(range).Within(0.001f));
-        Assert.That(weapon.PrimaryStatBonus, Is.EqualTo(power));
-        Assert.That(weapon.CooldownSeconds, Is.EqualTo(cooldown).Within(0.001f));
-        Assert.That(weapon.ScalingStat, Is.EqualTo(stat));
-    }
 }

@@ -214,12 +214,12 @@ public sealed class CombatSkillExecutionTests
         CombatAiPersonalityProfile profile = ScriptableObject.CreateInstance<CombatAiPersonalityProfile>();
         try
         {
-            CombatEditModeTestUtil.SetPrivateField(profile, "_displayNameJapanese", "慎重");
+            CombatEditModeTestUtil.SetPrivateField(profile, "_displayNameJapanese", "狡猾");
             CombatAiWorldLabel label = ownerGo.AddComponent<CombatAiWorldLabel>();
 
             label.SetPersonality(profile);
 
-            Assert.That(label.CurrentPersonalityText, Is.EqualTo("慎重"));
+            Assert.That(label.CurrentPersonalityText, Is.EqualTo("狡猾"));
         }
         finally
         {

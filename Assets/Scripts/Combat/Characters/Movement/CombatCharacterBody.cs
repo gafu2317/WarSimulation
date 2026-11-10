@@ -282,6 +282,14 @@ public sealed class CombatCharacterBody : MonoBehaviour
         _riverCrossingDestination = default;
     }
 
+    public void InvalidateNavigation()
+    {
+        Stop();
+        _aiNavigationQueries.EndTick();
+        ClearRoute();
+        ClearRiverCrossingDestination();
+    }
+
     public void Stop()
     {
         if (_agent == null || !_agent.isOnNavMesh) return;

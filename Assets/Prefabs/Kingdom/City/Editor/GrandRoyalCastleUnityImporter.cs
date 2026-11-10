@@ -11,17 +11,17 @@ namespace WarSimulation.Kingdom.City
 {
     public static class GrandRoyalCastleUnityImporter
     {
-        const string ManifestPath = "docs/Art/GrandRoyalCastle/unity_export_manifest.json";
+        const string ManifestPath = "docs/Art/Records/Castle/unity_export_manifest.json";
         const string ModelRoot = "Assets/Models/Kingdom/City";
         const string PrefabRoot = "Assets/Prefabs/Kingdom/City/Prefabs";
         const string MaterialRoot = "Assets/Prefabs/Kingdom/City/Materials";
         const string PrefabPath = PrefabRoot + "/Royal_Castle.prefab";
-        const string ValidationPath = "docs/Art/GrandRoyalCastle/unity_validation.json";
+        const string ValidationPath = "docs/Art/Records/Castle/unity_validation.json";
 
         [Serializable]
         class ExportModel
         {
-            public string name;
+            public string name, source, texture_layout;
             public string fbx;
             public int triangles;
             public float[] minimum;
@@ -51,7 +51,22 @@ namespace WarSimulation.Kingdom.City
             public bool grounded;
             public bool dimensionsMatch;
             public bool oldCastleNameAbsent;
+            public bool textureLayoutValid;
+            public float minimumUvTriangleTexels;
             public string status;
+        }
+
+        [MenuItem("WarSim/Kingdom/Refresh Grand Royal Castle Textures")]
+        public static void RefreshTextures()
+        {
+            if (EditorApplication.isPlaying) throw new InvalidOperationException("Exit Play mode before refreshing castle textures.");
+            var model = ReadManifest().models.Single();
+            ImportTextures(model);
+            AssetDatabase.ImportAsset(model.fbx, ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.SaveAssets();
+            var report = Validate(model);
+            File.WriteAllText(ValidationPath, JsonUtility.ToJson(report, true));
+            if (report.status != "PASS") throw new InvalidOperationException("Castle texture validation failed: " + ValidationPath);
         }
 
         [MenuItem("WarSim/Kingdom/Import Grand Royal Castle And Rebuild Catalog")]
@@ -88,9 +103,7 @@ namespace WarSimulation.Kingdom.City
 
         static void ImportModel(ExportModel model)
         {
-            ImportTexture(model.name + "_BaseColor.png", true, false, model.atlas_size);
-            ImportTexture(model.name + "_Normal.png", false, true, model.atlas_size);
-            ImportTexture(model.name + "_MetallicSmoothness.png", false, false, model.atlas_size);
+            ImportTextures(model);
 
             AssetDatabase.ImportAsset(model.fbx, ImportAssetOptions.ForceSynchronousImport);
             var importer = AssetImporter.GetAtPath(model.fbx) as ModelImporter;
@@ -133,7 +146,15 @@ namespace WarSimulation.Kingdom.City
             }
         }
 
-        static void ImportTexture(string file, bool srgb, bool normal, int size)
+        static void ImportTextures(ExportModel model)
+        {
+            var palette = model.texture_layout == "material_palette";
+            ImportTexture(model.name + "_BaseColor.png", true, false, model.atlas_size, palette);
+            ImportTexture(model.name + "_Normal.png", false, true, model.atlas_size, palette);
+            ImportTexture(model.name + "_MetallicSmoothness.png", false, false, model.atlas_size, palette);
+        }
+
+        static void ImportTexture(string file, bool srgb, bool normal, int size, bool palette)
         {
             var path = ModelRoot + "/Textures/" + file;
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
@@ -142,9 +163,9 @@ namespace WarSimulation.Kingdom.City
             importer.sRGBTexture = srgb;
             importer.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
             importer.alphaSource = normal || srgb ? TextureImporterAlphaSource.None : TextureImporterAlphaSource.FromInput;
-            importer.mipmapEnabled = true;
+            importer.mipmapEnabled = !palette;
             importer.wrapMode = TextureWrapMode.Clamp;
-            importer.filterMode = FilterMode.Trilinear;
+            importer.filterMode = palette ? FilterMode.Point : FilterMode.Trilinear;
             importer.anisoLevel = 4;
             importer.maxTextureSize = size;
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
@@ -189,9 +210,22 @@ namespace WarSimulation.Kingdom.City
             var usesUrp = materials.Length > 0 && materials.All(material => material.shader != null && material.shader.name == "Universal Render Pipeline/Lit");
             var grounded = Mathf.Abs(bounds.min.y) < 0.001f;
             var dimensionsMatch = Approximately(bounds.size, expected);
+            var minimumUvTexels = float.PositiveInfinity;
+            foreach (var filter in prefab.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var uv = filter.sharedMesh.uv;
+                var triangles = filter.sharedMesh.triangles;
+                for (var i = 0; i < triangles.Length; i += 3)
+                {
+                    var a = uv[triangles[i + 1]] - uv[triangles[i]];
+                    var b = uv[triangles[i + 2]] - uv[triangles[i]];
+                    minimumUvTexels = Mathf.Min(minimumUvTexels, Mathf.Abs(a.x * b.y - a.y * b.x) * .5f * model.atlas_size * model.atlas_size);
+                }
+            }
+            var textureLayoutValid = model.texture_layout != "material_palette" || minimumUvTexels >= 64;
             return new ValidationReport
             {
-                source = "ArtSource/Blender/GrandRoyalCastle.blend",
+                source = model.source,
                 fbx = model.fbx,
                 prefab = PrefabPath,
                 expectedTriangles = model.triangles,
@@ -204,7 +238,9 @@ namespace WarSimulation.Kingdom.City
                 grounded = grounded,
                 dimensionsMatch = dimensionsMatch,
                 oldCastleNameAbsent = !AssetDatabase.FindAssets("t:Prefab Kingdom_Castle", new[] { PrefabRoot }).Any(),
-                status = usesUrp && grounded && dimensionsMatch ? "PASS" : "FAIL"
+                textureLayoutValid = textureLayoutValid,
+                minimumUvTriangleTexels = minimumUvTexels,
+                status = usesUrp && grounded && dimensionsMatch && textureLayoutValid ? "PASS" : "FAIL"
             };
         }
 

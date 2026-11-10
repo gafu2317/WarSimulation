@@ -11,7 +11,7 @@ except NameError:
     ROOT = Path("/Users/fukutomi/Unity/WarSimulation")
 SOURCE = ROOT / "ArtSource/Blender/Kingdom/FantasySchoolLevels.blend"
 OUTPUT = ROOT / "ArtSource/Blender/Kingdom/SchoolLevelsPresentation.blend"
-RENDER = ROOT / "docs/Art/SchoolLevelUnity/school_levels_presentation.png"
+RENDER = ROOT / "docs/Art/Records/Schools/school_levels_presentation.png"
 
 ROWS = [
     ("WarriorAcademy", "WARRIOR ACADEMY", (0.48, 0.12, 0.10, 1.0)),

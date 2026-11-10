@@ -71,7 +71,74 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
         new(FrozenLakeAreaName, 2f),
     };
 
+    private NavMeshData _originalData;
+    private NavMeshData _runtimeData;
+    private NavMeshData _pendingData;
+    private bool _hadAreaVolumes;
+
     public NavMeshSurface Surface => _surface;
+
+    public AsyncOperation BeginRuntimeUpdate(MapData map)
+    {
+        EnsureSurface();
+        if (_surface.navMeshData == null || _pendingData != null) return null;
+        if (_originalData == null)
+        {
+            _originalData = _surface.navMeshData;
+            _hadAreaVolumes = transform.Find(AreaVolumeRootName) != null;
+        }
+        ConfigureSurface();
+        RebuildAreaVolumes(map);
+        // 保存済みNavMeshDataを書き換えると、岩撤去後も木の穴が失われる。
+        _pendingData = Instantiate(_originalData);
+        _pendingData.name = "RuntimeRockNavMesh";
+        return _surface.UpdateNavMesh(_pendingData);
+    }
+
+    public void CompleteRuntimeUpdate()
+    {
+        if (_pendingData == null || _surface == null) return;
+        _surface.RemoveData();
+        DestroyRuntimeData(_runtimeData);
+        _runtimeData = _pendingData;
+        _pendingData = null;
+        _surface.navMeshData = _runtimeData;
+        _surface.AddData();
+        ApplyAreaCosts();
+        Built?.Invoke();
+    }
+
+    public void RestoreOriginalData()
+    {
+        if (_pendingData != null) NavMeshBuilder.Cancel(_pendingData);
+        if (_surface != null && _originalData != null)
+        {
+            _surface.RemoveData();
+            _surface.navMeshData = _originalData;
+            if (_surface.isActiveAndEnabled) _surface.AddData();
+            if (!_hadAreaVolumes) ClearAreaVolumes();
+        }
+        bool changed = _originalData != null;
+        DestroyRuntimeData(_pendingData);
+        DestroyRuntimeData(_runtimeData);
+        _pendingData = _runtimeData = _originalData = null;
+        if (changed) Built?.Invoke();
+    }
+
+    private static void DestroyRuntimeData(NavMeshData data)
+    {
+        if (data == null) return;
+        if (Application.isPlaying) Destroy(data);
+        else DestroyImmediate(data);
+    }
+
+    private void OnDestroy()
+    {
+        if (_pendingData != null) NavMeshBuilder.Cancel(_pendingData);
+        DestroyRuntimeData(_pendingData);
+        DestroyRuntimeData(_runtimeData);
+        _pendingData = _runtimeData = _originalData = null;
+    }
 
     public bool Build(MapData map)
     {
@@ -82,6 +149,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
             return false;
         }
 
+        RestoreOriginalData();
         EnsureSurface();
         ConfigureSurface();
         RebuildAreaVolumes(map);
@@ -109,6 +177,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
             return false;
         }
 
+        RestoreOriginalData();
         EnsureSurface();
         ConfigureSurface();
         ClearAreaVolumes();
@@ -129,6 +198,7 @@ public sealed class CombatNavMeshBuilder : MonoBehaviour
     public void Clear()
     {
         using var _ = ClearMarker.Auto();
+        RestoreOriginalData();
         if (_surface == null) return;
         _surface.RemoveData();
         _surface.navMeshData = null;

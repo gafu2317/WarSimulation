@@ -3,7 +3,7 @@ import ast, math, random, sys
 from pathlib import Path
 import bpy
 from mathutils import Vector, Matrix
-ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/GrandStudy';TEX=ROOT/'ArtSource/Blender/GrandStudy/Textures'
+ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/Art/Records/GrandStudy';TEX=ROOT/'ArtSource/Blender/GrandStudy/Textures'
 bpy.ops.wm.open_mainfile(filepath=str(ROOT/'ArtSource/Blender/GrandStudy/GrandStudy.blend'))
 M={m.name:m for m in bpy.data.materials};current=None;random.seed(93)
 for path,names in [('generate_grand_study.py',['mesh','curve','lathe','ring','camera','area','setup']),('refine_grand_study_focal_props.py',['block','clear','bezier','disk'])]:

@@ -55,7 +55,7 @@ public sealed class SkillVfxEffect : MonoBehaviour
         _guard = null; _taunt = null; _thorns = null; _zone = null; _bound = false;
         _ending = -1; Age = 0; Finished = false; ActionId = 0;
         _camera = Camera.main;
-        _mesh.SetGround(skill is SkillId.Wand_AreaBlast or SkillId.Rosary_HealingArea
+        _mesh.SetGround(skill is SkillId.Wand_AreaBlast or SkillId.Player_AreaMagic or SkillId.Rosary_HealingArea
             ? CombatSceneContext.Instance?.MapSystem : null, point, Mathf.Max(1.5f, radius));
         _forward = Vector3.ProjectOnPlane(target - self, Vector3.up).normalized;
         if (_forward.sqrMagnitude < .01f) _forward = Vector3.forward;
@@ -129,7 +129,11 @@ public sealed class SkillVfxEffect : MonoBehaviour
         if (_zone != null) return _zone.IsActive;
         if (Skill == SkillId.Rosary_HealingArea) return false;
         if (FollowCharacter == null || !FollowCharacter.gameObject.activeInHierarchy ||
-            FollowCharacter.Health == null || !FollowCharacter.Health.IsAlive) return false;
+            FollowCharacter.Health == null) return false;
+        if (Skill == SkillId.Player_AllInvulnerable)
+            return CombatPlayerMagicSystem.CanReceiveInvulnerability(FollowCharacter) && _status != null &&
+                _status.HasActiveEffect(StatusKey);
+        if (!FollowCharacter.Health.IsAlive) return false;
         if (Skill == SkillId.Shield_ShoulderGuard) return _guard != null && _guard.IsActive;
         if (Skill == SkillId.Shield_Taunt) return _taunt != null && _taunt.IsActive;
         if (Skill == SkillId.Bible_Gotsume) return _thorns != null && _thorns.IsActive;
@@ -153,7 +157,7 @@ public sealed class SkillVfxEffect : MonoBehaviour
         else
         {
             float hitTime = time;
-            if (_phase == Phase.Preview && Skill == SkillId.Wand_GodsHand)
+            if (_phase == Phase.Preview && Skill is SkillId.Wand_GodsHand or SkillId.Player_AreaMagic)
             {
                 float lead = _previewLead;
                 if (time < lead) { DrawCast(time / Mathf.Max(.01f, lead)); _mesh.Upload(); return; }
@@ -197,7 +201,7 @@ public sealed class SkillVfxEffect : MonoBehaviour
         SkillId.Grimoire_StrDebuff or SkillId.StatDebuff_INT or SkillId.StatDebuff_FAI or SkillId.StatDebuff_AGI or
         SkillId.Grimoire_Bind or SkillId.Grimoire_Poison or SkillId.Grimoire_Stealth or
         SkillId.Bible_StrBuff or SkillId.Bible_IntBuff or SkillId.Bible_FaiBuff or SkillId.Bible_AgiBuff or
-        SkillId.Bible_Invulnerable or SkillId.Bible_Gotsume or
+        SkillId.Bible_Invulnerable or SkillId.Player_AllInvulnerable or SkillId.Bible_Gotsume or
         SkillId.Rosary_Regeneration or SkillId.Rosary_HealingArea;
 
     public static Color ColorFor(SkillId id) => SkillVfxArt.ColorFor(id);

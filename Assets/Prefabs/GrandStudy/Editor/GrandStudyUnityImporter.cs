@@ -12,7 +12,7 @@ namespace WarSimulation.GrandStudy
 {
     public static class GrandStudyUnityImporter
     {
-        const string ManifestPath = "docs/Art/GrandStudy/unity_export_manifest.json";
+        const string ManifestPath = "docs/Art/Records/GrandStudy/unity_export_manifest.json";
         const string ModelRoot = "Assets/Models/GrandStudy/Models";
         const string TextureRoot = "Assets/Models/GrandStudy/Textures";
         const string LightOakTexturePath = TextureRoot + "/grandstudy_light_oak_base.png";
@@ -23,7 +23,7 @@ namespace WarSimulation.GrandStudy
         const string PrefabRoot = "Assets/Prefabs/GrandStudy/Objects";
         const string RoomPrefabPath = "Assets/Prefabs/GrandStudy/GrandStudyRoom.prefab";
         const string ScenePath = "Assets/Scenes/GrandStudyRoom.unity";
-        const string ValidationPath = "docs/Art/GrandStudyUnity/unity_validation.json";
+        const string ValidationPath = "docs/Art/Records/GrandStudy/unity_validation.json";
 
         [Serializable]
         class ExportModel

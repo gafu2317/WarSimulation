@@ -1,0 +1,36 @@
+/* Reserve settings space and let resource cells share the remaining width. */
+@media(min-width:1141px){
+ .hud{display:grid;grid-template-columns:auto auto minmax(0,1fr) 44px;column-gap:12px;padding-inline:18px}
+ .hud-state{padding-right:16px}.hud-time{padding-inline:4px 16px;gap:12px}
+ .hud-settings{margin:0;padding:0;justify-content:flex-end}
+}
+.hud-treasury{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,4fr);width:100%;margin:0;padding:0;min-width:0}
+.hud-treasury .resources{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;max-width:100%;margin:0;min-width:0}
+.hud-treasury .resource{width:100%;min-width:0;padding-inline:10px;column-gap:8px;box-sizing:border-box}
+.hud-treasury .resource-value{white-space:nowrap;font-size:clamp(24px,2vw,32px)}
+@media(max-width:1700px){
+ .hud-treasury .resource{grid-template-columns:minmax(0,1fr);grid-template-rows:22px 36px;justify-content:start;align-content:center;row-gap:0;min-height:68px}
+ .hud-treasury .resource-symbol{grid-column:1;grid-row:1;width:14px;height:14px}
+ .hud-treasury .resource-name{grid-column:1;grid-row:1;margin-left:21px;font-size:14px;white-space:nowrap}
+ .hud-treasury .resource-value{grid-column:1;grid-row:2;justify-self:start;font-size:28px}
+}
+@media(min-width:1141px) and (max-width:1350px){
+ .hud{column-gap:8px;padding-inline:12px}.hud-state{padding-right:10px}.hud-time{padding-right:10px;gap:6px}
+ .calendar{flex-basis:110px;width:110px}.time-controls .budget-command{padding-inline:8px}
+ .hud-treasury .resource{padding-inline:7px}.hud-treasury .resource-value{font-size:25px}
+}
+@media(max-width:1140px){
+ .hud-treasury{grid-column:1/-1;grid-row:2}.hud-treasury .resource{padding-inline:14px}
+}
+@media(max-width:740px){
+ .hud-treasury{grid-row:3}.hud-treasury .resource{padding-inline:6px}
+ .hud-treasury .resource-value{font-size:clamp(18px,4vw,26px)}
+ .hud-treasury .resource-name{font-size:12px;margin-left:18px}.hud-treasury .resource-symbol{width:12px;height:12px}
+}
+@media(max-width:480px){
+ .hud-treasury .resource{padding-inline:3px;grid-template-rows:20px 30px}
+ .hud-treasury .resource-value{font-size:18px;letter-spacing:0}.hud-treasury .resource-name{font-size:11px;margin-left:15px}
+}
+
+.hud-treasury>.population{grid-column:1;grid-row:1;margin:0}
+.hud-treasury>.resources{grid-column:2;grid-row:1}

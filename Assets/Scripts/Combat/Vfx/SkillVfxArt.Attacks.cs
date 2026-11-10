@@ -256,26 +256,26 @@ public static partial class SkillVfxArt
             m.Right * scale, m.Up * scale, c);
     }
 
-    private static void GodsHand(SkillVfxMesh m, Vector3 foot, float t)
+    private static void GodsHand(SkillVfxMesh m, Vector3 foot, float t, Color tint, float scale = 1)
     {
         float handFade = Out(t, .04f, .3f);
         float afterglow = Out(t, .12f, .95f);
-        Glint(m, foot + Vector3.up * .2f, 1.6f, t, Gold);
-        Sparks(m, foot + Vector3.up * .3f, t, 2.6f, 90, 155, Gold, 5);
-        Sprite(m, SkillVfxShape.Impact, foot + Vector3.up * .24f - Vector3.Cross(m.Right, m.Up) * .85f,
-            2.3f * Ease(t, .12f), .5f, 0, A(White, Out(t, .05f, .26f)));
-        Fist(m, foot + Vector3.up * .15f, 2.6f, A(White, handFade * .9f));
-        Sprite(m, SkillVfxShape.Ray, foot + Vector3.up * 2.1f, 1.25f, 2.3f, 0,
-            A(Gold, afterglow * .22f), 1 - afterglow);
+        Glint(m, foot + Vector3.up * (.2f * scale), 1.6f * scale, t, tint);
+        Sparks(m, foot + Vector3.up * (.3f * scale), t, 2.6f * scale, 90, 155, tint, 5);
+        Sprite(m, SkillVfxShape.Impact, foot + Vector3.up * (.24f * scale) - Vector3.Cross(m.Right, m.Up) * (.85f * scale),
+            2.3f * Ease(t, .12f) * scale, .5f * scale, 0, A(White, Out(t, .05f, .26f)));
+        Fist(m, foot + Vector3.up * (.15f * scale), 2.6f * scale, A(White, handFade * .9f));
+        Sprite(m, SkillVfxShape.Ray, foot + Vector3.up * (2.1f * scale), 1.25f * scale, 2.3f * scale, 0,
+            A(tint, afterglow * .22f), 1 - afterglow);
         float expand = Ease(t, .24f);
-        LightBand(m, foot + m.Up * .35f, 3.4f * expand, .85f, 15, 330, A(Gold, afterglow * .9f));
-        if (t > .1f) Wave(m, foot, .3f + 2.7f * Ease(t - .1f, .5f), .07f,
-            A(Gold, Out(t, .2f, .75f) * .7f));
-        SkillVfxAtlas.Ground(m, SkillVfxShape.Impact, foot, 2.6f * expand, 0,
-            A(Gold, afterglow), 1 - afterglow);
-        Wave(m, foot, .2f + 2.8f * expand, .13f * afterglow, A(White, afterglow));
+        LightBand(m, foot + m.Up * (.35f * scale), 3.4f * expand * scale, .85f * scale, 15, 330, A(tint, afterglow * .9f));
+        if (t > .1f) Wave(m, foot, (.3f + 2.7f * Ease(t - .1f, .5f)) * scale, .07f * scale,
+            A(tint, Out(t, .2f, .75f) * .7f));
+        SkillVfxAtlas.Ground(m, SkillVfxShape.Impact, foot, 2.6f * expand * scale, 0,
+            A(tint, afterglow), 1 - afterglow);
+        Wave(m, foot, (.2f + 2.8f * expand) * scale, .13f * afterglow * scale, A(White, afterglow));
         for (int i = -1; i <= 1; i += 2)
-            Sprite(m, SkillVfxShape.Smoke, foot + m.Right * i * expand * 2.3f,
-                1.2f, .5f, i * 10, A(Gold, afterglow * .42f), 1 - afterglow);
+            Sprite(m, SkillVfxShape.Smoke, foot + m.Right * (i * expand * 2.3f * scale),
+                1.2f * scale, .5f * scale, i * 10, A(tint, afterglow * .42f), 1 - afterglow);
     }
 }

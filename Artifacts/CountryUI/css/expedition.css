@@ -1,0 +1,68 @@
+.asset-photo{display:block;flex-shrink:0;background-image:url('../assets/expedition-atlas-v77.png');background-size:600% 200%;background-repeat:no-repeat;background-color:#46525e}.portrait-photo{width:68px;height:92px;border-radius:3px}.weapon-photo{width:64px;height:64px;border-radius:3px}.expedition-members-panel{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:18px;flex:1;min-height:0;padding:20px 24px}.expedition-roster,.expedition-party{display:flex;flex-direction:column;min-height:0}.expedition-roster>header,.expedition-party>header{flex-shrink:0;margin-bottom:14px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}.expedition-members-panel h2{font-size:19px;margin:0}.expedition-members-panel header small,.expedition-roster>header>span{color:var(--muted);font-size:12px}.expedition-roster h2 small{margin-left:10px}.expedition-roster-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-content:start;overflow:auto;min-height:0;padding-right:6px}.expedition-soldier{display:flex;align-items:center;gap:14px;padding:10px 4px;text-align:left;background:transparent;border:0;box-shadow:none;min-width:0;position:relative;min-height:114px}.expedition-soldier.is-selected{background:transparent}.expedition-soldier-info{display:grid;gap:6px;min-width:0;flex:1}.expedition-soldier-info>b{font-size:18px;color:var(--paper)}.expedition-soldier-info>span{font-size:13px;color:var(--muted)}.expedition-soldier-info strong{color:var(--paper);font:600 19px Georgia,serif}.expedition-soldier-info>span>small{display:inline-block;margin-left:12px;font-size:13px}.expedition-skills{font-size:12px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}.expedition-row-status{color:#c1d5bf!important;font-size:12px!important}.expedition-check{position:absolute;right:0;bottom:0;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#303c47;color:#d5e5ef;font-size:18px}.expedition-soldier:disabled{opacity:.42!important;filter:grayscale(1)}.expedition-party{padding:0 0 16px;border-bottom:1px solid var(--line)}.expedition-party>header{display:flex;margin-bottom:10px}.expedition-party h2{margin-bottom:0}.expedition-party h2 b{color:#b8d3e4}.expedition-party-list{display:flex;gap:24px;overflow-x:auto;min-height:166px;padding:8px 6px 6px}.expedition-party-member{flex:0 0 132px;padding:0;background:transparent;border:0;position:relative}.party-person{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}.party-person .portrait-photo{width:72px;height:72px;border-radius:50%;box-shadow:0 0 0 2px #b8d3e4aa}.party-person>span:not(.asset-photo){display:grid;gap:4px}.party-person b{font-size:17px}.party-person small{font-size:12px;color:var(--muted)}.party-person>button{position:absolute;top:-3px;right:19px;width:23px;height:23px;min-height:23px;border-radius:50%;background:#303c47;border:0;box-shadow:none;padding:0;font-size:18px}.party-weapon{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:7px;padding:2px;background:transparent;text-align:left;border:0;box-shadow:none}.party-weapon>span:last-child{display:grid;gap:3px}.party-weapon b{font-size:13px}.party-weapon small{font-size:11px;color:var(--muted)}.weapon-empty{width:32px;height:32px;flex-shrink:0;display:grid;place-items:center;color:#dfc58c;font-size:20px;border-radius:50%;border:1px dashed #dfc58c88}.party-weapon.unassigned{border-color:#dfc58c55;color:#dfc58c}.party-empty{display:flex;align-items:center;gap:16px;font-size:14px;color:var(--muted);line-height:1.7;margin:0}.party-empty::before{content:"＋";display:grid;place-items:center;width:72px;height:72px;border-radius:50%;border:1px dashed #b8d3e477;color:#b8d3e4;font-size:28px}.expedition-weapon-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px}.expedition-weapon-picker button{display:flex;align-items:center;gap:12px;padding:12px 4px;text-align:left;background:transparent;border:0;box-shadow:none}.expedition-weapon-picker button>span:last-child{display:grid;gap:8px}.expedition-weapon-picker b{font-size:16px}.expedition-weapon-picker small{font-size:12px;color:var(--muted)}.expedition-destination-panel{flex:1;min-height:0;overflow:auto;padding:24px}.expedition-destination-panel h2{font-size:22px;margin:0 0 22px}.destination-list{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.destination-list>button{padding:0;overflow:hidden;text-align:left;display:flex;flex-direction:column;background:#29364077;border:1px solid transparent;box-shadow:none}.destination-list>button[aria-pressed=true]{border-color:#b8d3e4;background:#b8d3e41c}.destination-scene{display:block;width:100%;height:200px;background-image:url('../assets/kingdom-clean.png');background-size:cover}.scene-0{background-position:50% 10%}.scene-1{background-position:5% 70%;filter:hue-rotate(25deg)}.scene-2{background-position:85% 80%;filter:sepia(.3)}.destination-list>button>span:nth-child(2){display:grid;gap:10px;padding:20px}.destination-list b{font-size:24px}.destination-list small{font-size:15px;color:var(--muted)}.destination-list strong{padding:0 20px 20px;font-size:15px;color:#b8d3e4}.expedition-summary{display:flex;gap:24px;align-items:baseline;font-size:14px;color:var(--muted)}.expedition-summary b{color:var(--paper);margin-left:8px;font-size:18px}@media(max-width:1100px){.expedition-members-panel{gap:16px;padding:16px}.expedition-roster-list{grid-template-columns:repeat(4,minmax(0,1fr))}.destination-scene{height:160px}}@media(max-width:700px){.expedition-members-panel{padding:12px;gap:12px}.expedition-roster>header>span{display:none}.portrait-photo{width:48px;height:66px}.expedition-soldier{gap:8px;padding:8px;min-height:96px}.expedition-soldier-info>b{font-size:16px}.expedition-soldier-info>span>small{display:block;margin:4px 0 0}.expedition-roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}.expedition-party-member{flex-basis:120px}.destination-list{grid-template-columns:1fr}.destination-list>button{display:grid;grid-template-columns:110px 1fr auto;align-items:center}.destination-scene{height:110px}.destination-list>button>span:nth-child(2){padding:12px}.destination-list strong{padding:12px}.destination-list b{font-size:19px}.destination-list small{font-size:13px}.expedition-summary{gap:12px;font-size:12px}.expedition-summary b{font-size:15px}.expedition-weapon-picker{grid-template-columns:1fr}}
+
+@media(min-width:701px) and (max-width:1100px){.expedition-soldier{gap:8px;padding:8px}.expedition-soldier .portrait-photo{width:48px;height:66px}.expedition-soldier-info>b{font-size:16px}.expedition-soldier-info>span>small{display:block;margin:3px 0 0}}
+@media(max-width:480px){.expedition-roster-list{grid-template-columns:1fr}}
+
+.expedition-face{position:relative;flex-shrink:0;width:76px;height:76px}
+.expedition-face .portrait-photo{width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 1px #cad6df44}
+.expedition-soldier:hover:not(:disabled),.expedition-soldier:active:not(:disabled){background:transparent;filter:none;box-shadow:none}
+.expedition-soldier:hover:not(:disabled) .portrait-photo{box-shadow:0 0 0 2px #d7e7f2aa}
+.expedition-soldier.is-selected .portrait-photo{box-shadow:0 0 0 3px #a8cce0,0 0 14px #a8cce030}
+.expedition-soldier.is-selected .expedition-check{background:#abcbdc;color:#24323c}
+.expedition-soldier:focus-visible{outline:1px solid #b8d3e488;outline-offset:-2px}
+.party-weapon .weapon-photo{width:36px;height:36px;border-radius:50%}
+.party-weapon:hover:not(:disabled),.party-person>button:hover:not(:disabled){background:transparent;filter:none;color:#fff}
+.party-weapon:hover:not(:disabled) b{text-decoration:underline;text-underline-offset:4px}
+.expedition-weapon-picker .weapon-photo{border-radius:50%;width:80px;height:80px}
+.expedition-weapon-picker button:hover:not(:disabled){background:transparent;box-shadow:none;color:#fff}
+.expedition-weapon-picker button:hover:not(:disabled) .weapon-photo{box-shadow:0 0 0 2px #b8d3e4}
+@media(max-width:1100px){.expedition-face{width:56px;height:56px}.expedition-soldier .expedition-face .portrait-photo{width:100%;height:100%}.expedition-check{width:20px;height:20px;font-size:15px}.expedition-soldier{gap:10px}}
+
+.expedition-roster-list{column-gap:22px;row-gap:18px}
+.expedition-soldier{display:grid;grid-template-columns:76px minmax(0,1fr);column-gap:14px;row-gap:10px;align-content:start;padding:8px 3px;min-height:154px}
+.expedition-soldier-info{gap:7px}
+.expedition-soldier-info>span>small{display:block;margin:4px 0 0;font-size:12px}
+.expedition-stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding-top:9px;border-top:1px solid #c4cbd326}
+.expedition-stats>span{display:flex;flex-direction:column;gap:4px}
+.expedition-stats small{color:#bfcbd3;font:11px/1.2 Arial,sans-serif;letter-spacing:.04em}
+.expedition-stats strong{color:var(--paper);font:600 21px/1 Georgia,serif;font-variant-numeric:tabular-nums}
+.expedition-soldier>.expedition-skills{grid-column:1/-1;font-size:12px;line-height:1.4}
+.expedition-party{padding-bottom:10px}.expedition-party-list{min-height:142px;padding-top:4px}
+.party-person .portrait-photo{width:56px;height:56px}.party-person{gap:5px}.party-person b{font-size:16px}.party-person small{font-size:11px}
+.party-person>button{right:26px}.party-weapon{margin-top:5px}.expedition-party-member{flex-basis:132px}
+@media(max-width:1100px){.expedition-soldier{grid-template-columns:56px minmax(0,1fr);column-gap:9px}.expedition-roster-list{column-gap:14px}.expedition-stats strong{font-size:19px}.expedition-stats small{font-size:10px}}
+@media(max-width:700px){.expedition-soldier{grid-template-columns:56px minmax(0,1fr)}.expedition-stats strong{font-size:20px}}
+
+.expedition-roster-list{grid-auto-rows:max-content}
+.expedition-soldier{height:auto;min-height:0;align-self:start}
+.expedition-soldier-info{gap:5px;line-height:1.25}
+.expedition-soldier-info>span>small{display:inline-block;margin:0 0 0 8px}
+
+.expedition-party-member{flex-basis:220px;padding-right:12px}
+.party-person{flex-direction:row;justify-content:flex-start;text-align:left;gap:10px;padding-right:20px}
+.party-person .portrait-photo{width:48px;height:48px}.party-person>button{right:12px;top:0}
+.party-weapon{justify-content:flex-start;margin:6px 0}.party-weapon>span:last-child{gap:4px}
+.expedition-party-member>.expedition-stats{padding-top:6px;gap:8px}.expedition-party-member .expedition-stats strong{font-size:19px}
+.stat-up{color:#afd5bc!important}.stat-down{color:#e2ac9a!important}
+dialog.expedition-equipment{width:min(900px,calc(100vw - 48px));max-width:900px;max-height:calc(100vh - 48px);overflow:auto}
+.equipment-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:36px;margin-top:18px}
+.equipment-weapons h3{font-size:16px;color:var(--muted);margin:0 0 16px}
+.equipment-weapons .expedition-weapon-picker{grid-template-columns:1fr;gap:6px}
+.equipment-weapons .expedition-weapon-picker button{padding:5px 0;gap:18px;min-height:68px}
+.equipment-weapons .weapon-photo{width:58px;height:58px}
+.equipment-weapons button[aria-pressed=true] .weapon-photo{box-shadow:0 0 0 2px #b8d3e4}
+.equipment-weapons button[aria-pressed=true] b{color:#b8d3e4}
+.equipment-comparison{border-left:1px solid var(--line);padding-left:30px}
+.equipment-comparison>header{display:flex;gap:14px;align-items:center}
+.equipment-comparison>header .portrait-photo{width:56px;height:56px;border-radius:50%}
+.equipment-comparison>header>span:last-child,.equipment-selected>span:last-child{display:grid;gap:7px}
+.equipment-comparison header b{font-size:22px}.equipment-comparison header small,.equipment-selected small{font-size:12px;color:var(--muted)}
+.equipment-selected{display:flex;align-items:center;gap:14px;margin:18px 0}
+.equipment-selected .weapon-photo{width:52px;height:52px;border-radius:50%}.equipment-selected b{font-size:18px}
+.equipment-columns,.equipment-stat{display:grid;grid-template-columns:1fr 1fr 24px 1fr 1fr;gap:8px;align-items:center;text-align:right}
+.equipment-columns>span:first-child,.equipment-stat>span:first-child{text-align:left}
+.equipment-columns{font-size:12px;color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--line)}
+.equipment-stat{padding:10px 0}.equipment-stat>span:first-child{font-size:14px;color:var(--muted)}
+.equipment-stat b{font:600 24px/1 Georgia,serif}.equipment-stat strong{font:600 16px/1 Georgia,serif}
+.equipment-arrow{font-size:15px;color:var(--muted)}.equipment-current{display:block;padding-top:16px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+@media(max-width:700px){.equipment-layout{grid-template-columns:1fr;gap:20px}.equipment-comparison{border-left:0;border-top:1px solid var(--line);padding:20px 0 0}.equipment-weapons .expedition-weapon-picker{grid-template-columns:1fr 1fr}.equipment-weapons .weapon-photo{width:44px;height:44px}.equipment-weapons .expedition-weapon-picker button{gap:8px}.equipment-weapons .expedition-weapon-picker b{font-size:14px}}

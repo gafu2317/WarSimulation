@@ -65,6 +65,7 @@ public static class CombatFormationCode
         null,
         CombatAiPersonalityKind.HighGround,
         null,
+        CombatAiPersonalityKind.LowPresence,
     };
     // 21性格を超える場合はAlphabetへ文字を追加し、PersonalitySlotCountも増やす。
     // その場合は形式が変わるため、旧コード互換が必要なら旧デコーダを残す。

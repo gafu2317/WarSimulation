@@ -16,10 +16,21 @@
   <!-- Restore rollback/no-turn-panel-v23 to return to the immediately preceding layout. -->
   <link rel="stylesheet" href="css/top-band-v8.css">
   <link rel="stylesheet" href="css/palette-blue-grey.css">
-  <link rel="stylesheet" href="css/menu-roles.css?v=64">
-  <link rel="stylesheet" href="css/budget.css?v=64">
-  <link rel="stylesheet" href="css/training.css?v=64">
-  <script src="js/country.js?v=64" defer></script>
+  <link rel="stylesheet" href="css/menu-roles.css?v=107">
+  <link rel="stylesheet" href="css/budget.css?v=107">
+  <link rel="stylesheet" href="css/training.css?v=107">
+  <link rel="stylesheet" href="css/soldiers.css?v=107">
+  <link rel="stylesheet" href="css/expedition.css?v=107">
+  <link rel="stylesheet" href="css/hud-fit.css?v=107">
+  <link rel="stylesheet" href="css/monthly-controls-v115.css">
+  <link rel="stylesheet" href="css/game-ui-v130.css?v=133">
+  <link rel="stylesheet" href="css/spending.css?v=134">
+  <link rel="stylesheet" href="css/mobile-interaction.css?v=136">
+  <link rel="stylesheet" href="css/budget-outcomes.css?v=136">
+  <link rel="stylesheet" href="css/balance.css?v=138">
+  <script src="js/balance.js?v=138" defer></script>
+  <script src="js/balance-combat.js?v=138" defer></script>
+  <script src="js/country-v131.js?v=138" defer></script>
 </head>
 <body>
   <div class="game" aria-label="国家運営">
@@ -43,10 +54,18 @@
         <button data-action="settings" class="settings-button" aria-label="設定・保存">⚙</button>
       </section>
     </div>
+    <button class="defense-notice" data-action="defense-notice" hidden></button>
+    <button class="expedition-command" data-action="navigate-expedition"><span aria-hidden="true">⚑</span><span class="expedition-command-label">遠征</span></button>
     <main id="view" tabindex="-1"></main>
     <div class="command-dock" role="group" aria-label="王国の命令">
-      <button class="training-command" data-action="navigate-plan" data-route="plan"><span aria-hidden="true">⚖</span><b>今月の予算</b></button>
-      <button class="facilities-command" data-action="navigate-facilities" data-route="facilities"><span aria-hidden="true">⚒</span><b>建築物一覧</b></button>
+      <div class="command-menu-group monthly-menu" role="group" aria-label="月初の設定">
+        <button class="facilities-command budget-bottom" data-action="open-monthly-menu" data-route="plan" data-menu-tab="budget"><span aria-hidden="true">⚑</span><b>予算</b></button>
+        <button class="facilities-command" data-action="open-monthly-menu" data-route="plan" data-menu-tab="training"><span aria-hidden="true">♙</span><b>育成</b></button>
+      </div>
+      <div class="command-menu-group management-menu" role="group" aria-label="施設と戦力の管理">
+        <button class="facilities-command" data-action="open-monthly-menu" data-route="plan" data-menu-tab="construction"><span aria-hidden="true">⚒</span><b>建築</b></button>
+        <button class="facilities-command" data-action="open-soldier-menu" data-route="soldiers"><span aria-hidden="true">⚔</span><b>兵士・装備</b></button>
+      </div>
     </div>
   </div>
   <dialog id="modal" aria-labelledby="modal-title"><div id="modal-body"></div></dialog>

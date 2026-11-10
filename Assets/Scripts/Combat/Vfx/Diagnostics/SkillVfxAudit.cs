@@ -98,6 +98,16 @@ public sealed class SkillVfxAudit : MonoBehaviour
             foreach(var zone in FindObjectsByType<RosaryHealingAreaZone>()) zone.CancelImmediate();
             player.ClearAll();
             yield return null;
+            if(CombatPlayerMagicSettings.IsPlayerMagic(id))
+            {
+                var kind=id==SkillId.Player_AreaMagic ? CombatPlayerMagicKind.Area : CombatPlayerMagicKind.AllInvulnerable;
+                var settings=CombatPlayerMagicSettings.Default;
+                var request=new CombatPlayerMagicRequest(kind,enemy.transform.position,settings.AreaRadius,settings.AreaDamage,settings.InvulnerableSeconds);
+                var targets=new CombatPlayerMagicSystem(FindAnyObjectByType<CombatCharacterSystem>()).Execute(request);
+                player.PlayPlayerMagic(request,targets);
+                yield return CaptureSequence(id,kind==CombatPlayerMagicKind.Area?2f:settings.InvulnerableSeconds+.5f,player,"player magic");
+                continue;
+            }
             SkillBase skill=CombatSkillFactory.Create(id);
             Character recipient=skill.TargetKind is SkillTargetKind.Ally or SkillTargetKind.AllyOrSelf ? ally :
                 skill.TargetKind==SkillTargetKind.Self ? actor : enemy;

@@ -2,39 +2,49 @@ using UnityEngine;
 
 public class CountryCycleSystem : MonoBehaviour
 {
+    private DateManager _date;
+    private PlayDataManager _resources;
+
     private void Start()
     {
-        if (DateManager.Instance != null)
+        _date = DateManager.Instance;
+        _resources = PlayDataManager.Instance;
+        if (_date == null || _resources == null)
         {
-            DateManager.Instance.OnMonthChanged += HandleMonthChanged;
+            Debug.LogError("CountryCycleSystem requires DateManager and PlayDataManager.", this);
+            enabled = false;
+            return;
         }
+        Subscribe();
     }
 
-    private void OnDestroy()
+    private void OnEnable() { if (_date != null && _resources != null) Subscribe(); }
+    private void Subscribe()
     {
-        if (DateManager.Instance != null)
-        {
-            DateManager.Instance.OnMonthChanged -= HandleMonthChanged;
-        }
+        _date.OnDateChanged += HandleDateChanged;
+        _date.OnMonthChanged += HandleMonthChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (_date == null) return;
+        _date.OnDateChanged -= HandleDateChanged;
+        _date.OnMonthChanged -= HandleMonthChanged;
+    }
+
+    private void HandleDateChanged(int month, int day)
+    {
+        _resources.Expeditions?.AdvanceTo(CountryDate.From(_date));
+        _resources.Roster?.AdvanceTo(CountryDate.From(_date));
+        if (day == _date.DaysInCurrentMonth && _resources.TryCollectMonthlyIncome(_date.ElapsedMonths))
+            _resources.SaveCurrentDate(month, day);
+        if (_resources.Defense?.AdvanceTo(CountryDate.From(_date)) == true) _date.Pause();
     }
 
     private void HandleMonthChanged(int newMonth)
     {
         // 毎月の初めに時間の進行を一時停止させる
-        DateManager.Instance.PauseFastForward();
-
-        // ひとまず仮に一定量を加算
-        if (PlayDataManager.Instance != null)
-        {
-            PlayDataManager.Instance.SaveMoneyChange(100);
-            PlayDataManager.Instance.SaveWoodChange(50);
-            PlayDataManager.Instance.SaveOreChange(30);
-
-            // 現在の日付をセーブ
-            PlayDataManager.Instance.SaveCurrentDate(DateManager.Instance.CurrentMonth, DateManager.Instance.CurrentDay);
-        }
-
-        // ここで本来はUIなどを表示し、ユーザーのアクションを待つ。
-        // ユーザーが決定アクション（ConfirmCountryOperation）を実行すると時間が再開する。
+        _date.Pause();
+        _resources.SaveCurrentDate(_date.CurrentMonth, _date.CurrentDay);
     }
 }

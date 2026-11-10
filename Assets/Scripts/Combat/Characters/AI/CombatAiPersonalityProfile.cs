@@ -23,8 +23,27 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
     [SerializeField] private string _displayNameJapanese = "性格";
     [SerializeField] private CombatAiPersonalityKind _kind;
 
+    public const float AttentionSeekerStatMultiplier = 1.1f;
+    public const float CunningAgiMultiplier = 1.2f;
+    public const float RecklessAgiMultiplier = 0.8f;
+
+    public static float GetStatMultiplier(CombatAiPersonalityKind kind, CombatStat stat)
+    {
+        return (kind, stat) switch
+        {
+            (CombatAiPersonalityKind.AttentionSeeker, _) => AttentionSeekerStatMultiplier,
+            (CombatAiPersonalityKind.Gatekeeper, CombatStat.HP) => 1.2f,
+            (CombatAiPersonalityKind.Cunning, CombatStat.AGI) => CunningAgiMultiplier,
+            (CombatAiPersonalityKind.Reckless, CombatStat.AGI) => RecklessAgiMultiplier,
+            _ => 1f,
+        };
+    }
+
     public string DisplayNameJapanese => _displayNameJapanese;
     public CombatAiPersonalityKind Kind => _kind;
+
+    public static bool IsSelectable(CombatAiPersonalityKind kind) =>
+        System.Array.IndexOf(BuiltInKinds, kind) >= 0;
 
     public static List<CombatAiPersonalityProfile> CreateBuiltInProfiles()
     {
@@ -70,19 +89,19 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         return kind switch
         {
             CombatAiPersonalityKind.AttentionSeeker =>
-                "索敵中は味方や敵が集まる場所へ寄り、交戦・支援中は武器本来の役割に戻ります。",
+                "索敵中は味方や敵が集まる場所へ寄り、交戦・支援中は武器本来の役割に戻ります。武器・手動補正込みの最大HP・STR・INT・FAI・AGIが常時10%増加します。",
             CombatAiPersonalityKind.BattleJunkie =>
                 "攻撃できる敵を優先してしばらく追い、敵がいなければ魔石へ向かいます。",
             CombatAiPersonalityKind.Cunning =>
-                "敵魔石へ向かう際は敵の少ない安全な進攻ルートを選び、使える間はその道を維持します。",
+                "敵魔石へ向かう際は敵の少ない安全な進攻ルートを選び、使える間はその道を維持します。武器・手動補正込みのAGIが常時20%増加します。",
             CombatAiPersonalityKind.Devoted =>
                 "近くのHPが低い味方を見つけると駆けつけ、危険がなければ通常の支援行動に戻ります。",
             CombatAiPersonalityKind.Lonely =>
                 "近くに味方がいない間は技能を使わず味方を探し、合流すると通常行動を再開します。",
             CombatAiPersonalityKind.Reckless =>
-                "生存中の敵魔石を最優先し、魔石を狙えるダメージ技能だけで進攻ルートを進みます。",
+                "生存中の敵魔石を最優先し、魔石を狙えるダメージ技能だけを使って一直線に向かいます。武器補正込みのAGIが20%減少します。",
             CombatAiPersonalityKind.Gatekeeper =>
-                "自軍魔石の位置が分かる間は防衛を優先し、魔石前で脅威を迎撃して守備位置を維持します。",
+                "自軍魔石の位置が分かる間は防衛を優先し、魔石前で脅威を迎撃して守備位置を維持します。最大HPが20%増加します。",
             CombatAiPersonalityKind.Tagalong =>
                 "編成画面で便乗屋より上にある選択済みの味方を便乗対象に設定し、その味方の目的・対象・目的地を引き継ぎます。便乗対象が設定されていない、または利用できない場合は通常行動に戻ります。",
             CombatAiPersonalityKind.Avenger =>

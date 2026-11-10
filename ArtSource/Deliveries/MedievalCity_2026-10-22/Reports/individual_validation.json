@@ -1,0 +1,854 @@
+{
+  "status": "PASS",
+  "master_sha256": "971c1ee1b6326063acd55463d3fc471a8357b3576de20ee1af308c5c150bc15a",
+  "files_opened": 141,
+  "failures": [],
+  "assets": [
+    {
+      "name": "Anvil",
+      "triangles": 380,
+      "png_references_checked": 6,
+      "blend_sha256": "6fde2dfe9bf137104a53c3f3f0ed8f220964e35e6c2fef4ec791c2b7a690d5f2"
+    },
+    {
+      "name": "ArcaneAcademy_Lv1",
+      "triangles": 8288,
+      "png_references_checked": 57,
+      "blend_sha256": "5053d62090b7dd1ef588d6c4aae2185695e4c54d055b03d57e16f76eafd3c3cd"
+    },
+    {
+      "name": "ArcaneAcademy_Lv2",
+      "triangles": 9230,
+      "png_references_checked": 60,
+      "blend_sha256": "4a8f91fc7bd40ee6b66c635d0678176e74e3c65d5e4f0d041bd08dc127fb26e1"
+    },
+    {
+      "name": "ArcaneAcademy_Lv3",
+      "triangles": 11426,
+      "png_references_checked": 60,
+      "blend_sha256": "1a0827f1a8bd2c7c884f82faa0fb08a9aa4b6b4346badc4996d6e102135beac4"
+    },
+    {
+      "name": "ArcaneAcademy_Lv4",
+      "triangles": 12354,
+      "png_references_checked": 63,
+      "blend_sha256": "f7a5a479bec9df5fa6ee7abbc3ea04c408af532f6ae63d97728ab71d0cca971f"
+    },
+    {
+      "name": "ArcaneAcademy_Lv5",
+      "triangles": 14536,
+      "png_references_checked": 63,
+      "blend_sha256": "508e247b4118d0ff228238a593d440128f5fe65f043dfaeff8cb7a5086e00b38"
+    },
+    {
+      "name": "Arena",
+      "triangles": 8810,
+      "png_references_checked": 21,
+      "blend_sha256": "780e0519cf95e2891ec1f9a02f6115eb7a3753ca0a229fb19bd973e6ecd02f77"
+    },
+    {
+      "name": "Bakery",
+      "triangles": 6535,
+      "png_references_checked": 42,
+      "blend_sha256": "9f6859d5c1a9209faf1fd3b46ad927edf365dcff97a4831e3885b3edf825eba5"
+    },
+    {
+      "name": "Barracks",
+      "triangles": 7623,
+      "png_references_checked": 48,
+      "blend_sha256": "77b1dd77cd9d042a71dfddaab6808cea41c5a4c0d9300f7d9f4f0fa02fb4659c"
+    },
+    {
+      "name": "Barrel",
+      "triangles": 512,
+      "png_references_checked": 6,
+      "blend_sha256": "b452fb14c109b8f2bc8a443af0a54b20d99cc5f0763e6ff7d4df9cf5e92aabaa"
+    },
+    {
+      "name": "Bathhouse",
+      "triangles": 7710,
+      "png_references_checked": 39,
+      "blend_sha256": "61fe46ba7b70b1baaa23284342776dde079527d882c483677d85db71bac313cf"
+    },
+    {
+      "name": "Bench",
+      "triangles": 264,
+      "png_references_checked": 6,
+      "blend_sha256": "58560c514cb1ab99d6b8e3cdf1ed352e44a2e1d1b343ee6ce9cb93f2f83867de"
+    },
+    {
+      "name": "Blacksmith",
+      "triangles": 6024,
+      "png_references_checked": 48,
+      "blend_sha256": "0e0f254dadd08452774e360fd249fd1e1287cd4fefc329f23361778601d7cbed"
+    },
+    {
+      "name": "Casino",
+      "triangles": 4586,
+      "png_references_checked": 36,
+      "blend_sha256": "4d244aceecebb6ccb5c2a1f52b4fe6323aa09a6cad86bf7da3fc709f244d559c"
+    },
+    {
+      "name": "Chapel",
+      "triangles": 5282,
+      "png_references_checked": 30,
+      "blend_sha256": "e8c9b152615ba27352746a6ecc6753449ecb69295a6907558cacaf2cba2a6002"
+    },
+    {
+      "name": "Church",
+      "triangles": 14920,
+      "png_references_checked": 33,
+      "blend_sha256": "2324077a0a465fb6749b69a5b843aab2ce7db118116da3faa7d27c12ea958440"
+    },
+    {
+      "name": "Clinic",
+      "triangles": 10222,
+      "png_references_checked": 51,
+      "blend_sha256": "275542451f5700c6552d2c0c5ed741b00346bb94d0d56dc44fa041a0c5789589"
+    },
+    {
+      "name": "Cloth_Stall",
+      "triangles": 1466,
+      "png_references_checked": 21,
+      "blend_sha256": "629ad2c6181141e64dfabbc8d513d617e345b6b9b5ffbc55f50a9b0d3f2157ab"
+    },
+    {
+      "name": "Clothesline",
+      "triangles": 106,
+      "png_references_checked": 6,
+      "blend_sha256": "d0dd79b86ea52bda367b25bbdbe3cd15db3d99e0db55ac5acf8a86f129819dff"
+    },
+    {
+      "name": "Crate_Closed",
+      "triangles": 88,
+      "png_references_checked": 6,
+      "blend_sha256": "d7495b47539f7df6d7533192e275717eb6cacecccab38dad0ece38c4d93d80b8"
+    },
+    {
+      "name": "CrimsonRowhouse",
+      "triangles": 4343,
+      "png_references_checked": 36,
+      "blend_sha256": "f3f753b99c73b7c1be5be7be5fc9e9564fd07c7dd42d5b8cf95324627f4d4235"
+    },
+    {
+      "name": "Fantasy_House",
+      "triangles": 4157,
+      "png_references_checked": 36,
+      "blend_sha256": "8ecb16b5ffc9fd8a55f27352966aab6010f44c704d18449c19e18ece41ed287e"
+    },
+    {
+      "name": "Firewood_Rack",
+      "triangles": 296,
+      "png_references_checked": 6,
+      "blend_sha256": "ff0e7af21b687076318df48cf349a7f9e29ae4ac9dcb44e705c86107bfbf355a"
+    },
+    {
+      "name": "Flower_Border",
+      "triangles": 192,
+      "png_references_checked": 12,
+      "blend_sha256": "ce94aa5b164055bdbac7cb592a37c305b687c565092de2c7d420af4783448b32"
+    },
+    {
+      "name": "Flower_WildPatch",
+      "triangles": 128,
+      "png_references_checked": 12,
+      "blend_sha256": "47210bfb0555c2781664e951a2d29fde1bc908bd8c439797ee1dd86e1f2c4bb5"
+    },
+    {
+      "name": "Forge",
+      "triangles": 148,
+      "png_references_checked": 6,
+      "blend_sha256": "31d2475fcc97f539806e2786c46d398c1e5ef91a68861c2a75f02939e99c0d9f"
+    },
+    {
+      "name": "Granary",
+      "triangles": 3922,
+      "png_references_checked": 33,
+      "blend_sha256": "4c01af81676a801833201ccab9ed6d67f8cbab90e02c8e761ef385fbf5e3d1d2"
+    },
+    {
+      "name": "Granite_Corner",
+      "triangles": 348,
+      "png_references_checked": 6,
+      "blend_sha256": "8356d3d8addb4e5fccb29e79c89a1be9d80a794df9a8ebd5af8301b6b1256f89"
+    },
+    {
+      "name": "Granite_Gate",
+      "triangles": 141,
+      "png_references_checked": 9,
+      "blend_sha256": "bb336668ffe9f5903ce38c77fdb57dea8cbbe9aa37557f1178a39db23c725bad"
+    },
+    {
+      "name": "Granite_Straight",
+      "triangles": 264,
+      "png_references_checked": 6,
+      "blend_sha256": "c71797de3705ac5506a7c6a8dbe1b4675cf91b8c08b9ed42f7019ea1c56ac00a"
+    },
+    {
+      "name": "GroundPlant_FernPatch",
+      "triangles": 14,
+      "png_references_checked": 3,
+      "blend_sha256": "4cfed5388f3b4676773c77d114d238a0f527ea3f56e63a2bb8aa87dfbd549acb"
+    },
+    {
+      "name": "GroundPlant_GrassShort",
+      "triangles": 48,
+      "png_references_checked": 3,
+      "blend_sha256": "0f0f133db6450f698abca34405f4c193c19ced632382677611fc3ce6bac7303e"
+    },
+    {
+      "name": "GroundPlant_GrassTall",
+      "triangles": 48,
+      "png_references_checked": 3,
+      "blend_sha256": "60962c8c274abc16579ad16fec4e00fb0066514c37ef10320f57b4f106137c39"
+    },
+    {
+      "name": "GroundPlant_GrassTuft",
+      "triangles": 48,
+      "png_references_checked": 3,
+      "blend_sha256": "f9ff4237f52084f7ed84354a716723cd86536871b759c540930d4181f6030ae7"
+    },
+    {
+      "name": "Guardhouse",
+      "triangles": 2895,
+      "png_references_checked": 30,
+      "blend_sha256": "cbb88039440299eedb2e2512910a3f6201c1fef6df5f4f6bc6248830d510ad04"
+    },
+    {
+      "name": "Guildhall",
+      "triangles": 4712,
+      "png_references_checked": 42,
+      "blend_sha256": "501ee529af009c0dd6fd61c32c13af55dabfd36823c4329da4e71be6dc02f38b"
+    },
+    {
+      "name": "Handcart",
+      "triangles": 992,
+      "png_references_checked": 9,
+      "blend_sha256": "7e67cf6f86c8903f4c1b8c37b5133ae096e2f5297c412c0dde737bdb4a48ff0d"
+    },
+    {
+      "name": "Hay_Bale",
+      "triangles": 68,
+      "png_references_checked": 6,
+      "blend_sha256": "645b6a198dbd355d8bcb4d0eb3b37859b625f89b0b6dec06b3583ad1d7c49370"
+    },
+    {
+      "name": "LanternSpire",
+      "triangles": 7237,
+      "png_references_checked": 39,
+      "blend_sha256": "3a9bf550e8aa93faad9e82f58e5f8ec4b81104b4baaaf92d8ebb3beb353ccdea"
+    },
+    {
+      "name": "Library",
+      "triangles": 7370,
+      "png_references_checked": 39,
+      "blend_sha256": "ce459ee818c96eded28b46483bb6423c0d1df65ca1a5b15d59b4a0566b9cfeb5"
+    },
+    {
+      "name": "MerchantHouse",
+      "triangles": 5853,
+      "png_references_checked": 39,
+      "blend_sha256": "76a7eee13cc5f1e6bdbe5d61f5826c36fa2fe531a012dacf485b3c877f90dab0"
+    },
+    {
+      "name": "Museum",
+      "triangles": 8978,
+      "png_references_checked": 30,
+      "blend_sha256": "a7b77080258e620253321eaeac167a0433d485251ffe44fa96b74bfd23ba2ea3"
+    },
+    {
+      "name": "NaturalRock_02",
+      "triangles": 380,
+      "png_references_checked": 3,
+      "blend_sha256": "4bed0b9ca0e197f2bea5804bb9b122c6705c77aca3320d6d508855d79debf1c7"
+    },
+    {
+      "name": "NaturalRock_04",
+      "triangles": 624,
+      "png_references_checked": 3,
+      "blend_sha256": "65e02a5ec9290e5a8c6080d5c97b1ecba5763e8462dc9168f0a8fc14889065ce"
+    },
+    {
+      "name": "NaturalRock_07",
+      "triangles": 348,
+      "png_references_checked": 3,
+      "blend_sha256": "e8a8d59a784391e358673db6e29c5be8dafed3cd9ccc2f6d2bb33d721dcffd8f"
+    },
+    {
+      "name": "NaturalRock_08",
+      "triangles": 656,
+      "png_references_checked": 3,
+      "blend_sha256": "9c75faa2413b7f7c308a32c190b2f4770ea9c73f591ba097c34491701259f0cc"
+    },
+    {
+      "name": "NaturalRock_11",
+      "triangles": 380,
+      "png_references_checked": 3,
+      "blend_sha256": "222d0766eb55ce83a1062a38dc3c289574d6f82aa401ad18bca25b8c5d6a303a"
+    },
+    {
+      "name": "NaturalTree_01",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "67b7657947daa2d5e3b3553f8f66183a45516b8620d9c3e7ed89fab6b71e29a3"
+    },
+    {
+      "name": "NaturalTree_02",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "0abbf7cbfd4cf7bcd5c39cf598902c4d215584dba91747dc47040fd538c5687e"
+    },
+    {
+      "name": "NaturalTree_03",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "3104a31bba00d2deae7ee0b5d517cad0687d2f21fe9707ebad8323ed270c8133"
+    },
+    {
+      "name": "NaturalTree_04",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "728da3d0d3282636b88b1266e95618f9324b964b77d33876a00e89e5dc151bb5"
+    },
+    {
+      "name": "NaturalTree_05",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "3a92f92652473a681269a83c8db9fe879614bbbfd329d13561aa731af7491ace"
+    },
+    {
+      "name": "NaturalTree_06",
+      "triangles": 4014,
+      "png_references_checked": 9,
+      "blend_sha256": "75c2a058787d137b3b75669f730146b2215aadeb93f7bb9c4264ff51f62dc95f"
+    },
+    {
+      "name": "NaturalTree_07",
+      "triangles": 2182,
+      "png_references_checked": 9,
+      "blend_sha256": "4634d06a6aeea8a6088ef8edcd05edbac7c3e233d575ec78f9f763ba86b6c33c"
+    },
+    {
+      "name": "NaturalTree_08",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "7511bd95fc18f4d19c84fd84dc597393813c09ce52dd349ecd7ec0f4a25e75ff"
+    },
+    {
+      "name": "NaturalTree_09",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "a123490cad21f43bfd8ec7ec425852d0af4c1d201bde52835488d533122c1bd4"
+    },
+    {
+      "name": "NaturalTree_10",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "f488d800681b7f268d4a1b27515ffb9e6233ef16277a475b8a5ec9bf56890803"
+    },
+    {
+      "name": "Noticeboard",
+      "triangles": 98,
+      "png_references_checked": 12,
+      "blend_sha256": "b373393e13ad9aa890137aad96d30553b5d1a0c52c057510d937111fa35c5ec0"
+    },
+    {
+      "name": "Observatory",
+      "triangles": 10134,
+      "png_references_checked": 36,
+      "blend_sha256": "5e855d7ed9537752282b5652fa707108525786fc83bdfbecf8492525681a2291"
+    },
+    {
+      "name": "Paved_Plot",
+      "triangles": 24,
+      "png_references_checked": 6,
+      "blend_sha256": "775027c3fb9d3084288f41fb72973b5c1003631d82d845ae8a7322b46c999765"
+    },
+    {
+      "name": "Plaza",
+      "triangles": 2160,
+      "png_references_checked": 33,
+      "blend_sha256": "dd38218fd67eab1f031a521d8c04cae8fafdedebfb4a51b7e71b9c1fd60bf25e"
+    },
+    {
+      "name": "Produce_Stall",
+      "triangles": 7600,
+      "png_references_checked": 36,
+      "blend_sha256": "cee567c23f2e638666d154d08aa535aab8bbbae1088aabd475daca8069142083"
+    },
+    {
+      "name": "Road_Corner",
+      "triangles": 208,
+      "png_references_checked": 9,
+      "blend_sha256": "76645697d28c5946b5ceb4aeec0e7cba6e6292a8dec1366cd19d6591572a8a81"
+    },
+    {
+      "name": "Road_Cross",
+      "triangles": 408,
+      "png_references_checked": 9,
+      "blend_sha256": "8b0ff657d688429241dbb1b1fb6961e1ee9a3b4eb42e4190ed5c2c8960b0da0d"
+    },
+    {
+      "name": "Road_End",
+      "triangles": 1836,
+      "png_references_checked": 9,
+      "blend_sha256": "8991339e3973dc25c19825233f4186de3a1408af9d489d031241d904bc3ee78e"
+    },
+    {
+      "name": "Road_Straight",
+      "triangles": 24,
+      "png_references_checked": 6,
+      "blend_sha256": "9333122d4436dc3fbd24168d331306facba4107bbd0130b106fb1572036f1ab0"
+    },
+    {
+      "name": "Road_T",
+      "triangles": 216,
+      "png_references_checked": 9,
+      "blend_sha256": "721b57747922704041bfaa808511d02dcde9d4d372ef563f0628722331ef16ff"
+    },
+    {
+      "name": "Royal_Castle",
+      "triangles": 16084,
+      "png_references_checked": 33,
+      "blend_sha256": "c73d6aa18bc9a038c676b0fdb937bc70fc592da874023689320095e7d3896702"
+    },
+    {
+      "name": "Signpost",
+      "triangles": 76,
+      "png_references_checked": 3,
+      "blend_sha256": "7d07c399ceff0db964d1c9012810d4c2df5be249b190b1dcec8385119cb2ac66"
+    },
+    {
+      "name": "SpiritAcademy_Lv1",
+      "triangles": 7774,
+      "png_references_checked": 57,
+      "blend_sha256": "6627b614e1d7a9d1a1ef05ce2825fda098eb16e29bd35edab2f457943b7161ec"
+    },
+    {
+      "name": "SpiritAcademy_Lv2",
+      "triangles": 9692,
+      "png_references_checked": 57,
+      "blend_sha256": "6655b0953420b9bb8f21297d3f9660c97152e69c2426434e641df7e349c8fdce"
+    },
+    {
+      "name": "SpiritAcademy_Lv3",
+      "triangles": 11610,
+      "png_references_checked": 57,
+      "blend_sha256": "ee5f95d93728da224d05e3377c8c85c1342d9d4b9ad832f6574f0b3da6c50c66"
+    },
+    {
+      "name": "SpiritAcademy_Lv4",
+      "triangles": 12100,
+      "png_references_checked": 57,
+      "blend_sha256": "8f762dd5612189082c25e98154d56b26dc973d339bd2cbb2278e1bca850675c6"
+    },
+    {
+      "name": "SpiritAcademy_Lv5",
+      "triangles": 12904,
+      "png_references_checked": 60,
+      "blend_sha256": "718d0dba02ffd5dec1fae5275f78843a1d9945c3e6208b24b73e2930646f4152"
+    },
+    {
+      "name": "Stable",
+      "triangles": 1662,
+      "png_references_checked": 30,
+      "blend_sha256": "6a6f9171013c7bd5f770029f33993a504b050c4bebe3e06af85a7259ff32d3e5"
+    },
+    {
+      "name": "Streetlamp",
+      "triangles": 240,
+      "png_references_checked": 6,
+      "blend_sha256": "90a3843441b12b74f5c2014b896726e9cf643b818035cb0d17b37f52acbca9c1"
+    },
+    {
+      "name": "Tavern",
+      "triangles": 5500,
+      "png_references_checked": 39,
+      "blend_sha256": "532059702115949c398f51272d651b9893e6e3c958fff8137d8bb2e96af95bd1"
+    },
+    {
+      "name": "Tree_AlleyCypress",
+      "triangles": 780,
+      "png_references_checked": 9,
+      "blend_sha256": "e19d077015730cfb42c8689205011763a1c161cdad400421bbf7eb1239460f9b"
+    },
+    {
+      "name": "Tree_Shade",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "135335da295b0c977575f68c8dc53f5d72799ca3514bc6da9262e6fe227a0b5b"
+    },
+    {
+      "name": "Tree_Street",
+      "triangles": 3098,
+      "png_references_checked": 9,
+      "blend_sha256": "267f7cdadf710955aa63c83048a852b61ea2fa0113a8e78fe30f536ee1d953ea"
+    },
+    {
+      "name": "VeiledCourtyard",
+      "triangles": 7483,
+      "png_references_checked": 54,
+      "blend_sha256": "6c4541b8e4540d20bff6a5347c3a6d97f0a9ca42f275d7bfba9f2429fd595227"
+    },
+    {
+      "name": "VelvetTerrace",
+      "triangles": 5595,
+      "png_references_checked": 39,
+      "blend_sha256": "10f2b58204c5dc26517db21493c9b6f83afbb7ea02c95c22aa31dcc0ed578ee8"
+    },
+    {
+      "name": "Warehouse",
+      "triangles": 2363,
+      "png_references_checked": 33,
+      "blend_sha256": "b55ee267bfa82d2f3a8305d3ee6ec335027adfc3743e48ee28bef61eaa04fe84"
+    },
+    {
+      "name": "WarriorAcademy_Lv1",
+      "triangles": 5647,
+      "png_references_checked": 42,
+      "blend_sha256": "8245a7d078d7f61c6d1f248f6fc421e3a687026e3004d6222e68f4a47ec8e6ea"
+    },
+    {
+      "name": "WarriorAcademy_Lv2",
+      "triangles": 6319,
+      "png_references_checked": 42,
+      "blend_sha256": "c946719bbae57adfcde5851ddbac5402e2a21827df8d196d5462848046ecf0cd"
+    },
+    {
+      "name": "WarriorAcademy_Lv3",
+      "triangles": 7261,
+      "png_references_checked": 45,
+      "blend_sha256": "5b508fa16957b703c295373095b674bfb6a4b3446c4ed7ba08042d749cf6ee15"
+    },
+    {
+      "name": "WarriorAcademy_Lv4",
+      "triangles": 9701,
+      "png_references_checked": 48,
+      "blend_sha256": "040749be4d27546f4870ff49dfb2a299b25e13c5284c2548df3234e7a63ec0f7"
+    },
+    {
+      "name": "WarriorAcademy_Lv5",
+      "triangles": 10505,
+      "png_references_checked": 48,
+      "blend_sha256": "e03649a9a5419658ffe50a2b3e39b06b24fed4c801410a7f0237c59a605e7f1d"
+    },
+    {
+      "name": "Water_Trough",
+      "triangles": 222,
+      "png_references_checked": 6,
+      "blend_sha256": "e1ca3b55c5e30383a51b364b0a3caa972dccfd2e5c202f3733eaf5f6a46184e5"
+    },
+    {
+      "name": "Well",
+      "triangles": 438,
+      "png_references_checked": 18,
+      "blend_sha256": "ddc1b8b27d88d9cd817f5fd52663da105d2a48362c24746a604bac875aca48a2"
+    },
+    {
+      "name": "WorkshopHouse",
+      "triangles": 2546,
+      "png_references_checked": 33,
+      "blend_sha256": "5d314137bf7b01554b2eb34d00d1342e9b5172695c87091975adf4e686f43439"
+    },
+    {
+      "name": "Fence_Panel",
+      "triangles": 200,
+      "png_references_checked": 6,
+      "blend_sha256": "821093067069252026e91532dd46e16d2d69331b82606ba7e4e64566dc6ae8bc"
+    },
+    {
+      "name": "Fence_Post",
+      "triangles": 56,
+      "png_references_checked": 6,
+      "blend_sha256": "f4c09627578161dac0015e9c183e85c47b963c7e10a9abb023a107b972e6bc96"
+    },
+    {
+      "name": "Fence_Gate",
+      "triangles": 244,
+      "png_references_checked": 6,
+      "blend_sha256": "bdf6f82ddb44ae06a2e2ad1dfdd3a5c3e029226b05f7d190e19587e61f084870"
+    },
+    {
+      "name": "Stone_Wall",
+      "triangles": 88,
+      "png_references_checked": 6,
+      "blend_sha256": "d261dbd4ec71848bcc15749de9e7bb98088cc075945a27ecd8c43a9c9553befc"
+    },
+    {
+      "name": "Stone_Wall_Corner",
+      "triangles": 40,
+      "png_references_checked": 6,
+      "blend_sha256": "1f65ee187073ed4c98008be3a775bb80c577b5c1074d7fb6708129591e653ea0"
+    },
+    {
+      "name": "Crate_Open",
+      "triangles": 92,
+      "png_references_checked": 3,
+      "blend_sha256": "250cf95d9a3d6ddd897c01a54e4167336889b6d1f1d8cf243d1730069d1c1204"
+    },
+    {
+      "name": "Grain_Sack",
+      "triangles": 328,
+      "png_references_checked": 3,
+      "blend_sha256": "3b711d3835225b8ad98ebec1c823c848dd5f41efb01d1547c310513cc01c9893"
+    },
+    {
+      "name": "Produce_Basket",
+      "triangles": 1616,
+      "png_references_checked": 9,
+      "blend_sha256": "a1660db5ddd59412045b082b23de82b30583275b5ac26d9ecf966e638fc008ae"
+    },
+    {
+      "name": "Planter",
+      "triangles": 456,
+      "png_references_checked": 18,
+      "blend_sha256": "0cd069e03661ec196ba06dda0a1deb632eca742d4e2fc4b586acaef235f34de2"
+    },
+    {
+      "name": "Drain_Grate",
+      "triangles": 52,
+      "png_references_checked": 9,
+      "blend_sha256": "a4207d78d766f1b5d0b7dbf44aaa943af7cecb3dd3f5e527ba97d76c204fc0d9"
+    },
+    {
+      "name": "Bollard",
+      "triangles": 124,
+      "png_references_checked": 3,
+      "blend_sha256": "b63da58e8c69fef9abaa6fcf76df1b1601ca16fbc25489cff496990eba71fd3f"
+    },
+    {
+      "name": "Bucket",
+      "triangles": 564,
+      "png_references_checked": 6,
+      "blend_sha256": "dae1ad9afdb5921caaaeca93fa422b0c42c8bdb7d12ef283e70b5c10cd0441a6"
+    },
+    {
+      "name": "Fish_Stall",
+      "triangles": 2739,
+      "png_references_checked": 27,
+      "blend_sha256": "cc8040c4ce87b2b3787bbe1575938d6cc6dce199b6df6c91ed9ad57891fef33a"
+    },
+    {
+      "name": "Bread_Stall",
+      "triangles": 5908,
+      "png_references_checked": 24,
+      "blend_sha256": "7f82bedfee8627a179dea63a68435d0e338d65938630719fde993eea28c99961"
+    },
+    {
+      "name": "Spice_Stall",
+      "triangles": 3058,
+      "png_references_checked": 30,
+      "blend_sha256": "4e39c7cef7ce89791bece98b7adc3701424a6d1494c01d8e929aecc0c06797c0"
+    },
+    {
+      "name": "Flower_Stall",
+      "triangles": 2966,
+      "png_references_checked": 33,
+      "blend_sha256": "461d499567199712d6192967da3a234e0f3adc3f827dd5387fa554b8f8cb6633"
+    },
+    {
+      "name": "Butcher_Stall",
+      "triangles": 3802,
+      "png_references_checked": 21,
+      "blend_sha256": "26906c22e14a17da3c0fa739ffa2a7f98dba5b4b742d004602bc6d25f21fb3dd"
+    },
+    {
+      "name": "Potion_Stall",
+      "triangles": 7846,
+      "png_references_checked": 30,
+      "blend_sha256": "12001c1a2b184e03f66f6b9825d41a53d5aff70ceefcdcbdf34e51ba13e6bad8"
+    },
+    {
+      "name": "Book_Stall",
+      "triangles": 2014,
+      "png_references_checked": 24,
+      "blend_sha256": "a1f0a56ed8b43d6a3b100f90a9ca0303b42b1aadc39b08d69f1eb7699f196581"
+    },
+    {
+      "name": "Weapon_Stall",
+      "triangles": 1310,
+      "png_references_checked": 18,
+      "blend_sha256": "564456d9ddbb4ac4330ebe45936081f499b1e0f6795197bc71c879076c41b709"
+    },
+    {
+      "name": "Covered_Wagon",
+      "triangles": 1328,
+      "png_references_checked": 12,
+      "blend_sha256": "bf5b431878e7f2940ecb6ba3f1ce0c7093793ff4413af8ef95f4d6b30e19102c"
+    },
+    {
+      "name": "Merchant_Wagon",
+      "triangles": 1516,
+      "png_references_checked": 9,
+      "blend_sha256": "8895769c66765d278cb8bcb982399686e5f65e4cb4154b5a7593222db823e4d2"
+    },
+    {
+      "name": "Wheelbarrow",
+      "triangles": 444,
+      "png_references_checked": 6,
+      "blend_sha256": "c161ead7d78a3a1a228eee8ac73c2a5a1a946be84306f43885ee7c2c66276cc0"
+    },
+    {
+      "name": "Market_Scale",
+      "triangles": 268,
+      "png_references_checked": 9,
+      "blend_sha256": "3a6129573d36b2d848c908f174cf182bbdb3b021cac4ce4c7f7c7799654fab42"
+    },
+    {
+      "name": "Basket_Empty",
+      "triangles": 236,
+      "png_references_checked": 3,
+      "blend_sha256": "9308b6d7a7fb94d5a0c0e1472abb484fcb1862e6318f7426e8b9e442289587c9"
+    },
+    {
+      "name": "Pottery_Jars",
+      "triangles": 852,
+      "png_references_checked": 3,
+      "blend_sha256": "7353998c4438f73203a838048a27f18be693d9df91179258515cf487023dd3d0"
+    },
+    {
+      "name": "Sack_Stack",
+      "triangles": 984,
+      "png_references_checked": 3,
+      "blend_sha256": "d12cd943c20b88b8e8ba7701cb3becc35b1f5bcfa38c83856900d1a7bc3dec23"
+    },
+    {
+      "name": "Vegetable_Crate",
+      "triangles": 1748,
+      "png_references_checked": 9,
+      "blend_sha256": "11ccba333ba5cdfa6ec292414487dceb39235c6c4efff8ad3223fd341302410b"
+    },
+    {
+      "name": "Fish_Crate",
+      "triangles": 418,
+      "png_references_checked": 6,
+      "blend_sha256": "ad65151b914805f7998338e9e6ea2b7ad46b012a2bd63ed4d1926e8c6a52c2b7"
+    },
+    {
+      "name": "Bread_Basket",
+      "triangles": 996,
+      "png_references_checked": 6,
+      "blend_sha256": "cc8aa7827444707fb609df489e595821a35707da11e8860fba1d3c15e80888d7"
+    },
+    {
+      "name": "Rolled_Fabric",
+      "triangles": 228,
+      "png_references_checked": 9,
+      "blend_sha256": "8e072f1b9c14e9e95a8dcad1e9127d89d652218ba12f4deaca095869859d98ce"
+    },
+    {
+      "name": "Hanging_Herbs",
+      "triangles": 108,
+      "png_references_checked": 12,
+      "blend_sha256": "934936ddd1484023b80f200d30eb88a00e6e4df7d6c1e5e070b8ace4e13202cf"
+    },
+    {
+      "name": "Shop_Sign",
+      "triangles": 58,
+      "png_references_checked": 9,
+      "blend_sha256": "fb9db31f04b484a20012ec6fe7981727b121cf375fd5c9738a3d6b0d59527dc9"
+    },
+    {
+      "name": "Shield_Rack",
+      "triangles": 141,
+      "png_references_checked": 9,
+      "blend_sha256": "d1076c32bc80303ebe01a415fd9f7d9b9290e30c5a3930a181d096bc6f58b617"
+    },
+    {
+      "name": "Weapon_Rack",
+      "triangles": 240,
+      "png_references_checked": 12,
+      "blend_sha256": "75779bbe2a11a7a0a6dbdc8e40b85699105d4560abbb9547704259dcfdc1b357"
+    },
+    {
+      "name": "Training_Dummy",
+      "triangles": 476,
+      "png_references_checked": 12,
+      "blend_sha256": "209352587fa8c13b47c7fddcf3b1c266e119d5a657047a34d091fd8a2e96c1fd"
+    },
+    {
+      "name": "Fountain",
+      "triangles": 676,
+      "png_references_checked": 6,
+      "blend_sha256": "a88f742b069935ff6fbcd843c200dbf71d59b97050515401260cbc423f59c1e2"
+    },
+    {
+      "name": "Wash_Tub",
+      "triangles": 374,
+      "png_references_checked": 9,
+      "blend_sha256": "f6e8527327fff3bdf164e30d67ee7c0e5ffdec4a3c51a236e1cfd7f87ad8432e"
+    },
+    {
+      "name": "Street_Brazier",
+      "triangles": 232,
+      "png_references_checked": 3,
+      "blend_sha256": "0bf83d4dd4876db56acef6fd672dd93289f01d13fecff2061d5ff3a85f14a39c"
+    },
+    {
+      "name": "Hanging_Lantern",
+      "triangles": 884,
+      "png_references_checked": 6,
+      "blend_sha256": "ccd2ad7529ec35af4e3a7e88fcdd1e5968dc2640de0301e0ddf6d12773c0a698"
+    },
+    {
+      "name": "Windmill",
+      "triangles": 2678,
+      "png_references_checked": 30,
+      "blend_sha256": "10ab8a576cb963e4379b945b3e9bf68a7f7c8c79416756128cb10c75209ab051"
+    },
+    {
+      "name": "Watermill",
+      "triangles": 3728,
+      "png_references_checked": 36,
+      "blend_sha256": "f8fd3cd5591b7d931fb70fe179d49eae73b47de61e5239f81e28585171eaf8a0"
+    },
+    {
+      "name": "Market_Hall",
+      "triangles": 18836,
+      "png_references_checked": 63,
+      "blend_sha256": "a1a4a30af284ff1a3784662c06ac0206d94aca6879e479308ea0d705bfbf6aed"
+    },
+    {
+      "name": "Watchtower",
+      "triangles": 1312,
+      "png_references_checked": 18,
+      "blend_sha256": "9f37206719cd6483c8efc131a9e81a29a0647730f6bcae637c581be359a9e24b"
+    },
+    {
+      "name": "Stone_Bridge",
+      "triangles": 492,
+      "png_references_checked": 6,
+      "blend_sha256": "54c6fea4cf7d3e8d394cfcdb1cb318f11d94dbe447184f2aeb7d24a4898b21cb"
+    },
+    {
+      "name": "Wooden_Bridge",
+      "triangles": 2664,
+      "png_references_checked": 9,
+      "blend_sha256": "c216ae0edcfae76af0d0d95e8663f36c41f3e7c21945c1cd5214daf69fbc96c6"
+    },
+    {
+      "name": "Dock_Section",
+      "triangles": 284,
+      "png_references_checked": 6,
+      "blend_sha256": "a1b6fd8107db2b6d507afb27e5254c6128883718382c0c66be8fbdd44020d3a3"
+    },
+    {
+      "name": "Stone_Stairs",
+      "triangles": 60,
+      "png_references_checked": 3,
+      "blend_sha256": "4e7247b2783af89a00bd42d0c32c18acf15027988eac46398200040d0747fce6"
+    },
+    {
+      "name": "Wooden_Stairs",
+      "triangles": 772,
+      "png_references_checked": 6,
+      "blend_sha256": "69e80a83b588b692bb7eb127b08d32ab31749f294b981b5b63e37e271bac9602"
+    },
+    {
+      "name": "Outhouse",
+      "triangles": 157,
+      "png_references_checked": 21,
+      "blend_sha256": "c768e08062fdbfea32c0ba39231512808a38f2701539898e5c98ff1de1b4667d"
+    }
+  ]
+}

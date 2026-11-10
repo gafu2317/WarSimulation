@@ -1,0 +1,341 @@
+:root { --touch-size:44px; }
+button,input,select { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+button { transition:translate .09s ease-out,filter .09s ease-out,background .12s,border-color .12s,box-shadow .09s; }
+button:active:not(:disabled):not([aria-disabled=true]) {
+  translate:0 2px;
+  filter:brightness(.84);
+  box-shadow:inset 0 2px 5px #13232d80!important;
+}
+input:not([type=range]):active,select:active { box-shadow:inset 0 2px 5px #13232d80; border-color:#d3e8f2; }
+input[type=range] { touch-action:pan-y; }
+input[type=range]:active { filter:brightness(1.18); }
+input[type=range]::-webkit-slider-thumb { cursor:grab; }
+input[type=range]:active::-webkit-slider-thumb { cursor:grabbing; box-shadow:0 0 0 6px #c1e3ee35; }
+input[type=range]:active::-moz-range-thumb { cursor:grabbing; box-shadow:0 0 0 6px #c1e3ee35; }
+.stat-unused { opacity:.6; }
+.stat-unused strong,.stat-unused b { font-weight:400!important; }
+.stat-unused>small,.equipment-stat.stat-unused>span:first-child { text-decoration:underline dotted; text-underline-offset:4px; }
+.weapon-missing { border:1px dashed #edbe8d!important; border-radius:6px; padding:6px 8px; color:#ffe0ad; background:#76544038; }
+.weapon-missing>span:last-child { font-weight:700; }
+.weapon-missing .weapon-empty { border:2px solid currentColor; border-radius:4px; font-weight:800; }
+.recovery-status { display:flex; align-items:center; gap:8px; padding:10px 12px; border-left:3px dashed #e6c47b; background:#e6c47b0d; color:#e6c47b; }
+.recovery-status::before { content:"◷"; flex:0 0 auto; font:24px/1 sans-serif; }
+.recovery-ready { border-left-style:solid; border-left-color:#b5d5bf; color:#b5d5bf; }
+.recovery-ready::before { content:"✓"; }
+
+@media(max-width:740px) {
+  .game { --hud-height:154px; height:100dvh; }
+  .hud {
+    inset:0 0 auto;
+    height:var(--hud-height);
+    grid-template-columns:minmax(0,1fr) 44px;
+    grid-template-rows:48px 48px 58px;
+    gap:0 10px;
+    padding:0 12px;
+  }
+  .hud-state { grid-column:1; grid-row:1; min-width:0; padding:0; border:0; }
+  .realm,.realm:hover:not(:disabled) { min-height:44px; gap:8px; }
+  .realm-copy { min-width:0; }
+  .realm-copy strong { max-width:100%; overflow:hidden; text-overflow:ellipsis; font-size:18px; }
+  .realm-copy small,.realm .crest { display:none; }
+  .hud-settings { grid-column:2; grid-row:1; }
+  .settings-button { width:44px; height:44px; min-height:44px; font-size:26px; }
+  .hud-time { grid-column:1/-1; grid-row:2; display:flex; gap:12px; width:100%; min-width:0; padding:0; }
+  .calendar { width:auto; flex:0 0 auto; }
+  .date { gap:0; }
+  .date b { font-size:18px; }
+  .date .date-state { font-size:12px; }
+  .time-controls { flex:1; display:flex; justify-content:flex-end; min-width:0; gap:6px; }
+  .time-controls button { min-width:48px; min-height:44px; padding:8px 10px; font-size:16px; }
+  .time-controls .time-auto { min-width:70px; gap:5px; }
+  .time-controls .time-auto small { font-size:15px; }
+  .hud-treasury { grid-column:1/-1; grid-row:3; display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,4fr); border-top:1px solid var(--line); }
+  .hud-treasury .resources { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .hud-treasury .resource { grid-template-columns:minmax(0,1fr); grid-template-rows:22px 28px; min-height:54px; padding:0 5px; }
+  .hud-treasury .population { padding-left:0; }
+  .hud-treasury .resource-symbol { grid-row:1; grid-column:1; width:18px; height:18px; flex-basis:18px; }
+  .hud-treasury .resource-name { grid-row:1; grid-column:1; font-size:13px; margin-left:22px; }
+  .hud-treasury .resource-value { grid-row:2; grid-column:1; font-size:22px; white-space:nowrap; }
+  .city-minimap { width:104px; left:12px; top:calc(var(--hud-height) + 10px); }
+  .city-minimap figcaption { display:none; }
+  .command-dock {
+    left:8px;
+    right:auto;
+    bottom:calc(8px + env(safe-area-inset-bottom,0px));
+    width:calc((100% - 16px) * .8);
+    max-width:none;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:0;
+    border-radius:10px 0 0 10px;
+  }
+  .command-dock .facilities-command,.command-dock .management-menu .facilities-command {
+    width:100%; min-width:0; min-height:62px; height:62px;
+    padding:5px 2px; gap:3px; flex-direction:column;
+  }
+  .command-dock .facilities-command>span:first-child { width:26px; height:26px; flex-basis:26px; font-size:26px; }
+  .command-dock .facilities-command b { font-size:14px; line-height:1.4; white-space:normal; }
+  .expedition-command {
+    right:8px;
+    bottom:calc(8px + env(safe-area-inset-bottom,0px));
+    width:calc((100% - 16px) * .2);
+    min-width:0; min-height:64px; height:64px;
+    padding:5px 2px; gap:2px; flex-direction:column;
+    border-radius:0 10px 10px 0; font-size:14px; line-height:1.4;
+  }
+  .expedition-command>span[aria-hidden] { width:26px; height:26px; font-size:26px; }
+  .expedition-command b,.expedition-command small { font-size:12px; margin:0; }
+  .defense-notice.defense-active { bottom:calc(82px + env(safe-area-inset-bottom,0px)); padding:12px; gap:10px; }
+  .defense-notice-message strong { font-size:18px; }
+  .defense-notice-action { font-size:16px; }
+  .building-marker { min-height:52px; max-width:calc(100vw - 24px); padding:7px 10px; gap:7px; }
+  .marker-emblem { width:30px; height:30px; flex-basis:30px; font-size:28px; }
+  .marker-name { font-size:16px; }
+  .marker-name small { font-size:13px; }
+  .marker-warrior { left:5%; top:49%; }
+  .marker-magic { left:54%; top:max(36%,calc(var(--hud-height) + 18px)); }
+  .marker-church { left:57%; top:62%; }
+  .game-window,.budget-window {
+    width:calc(100% - 12px);
+    top:calc(var(--hud-height) + 6px);
+    bottom:calc(6px + env(safe-area-inset-bottom,0px));
+    border-radius:10px;
+  }
+  .game-window .window-title { min-height:58px; padding:4px 12px; gap:8px; }
+  .window-title h1 { font-size:23px; }
+  .game-window .close,.close { min-width:44px; width:44px; height:44px; min-height:44px; }
+  .budget-tabs { flex:1; min-width:0; gap:8px; }
+  .budget-tabs [role=tab] { flex:1; min-width:0; padding:12px 2px 10px; font-size:16px; line-height:1.5; white-space:normal; }
+  .window-content,.budget-content,.construction-content,.expedition-destination-panel,
+  .soldier-body,.training-body,.expedition-members-panel,.weapon-body,
+  .expedition-overview-body,.mission-content { padding:16px 12px; overflow-x:hidden; overscroll-behavior:contain; }
+  .game-window .window-bottom { min-height:64px; padding:10px 12px; gap:8px; flex-wrap:wrap; }
+  .window-bottom small,.window-bottom .training-footer-hint { font-size:14px; line-height:1.5; }
+  .window-bottom>.primary,.window-bottom .primary { min-height:48px; min-width:0; font-size:17px; }
+  .budget-footer { gap:4px 12px; font-size:15px; }
+  .budget-footer b { font-size:21px; }
+  .budget-source { grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 8px; }
+  .budget-source .treasury-option { justify-self:stretch; justify-content:flex-end; min-height:44px; font-size:16px; }
+  .treasury-option input { width:26px; height:26px; flex:0 0 26px; }
+  .budget-source-tax,.budget-source-treasury,.budget-source-total { min-width:0; padding:6px 2px; }
+  .budget-source small { font-size:14px; }
+  .budget-source strong { font-size:28px; }
+  .budget-layout { grid-template-columns:minmax(0,1fr); gap:20px; }
+  .budget-columns { display:none; }
+  .building-budget { grid-template-columns:minmax(0,1fr); gap:12px; padding:20px 0; }
+  .budget-building { gap:10px; }
+  .budget-building .facility-icon { display:grid; width:32px; height:32px; flex-basis:32px; font-size:30px; }
+  .budget-building h2 { font-size:20px; }
+  .budget-building small,.facility-purpose { font-size:15px; }
+  .allocation-top { gap:8px; flex-wrap:wrap; }
+  .budget-adjust { gap:8px; }
+  .budget-adjust button { width:44px; min-width:44px; height:44px; min-height:44px; font-size:25px; }
+  .allocation-top .budget-adjust strong { min-width:96px; font-size:27px; }
+  .allocation-top .budget-adjust strong>small:first-child { font-size:14px; margin-right:5px; }
+  .allocation-top .allocation-amount { margin-left:auto; gap:6px; }
+  .allocation-top .allocation-amount b { font-size:27px; }
+  .allocation-top .allocation-amount small { font-size:14px; }
+  .allocation-control input[type=range] { min-height:44px; height:44px; margin:0; width:100%; }
+  .allocation-control input[type=range]::-webkit-slider-thumb { width:26px; height:26px; }
+  .allocation-control input[type=range]::-moz-range-thumb { width:26px; height:26px; }
+  .allocation-minimum { font-size:15px; }
+  .allocation-effect { font-size:16px; }
+  .allocation-effect b { font-size:20px; }
+  .budget-reserve { position:static; padding:16px; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; border:1px solid var(--line); border-radius:8px; }
+  .budget-reserve>div { min-width:0; font-size:15px; }
+  .budget-reserve .budget-balance { gap:12px; }
+  .budget-money-flow { flex-wrap:wrap; }
+  .budget-reserve p { font-size:15px; }
+  .training-body,.soldier-body,.expedition-members-panel { display:block; overflow-y:auto; min-height:0; }
+  .school-tabs { gap:6px; margin-bottom:18px; }
+  .school-tab { padding:10px 6px; min-height:80px; gap:5px; align-content:center; justify-content:center; text-align:center; }
+  .school-tab>span:nth-child(2) { width:100%; }
+  .school-tab b { font-size:16px; }
+  .school-tab small { font-size:14px; }
+  .school-tab-count { margin:0; font-size:14px; }
+  .school-tab-count b { font-size:22px; }
+  .training-board>header { flex-wrap:wrap; gap:6px; align-items:center; }
+  .training-board h2 { font-size:18px; }
+  .training-board>header strong { font-size:20px; }
+  .training-board { padding-bottom:16px; margin-bottom:18px; }
+  .training-slot-list { max-height:none; min-height:132px; padding:6px 2px 12px; overflow-y:visible; }
+  .training-slot-list .training-seat,.training-slot-list .empty-slot { width:120px; flex:0 0 120px; }
+  .assigned-remove,.training-seat .assigned-remove { width:44px; height:44px; min-height:44px; top:-3px; right:0; font-size:25px; }
+  .training-seat .assigned-remove { right:0; top:-4px; }
+  .training-seat .assigned-person { padding-top:10px; }
+  .training-seat .assigned-status { font-size:14px; }
+  .character-area,.training-body>.character-area,.expedition-character-area { display:flex; flex-direction:column; overflow:visible; gap:20px!important; }
+  .character-area.soldier-body { overflow-y:auto; overflow-x:hidden; }
+  .candidate-panel,.expedition-roster { min-height:0; flex:none; overflow:visible; }
+  .candidate-list.roster-grid,.expedition-roster-list.roster-grid,.member-selection .roster-grid,
+  .training-window .candidate-list.roster-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:14px 12px!important; max-height:none; overflow:visible; }
+  .candidate-panel>header h2,.expedition-roster>header h2 { font-size:20px; }
+  .roster-entry .roster-character { min-height:148px; }
+  .training-window .roster-entry .roster-character { min-height:120px; padding-block:10px!important; }
+  .roster-person b,.training-window .roster-person b { font-size:17px; white-space:normal; }
+  .roster-cp,.roster-status,.roster-blocked-reason { font-size:14px; }
+  .roster-cp strong { font-size:19px; }
+  .roster-skill-open,.training-window .roster-skill-open { min-height:44px; padding:10px 2px; font-size:15px; }
+  .roster-character .expedition-stats strong,.assigned-character .expedition-stats strong { font-size:18px; }
+  .roster-character .expedition-stats small,.assigned-character .expedition-stats small { font-size:12px; }
+  .character-details { display:block; order:-1; flex:none; overflow:visible; max-height:none; padding:4px 0 20px; border:0; border-bottom:1px solid var(--line); }
+  .character-details p,.character-details small { font-size:16px; }
+  .character-details .expedition-stats small { font-size:14px; }
+  .learned-skills .skill-link { min-height:44px; padding:8px 0; }
+  .soldier-toolbar { padding:12px; flex-wrap:wrap; }
+  .soldier-toolbar label { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:16px; }
+  .soldier-toolbar select { min-height:44px; font-size:16px; }
+  .defense-member-list,.expedition-party-list { max-height:none; min-height:220px; overflow-y:visible; }
+  .assigned-character { width:216px; flex-basis:216px; }
+  .assigned-person { padding-right:38px; }
+  .assigned-weapon { min-height:48px; font-size:16px; }
+  .construction-picker { grid-template-columns:minmax(0,1fr); gap:18px; }
+  .construction-catalog { flex-direction:column; gap:8px; }
+  .construction-option { grid-template-columns:64px minmax(0,1fr) auto; width:100%; min-height:82px; padding:10px; gap:10px; }
+  .construction-option .building-preview { grid-column:1; grid-row:1; width:64px; height:58px; }
+  .construction-option>span:nth-child(2) { grid-column:2; grid-row:1; min-width:0; gap:5px; }
+  .construction-option b { font-size:18px; }
+  .construction-option small { font-size:14px; }
+  .construction-option .catalog-status { grid-column:3; grid-row:1; font-size:14px; white-space:normal; padding:0; }
+  .construction-inspector { padding:16px 12px; border:1px solid var(--line); }
+  .inspector-heading h3 { font-size:23px; }
+  .construction-inspector p { font-size:16px; margin-bottom:18px; }
+  .construction-cost { grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .construction-cost small,.construction-duration small { font-size:14px; }
+  .construction-cost b { font-size:24px; }
+  .construction-order { flex-wrap:wrap; gap:12px; }
+  .construction-order>span { font-size:16px; }
+  .construction-order button { min-height:48px; margin-left:auto; font-size:17px; }
+  .construction-row { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .construction-row .budget-building { grid-column:1; grid-row:1; }
+  .construction-row .construction-cost { grid-column:1; grid-row:2; }
+  .construction-row .construction-duration { grid-column:1; grid-row:3; flex-direction:row; align-items:baseline; }
+  .construction-row>button { grid-column:1; grid-row:4; min-height:48px; font-size:17px; }
+  .construction-list-heading { flex-wrap:wrap; gap:8px; }
+  .construction-list-heading button { min-height:44px; font-size:16px; }
+  .construction-queues>div { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .construction-queues h3,.construction-queues .queue { font-size:16px; }
+  .weapon-body:has(.arsenal-list) { display:block; grid-template-columns:minmax(0,1fr)!important; overflow-y:auto!important; padding:16px 12px; }
+  .weapon-roster,.arsenal-list { overflow:visible; }
+  .arsenal-detail { border-left:0; border-top:1px solid var(--line); padding:20px 0; margin-top:20px; overflow:visible; }
+  .arsenal-detail h2 { font-size:22px; }
+  .arsenal-row { grid-template-columns:56px minmax(0,1fr); }
+  .arsenal-row small,.arsenal-bonus { font-size:15px; }
+  .arsenal-production { padding:14px 12px; }
+  .expedition-steps { padding:0 12px; }
+  .expedition-main-header+.budget-tab-header .budget-tabs button { font-size:16px; padding:10px 4px; }
+  .expedition-summary { flex-wrap:wrap; gap:4px 12px; font-size:15px; }
+  .departure-actions { width:100%; }
+  .departure-actions .primary { flex:1; }
+  .destination-name { flex-wrap:wrap; gap:8px; }
+  .expedition-destination-panel .destination-list>button { padding:16px 8px; gap:10px; }
+  .expedition-destination-panel .destination-list .destination-facts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .expedition-destination-panel .destination-list .destination-facts b { font-size:18px; }
+  .expedition-destination-panel .destination-list small { font-size:15px; }
+  .destination-select { font-size:16px; }
+  dialog,#modal,dialog.resource-detail,#modal.defense-dialog,dialog.expedition-equipment {
+    position:fixed; inset:0; margin:auto; width:calc(100vw - 16px); max-width:calc(100vw - 16px);
+    max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    padding:20px 16px; font-size:16px; overflow-x:hidden; overscroll-behavior:contain;
+  }
+  .modal-heading { gap:12px; margin-bottom:16px; padding-bottom:14px; }
+  .modal-heading h2 { font-size:23px; overflow-wrap:anywhere; }
+  dialog .actions.end { display:flex; flex-wrap:wrap; gap:8px; }
+  dialog .actions.end button { min-height:48px; flex:1; font-size:17px; padding:10px 12px; }
+  .equipment-layout { grid-template-columns:minmax(0,1fr); gap:20px; }
+  .equipment-weapons { max-height:none; overflow:visible; padding:0; }
+  .equipment-weapons .expedition-weapon-picker { grid-template-columns:minmax(0,1fr); }
+  .equipment-weapons .expedition-weapon-picker button { gap:12px; min-height:76px; }
+  .equipment-weapons .expedition-weapon-picker b { font-size:18px; }
+  .equipment-weapons .expedition-weapon-picker small { font-size:15px; }
+  .equipment-comparison { padding:20px 12px; border-left:0; border-top:1px solid var(--line); }
+  .equipment-columns,.equipment-stat { grid-template-columns:1fr 1fr 20px 1fr 1fr; gap:5px; }
+  .equipment-stat>span:first-child,.equipment-columns { font-size:14px; }
+  .equipment-stat b { font-size:24px; }
+  .equipment-stat strong { font-size:18px; }
+  .spending-preview { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .resource-change { gap:10px; }
+  .change-values { font-size:19px; }
+  .resource-editor { grid-template-columns:minmax(0,1fr); }
+  .resource-editor label,.resource-editor label:nth-child(-n+2) { grid-column:auto; font-size:16px; }
+  .resource-editor input { min-height:48px; font-size:22px; }
+  .month-ledgers { grid-template-columns:minmax(0,1fr); gap:18px; }
+  .month-building-head,.month-building-row { grid-template-columns:1.5fr 1fr 1fr 1fr; gap:8px; font-size:14px; }
+  #toast { left:12px; right:12px; width:auto; max-width:none; bottom:calc(82px + env(safe-area-inset-bottom,0px)); font-size:16px; transform:none; }
+}
+
+@media(max-width:389px) {
+  .command-dock .facilities-command b { font-size:clamp(11px,3.5vw,13px); white-space:nowrap; }
+}
+
+@media(max-width:374px) {
+  .hud { padding-inline:8px; }
+  .hud-time { gap:6px; }
+  .date b { font-size:16px; }
+  .time-controls { gap:4px; }
+  .time-controls button { padding-inline:7px; min-width:44px; }
+  .time-controls .time-auto { min-width:62px; }
+  .hud-treasury .resource-value { font-size:19px; }
+  .hud-treasury .resource-name { font-size:12px; margin-left:19px; }
+  .hud-treasury .resource-symbol { width:16px; height:16px; }
+  .allocation-top .allocation-amount { flex:1; justify-content:flex-end; }
+  .construction-option { grid-template-columns:56px minmax(0,1fr); }
+  .construction-option .building-preview { width:56px; }
+  .construction-option .catalog-status { grid-column:2; grid-row:2; }
+}
+
+@media(max-height:560px) and (max-width:740px) and (orientation:landscape) {
+  .game { --hud-height:106px; }
+  .hud { grid-template-columns:minmax(140px,1fr) minmax(260px,2fr) 44px; grid-template-rows:48px 58px; }
+  .hud-state { grid-row:1; grid-column:1; }
+  .hud-time { grid-row:1; grid-column:2; }
+  .hud-settings { grid-row:1; grid-column:3; }
+  .hud-treasury { grid-row:2; grid-column:1/-1; }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  button,input,select { transition:none!important; }
+  button:active:not(:disabled):not([aria-disabled=true]) { translate:none; }
+}
+
+@media(max-width:740px) {
+  #modal.expedition-equipment .equipment-weapons { max-height:32dvh; min-height:190px; overflow-y:auto; overscroll-behavior:contain; }
+  #modal.expedition-equipment .actions.end { position:sticky; bottom:-20px; padding:12px 0; background:#3b4d58; border-top:1px solid var(--line); z-index:2; }
+}
+
+@media(max-width:740px) {
+  .expedition-command {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:28px 16px;
+    align-content:center;
+    align-items:center;
+    gap:2px;
+    overflow:hidden;
+  }
+  .expedition-command:not(:has(>b,>small)) { grid-template-rows:1fr; }
+  .expedition-command>span[aria-hidden] { grid-column:1; grid-row:1; width:24px; height:24px; font-size:24px; justify-self:end; }
+  .expedition-command-label { grid-column:2; grid-row:1; justify-self:start; font-size:16px; white-space:nowrap; }
+  .expedition-command>b,.expedition-command>small {
+    grid-row:2; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+    font-size:11px; line-height:16px; letter-spacing:-.02em; white-space:nowrap; justify-self:center;
+  }
+  .expedition-command>b { grid-column:1; }
+  .expedition-command>small { grid-column:2; }
+  .expedition-command>b:last-child,.expedition-command:not(:has(>b))>small { grid-column:1/-1; }
+  .skill-link { display:inline-flex; align-items:center; min-width:44px; min-height:44px; padding:8px 0; }
+  #modal select { min-height:44px; max-width:100%; padding:8px 10px; font-size:16px; }
+  .mock-expedition-setting { flex-direction:column; align-items:flex-start; gap:8px; font-size:16px; }
+  .mock-expedition-setting select { width:100%; }
+  .soldiers-window:not(:has(.arsenal-production)) { overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; }
+  .soldiers-window:not(:has(.arsenal-production))>.window-title { position:sticky; top:0; z-index:3; }
+  .soldiers-window:not(:has(.arsenal-production))>.soldier-toolbar,
+  .soldiers-window:not(:has(.arsenal-production))>.soldier-defense-board,
+  .soldiers-window:not(:has(.arsenal-production))>.soldier-body { flex:0 0 auto; }
+  .soldiers-window:not(:has(.arsenal-production))>.soldier-body { overflow:visible; }
+}
+@media(max-width:374px) {
+  .expedition-command>span[aria-hidden] { width:20px; height:20px; font-size:20px; }
+  .expedition-command>b,.expedition-command>small { font-size:10px; }
+}
+
+@media(max-width:740px) { #modal:has(.spending-preview,.cp-change) .actions.end { bottom:-20px; padding:12px 0; } }

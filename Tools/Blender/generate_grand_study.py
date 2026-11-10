@@ -4,7 +4,7 @@ from pathlib import Path
 from mathutils import Vector
 R=Path(__file__).resolve().parents[2]
 OUT=R/'ArtSource/Blender/GrandStudy/GrandStudy.blend'
-REVIEW=R/'docs/Art/GrandStudy'
+REVIEW=R/'docs/Art/Records/GrandStudy'
 random.seed(17)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene=bpy.context.scene;scene.name='01 Furnished Study';scene.unit_settings.system='METRIC'

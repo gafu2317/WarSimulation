@@ -111,7 +111,7 @@ def main():
                     if any(other.name.startswith(k+'_Lv') for k in s.KINDS):other.hide_render=other!=col
                 target=root.location+Vector((0,0,11))
                 camera.location=target+Vector((27,-48,28));camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler()
-                scene.render.filepath=str(ROOT/'docs/Art/FantasySchoolLevels'/f'{kind}_IconFlag.png')
+                scene.render.filepath=str(ROOT/'docs/Art/Records/Schools'/f'{kind}_IconFlag.png')
                 bpy.ops.render.render(write_still=True)
     
 

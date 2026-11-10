@@ -34,7 +34,22 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     private bool _canReviveAfterRetreat = true;
     private bool _withdrawalCompleted;
 
-    public int MaxHP => _maxHP;
+    private int _maxHPAdjustment;
+    private float? _reviveDelayOverride;
+
+    public float ReviveDelayAfterArrival => _reviveDelayOverride ?? _reviveDelayAfterArrival;
+
+    public void SetReviveDelayOverride(float? seconds)
+    {
+        if (seconds.HasValue && (seconds.Value < 0f || float.IsNaN(seconds.Value) || float.IsInfinity(seconds.Value)))
+            throw new ArgumentOutOfRangeException(nameof(seconds));
+        _reviveDelayOverride = seconds;
+    }
+
+    public int MaxHPBeforePersonality => Mathf.Max(1, _maxHP + _maxHPAdjustment);
+    public int MaxHP => Mathf.Max(1, Mathf.RoundToInt(MaxHPBeforePersonality *
+        CombatAiPersonalityProfile.GetStatMultiplier(
+            ResolveOwner()?.PersonalityProfile?.Kind ?? CombatAiPersonalityKind.Neutral, CombatStat.HP)));
     public int HP => _hp;
     public bool IsAlive => _hp > 0;
     public LifeState LifeState { get; private set; } = LifeState.Active;
@@ -73,13 +88,20 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     public void Initialize(int maxHP, int currentHP = -1)
     {
         _maxHP = Mathf.Max(1, maxHP);
-        _hp = Mathf.Clamp(currentHP < 0 ? _maxHP : currentHP, 0, _maxHP);
+        _hp = Mathf.Clamp(currentHP < 0 ? MaxHP : currentHP, 0, MaxHP);
         LifeState = _hp > 0 ? LifeState.Active : LifeState.Retreating;
         _hasRetreatDestination = false;
         _reviveAtTime = float.PositiveInfinity;
         _canReviveAfterRetreat = true;
         _withdrawalCompleted = false;
         NotifyHealthChanged();
+    }
+
+    public void SetMaxHPAdjustment(int adjustment)
+    {
+        if (_maxHPAdjustment == adjustment) return;
+        _maxHPAdjustment = adjustment;
+        Initialize(_maxHP);
     }
 
     public int TakeDamage(int amount, Character attacker = null)
@@ -178,7 +200,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         if (amount <= 0 || LifeState != LifeState.Active) return 0;
 
         int previousHP = _hp;
-        _hp = Mathf.Min(_maxHP, _hp + amount);
+        _hp = Mathf.Min(MaxHP, _hp + amount);
         int healed = _hp - previousHP;
         if (healed > 0)
         {
@@ -190,7 +212,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
     public void RestoreFull()
     {
-        _hp = _maxHP;
+        _hp = MaxHP;
         LifeState = LifeState.Active;
         _hasRetreatDestination = false;
         _reviveAtTime = float.PositiveInfinity;
@@ -227,6 +249,11 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
         ResolveOwner()?.SkillCaster?.ClearCast();
         TryStartRetreatMove();
         NotifyHealthChanged();
+    }
+
+    public void InvalidateRetreatNavigation()
+    {
+        if (LifeState == LifeState.Retreating && !_withdrawalCompleted) _hasRetreatDestination = false;
     }
 
     private bool TryStartRetreatMove()
@@ -266,7 +293,7 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
 
         if (float.IsPositiveInfinity(_reviveAtTime))
         {
-            _reviveAtTime = Time.time + _reviveDelayAfterArrival;
+            _reviveAtTime = Time.time + ReviveDelayAfterArrival;
         }
         if (Time.time < _reviveAtTime) return false;
 

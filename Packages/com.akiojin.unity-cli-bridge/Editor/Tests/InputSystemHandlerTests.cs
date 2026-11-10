@@ -38,6 +38,9 @@ namespace UnityCliBridge.Tests
         private static readonly MethodInfo RestoreMethod = typeof(InputSystem).GetMethod(
             "Restore",
             BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly Action ProcessScheduledReleases = (Action)Delegate.CreateDelegate(
+            typeof(Action), typeof(InputSystemHandler).GetMethod("ProcessScheduledReleases",
+                BindingFlags.Static | BindingFlags.NonPublic));
 
         [OneTimeSetUp]
         public void OneTimeSetup()
@@ -58,6 +61,8 @@ namespace UnityCliBridge.Tests
             Assert.NotNull(RestoreMethod, "Input System test restoration is unavailable.");
             SaveAndResetMethod.Invoke(null, new object[] { false, null });
             inputSystemSaved = true;
+            // SaveAndReset removes the handler's original Input System subscription.
+            InputSystem.onAfterUpdate += ProcessScheduledReleases;
 
             keyboard = InputSystem.AddDevice<Keyboard>();
             mouse = InputSystem.AddDevice<Mouse>();
@@ -80,6 +85,7 @@ namespace UnityCliBridge.Tests
                 InputSystemHandler.ResetSimulation(new JObject());
                 if (inputSystemSaved)
                 {
+                    InputSystem.onAfterUpdate -= ProcessScheduledReleases;
                     RestoreMethod.Invoke(null, null);
                     inputSystemSaved = false;
                 }

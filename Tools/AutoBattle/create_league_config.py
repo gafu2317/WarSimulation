@@ -99,7 +99,7 @@ def create_config(build):
                        "SkillsAndStats": "Same character prefab for both teams; current weapon and skill assets.",
                        "Scope": "Best measured candidates under equally weighted opponents and available maps; not exhaustive."},
         "Batch": {"Executable": ".unity/CombatAutoBattleSearch/CombatAutoBattleSearch.app",
-                  "ParallelProcesses": 2, "MatchesPerJob": 4, "JobWorkerCount": 1},
+                  "ParallelProcesses": 4, "MatchesPerJob": 4, "JobWorkerCount": 1},
     }
 
 

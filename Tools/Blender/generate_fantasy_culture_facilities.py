@@ -9,7 +9,7 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SOURCE = os.path.join(ROOT, "ArtSource", "Blender", "FantasyCultureFacilities.blend")
-REVIEW = os.path.join(ROOT, "docs", "Art", "FantasyCultureFacilities")
+REVIEW = os.path.join(ROOT, "docs", "Art", "Records", "CultureFacilities")
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location("town_facilities", os.path.join(os.path.dirname(__file__), "generate_fantasy_town_facilities.py"))
 t = importlib.util.module_from_spec(spec)

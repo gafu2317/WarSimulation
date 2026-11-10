@@ -10,10 +10,10 @@ namespace WarSimulation.Kingdom.Schools
 {
     public static class SchoolLevelAssetImporter
     {
-        const string ManifestPath = "docs/Art/SchoolLevelUnity/export_manifest.json";
+        const string ManifestPath = "docs/Art/Records/Schools/export_manifest.json";
         const string MaterialRoot = "Assets/Prefabs/Kingdom/City/Materials/SchoolLevels";
         const string PrefabRoot = "Assets/Prefabs/Kingdom/City/Prefabs";
-        const string ValidationPath = "docs/Art/SchoolLevelUnity/unity_validation.json";
+        const string ValidationPath = "docs/Art/Records/Schools/unity_validation.json";
 
         [Serializable]
         class ExportModel

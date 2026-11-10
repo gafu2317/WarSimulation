@@ -28,7 +28,7 @@ while remaining:
  assert any(v is not None for v in hits),tuple(c)
  count+=1
 t=bpy.data.objects['Castle stone terrace'];assert tuple(round(v,2) for v in t.dimensions[:2])==(60,54)
-v=p/'docs/Art/GrandRoyalCastle/validation.json';r=json.loads(v.read_text());r.update(saved_file_reopened=True,window_glass_components_checked=count,windows_have_wall_support=True,old_inner_castle_removed=True);v.write_text(json.dumps(r,indent=2))
+v=p/'docs/Art/Records/Castle/validation.json';r=json.loads(v.read_text());r.update(saved_file_reopened=True,window_glass_components_checked=count,windows_have_wall_support=True,old_inner_castle_removed=True);v.write_text(json.dumps(r,indent=2))
 
 roof=bpy.data.objects['Slate roofs'].data
 checked=0

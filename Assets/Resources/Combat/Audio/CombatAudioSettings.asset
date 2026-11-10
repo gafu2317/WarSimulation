@@ -3,12 +3,146 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6d05e8a83a304a59b8dcd64c2129bb76, type: 3}
   m_Name: CombatAudioSettings
   m_EditorClassIdentifier:
+  SceneBgm: []
+  ClipVolumes: []
+  BattleBgmVolume: 1
   Font: {fileID: 11400000, guid: b23c7cacab96446749d20c4835e528a1, type: 2}
   BattleBgm: {fileID: 0}
-  Skills: []
-  Library: []
+  Skills:
+  - Skill: 1
+    Clip: {fileID: 8300000, guid: 1c833328ea8344b0b10279cff6bce930, type: 3}
+    Volume: 1
+  - Skill: 30
+    Clip: {fileID: 8300000, guid: 2e4ef9f22cc0465bb5e83890f75e38d6, type: 3}
+    Volume: 1
+  - Skill: 31
+    Clip: {fileID: 8300000, guid: 6fbd3f7186814163a01d15170522f23e, type: 3}
+    Volume: 1
+  - Skill: 12
+    Clip: {fileID: 8300000, guid: 68a55340aabf4d69ba0e664d76ad1af9, type: 3}
+    Volume: 1
+  - Skill: 29
+    Clip: {fileID: 8300000, guid: 01107b302c514a9686c7ead5e0ca9cc4, type: 3}
+    Volume: 1
+  - Skill: 32
+    Clip: {fileID: 8300000, guid: d5b4a23c5cd34776a07fc2bb11d3f181, type: 3}
+    Volume: 1
+  - Skill: 33
+    Clip: {fileID: 8300000, guid: 70927e245ac940039c5020cde082d3cc, type: 3}
+    Volume: 1
+  - Skill: 3
+    Clip: {fileID: 8300000, guid: 7d0775a19801420c8f8f0cf18a06cafe, type: 3}
+    Volume: 1
+  - Skill: 18
+    Clip: {fileID: 8300000, guid: 9dfcb2413e054445a8a94b6ed87099bc, type: 3}
+    Volume: 1
+  - Skill: 23
+    Clip: {fileID: 8300000, guid: fc559b89657441ae959789d0244ea0fb, type: 3}
+    Volume: 1
+  - Skill: 26
+    Clip: {fileID: 8300000, guid: 791bc184146a4a07928eb12396f63a50, type: 3}
+    Volume: 1
+  - Skill: 13
+    Clip: {fileID: 8300000, guid: 64687587a3964f34815b1f5937a17b11, type: 3}
+    Volume: 1
+  - Skill: 4
+    Clip: {fileID: 8300000, guid: 274077e24f51447d83fd98398d2040ee, type: 3}
+    Volume: 1
+  - Skill: 20
+    Clip: {fileID: 8300000, guid: a0c49cd93dc74ffb927d684d17775b80, type: 3}
+    Volume: 1
+  - Skill: 21
+    Clip: {fileID: 8300000, guid: 8ffbc02aaa42431398e294b6bec593e2, type: 3}
+    Volume: 1
+  - Skill: 25
+    Clip: {fileID: 8300000, guid: bd272375251548718462eb033e0566ff, type: 3}
+    Volume: 1
+  - Skill: 14
+    Clip: {fileID: 8300000, guid: 113926228e2a43fcaba996b2124c104a, type: 3}
+    Volume: 1
+  - Skill: 2
+    Clip: {fileID: 8300000, guid: b79de04dc6e14d79b9ba3cfc61587d75, type: 3}
+    Volume: 1
+  - Skill: 6
+    Clip: {fileID: 8300000, guid: b79de04dc6e14d79b9ba3cfc61587d75, type: 3}
+    Volume: 1
+  - Skill: 7
+    Clip: {fileID: 8300000, guid: b79de04dc6e14d79b9ba3cfc61587d75, type: 3}
+    Volume: 1
+  - Skill: 8
+    Clip: {fileID: 8300000, guid: b79de04dc6e14d79b9ba3cfc61587d75, type: 3}
+    Volume: 1
+  - Skill: 19
+    Clip: {fileID: 8300000, guid: 7d256ea30fe141498f1eb6c6905c4737, type: 3}
+    Volume: 1
+  - Skill: 28
+    Clip: {fileID: 8300000, guid: 41676faea50945028403412150904eef, type: 3}
+    Volume: 1
+  - Skill: 15
+    Clip: {fileID: 8300000, guid: 61fa4980c0c54adf99aa970d9d8d6d41, type: 3}
+    Volume: 1
+  - Skill: 16
+    Clip: {fileID: 8300000, guid: 9f23fffcc5a644af923f801bed9498e1, type: 3}
+    Volume: 1
+  - Skill: 17
+    Clip: {fileID: 8300000, guid: 9f23fffcc5a644af923f801bed9498e1, type: 3}
+    Volume: 1
+  - Skill: 22
+    Clip: {fileID: 8300000, guid: 9f23fffcc5a644af923f801bed9498e1, type: 3}
+    Volume: 1
+  - Skill: 27
+    Clip: {fileID: 8300000, guid: 9f23fffcc5a644af923f801bed9498e1, type: 3}
+    Volume: 1
+  - Skill: 24
+    Clip: {fileID: 8300000, guid: b4ba1af48d244498915bbf2e3ebddc05, type: 3}
+    Volume: 1
+  - Skill: 9
+    Clip: {fileID: 8300000, guid: 274077e24f51447d83fd98398d2040ee, type: 3}
+    Volume: 1
+  - Skill: 10
+    Clip: {fileID: 8300000, guid: 274077e24f51447d83fd98398d2040ee, type: 3}
+    Volume: 1
+  - Skill: 11
+    Clip: {fileID: 8300000, guid: 274077e24f51447d83fd98398d2040ee, type: 3}
+    Volume: 1
+  - Skill: 34
+    Clip: {fileID: 8300000, guid: 791bc184146a4a07928eb12396f63a50, type: 3}
+    Volume: 1
+  - Skill: 35
+    Clip: {fileID: 8300000, guid: 7d256ea30fe141498f1eb6c6905c4737, type: 3}
+    Volume: 1
+  Library:
+  - {fileID: 8300000, guid: b4ba1af48d244498915bbf2e3ebddc05, type: 3}
+  - {fileID: 8300000, guid: 9f23fffcc5a644af923f801bed9498e1, type: 3}
+  - {fileID: 8300000, guid: 7d256ea30fe141498f1eb6c6905c4737, type: 3}
+  - {fileID: 8300000, guid: 70927e245ac940039c5020cde082d3cc, type: 3}
+  - {fileID: 8300000, guid: 61fa4980c0c54adf99aa970d9d8d6d41, type: 3}
+  - {fileID: 8300000, guid: d5b4a23c5cd34776a07fc2bb11d3f181, type: 3}
+  - {fileID: 8300000, guid: bd272375251548718462eb033e0566ff, type: 3}
+  - {fileID: 8300000, guid: 2e4ef9f22cc0465bb5e83890f75e38d6, type: 3}
+  - {fileID: 8300000, guid: 7d0775a19801420c8f8f0cf18a06cafe, type: 3}
+  - {fileID: 8300000, guid: 1c833328ea8344b0b10279cff6bce930, type: 3}
+  - {fileID: 8300000, guid: 8ffbc02aaa42431398e294b6bec593e2, type: 3}
+  - {fileID: 8300000, guid: fc559b89657441ae959789d0244ea0fb, type: 3}
+  - {fileID: 8300000, guid: 791bc184146a4a07928eb12396f63a50, type: 3}
+  - {fileID: 8300000, guid: 9dfcb2413e054445a8a94b6ed87099bc, type: 3}
+  - {fileID: 8300000, guid: 6fbd3f7186814163a01d15170522f23e, type: 3}
+  - {fileID: 8300000, guid: 274077e24f51447d83fd98398d2040ee, type: 3}
+  - {fileID: 8300000, guid: 64687587a3964f34815b1f5937a17b11, type: 3}
+  - {fileID: 8300000, guid: 113926228e2a43fcaba996b2124c104a, type: 3}
+  - {fileID: 8300000, guid: b79de04dc6e14d79b9ba3cfc61587d75, type: 3}
+  - {fileID: 8300000, guid: 68a55340aabf4d69ba0e664d76ad1af9, type: 3}
+  - {fileID: 8300000, guid: 01107b302c514a9686c7ead5e0ca9cc4, type: 3}
+  - {fileID: 8300000, guid: a0c49cd93dc74ffb927d684d17775b80, type: 3}
+  - {fileID: 8300000, guid: 41676faea50945028403412150904eef, type: 3}
   BgmVolume: 0.5
-  SeVolume: 0.8
+  SeVolume: 0.4

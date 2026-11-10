@@ -13,8 +13,8 @@
 *.log
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
-*.blend1
-*.blend1.meta
+*.blend[1-9]
+*.blend[1-9].meta
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
@@ -43,6 +43,7 @@ ExportedObj/
 *.csproj
 *.unityproj
 *.sln
+*.slnx
 *.suo
 *.tmp
 *.user
@@ -102,28 +103,60 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
-# TextMeshPro SDF font assets (auto-generated from TTF, too large for GitHub)
-*SDF.asset
-*SDF.asset.meta
-
 # Local recovery, OS metadata, and transient test artifacts
 .DS_Store
 /Assets/_Recovery/
+/Assets/_Recovery.meta
 /TestResults_*.xml
-.unity/test-results/
-.unity/capture/
-.unity/CombatPlaytestWebGL/
-.unity/CombatPlaytestWebGL-pages/
-.unity/CombatAutoBattleSearch/
-.unity/gh-pages-deploy/
-/Tools/AutoBattle/**/__pycache__/
+/.unity/
+__pycache__/
+*.pyc
+*.pyo
 /Assets/Scenes/Combat/AutoBattleSearch.unity*
-/WarSimulation1.slnx
+
+# Inspection outputs are local; retain source, summaries, and importer inputs
+/Artifacts/**
+!/Artifacts/**/
+!/Artifacts/**/*.md
+!/Artifacts/**/*.py
+!/Artifacts/**/*.cs
+!/Artifacts/**/*.blend
+!/Artifacts/CountryUI/.openai/**
+!/Artifacts/CountryUI/assets/**
+!/Artifacts/CountryUI/css/**
+!/Artifacts/CountryUI/js/**
+!/Artifacts/CountryUI/docs/**
+!/Artifacts/CountryUI/tests/**
+!/Artifacts/CountryUI/tools/**
+!/Artifacts/CountryUI/mockups/**/*.html
+!/Artifacts/CountryUI/index.html
+!/Artifacts/CountryUI/build.mjs
+!/Artifacts/RoleFacilityRebuild20261024/generation_CityV2.json
+!/Artifacts/CityV2Quality20261030/Generated/support_generation.json
+!/Artifacts/ItchUpdate*/build.json
+!/Artifacts/ItchUpdate*/release.json
+!/Artifacts/ItchUpdate*/package.json
+!/Artifacts/ItchUpdate*/repackage.json
+!/Artifacts/ItchUpdate*/restoration.json
+/Artifacts/**/[Bb]efore*/
+/Artifacts/**/[Bb]ackup*/
+/Artifacts/**/rollback/
+/Artifacts/**/retired/
+/Artifacts/**/rejected-implementation/
+/Artifacts/**/runtime-only/
+/Artifacts/CountryUI/dist/
+/ArtSource/Exports/
 
 # Local recordings, frame sequences, and visual check images
 /Captures/
+/ArtSource/**/Previews/
+/ArtSource/Blender/Reviews/**/*.png
+/ArtSource/Blender/Reviews/**/*.jpg
+/ArtSource/Blender/Reviews/**/*.jpeg
+/ArtSource/Blender/Environment/*Preview.png
+/ArtSource/Blender/Environment/*Closeup.png
 docs/Art/**/*.png
 docs/Art/**/*.jpg
 docs/Art/**/*.jpeg
-docs/Art/GrandStudy/validation.json
+docs/Art/Records/GrandStudy/validation.json
 /Assets/Screenshots/
