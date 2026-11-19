@@ -6,9 +6,13 @@ import bmesh
 from mathutils import Vector
 
 
+DEFAULT_ROOF_UV_METRES = 2.2
+
+
 class Model:
-    def __init__(self, name, aliases):
+    def __init__(self, name, aliases, *, roof_uv_metres=DEFAULT_ROOF_UV_METRES):
         self.name, self.aliases = name, aliases
+        self.roof_uv_metres = roof_uv_metres
         self.parts = defaultdict(lambda: [[], [], [], []])
         self.section = 'Foundation'
         self.features = set()
@@ -39,6 +43,8 @@ class Model:
         axis = max(range(3), key=lambda i: abs(normal[i]))
         a, b = ((2, 1), (0, 2), (0, 1))[axis]
         scale = 3.0 if material in ('stone', 'trim', 'paving', 'brick') else 2.2
+        if material == 'roof':
+            scale = self.roof_uv_metres
         if uv is None and self.wall_mapping and material == 'stone':
             x, z, radius = self.wall_mapping
             angles = [math.atan2(p[0]-x, z-p[2]) for p in points]
@@ -51,7 +57,7 @@ class Model:
             if across.z < -.001 or (abs(across.z)<.001 and across.x<0): across = -across
             uphill = n.cross(across).normalized()
             if uphill.y<0:uphill = -uphill
-            uv = [(Vector(p).dot(across)/2.2, Vector(p).dot(uphill)/2.2) for p in points]
+            uv = [(Vector(p).dot(across)/scale, Vector(p).dot(uphill)/scale) for p in points]
         uvs.extend(uv if uv is not None and len(uv) == len(points) else [(p[a]/scale, p[b]/scale) for p in points])
 
     def box(self, center, size, mat, yaw=0):

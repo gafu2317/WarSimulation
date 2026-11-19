@@ -1125,14 +1125,14 @@
         "Window_Sacred"
       ],
       "minimum": [
-        -10.5,
+        -13.65,
         0.0,
-        -15.0
+        -19.5
       ],
       "maximum": [
-        10.5,
-        18.6,
-        15.0
+        13.65,
+        24.18,
+        19.5
       ],
       "role_identity": "BellTower; BellTower_Top; CongregationEntrance; ContinuousFoundation; HighNave; HighNave_Roof; Landmark_CathedralRoseWindow; Landmark_GreatOpenBelfryAndCross; RoundedApse; SideAisle; SideAisle_Roof; TransverseChapel; TransverseChapel_Roof",
       "display_name": "教会",
@@ -1141,14 +1141,14 @@
       "label": "教会",
       "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Church.fbx",
       "min": [
-        -10.5,
+        -13.65,
         0.0,
-        -15.0
+        -19.5
       ],
       "max": [
-        10.5,
-        18.6,
-        15.0
+        13.65,
+        24.18,
+        19.5
       ],
       "vertices": 53953,
       "faces": 13501,
@@ -1169,12 +1169,12 @@
       ],
       "markers": {
         "Entrance": [
-          0,
-          0.23,
-          -15.0
+          0.0,
+          0.29900000000000004,
+          -19.5
         ]
       },
-      "geometryHash": "6a8a7e9f35eb6cbcca87c1f80e3266e796dc5724182110148b4462f4bd75b3af",
+      "geometryHash": "464132649f7d1fb62e57ad77840d66c1257a09ed48ce3f6088296f1934e7835f",
       "fromScratch": true,
       "rolePlacards": false,
       "sourceInputs": [
@@ -3220,76 +3220,103 @@
       "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
       "front": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Royal_Castle.png",
       "three_quarter": "Artifacts/RoleFacilityRebuild20261024/After/Captures/New_Royal_Castle.png",
-      "triangles": 44140,
-      "mesh_parts": 45,
+      "triangles": 106539,
+      "mesh_parts": 107,
       "materials": [
+        "Brass",
         "Bronze_Fittings",
+        "Canvas_Blue",
         "Carved_Limestone",
         "Cobble",
+        "Cypress_Foliage",
         "DarkTimber",
         "Door_Oak",
         "Earth",
         "Fieldstone",
         "Foliage",
         "Glazing_Blue",
+        "Identity_Ivory",
         "Iron",
         "Oak",
         "Plaster",
         "Roof_Slate",
-        "Terracotta"
+        "Window_Amber"
       ],
       "minimum": [
-        -22.0,
+        -26.4,
         0.0,
-        -19.5
+        -23.4
       ],
       "maximum": [
-        22.0,
-        22.019001,
-        19.5
+        26.4,
+        32.88,
+        23.4
       ],
-      "role_identity": "CentralRoyalKeep; CentralRoyalKeep_Top; ContinuousFoundation; CornerKeep; CornerKeep_Roof; CurtainWall; FortifiedInnerWard; GatehouseFlank; GatehouseFlank_Top; OpenGatehousePassage; RoyalGreatHall; RoyalGreatHall_Roof; RoyalGuardCourt; WallWalkAndCrenellations",
+      "role_identity": "BlueProcessionalRunner; CentralPalaceHall; CentralPalaceHall_Roof; CentralRoyalKeep; CourtCypressPlanters; CourtyardGalleryRoofs; CourtyardLanterns; CourtyardSideGalleries; CrownedGate; ForecourtCornerTower; ForecourtCornerTower_Base; ForecourtCornerTower_Cornices; ForecourtCornerTower_Spire; GateThreshold; GateTower; GateTower_Base; GateTower_Cornices; GateTower_Spire; InnerCourtPaving; KeepCarvedCornices; KeepHallSeam; Landmark_CrownedRoyalKeep; Landmark_GreatHallRoseWindow; Landmark_RoyalCrownAboveGate; OuterCurtainWalls; PalaceEntryPortico; PalaceForestairs; PalaceSideWings; PalaceSideWingsLowerWalls; PalaceWingArcades; RearStairTower; RearStairTower_Base; RearStairTower_Cornices; RearStairTower_Spire; RoyalBanners; StairTowerLinks; WingRoofAndDormers",
       "display_name": "王城",
       "fbx": "Assets/Models/Kingdom/CityV2/Models/Royal_Castle.fbx",
       "style": "CityV2",
       "label": "城",
       "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Royal_Castle.fbx",
       "min": [
-        -22.0,
+        -26.4,
         0.0,
-        -19.5
+        -23.4
       ],
       "max": [
-        22.0,
-        22.019001,
-        19.5
+        26.4,
+        32.88,
+        23.4
       ],
-      "vertices": 94984,
-      "faces": 23502,
+      "vertices": 228397,
+      "faces": 56091,
       "features": [
+        "BlueProcessionalRunner",
+        "CentralPalaceHall",
+        "CentralPalaceHall_Roof",
         "CentralRoyalKeep",
-        "CentralRoyalKeep_Top",
-        "ContinuousFoundation",
-        "CornerKeep",
-        "CornerKeep_Roof",
-        "CurtainWall",
-        "FortifiedInnerWard",
-        "GatehouseFlank",
-        "GatehouseFlank_Top",
-        "OpenGatehousePassage",
-        "RoyalGreatHall",
-        "RoyalGreatHall_Roof",
-        "RoyalGuardCourt",
-        "WallWalkAndCrenellations"
+        "CourtCypressPlanters",
+        "CourtyardGalleryRoofs",
+        "CourtyardLanterns",
+        "CourtyardSideGalleries",
+        "CrownedGate",
+        "ForecourtCornerTower",
+        "ForecourtCornerTower_Base",
+        "ForecourtCornerTower_Cornices",
+        "ForecourtCornerTower_Spire",
+        "GateThreshold",
+        "GateTower",
+        "GateTower_Base",
+        "GateTower_Cornices",
+        "GateTower_Spire",
+        "InnerCourtPaving",
+        "KeepCarvedCornices",
+        "KeepHallSeam",
+        "Landmark_CrownedRoyalKeep",
+        "Landmark_GreatHallRoseWindow",
+        "Landmark_RoyalCrownAboveGate",
+        "OuterCurtainWalls",
+        "PalaceEntryPortico",
+        "PalaceForestairs",
+        "PalaceSideWings",
+        "PalaceSideWingsLowerWalls",
+        "PalaceWingArcades",
+        "RearStairTower",
+        "RearStairTower_Base",
+        "RearStairTower_Cornices",
+        "RearStairTower_Spire",
+        "RoyalBanners",
+        "StairTowerLinks",
+        "WingRoofAndDormers"
       ],
       "markers": {
         "Entrance": [
           0,
-          0.23,
-          -19.5
+          0.276,
+          -23.4
         ]
       },
-      "geometryHash": "06a2b1cc18530484b3a50364875432c5d7ea5d1eb7522846a0a20ef9ced7f467",
+      "geometryHash": "8f16b5082334b07c095632a8cbc1f8dfcdc97e2b72c3be858117d66b53f0b047",
       "fromScratch": true,
       "rolePlacards": false,
       "sourceInputs": [
@@ -3299,7 +3326,11 @@
         "distance-readable identity"
       ],
       "coordinateSystem": "X right, Y up, Z back",
-      "landmarks": []
+      "landmarks": [
+        "CrownedRoyalKeep",
+        "GreatHallRoseWindow",
+        "RoyalCrownAboveGate"
+      ]
     },
     {
       "name": "Signpost",

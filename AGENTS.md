@@ -17,6 +17,10 @@
 - AIによるUnity Editorの起動・再起動は禁止する。ユーザーが開いた既存のEditorを再利用し、接続できない場合もAIから起動しない。
 - `InternalEditorUtility.ReadScreenPixel` と `ReadScreenPixelUnderCursor` は使用禁止。2026-11-05に画面取得中のネイティブクラッシュを確認した。端末枠を含む表示は、起動済みEditorを外部の画面取得で確認する。
 
+## AIによるBlender操作
+
+- 操作できるBlenderが開いていればMCPで再利用する。macOSでバッチ実行が必要なときは `sh Tools/Blender/run_background.sh …` を使う。MetalのGPU名を取得できない環境では起動前に停止する。Codexのサンドボックスで停止した場合は、バッチが必要なときに限り承認付き実行へ切り替える。原因と手順は [Blender制作スクリプト](Tools/Blender/README.md) を参照する。
+
 ## Structure
 
 - `Assets/Scripts/Systems/Combat/` はシーン orchestration、`Assets/Scripts/Combat/` は戦闘ドメイン。`Map` は地形生成・描画データ、`Combat` はAI・スキル等の戦闘設定を指す。

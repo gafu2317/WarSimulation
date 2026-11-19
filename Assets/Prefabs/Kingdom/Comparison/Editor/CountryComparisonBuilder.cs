@@ -929,8 +929,13 @@ namespace WarSimulation.CountryComparison.Editor
             var savedPlan=JsonUtility.FromJson<Plan>(File.ReadAllText(PlanPath));
             var comparison=Object.FindFirstObjectByType<CountryComparisonView>();
             var failures=new List<string>();var checkedBuildings=0;
-            foreach(var city in comparison.cities)
+            foreach(var city in comparison.cities.Where(city => city != null))
             {
+                if (CountryLayoutInstaller.IsApproved(city))
+                {
+                    CountryLayoutInstaller.ValidateModern(comparison);
+                    continue;
+                }
                 var roots=city.transform.Find("Buildings and courtyards");
                 var candidates=new List<GameObject>();
                 foreach(Transform zone in roots)foreach(Transform item in zone)candidates.Add(item.gameObject);

@@ -114,6 +114,11 @@ namespace WarSimulation.CountryComparison.Editor
                 var streets = city.Find("Connected streets and entrance paths");
                 var filters = city.GetComponentsInChildren<MeshFilter>(true);
                 var earth = city.Find(label=="Old" ? "Old town earth" : "New town earth").GetComponent<MeshFilter>();
+                if (CountryLayoutInstaller.IsApproved(city.gameObject))
+                {
+                    footprints.Add(Outline(earth));
+                    continue;
+                }
                 var plots = streets.Cast<Transform>().Where(t=>t.name=="Paved_Plot").ToArray();
                 var plotCuts = plots.Select(t=>Rectangle(CountryComparisonImporter.BoundsOf(t.gameObject))).ToList();
                 var paving = filters.Where(f=>f!=earth && !PrefabUtility.IsPartOfPrefabInstance(f) && f.GetComponent<MeshRenderer>() is { } r &&

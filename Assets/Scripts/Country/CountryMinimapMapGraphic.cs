@@ -4,6 +4,9 @@ using UnityEngine;
 public sealed class CountryMinimapMapGraphic : UnityEngine.UI.MaskableGraphic
 {
     [SerializeField] private Mesh _layout;
+    [SerializeField] private Mesh _modernLayout;
+    [SerializeField] private CountryComparisonView _country;
+    private Mesh _activeLayout;
     private Vector3[] _vertices;
     private Color32[] _colors;
     private int[] _triangles;
@@ -11,6 +14,27 @@ public sealed class CountryMinimapMapGraphic : UnityEngine.UI.MaskableGraphic
     public void SetLayout(Mesh layout)
     {
         _layout = layout;
+        UseLayout(CurrentLayout);
+    }
+
+    public void BindModernLayout(Mesh layout, CountryComparisonView country)
+    {
+        _modernLayout = layout;
+        _country = country;
+        UseLayout(CurrentLayout);
+    }
+
+    private Mesh CurrentLayout => _modernLayout != null && _country != null && _country.viewIndex == 1 ? _modernLayout : _layout;
+
+    private void RefreshLayout()
+    {
+        var layout = CurrentLayout;
+        if (layout != _activeLayout) UseLayout(layout);
+    }
+
+    private void UseLayout(Mesh layout)
+    {
+        _activeLayout = layout;
         _vertices = layout != null ? layout.vertices : null;
         _colors = layout != null ? layout.colors32 : null;
         _triangles = layout != null ? layout.triangles : null;
@@ -19,8 +43,15 @@ public sealed class CountryMinimapMapGraphic : UnityEngine.UI.MaskableGraphic
 
     protected override void OnEnable()
     {
-        SetLayout(_layout);
         base.OnEnable();
+        RefreshLayout();
+        Canvas.preWillRenderCanvases += RefreshLayout;
+    }
+
+    protected override void OnDisable()
+    {
+        Canvas.preWillRenderCanvases -= RefreshLayout;
+        base.OnDisable();
     }
 
     protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper vh)

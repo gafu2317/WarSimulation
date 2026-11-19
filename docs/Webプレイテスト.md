@@ -67,6 +67,10 @@ butler push --assume-yes .unity/CombatPlaytestWebGL gafu2317/webtest:html5
 
 ## 最新の配布記録
 
+2026-11-18、`webtest-20261118-175720` 向けのWebGL Releaseビルドを作成し、既存のローダー・128MiB分割でアップロードを実施。ビルドはエラー0・警告1（Noto Sans JP SDFインポーター不整合）、対象11シーンの保存内容はビルド前後で一致。更新後の公開状態・起動・動作確認は行わない。
+
+2026-11-18、役割施設の階高調整を含む保存済みのCountryシーン（183棟）をWebGL Releaseでビルドし、`country-layout-20261118` として `gafu2317/webtest:html5` にアップロードした。butlerはアップロード成功と配信処理の開始を返した。既存ローダーを使い、配布は19ファイル、データは128MiB単位の2分割。結合データはUnityの元データとSHA-256で一致した。ビルド前後で対象11シーンと街のレイアウトアセットのハッシュが一致した。ビルドはエラー0・警告1で、Noto Sans JP SDFのインポーター警告と同アセットの再書き込みを確認した。
+
 2026-11-10、国家シーンの軽量化を含むWebGL Release版を、元のローダー・128MiB分割で `country-performance-20261110-restored`（build `2343551`）として公開した。butlerの処理完了を確認。ゲームデータの結合結果はビルド直後とSHA-256で一致し、配布は21ファイル・データ4分割。ビルドはエラー0・警告2（Noto SDFインポーター不整合）、ビルド対象11シーンの保存内容を保持した。記録は `Artifacts/ItchUpdate20261110/`。復元版への追加ブラウザー検証は行っていない。
 
 2026-11-03、[検査結果への修正](../Artifacts/CountryUI/UXFix-v1/verification.md#itchio更新)を `country-ux-20261103-r2`、`html5` の版19（build `2286556`）として公開した。[公開ページ](https://gafu2317.itch.io/webtest)の更新表示と、butlerのcompletedを確認。WebGL Releaseビルドは成功、エラー0・警告2。警告はNoto SDFインポーター不整合で、今回はフォントファイルの内容もビルド前から変わっている。分割データ3個の結合結果が元の展開済みデータと一致し、最大ファイル128MiB・全20ファイルを確認した。

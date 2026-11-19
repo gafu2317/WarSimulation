@@ -36,7 +36,12 @@ def main():
             m=Model(name,palette)
             level=int(name[-1]) if '_Lv' in name else 5
             scale=.64+level*.072 if '_Lv' in name else 1
-            build(m,name,plot['width']*scale,plot['depth']*scale,style)
+            mesh_scale=spec.get('meshScale',1)
+            build(m,name,plot['width']*scale/mesh_scale,plot['depth']*scale/mesh_scale,style)
+            if mesh_scale != 1:
+                for vertices, *_ in m.parts.values():
+                    vertices[:]=[tuple(axis*mesh_scale for axis in v) for v in vertices]
+                m.markers={key:tuple(axis*mesh_scale for axis in v) for key,v in m.markers.items()}
             objects=m.finish(materials)
             bpy.ops.object.select_all(action='DESELECT')
             for obj in objects:obj.select_set(True)

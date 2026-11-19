@@ -26,7 +26,7 @@ namespace WarSimulation.CountryComparison.Editor
             if (EditorApplication.isPlaying) throw new System.InvalidOperationException("Exit Play mode first.");
             var view = Object.FindAnyObjectByType<CountryComparisonView>();
             if (view == null) throw new System.InvalidOperationException("Open the Country comparison scene.");
-            var reduction = view.cities.Sum(city => Bake(city.transform));
+            var reduction = view.cities.Where(city => city != null).Sum(city => Bake(city.transform));
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(view.gameObject.scene);
             UnityEditor.SceneManagement.EditorSceneManager.SaveScene(view.gameObject.scene);
             Debug.Log("Country meshes combined: " + reduction + " fewer renderers.");
@@ -34,6 +34,8 @@ namespace WarSimulation.CountryComparison.Editor
 
         public static int Bake(Transform city)
         {
+            if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(city.gameObject)?.EndsWith(".townlayout", System.StringComparison.Ordinal) == true)
+                return 0;
             Restore(city);
             var roots = city.GetComponentsInChildren<Transform>(true).Where(t =>
                 PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject) &&

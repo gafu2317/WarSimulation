@@ -2,12 +2,12 @@
   "authoring": "Purpose-built architecture with large equipment, sculptural shop signs and readable silhouettes.",
   "existingModelsRead": false,
   "existingImagesRead": false,
-  "designHash": "97e454bafabe0cc6c13d2b343b867e31920d70f2c8352991fe0aaf22328378cb",
+  "designHash": "c8042ef31d1fbac26ae3c16cb316c7728ed465c4fd2d6fe9a115a6a6be23c21b",
   "sources": {
-    "build_assets.py": "33da1fb77f7eccf02c6dae3c0b643c51afce152fec6dc095a1d80bddf9d52366",
+    "build_assets.py": "cfdb90464d180287d312787412853bce07d862fb92d0a38c3db3e9fa06bde852",
     "landmarks.py": "0d9e52f5b27942efd08c16c5fb9303016039afef12def823958abdf8c2a89c89",
     "mesh.py": "3f09a569f86e812739b4e5f90c73bcca783dc89eccf2a83ca7ba8d7b5db3c38f",
-    "architecture.py": "0e1602db927e1e736427fa97792679b3dfd82c4d9d120f0780ab745db13ac83b",
+    "architecture.py": "936de7c30beb299f947154bbffb7ba3f1b5e72686c74e759068f68e48b2aa138",
     "furnishings.py": "4fbbaf4a8ec58daf0b8a5c185ba53a014510ac6b8a3e2785806871cca447f952"
   },
   "assets": [
@@ -18,63 +18,94 @@
       "staged": "Artifacts/RoleFacilityRebuild20261024/Generated/CityV2/Royal_Castle.fbx",
       "fbx": "Assets/Models/Kingdom/CityV2/Models/Royal_Castle.fbx",
       "materials": [
+        "Brass",
         "Bronze_Fittings",
+        "Canvas_Blue",
         "Carved_Limestone",
         "Cobble",
+        "Cypress_Foliage",
         "DarkTimber",
         "Door_Oak",
         "Earth",
         "Fieldstone",
         "Foliage",
         "Glazing_Blue",
+        "Identity_Ivory",
         "Iron",
         "Oak",
         "Plaster",
         "Roof_Slate",
-        "Terracotta"
+        "Window_Amber"
       ],
       "min": [
-        -22.0,
+        -26.4,
         0.0,
-        -19.5
+        -23.4
       ],
       "max": [
-        22.0,
-        22.019001,
-        19.5
+        26.4,
+        32.88,
+        23.4
       ],
-      "vertices": 94984,
-      "faces": 23502,
+      "vertices": 228397,
+      "faces": 56091,
       "features": [
+        "BlueProcessionalRunner",
+        "CentralPalaceHall",
+        "CentralPalaceHall_Roof",
         "CentralRoyalKeep",
-        "CentralRoyalKeep_Top",
-        "ContinuousFoundation",
-        "CornerKeep",
-        "CornerKeep_Roof",
-        "CurtainWall",
-        "FortifiedInnerWard",
-        "GatehouseFlank",
-        "GatehouseFlank_Top",
-        "OpenGatehousePassage",
-        "RoyalGreatHall",
-        "RoyalGreatHall_Roof",
-        "RoyalGuardCourt",
-        "WallWalkAndCrenellations"
+        "CourtCypressPlanters",
+        "CourtyardGalleryRoofs",
+        "CourtyardLanterns",
+        "CourtyardSideGalleries",
+        "CrownedGate",
+        "ForecourtCornerTower",
+        "ForecourtCornerTower_Base",
+        "ForecourtCornerTower_Cornices",
+        "ForecourtCornerTower_Spire",
+        "GateThreshold",
+        "GateTower",
+        "GateTower_Base",
+        "GateTower_Cornices",
+        "GateTower_Spire",
+        "InnerCourtPaving",
+        "KeepCarvedCornices",
+        "KeepHallSeam",
+        "Landmark_CrownedRoyalKeep",
+        "Landmark_GreatHallRoseWindow",
+        "Landmark_RoyalCrownAboveGate",
+        "OuterCurtainWalls",
+        "PalaceEntryPortico",
+        "PalaceForestairs",
+        "PalaceSideWings",
+        "PalaceSideWingsLowerWalls",
+        "PalaceWingArcades",
+        "RearStairTower",
+        "RearStairTower_Base",
+        "RearStairTower_Cornices",
+        "RearStairTower_Spire",
+        "RoyalBanners",
+        "StairTowerLinks",
+        "WingRoofAndDormers"
       ],
       "markers": {
         "Entrance": [
           0,
-          0.23,
-          -19.5
+          0.276,
+          -23.4
         ]
       },
-      "triangles": 47980,
-      "mesh_parts": 45,
+      "triangles": 116215,
+      "mesh_parts": 107,
       "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
       "coordinateSystem": "X right, Y up, Z back",
-      "geometryHash": "06a2b1cc18530484b3a50364875432c5d7ea5d1eb7522846a0a20ef9ced7f467",
+      "geometryHash": "8f16b5082334b07c095632a8cbc1f8dfcdc97e2b72c3be858117d66b53f0b047",
       "fromScratch": true,
-      "landmarks": [],
+      "landmarks": [
+        "CrownedRoyalKeep",
+        "GreatHallRoseWindow",
+        "RoyalCrownAboveGate"
+      ],
       "sourceInputs": [
         "facility function",
         "plot dimensions",
@@ -106,14 +137,14 @@
         "Window_Sacred"
       ],
       "min": [
-        -10.5,
+        -13.65,
         0.0,
-        -15.0
+        -19.5
       ],
       "max": [
-        10.5,
-        18.6,
-        15.0
+        13.65,
+        24.18,
+        19.5
       ],
       "vertices": 53953,
       "faces": 13501,
@@ -134,16 +165,16 @@
       ],
       "markers": {
         "Entrance": [
-          0,
-          0.23,
-          -15.0
+          0.0,
+          0.29900000000000004,
+          -19.5
         ]
       },
       "triangles": 26951,
       "mesh_parts": 56,
       "blend": "Art/RoleFacilities/CityV2_Facilities.blend",
       "coordinateSystem": "X right, Y up, Z back",
-      "geometryHash": "6a8a7e9f35eb6cbcca87c1f80e3266e796dc5724182110148b4462f4bd75b3af",
+      "geometryHash": "464132649f7d1fb62e57ad77840d66c1257a09ed48ce3f6088296f1934e7835f",
       "fromScratch": true,
       "landmarks": [
         "CathedralRoseWindow",

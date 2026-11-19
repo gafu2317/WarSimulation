@@ -7,7 +7,7 @@ namespace WarSimulation.CountryComparison.Editor
 {
     public static class CityV2MaterialQuality
     {
-        const string Root = "Assets/Prefabs/Kingdom/CityV2/Materials/";
+        internal const string Root = "Assets/Prefabs/Kingdom/CityV2/Materials/";
 
         public static bool IsDedicated(string name) => name is "Carved_Limestone" or "Bronze_Fittings" or "Glazing_Blue" or "Glazing_Amber"
             or "Glazing_Sage" or "Glazing_Plum" or "Coal" or "Glowing_Coals" or "Leather" or "Wicker" or "Architectural_Glass" || name.StartsWith("Identity_", StringComparison.Ordinal);

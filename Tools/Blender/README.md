@@ -49,10 +49,17 @@ trim_rock_bottoms.py → rebuild_rock_bases.py → generate_natural_rock_variant
 
 ## 実行前に確認すること
 
+- macOSでバッチ実行する場合は、リポジトリのルートから `sh Tools/Blender/run_background.sh` に Blender の引数を渡す。このスクリプトは Metal の GPU 名を確認してから Blender をバックグラウンドで起動する。Codexでは起動済みのBlenderをMCPで操作できる場合は再利用する。バッチが必要で事前チェックに失敗した場合は、承認付きのローカル実行に切り替える。
 - 通常のPythonではなくBlender付属のPython環境で実行する。`bpy` が必要。
 - 生成スクリプトはシーンを初期化し、固定パスの原本や出力を上書きする場合がある。編集中のGUI上で不用意に実行しない。
 - Blenderでの手修正はレシピには自動反映されない。手修正した原本を残したいときは、再生成前に別名保存する。
 - **Unityへ渡すだけなら再生成しない。** 保存済み `.blend` からFBXを取り出す。
 - `__pycache__` は削除候補だが、現在の4ファイルはGit追跡中。`.gitignore` への追加だけでは追跡解除にならない。
+
+2026-11-16に、CodexのサンドボックスからBlender 5.0.0を起動した際、Python実行前にMetalの機能検出で `SIGSEGV` が発生した。クラッシュログは `supports_barycentric_whitelist` から `strstr` を呼ぶ箇所を示した。起動前のGPU名の取得はサンドボックス内で失敗し、承認付き実行では成功した。 [Blender 5.0.0のMetal実装](https://github.com/blender/blender/blob/v5.0.0/source/blender/gpu/metal/mtl_backend.mm#L274-L293)
+
+確認にはサンドボックス内で `sh Tools/Blender/run_background.sh --version` を使い、診断メッセージを出して起動前に停止することを確かめた。承認付き実行では同じスクリプトに `--factory-startup --disable-autoexec --python-exit-code 1 --python-expr 'import bpy; assert bpy.app.background'` を渡し、正常終了を確認した。
+
+2026-11-17の街の描画では、水車小屋の補助水面・水路壁を `collection.all_objects` の走査中に削除したため、`Collection_all_objects_next` でBlenderが終了した。`Tools/World/render_country_redesign.py` は一覧を `list(...)` に取り出してから削除する。修正後に街の全景と近景の描画、本番の制作原本を参照した配置ファイルの保存と再読み込みが正常終了した。
 
 採用する素材とUnityへの移行手順は [素材管理ガイド](../../docs/Art/README.md) を参照。

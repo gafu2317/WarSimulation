@@ -35,6 +35,7 @@ public static class CountryFacilityBuilder
         ("SpiritAcademy_Lv5", "精霊使役学校", "精霊施設", "ステータスを上昇させる施設。"),
         ("Blacksmith", "鍛冶場", "武器製作施設", "施設レベルを上げると、より良い武器を製作できる。")
     };
+    internal static int FacilityCount => Definitions.Length;
 
     [MenuItem("WarSim/Country/Set Up Facility Banners")]
     public static void Build()
@@ -66,19 +67,25 @@ public static class CountryFacilityBuilder
         if (country != null && controller != null && controller.Targets.Count == 0) BindTargets(country);
     }
 
-    public static void BindTargets(CountryComparisonView country)
+    public static void BindTargets(CountryComparisonView country, string reportPath = ".unity/test-results/country-facility-targets.json")
     {
-        var controller = Object.FindFirstObjectByType<CountryFacilityLayer>(FindObjectsInactive.Include);
+        var controller = Object.FindAnyObjectByType<CountryFacilityLayer>(FindObjectsInactive.Include);
         if (controller == null) return;
         var targets = new List<CountryFacilityTarget>();
-        foreach (var city in country.cities)
+        var cities = country.cities.Where(city => city != null).ToArray();
+        foreach (var city in cities)
         {
             var transforms = city.GetComponentsInChildren<Transform>(true);
+            var plots = city.transform.Find("Buildings and courtyards");
+            var placed = plots.Cast<Transform>().SelectMany(zone => zone.Cast<Transform>()).ToArray();
+            var entertainment = plots.Find("Entertainment quarter");
+            var isApprovedTown = PrefabUtility.IsAnyPrefabInstanceRoot(city);
             foreach (var definition in Definitions)
             {
                 var building = definition.model == "Entertainment quarter"
-                    ? city.transform.Find("Buildings and courtyards/Entertainment quarter")
-                    : transforms.Single(t => t.name == definition.model && PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject));
+                    ? (isApprovedTown ? entertainment.Find("CrimsonRowhouse") ?? entertainment : entertainment)
+                    : placed.SingleOrDefault(t => t.name == definition.model) ??
+                      transforms.Single(t => t.name == definition.model && PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject));
                 if (building == null) throw new InvalidOperationException("Missing facility: " + city.name + "/" + definition.model);
                 var renderers = building.GetComponentsInChildren<MeshRenderer>(true);
                 Bounds bounds = renderers[0].bounds;
@@ -93,11 +100,11 @@ public static class CountryFacilityBuilder
         controller.Bind(country.viewCamera, country, targets.ToArray());
         PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
         EditorSceneManager.MarkSceneDirty(country.gameObject.scene);
-        Directory.CreateDirectory(".unity/test-results");
-        File.WriteAllText(".unity/test-results/country-facility-targets.json", JsonUtility.ToJson(new TargetReport {
-            cities = country.cities.Length, facilitiesPerCity = Definitions.Length,
+        Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
+        File.WriteAllText(reportPath, JsonUtility.ToJson(new TargetReport {
+            cities = cities.Length, facilitiesPerCity = Definitions.Length,
             entries = targets.Select(t => new TargetEntry { name = t.name, category = t.category, building = t.building.name,
-                country = country.cities.First(c => t.building.IsChildOf(c.transform)).name,
+                country = cities.First(c => t.building.IsChildOf(c.transform)).name,
                 anchor = t.building.TransformPoint(t.localAnchor) }).ToArray()
         }, true));
     }

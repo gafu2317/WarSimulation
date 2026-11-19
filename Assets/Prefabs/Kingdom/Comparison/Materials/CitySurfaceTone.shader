@@ -35,6 +35,7 @@ Shader "WarSimulation/City Surface Tone"
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
             #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _TOWN_LAYOUT_TONE
             #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
             #pragma shader_feature_local_fragment _OCCLUSIONMAP
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
@@ -54,7 +55,12 @@ Shader "WarSimulation/City Surface Tone"
                 InitializeUntonedSurface(uv, surface);
                 half3 textureColour = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb;
                 half luminance = dot(textureColour, half3(0.2126, 0.7152, 0.0722));
-                surface.albedo = lerp(luminance.xxx, textureColour, _BaseColor.a) * _BaseColor.rgb;
+                #if defined(_TOWN_LAYOUT_TONE)
+                    half tone = saturate((luminance - 0.036h) / (0.64h - 0.036h));
+                    surface.albedo = lerp(_BaseColor.rgb * 0.62h, min(1.0h, _BaseColor.rgb * 1.52h), tone);
+                #else
+                    surface.albedo = lerp(luminance.xxx, textureColour, _BaseColor.a) * _BaseColor.rgb;
+                #endif
                 surface.alpha = 1;
                 surface.emission = 0;
             }

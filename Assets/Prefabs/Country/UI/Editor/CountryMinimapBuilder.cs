@@ -16,14 +16,14 @@ public static class CountryMinimapBuilder
     private const string PlanPath = "Assets/Data/CountryComparison/town_plan.json";
 
     [Serializable] private sealed class Point { public float x, z; public Vector2 Position => new(x, z); }
-    [Serializable] private sealed class Road { public float width; public bool avenue, paved; public Point[] points, outline; }
+    [Serializable] private sealed class Road { public float width; public bool avenue, paved, gravel; public Point[] points, outline; }
     [Serializable] private sealed class Plot { public string name; public float x, z, width, depth, yaw; public Point[] points; }
     [Serializable] private sealed class Plan
     {
         public bool pavedTown;
         public float riverZ, riverWidth;
         public Point[] wallOutline;
-        public Road[] roads, accessPaths, frontages;
+        public Road[] roads, accessPaths, frontages, secondaryAccessPaths, amenityPaths;
         public Plot[] buildings, squares, greens;
     }
 
@@ -67,15 +67,28 @@ public static class CountryMinimapBuilder
     }
 
     public static (Mesh mesh, Rect bounds) RefreshLayout()
+        => RefreshLayout(File.ReadAllText(PlanPath), LayoutPath);
+
+    public static void BindModernLayout(string json, CountryComparisonView view)
     {
-        var plan = JsonUtility.FromJson<Plan>(File.ReadAllText(PlanPath));
+        var map = Object.FindAnyObjectByType<CountryMinimapMapGraphic>(FindObjectsInactive.Include);
+        if (map == null) throw new InvalidOperationException("Country minimap is missing.");
+        var (mesh, _) = RefreshLayout(json, Folder + "/Minimap/ApprovedTownLayout.asset");
+        Undo.RecordObject(map, "Bind modern town minimap");
+        map.BindModernLayout(mesh, view);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(map);
+    }
+
+    private static (Mesh mesh, Rect bounds) RefreshLayout(string json, string path)
+    {
+        var plan = JsonUtility.FromJson<Plan>(json);
         Vector2 min = new(plan.wallOutline.Min(p => p.x) - 8, plan.wallOutline.Min(p => p.z) - 8);
         Vector2 max = new(plan.wallOutline.Max(p => p.x) + 8, plan.wallOutline.Max(p => p.z) + 8);
         Rect bounds = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         var layout = BuildLayout(plan, bounds);
         if (!AssetDatabase.IsValidFolder(Folder + "/Minimap")) AssetDatabase.CreateFolder(Folder, "Minimap");
-        var saved = AssetDatabase.LoadAssetAtPath<Mesh>(LayoutPath);
-        if (saved == null) { AssetDatabase.CreateAsset(layout, LayoutPath); saved = layout; }
+        var saved = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+        if (saved == null) { AssetDatabase.CreateAsset(layout, path); saved = layout; }
         else { EditorUtility.CopySerialized(layout, saved); Object.DestroyImmediate(layout); }
         EditorUtility.SetDirty(saved);
         return (saved, bounds);
@@ -131,8 +144,10 @@ public static class CountryMinimapBuilder
             for (int i = 1; i < road.points.Length; i++)
                 Segment(road.points[i - 1].Position, road.points[i].Position, road.width, color);
         }
-        foreach (var approach in plan.accessPaths)
+        foreach (var approach in plan.accessPaths.Concat(plan.secondaryAccessPaths ?? Array.Empty<Road>()))
             DrawRoad(approach, plan.pavedTown || approach.paved ? cobble : new Color32(120, 105, 85, 255));
+        foreach (var approach in plan.amenityPaths ?? Array.Empty<Road>())
+            DrawRoad(approach, approach.gravel ? new Color32(120, 105, 85, 255) : cobble);
         foreach (var road in plan.frontages) DrawRoad(road, cobble);
         foreach (var road in plan.roads.OrderBy(road => road.avenue))
             DrawRoad(road, road.avenue ? new Color32(171, 175, 160, 255) : cobble);

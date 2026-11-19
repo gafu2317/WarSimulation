@@ -694,33 +694,299 @@ def plaza(m,w,d,s):
 
 
 def castle(m,w,d,s):
-    court(m,'FortifiedInnerWard',0,0,w*.78,d*.76)
+    tower_x=w/2-3.75
+    gate_z=-18.6
+    rear_z=d/2-.68
+    floor=.276
+    passage=6.4
+    m.markers['Entrance']=(0,floor,-d/2)
+    m.feature('InnerCourtPaving')
+    m.box((0,floor/2,(gate_z+rear_z)/2),(tower_x*2,floor,rear_z-gate_z),'trim')
+    m.feature('GateThreshold')
+    m.box((0,floor/2,(-d/2+gate_z)/2),(passage,floor,gate_z+d/2),'paving')
+
+    m.feature('OuterCurtainWalls')
+    front_span=tower_x-passage/2
     for side in (-1,1):
-        m.feature('CurtainWall')
-        m.box((side*w*.40,2.3,0),(.65,4.2,d*.79),'stone')
-        if side==1:m.box((0,2.3,side*d*.39),(w*.80,4.2,.65),'stone')
-        else:
-            for flank in (-1,1):m.box((flank*w*.245,2.3,side*d*.39),(w*.31,4.2,.65),'stone')
-    m.feature('WallWalkAndCrenellations')
+        x=side*(tower_x+passage/2)/2
+        palace_wall(m,x,gate_z,front_span,0)
+        palace_wall(m,side*tower_x,(gate_z+rear_z)/2,rear_z-gate_z,math.pi/2)
+    palace_wall(m,0,rear_z,tower_x*2,0)
+
     for side in (-1,1):
-        for i in range(14):
-            m.box(((i-6.5)*w*.055,4.8,side*d*.39),(.85,1.0,.8),'trim')
-        for i in range(12):m.box((side*w*.40,4.8,(i-5.5)*d*.061),(.8,1.0,.85),'trim')
+        palace_turret(m,'ForecourtCornerTower',side*tower_x,gate_z,2.64,8.65,3.70,(4.05,))
+        palace_turret(m,'GateTower',side*5.43,gate_z-.40,2.25,6.74,1.75,(3.80,))
+        palace_turret(m,'RearStairTower',side*tower_x,13.15,3.35,15.4,5.05,(6.20,11.30))
+        palace_banner(m,side*5.43,5.95,gate_z-.40-2.24,1.38,3.21)
+
+    m.feature('CrownedGate')
+    for z in (gate_z-1.18,gate_z+1.34):
+        m.arch(0,floor,z,passage,4.38,.45,.64,'trim')
+        m.arch(0,floor,z,passage+.60,4.68,.19,.38,'trim')
+    spring=floor+4.38-passage/2
+    outside=passage/2+.35
+    for side in (-1,1):
+        for i in range(10):
+            a,b=i*math.pi/20,(i+1)*math.pi/20
+            x0,x1=side*outside*math.cos(a),side*outside*math.cos(b)
+            h0,h1=spring+outside*math.sin(a),spring+outside*math.sin(b)
+            front,back=gate_z-1.25,gate_z+1.41
+            pts=[(x0,h0,front),(x1,h1,front),(x1,5.54,front),(x0,5.54,front)]
+            m.face(pts if side>0 else list(reversed(pts)),'stone')
+            pts=[(x,y,back) for x,y,_ in pts]
+            m.face(list(reversed(pts)) if side>0 else pts,'stone')
+    m.box((0,5.66,gate_z+.05),(7.60,.26,3.03),'trim')
+    m.box((0,5.91,gate_z+.05),(7.25,.23,2.83),'trim')
+    for i in (-2,-1,0,1,2):
+        m.box((i*1.44,6.25,gate_z-1.14),(.72,.45,.44),'trim')
+    m.landmark('RoyalCrownAboveGate')
+    crest_z=gate_z-1.52
+    m.cylinder((0,5.75,crest_z),.76,.24,'gold',axis=(0,0,1),n=32)
+    m.cylinder((0,5.75,crest_z-.16),.61,.14,'blue',axis=(0,0,1),n=32)
+    palace_crown(m,0,5.76,crest_z-.25,.93)
+    for side in (-1,1):
+        palace_lantern(m,side*2.45,gate_z-1.15,2.83,3.58)
+
+    hall_front=1.45
+    hall_height=8.9
+    room(m,'CentralPalaceHall',0,hall_front+3.85,10.75,7.70,hall_height,s,
+         window_height=3.3,spacing=4.25,door_width=3.65,door_height=4.15,base=.93,wall='trim')
+    m.landmark('GreatHallRoseWindow')
+    rose_y,rose_z=9.05,hall_front-.35
+    m.cylinder((0,rose_y,rose_z),1.72,.25,'trim',axis=(0,0,1),n=40)
+    m.cylinder((0,rose_y,rose_z-.18),1.53,.17,'gold',axis=(0,0,1),n=40)
+    m.cylinder((0,rose_y,rose_z-.31),1.41,.12,'blueglass',axis=(0,0,1),n=40)
+    m.cylinder((0,rose_y,rose_z-.42),.34,.14,'gold',axis=(0,0,1),n=24)
+    m.cylinder((0,rose_y,rose_z-.52),.24,.10,'blueglass',axis=(0,0,1),n=20)
+    for i in range(8):
+        a=(i+.5)*math.tau/8
+        x,y=.87*math.cos(a),rose_y+.87*math.sin(a)
+        for j in range(12):
+            b,c=j*math.tau/12,(j+1)*math.tau/12
+            def petal(t):
+                return (x+.54*math.cos(t)*math.cos(a)-.23*math.sin(t)*math.sin(a),
+                        y+.54*math.cos(t)*math.sin(a)+.23*math.sin(t)*math.cos(a),rose_z-.41)
+            m.beam(petal(b),petal(c),.058,'gold')
+
+    m.feature('PalaceForestairs')
+    front_step=-3.36
+    for i in range(3):
+        top=floor+.218*(i+1)
+        z0=front_step+i*.56
+        runner_end=z0+.56 if i<2 else hall_front-.20
+        m.box((0,top/2,(z0+hall_front)/2),(9.85-.23*i,top,hall_front-z0),'trim')
+        m.box((0,top+.011,(runner_end+z0)/2),(2.38,.02,runner_end-z0),'blue')
+        m.box((0,top-.108,z0-.008),(2.38,.218,.012),'blue')
+        for side in (-1,1):
+            m.box((side*1.11,top+.019,(runner_end+z0)/2),(.06,.012,runner_end-z0),'gold')
+            m.box((side*1.11,top-.108,z0-.016),(.06,.218,.010),'gold')
+    m.feature('BlueProcessionalRunner')
+    gate_run=(gate_z-1.4,front_step)
+    m.box((0,floor+.008,sum(gate_run)/2),(2.38,.014,gate_run[1]-gate_run[0]),'blue')
+    for side in (-1,1):
+        m.box((side*1.11,floor+.016,sum(gate_run)/2),(.06,.012,gate_run[1]-gate_run[0]),'gold')
+        palace_banner(m,side*4.68,8.18,hall_front-.22,1.20,2.20)
+    palace_colonnade(m,'PalaceEntryPortico',0,-.76,(2.3,3.78,2.3),5.54,0,.93)
+    m.box((0,5.71,.28),(9.14,.28,2.42),'trim')
+    for side in (-1,1):
+        palace_lantern(m,side*3.25,-.84,3.18,5.60)
+
+    for side in (-1,1):
+        x=side*12.73
+        wing_z=10.0
+        m.feature('PalaceSideWingsLowerWalls')
+        m.box((x,2.30,wing_z+.30),(12.07,4.60,7.50),'trim')
+        room(m,'PalaceSideWings',x,wing_z,12.08,7.88,9.77,s,base=4.62,
+             roof=False,spacing=2.70,window_height=2.80,entry=False,wall='trim')
+        m.feature('WingRoofAndDormers')
+        palace_hip_roof(m,x,wing_z,12.12,7.92,9.85,3.09)
+        m.box((x,10.73,wing_z-3.20),(2.69,2.06,2.16),'trim')
+        m.roof(x,wing_z-3.25,2.74,2.18,11.76,1.44,wall='trim')
+        aperture(m,x,10.13,wing_z-4.46,.90,1.62)
+        palace_finial(m,x,wing_z-4.45,13.21,.70)
+        palace_colonnade(m,'PalaceWingArcades',x,4.25,(2.26,)*5,4.24,0,floor)
+        palace_hip_roof(m,x,5.24,12.54,2.56,4.37,.83)
+        m.feature('StairTowerLinks')
+        z=13.15
+        m.box((side*19.38,2.55,z),(2.74,5.10,3.17),'trim')
+        palace_hip_roof(m,side*19.38,z,2.76,3.19,5.10,.92)
+        palace_banner(m,side*15.53,8.20,wing_z-4.30,1.02,2.96)
+        for offset in (-4.52,-2.26,0,2.26,4.52):
+            palace_lantern(m,x+offset,4.40,2.75,4.37)
+
+    for side in (-1,1):
+        z=-6.72
+        x=side*18.81
+        palace_colonnade(m,'CourtyardSideGalleries',x,z,(2.85,)*6,3.91,side*math.pi/2,floor)
+        m.feature('CourtyardGalleryRoofs')
+        m.shed(x if side>0 else -tower_x,tower_x if side>0 else x,z,17.66,
+               4.03 if side>0 else 5.46,5.46 if side>0 else 4.03)
+        for i in range(6):
+            palace_lantern(m,x+side*.42,z+2.85*(i-2.5),2.54,4.18)
+        palace_planter(m,side*9.26,-9.70)
+        palace_planter(m,side*6.67,-1.70)
+
+    keep_z=15.60
+    keep_w,keep_d,keep_top=13.08,12.27,22.0
+    room(m,'CentralRoyalKeep',0,keep_z,keep_w,keep_d,keep_top,s,
+         roof=False,entry=False,spacing=3.94,window_height=3.1,wall='trim')
+    m.feature('KeepHallSeam')
+    m.box((0,3.0,9.30),(6.27,6,1.14),'trim')
+    m.feature('KeepCarvedCornices')
+    for y in (14.77,18.40,21.87):
+        m.box((0,y,keep_z),(keep_w+.38,.24,keep_d+.36),'trim')
+        m.box((0,y+.15,keep_z),(keep_w+.22,.12,keep_d+.23),'trim')
+    for i in range(11):
+        x=(i-5)*1.10
+        m.box((x,21.57,keep_z-keep_d/2-.07),(.34,.42,.43),'trim')
+        m.box((x,21.57,keep_z+keep_d/2+.07),(.34,.42,.43),'trim')
+    m.landmark('CrownedRoyalKeep')
+    palace_hip_roof(m,0,keep_z,keep_w+.37,keep_d+.37,22.07,6.50)
     for side in (-1,1):
         for end in (-1,1):
-            if s==2:round_tower(m,'CornerKeep',side*w*.39,end*d*.38,w*.075,8.7,s)
-            else:square_tower(m,'SquareCornerBastion',side*w*.38,end*d*.37,w*.14,d*.14,7.4,s,battle=True)
-    room(m,'RoyalGreatHall',0,-d*.10,w*.47,d*.38,9.5 if s==2 else 8.0,s,window_height=3.5,shape='gable' if s==2 else 'vault')
-    if s==2:square_tower(m,'CentralRoyalKeep',0,d*.21,w*.22,d*.24,14.0,s)
-    else:square_tower(m,'AsymmetricRoyalKeep',-w*.18,d*.21,w*.25,d*.26,13.2,s,battle=True)
-    m.feature('OpenGatehousePassage')
-    for side in (-1,1):square_tower(m,'GatehouseFlank',side*w*.13,-d*.39,w*.12,d*.14,7.2,s)
-    m.arch(0,.23,-d*.40,w*.12,3.6,.4,.9,'trim')
-    m.box((0,4.5,-d*.40),(w*.16,1.3,d*.11),'stone')
-    m.feature('RoyalGuardCourt')
+            palace_finial(m,side*(keep_w/2-.28),keep_z+end*(keep_d/2-.28),22.62,.86)
+    flag_width_scale,flag_height_scale=2.5,5
+    flag_bottom=29.03
+    outline(m,[(.02+x*flag_width_scale,flag_bottom+y*flag_height_scale)
+               for x,y in ((0,.72),(2.58,.60),(2.01,.28),(2.58,0),(0,.10))],keep_z,.045,'blue')
+    flag_top=flag_bottom+.72*flag_height_scale
+    pole_base,pole_top=28.58,flag_top+.15
+    m.cylinder((0,(pole_base+pole_top)/2,keep_z),.12,pole_top-pole_base,'gold',n=12)
+    m.ellipsoid((0,flag_top+.07,keep_z),(.18,.18,.18),'gold',n=16,rings=10)
+
+
+def palace_wall(m,x,z,length,yaw):
+    m.box((x,2.08,z),(length,4.16,1.08),'stone',yaw)
+    m.box((x,4.11,z),(length,.29,1.36),'trim',yaw)
+    count=round(length/1.69)
+    for i in range(count):
+        u=(i+.5-count/2)*length/count
+        m.box((x+math.cos(yaw)*u,4.60,z-math.sin(yaw)*u),(.78,.78,1.08),'trim',yaw)
+
+
+def palace_colonnade(m,label,x,z,bays,top,yaw,base):
+    m.feature(label)
+    co,si=math.cos(yaw),math.sin(yaw)
+    u=-sum(bays)/2
+    for bay in (*bays,0):
+        xx,zz=x+co*u,z-si*u
+        m.box((xx,base+.115,zz),(.60,.23,.60),'trim',yaw)
+        m.cylinder((xx,(base+top)/2,zz),.23,top-base-.36,'trim',n=16,top=.20)
+        m.box((xx,top-.21,zz),(.54,.26,.54),'trim',yaw)
+        if bay:
+            middle=u+bay/2
+            m.arch(x+co*middle,base+.43,z-si*middle,bay-.50,top-base-.58,.17,.35,'trim',yaw)
+        u+=bay
+    m.box((x,top+.09,z),(sum(bays)+.58,.28,.62),'trim',yaw)
+
+
+def palace_hip_roof(m,x,z,w,d,y,rise):
+    l,r=x-w/2-.24,x+w/2+.24
+    f,b=z-d/2-.24,z+d/2+.24
+    inset=min((b-f)*.40,(r-l)*.45)
+    a,c,e,g=(l,y,f),(r,y,f),(r,y,b),(l,y,b)
+    left,right=(l+inset,y+rise,z),(r-inset,y+rise,z)
+    for face in ((a,left,right,c),(g,e,right,left),(a,g,left),(c,right,e)):
+        m.face(face,'roof')
+    for p,q in ((a,c),(c,e),(e,g),(g,a),(left,right)):
+        m.beam(p,q,.12,'bronze')
+    for p,q in ((a,left),(g,left),(c,right),(e,right)):
+        m.beam(p,q,.087,'bronze')
+
+
+def palace_turret(m,label,x,z,r,body,spire,levels):
+    m.feature(label+'_Base')
+    m.lathe(x,0,z,[(r+.40,0),(r+.40,.24),(r+.31,.31),
+                   (r+.31,.53),(r+.18,.66),(r+.08,.90)],'trim',n=24)
+    m.feature(label)
+    sides=24
+    chord=2*r*math.sin(math.pi/sides)
+    plane=r*math.cos(math.pi/sides)
+    win=min(chord*.59,.69)
+    h=1.48 if body<10 else 1.86
+    m.wall_mapping=(x,z,r)
+    for i in range(sides):
+        a=i*math.tau/sides
+        co,si=math.cos(a),math.sin(a)
+        xx,zz=x+si*plane,z-co*plane
+        openings=levels if i%2==0 else ()
+        xs=(-chord/2,-win/2,win/2,chord/2) if openings else (-chord/2,chord/2)
+        ys=sorted([.71,body]+[v for low in openings for v in (low,low+h)])
+        def p(u,y,depth=0):
+            return (xx+co*u-si*depth,y,zz+si*u+co*depth)
+        for left,right in zip(xs,xs[1:]):
+            for low,high in zip(ys,ys[1:]):
+                if abs((left+right)/2)<win/2 and low in openings and abs(high-low-h)<.001:
+                    for u in (left,right):
+                        line=[p(u,low),p(u,high),p(u,high,.17),p(u,low,.17)]
+                        m.face(line if u<0 else list(reversed(line)),'trim')
+                    continue
+                m.face([p(left,low),p(left,high),p(right,high),p(right,low)],'stone')
+        for low in openings:
+            px,yy,pz=p(0,low,.10)
+            aperture(m,px,yy,pz,win,h,yaw=-a)
+    m.wall_mapping=None
+    m.feature(label+'_Cornices')
+    for y in (*[low-.34 for low in levels],body-.47,body+.04):
+        m.ring(x,z,r-.10,r+.135,y,y+.16,'trim',n=sides)
+    for i in range(12):
+        a=i*math.tau/12
+        m.box((x+math.sin(a)*r,body-.20,z-math.cos(a)*r),(.28,.49,.33),'trim',-a)
+    m.feature(label+'_Spire')
+    m.lathe(x,body+.18,z,[(r+.32,0),(r+.13,spire*.10),(r*.70,spire*.34),
+                          (r*.38,spire*.64),(r*.19,spire*.85),(.12,spire)],'roof',n=sides)
+    m.ring(x,z,r+.21,r+.34,body+.17,body+.25,'bronze',n=sides)
+    palace_finial(m,x,z,body+.16+spire,1)
+
+
+def palace_finial(m,x,z,y,scale):
+    profile=[(.18,0),(.18,.11),(.105,.26),(.132,.32),(.18,.49),
+             (.125,.64),(.035,.78)]
+    m.lathe(x,y,z,[(r*scale,h*scale) for r,h in profile],'gold',n=16)
+
+
+def palace_crown(m,x,y,z,w):
+    tips=[(-.46,-.21),(-.51,.23),(-.24,.06),(0,.34),(.24,.06),(.51,.23),(.46,-.21)]
+    outline(m,[(x+a*w,y+b*w) for a,b in tips],z,.067,'gold')
+    m.box((x,y-.28*w,z),(.86*w,.09*w,.073),'gold')
+
+
+def palace_banner(m,x,y,z,w,h):
+    m.feature('RoyalBanners')
+    cloth=[(-w/2,0),(w/2,0),(w/2,-h*.77),(0,-h),(-w/2,-h*.77)]
+    outline(m,[(x+a,y+b) for a,b in cloth],z,.07,'gold')
+    outline(m,[(x+.90*a,y-.062+.935*b) for a,b in cloth],z-.055,.04,'blue')
+    m.beam((x-w*.60,y+.06,z),(x+w*.60,y+.06,z),.10,'gold')
     for side in (-1,1):
-        weapon_rack(m,side*w*.19,-d*.23,2.4,shields=True)
-        planter(m,side*w*.30,d*.01,2.5,1.4)
+        u=x+side*w*.49
+        m.beam((u,y+.06,z),(u,y+.06,z+.34),.075,'bronze')
+    palace_crown(m,x,y-h*.43,z-.10,w*.59)
+
+
+def palace_lantern(m,x,z,y,ceiling):
+    m.feature('CourtyardLanterns')
+    m.cylinder((x,(y+.28+ceiling)/2,z),.031,ceiling-y-.28,'bronze',n=8)
+    m.box((x,y-.23,z),(.36,.10,.35),'bronze')
+    m.box((x,y,z),(.29,.38,.27),'amber')
+    m.cylinder((x,y+.25,z),.24,.18,'bronze',n=8,top=.076)
+    for i in (-1,1):
+        for j in (-1,1):
+            m.beam((x+i*.148,y-.18,z+j*.14),(x+i*.148,y+.20,z+j*.14),.036,'bronze')
+
+
+def palace_planter(m,x,z):
+    m.feature('CourtCypressPlanters')
+    for y,w,d in ((.33,2.80,2.88),(.47,2.57,2.65)):
+        m.box((x,y,z),(w,.20,d),'trim')
+    m.box((x,.58,z),(2.19,.095,2.29),'soil')
+    m.cylinder((x,1.21,z),.128,1.25,'wood',n=12)
+    m.lathe(x,.77,z,[(.25,0),(.61,.44),(.63,.89),(.48,1.53),(.30,2.33),(.055,3.13)],
+            'leaflight',n=18)
+    for i in range(9):
+        a=i*math.tau/9
+        xx,zz=x+.86*math.cos(a),z+.89*math.sin(a)
+        m.ellipsoid((xx,.72,zz),(.23,.16,.23),'leaf',n=9,rings=6)
+        m.ellipsoid((xx,.87,zz),(.13,.085,.14),'ivory',n=9,rings=6)
 
 
 def services(m,name,w,d,s):
@@ -817,6 +1083,9 @@ def services(m,name,w,d,s):
 def build(m,name,w,d,style):
     if style!='CityV2':raise ValueError(style)
     s=2
+    if name=='Royal_Castle':
+        castle(m,w,d,s)
+        return
     footing(m,w,d)
     if name.startswith('WarriorAcademy'):warrior(m,w,d,s,int(name[-1]))
     elif name.startswith('ArcaneAcademy'):arcane(m,w,d,s,int(name[-1]))
@@ -833,5 +1102,4 @@ def build(m,name,w,d,style):
     elif name=='Arena':arena(m,w,d,s)
     elif name in ('CrimsonRowhouse','VelvetTerrace','LanternSpire','VeiledCourtyard'):nightlife(m,name,w,d,s)
     elif name=='Plaza':plaza(m,w,d,s)
-    elif name=='Royal_Castle':castle(m,w,d,s)
     else:services(m,name,w,d,s)
