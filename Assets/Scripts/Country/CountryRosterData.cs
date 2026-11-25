@@ -23,6 +23,7 @@ public sealed class CountrySoldierDefinition
 {
     public string Id, Name;
     public Sprite Icon, StandingArt;
+    public Rect StandingArtBounds;
     public CountrySoldierStats InitialStats;
     [Min(1)] public int MaxCP = 100;
     public string InitialWeaponId;

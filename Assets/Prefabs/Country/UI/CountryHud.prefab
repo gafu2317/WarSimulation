@@ -162,7 +162,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: WarSimulation.Runtime::CountrySafeArea
   _targets:
-  - Rect: {fileID: 7465799712499048960}
+  - Rect: {fileID: 7534639454805149577}
     Min: {x: 0, y: 0}
     Max: {x: 1, y: 1}
     Horizontal: 1
@@ -298,6 +298,11 @@ MonoBehaviour:
     Horizontal: 1
     Vertical: 1
   - Rect: {fileID: 7086962109880334813}
+    Min: {x: 0.5, y: 0.5}
+    Max: {x: 0.5, y: 0.5}
+    Horizontal: 1
+    Vertical: 1
+  - Rect: {fileID: 3162129372420019241}
     Min: {x: 0.5, y: 0.5}
     Max: {x: 0.5, y: 0.5}
     Horizontal: 1
@@ -2121,6 +2126,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 8514915565865221759, guid: b43267fded9f54ef783abc0231926666, type: 3}
   m_PrefabInstance: {fileID: 5837704434519625278}
   m_PrefabAsset: {fileID: 0}
+--- !u!224 &3162129372420019241 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8854519600888371735, guid: b43267fded9f54ef783abc0231926666, type: 3}
+  m_PrefabInstance: {fileID: 5837704434519625278}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &6913639455425480840 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1076816834130413238, guid: b43267fded9f54ef783abc0231926666, type: 3}
@@ -2134,6 +2144,11 @@ RectTransform:
 --- !u!224 &7465799712499048960 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3934008660241148990, guid: b43267fded9f54ef783abc0231926666, type: 3}
+  m_PrefabInstance: {fileID: 5837704434519625278}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &7534639454805149577 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 4148901475597027767, guid: b43267fded9f54ef783abc0231926666, type: 3}
   m_PrefabInstance: {fileID: 5837704434519625278}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &7840875045241640246 stripped

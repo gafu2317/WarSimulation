@@ -22,6 +22,8 @@ public sealed class CountryTrainingView : MonoBehaviour
     private GameObject[] _emptySlots;
     private int _school;
     public CountryRosterData Data => _view.Data;
+    internal int SelectedCount => _drafts?[_school].Count ?? 0;
+    internal CountryDate StartDate => _roster.Today.PlanningStart;
     public bool CanStart => _roster != null && _drafts[_school].Count > 0 && _drafts[_school].Count + _roster.TrainingCount(_school) <= _roster.Capacity(_school);
     public bool ConfirmationOpen => _confirmation.IsOpen;
     public event Action Changed;
@@ -74,8 +76,8 @@ public sealed class CountryTrainingView : MonoBehaviour
         }
         var school = Data.Schools[_school];
         int level = _roster.SchoolLevel(_school);
-        _learningLabel.text = $"{LearningNames(school.FirstWeapon, school.FirstSkills)}　{LearningNames(school.SecondWeapon, school.SecondSkills)}\n学ぶ技と効果 ›";
-        _schoolName.text = $"{school.Name} Lv.{_roster.SchoolLevel(_school)}　{CountryRoster.WeaponName(school.FirstWeapon)}・{CountryRoster.WeaponName(school.SecondWeapon)}";
+        _learningLabel.text = $"Lv.{level}　{LearningNames(school.FirstWeapon, school.FirstSkills)}　{LearningNames(school.SecondWeapon, school.SecondSkills)}\n学ぶ技と効果 ›";
+        _schoolName.text = $"{school.Name} Lv.{level}　{CountryRoster.WeaponName(school.FirstWeapon)}・{CountryRoster.WeaponName(school.SecondWeapon)}";
         int occupied = _roster.TrainingCount(_school), count = _drafts[_school].Count;
         int active = _roster.Soldiers.Where((soldier, id) => soldier.Training?.School == _school && _roster.IsTraining(id)).Count();
         _capacity.text = $"訓練中 {active}　予約 {occupied - active}　選択中 {count} ／ 定員 {_roster.Capacity(_school)}人";

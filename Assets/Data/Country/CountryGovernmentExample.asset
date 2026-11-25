@@ -17,7 +17,7 @@ MonoBehaviour:
     EffectName: "\u8A13\u7DF4\u52B9\u679C"
     InitialLevel: 1
     Minimum: 100
-    Funding: 200
+    Funding: 130
     TrainingSchool: 1
     Construction:
       Money: 350
@@ -26,16 +26,16 @@ MonoBehaviour:
       Months: 2
       Effect: "\u3053\u306E\u5B66\u6821\u3067\u30E1\u30F3\u30D0\u30FC\u3092\u8A13\u7DF4\u3067\u304D\u308B"
     Upgrade:
-      Money: 550
-      Wood: 100
-      Ore: 80
+      Money: 510
+      Wood: 260
+      Ore: 150
       Months: 1
       Effect: "\u8A13\u7DF4\u52B9\u679C 100% \u2192 120%"
   - Name: "\u9B54\u6CD5\u5B66\u6821"
     EffectName: "\u8A13\u7DF4\u52B9\u679C"
     InitialLevel: 1
     Minimum: 80
-    Funding: 150
+    Funding: 105
     TrainingSchool: 1
     Construction:
       Money: 400
@@ -44,16 +44,16 @@ MonoBehaviour:
       Months: 2
       Effect: "\u3053\u306E\u5B66\u6821\u3067\u30E1\u30F3\u30D0\u30FC\u3092\u8A13\u7DF4\u3067\u304D\u308B"
     Upgrade:
-      Money: 600
-      Wood: 90
-      Ore: 100
+      Money: 580
+      Wood: 170
+      Ore: 230
       Months: 1
       Effect: "\u8A13\u7DF4\u52B9\u679C 100% \u2192 120%"
   - Name: "\u6559\u4F1A"
     EffectName: "\u8A13\u7DF4\u52B9\u679C"
     InitialLevel: 1
     Minimum: 60
-    Funding: 100
+    Funding: 75
     TrainingSchool: 1
     Construction:
       Money: 300
@@ -62,16 +62,16 @@ MonoBehaviour:
       Months: 2
       Effect: "\u3053\u306E\u5B66\u6821\u3067\u30E1\u30F3\u30D0\u30FC\u3092\u8A13\u7DF4\u3067\u304D\u308B"
     Upgrade:
-      Money: 500
-      Wood: 80
-      Ore: 70
+      Money: 340
+      Wood: 160
+      Ore: 100
       Months: 1
       Effect: "\u8A13\u7DF4\u52B9\u679C 100% \u2192 120%"
   - Name: "\u7CBE\u970A\u4F7F\u5F79\u5B66\u6821"
     EffectName: "\u65BD\u8A2D\u52B9\u679C"
     InitialLevel: 1
     Minimum: 90
-    Funding: 150
+    Funding: 105
     TrainingSchool: 0
     Construction:
       Money: 450
@@ -80,16 +80,16 @@ MonoBehaviour:
       Months: 2
       Effect: "\u30B9\u30C6\u30FC\u30BF\u30B9\u3092\u4E0A\u6607\u3055\u305B\u308B"
     Upgrade:
-      Money: 650
-      Wood: 110
-      Ore: 110
+      Money: 630
+      Wood: 250
+      Ore: 255
       Months: 1
       Effect: "\u7CBE\u970A\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5F37\u5316\u3059\u308B"
   - Name: "\u935B\u51B6\u5834"
     EffectName: "\u6B66\u5668\u88FD\u4F5C\u306E\u54C1\u8CEA"
     InitialLevel: 1
     Minimum: 70
-    Funding: 100
+    Funding: 85
     TrainingSchool: 0
     Construction:
       Money: 380
@@ -98,9 +98,9 @@ MonoBehaviour:
       Months: 2
       Effect: "\u6B66\u5668\u3092\u88FD\u4F5C\u3067\u304D\u308B"
     Upgrade:
-      Money: 580
-      Wood: 80
-      Ore: 100
+      Money: 500
+      Wood: 210
+      Ore: 220
       Months: 1
       Effect: "\u88FD\u4F5C\u3067\u304D\u308B\u6B66\u5668\u306E\u54C1\u8CEA\u304C\u4E0A\u304C\u308B"
   - Name: "\u56F3\u66F8\u9928"
@@ -110,8 +110,8 @@ MonoBehaviour:
     Funding: 0
     TrainingSchool: 0
     Construction:
-      Money: 420
-      Wood: 120
+      Money: 350
+      Wood: 320
       Ore: 60
       Months: 2
       Effect: "\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5229\u7528\u3067\u304D\u308B"
@@ -128,9 +128,9 @@ MonoBehaviour:
     Funding: 0
     TrainingSchool: 0
     Construction:
-      Money: 480
-      Wood: 100
-      Ore: 100
+      Money: 470
+      Wood: 170
+      Ore: 175
       Months: 2
       Effect: "\u65BD\u8A2D\u306E\u6A5F\u80FD\u3092\u5229\u7528\u3067\u304D\u308B"
     Upgrade:

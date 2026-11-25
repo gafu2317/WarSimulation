@@ -79,13 +79,13 @@ public static class CountryGovernmentBuilder
         if (!AssetDatabase.IsValidFolder("Assets/Data/Country")) AssetDatabase.CreateFolder("Assets/Data", "Country");
         data = ScriptableObject.CreateInstance<CountryGovernmentData>();
         data.Facilities = new[] {
-            Facility("戦士学校", 1, true, 100, 200, "訓練効果", Cost(350,120,60,2,"この学校でメンバーを訓練できる"), Cost(550,100,80,1,"訓練効果 100% → 120%")),
-            Facility("魔法学校", 1, true, 80, 150, "訓練効果", Cost(400,110,80,2,"この学校でメンバーを訓練できる"), Cost(600,90,100,1,"訓練効果 100% → 120%")),
-            Facility("教会", 1, true, 60, 100, "訓練効果", Cost(300,100,50,2,"この学校でメンバーを訓練できる"), Cost(500,80,70,1,"訓練効果 100% → 120%")),
-            Facility("精霊使役学校", 1, false, 90, 150, "施設効果", Cost(450,130,90,2,"ステータスを上昇させる"), Cost(650,110,110,1,"精霊施設の機能を強化する")),
-            Facility("鍛冶場", 1, false, 70, 100, "武器製作の品質", Cost(380,100,80,2,"武器を製作できる"), Cost(580,80,100,1,"製作できる武器の品質が上がる")),
-            Facility("図書館", 0, false, 80, 0, "施設効果", Cost(420,120,60,2,"施設の機能を利用できる"), Cost(620,120,60,1,"施設の機能を強化する")),
-            Facility("天文台", 0, false, 80, 0, "施設効果", Cost(480,100,100,2,"施設の機能を利用できる"), Cost(680,100,100,1,"施設の機能を強化する"))
+            Facility("戦士学校", 1, true, 100, 130, "訓練効果", Cost(350,120,60,2,"この学校でメンバーを訓練できる"), Cost(510,260,150,1,"訓練効果 100% → 120%")),
+            Facility("魔法学校", 1, true, 80, 105, "訓練効果", Cost(400,110,80,2,"この学校でメンバーを訓練できる"), Cost(580,170,230,1,"訓練効果 100% → 120%")),
+            Facility("教会", 1, true, 60, 75, "訓練効果", Cost(300,100,50,2,"この学校でメンバーを訓練できる"), Cost(340,160,100,1,"訓練効果 100% → 120%")),
+            Facility("精霊使役学校", 1, false, 90, 105, "施設効果", Cost(450,130,90,2,"ステータスを上昇させる"), Cost(630,250,255,1,"精霊施設の機能を強化する")),
+            Facility("鍛冶場", 1, false, 70, 85, "武器製作の品質", Cost(380,100,80,2,"武器を製作できる"), Cost(500,210,220,1,"製作できる武器の品質が上がる")),
+            Facility("図書館", 0, false, 80, 0, "施設効果", Cost(350,320,60,2,"施設の機能を利用できる"), Cost(620,120,60,1,"施設の機能を強化する")),
+            Facility("天文台", 0, false, 80, 0, "施設効果", Cost(470,170,175,2,"施設の機能を利用できる"), Cost(680,100,100,1,"施設の機能を強化する"))
         };
         AssetDatabase.CreateAsset(data, DataPath);
         return data;
@@ -185,7 +185,8 @@ public static class CountryGovernmentBuilder
         BuildTraining(pages[3].transform, controller);
         var footer = BottomFill(shell, "Footer", 128); Image(footer, Panel);
         Image(TopFill(footer, "Edge", 0, 1), Theme.Line);
-        var back = Button(Top(footer, "Back", 32, 8, 224, 112), "‹ 国へ戻る", Panel);
+        var back = PageButton(Child(footer, "Back"), Theme.CountryReturnText);
+        Theme.PlacePageItem((RectTransform)back.transform, 0, Theme.PageBarInset, Theme.PageBarBackWidth);
         var confirm = Button(Right(footer, "Confirm", 32, 8, 344, 112), "配分を確定", Theme.Selected, true);
         var next = footer.Find("Next");
         if (next != null) Object.DestroyImmediate(next.gameObject);
@@ -193,7 +194,7 @@ public static class CountryGovernmentBuilder
         BuildDetails(window, controller);
         CountryGovernmentArtBuilder.Apply(root);
         Set(controller, ("_data", data), ("_window", window.gameObject), ("_shell", group), ("_dateText", date), ("_treasuryText", treasury), ("_status", status),
-            ("_backButton", back), ("_roundedPanel", AssetDatabase.LoadAssetAtPath<Sprite>(Folder + "/Shapes/RoundedPanel.png")), ("_confirmButton", confirm), ("_confirmFrame", confirm.transform.Find("Frame").GetComponent<CountryGovernmentPlate>()), ("_confirmLabel", confirm.GetComponentInChildren<TextMeshProUGUI>()),
+            ("_backButton", back), ("_confirmButton", confirm), ("_confirmFrame", confirm.transform.Find("Frame").GetComponent<CountryGovernmentPlate>()), ("_confirmLabel", confirm.GetComponentInChildren<TextMeshProUGUI>()),
             ("_allocationPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "/CountryGovernmentAllocationRow.prefab").GetComponent<CountryGovernmentAllocationRow>()),
             ("_choicePrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "/CountryGovernmentChoice.prefab").GetComponent<CountryGovernmentChoice>()));
         SetArray(controller, "_tabs", tabs); SetArray(controller, "_pages", pages);
@@ -491,6 +492,36 @@ public static class CountryGovernmentBuilder
         Fill(rect, "Focus", new Vector2(0, 8), new Vector2(0, -8));
         return button;
     }
+    internal static UnityEngine.UI.Button PageButton(RectTransform rect, string text)
+    {
+        var rounded = AssetDatabase.LoadAssetAtPath<Sprite>(Folder + "/Shapes/RoundedPanel.png");
+        foreach (string name in new[] { "Shadow", "Outline", "Icon" })
+            if (rect.Find(name) is Transform part) Object.DestroyImmediate(part.gameObject);
+        Image(rect, Color.clear).raycastTarget = true;
+        var frame = Picture(Fill(rect, "Frame", new Vector2(0, 8), new Vector2(0, -8)), rounded);
+        frame.color = Theme.Border; frame.gameObject.SetActive(true); frame.transform.SetAsFirstSibling();
+        var focus = Picture(Fill(rect, "Focus", new Vector2(0, 8), new Vector2(0, -8)), rounded);
+        focus.color = Theme.Accent; focus.enabled = false; focus.transform.SetSiblingIndex(1);
+        var face = Picture(Fill(rect, "Surface", new Vector2(3, 11), new Vector2(-3, -11)), rounded);
+        face.transform.SetSiblingIndex(2);
+        var label = Label(Fill(rect, "Label", new Vector2(8, 8), new Vector2(-8, -8)), text, 32, Theme.Ink);
+        label.alignment = TextAlignmentOptions.Center; label.transform.SetAsLastSibling();
+        var button = Add<UnityEngine.UI.Button>(rect.gameObject);
+        button.transition = UnityEngine.UI.Selectable.Transition.ColorTint;
+        button.targetGraphic = face; Theme.Colors(button, Theme.Face);
+        CountryButtonFeedbackBuilder.Configure(button);
+        return button;
+    }
+
+    internal static UnityEngine.UI.Image Picture(RectTransform rect, Sprite sprite)
+    {
+        foreach (var graphic in rect.GetComponents<UnityEngine.UI.Graphic>().Where(g => g is not UnityEngine.UI.Image).ToArray())
+            Object.DestroyImmediate(graphic);
+        var image = Image(rect, Color.white); image.sprite = sprite; image.type = UnityEngine.UI.Image.Type.Sliced;
+        image.pixelsPerUnitMultiplier = 4; image.raycastTarget = false;
+        return image;
+    }
+
     internal static void Tab(UnityEngine.UI.Button button, bool inset = false)
     {
         var rect = (RectTransform)button.transform;

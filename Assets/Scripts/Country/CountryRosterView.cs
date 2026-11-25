@@ -8,11 +8,17 @@ using UnityEngine.EventSystems;
 
 public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
 {
+    public const float StandingArtFrameRatio = 2f / 3f;
+    private static readonly Vector2 StandingArtInset = new(.045f, .03f);
+    private static readonly string[] StatSortOptions = { "標準順", "CP", "最大HP", "STR", "INT", "FAI", "AGI" };
+    private static readonly WeaponKind[] SkillSortKinds = ((WeaponKind[])Enum.GetValues(typeof(WeaponKind)))
+        .Where(kind => kind != WeaponKind.Unarmed).ToArray();
     [SerializeField] private CountryRosterData _data;
     [SerializeField] private CountryRosterRow _rowPrefab;
     [SerializeField] private Sprite[] _weaponCategoryIcons;
     [SerializeField] private Sprite _roundedPanel;
     [SerializeField] private UnityEngine.UI.ScrollRect _list, _details;
+    [SerializeField] private TMP_Dropdown _sort;
     [SerializeField] private UnityEngine.UI.Image _portrait;
     [SerializeField] private UnityEngine.UI.AspectRatioFitter _portraitFrame;
     [SerializeField] private GameObject _cpRow;
@@ -46,6 +52,10 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     private List<GameObject>[] _skillRows;
     private UnityEngine.UI.Button _equipmentAction;
     private TextMeshProUGUI _equipmentActionLabel;
+    private (Vector2 Position, Vector2 Size, TextAlignmentOptions Alignment, TextOverflowModes Overflow) _weaponNameLayout;
+    private float _portraitTopInset;
+    private (Vector2 Min, Vector2 Max) _portraitOffsets;
+    private RectTransform _portraitClip;
     public CountryRosterData Data => _data;
     public Sprite RoundedPanel => _roundedPanel;
     public int SelectedSoldier => _soldier;
@@ -62,7 +72,8 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         for (int i = 0; i < _rows.Length; i++)
         {
             int id = i;
-            _rows[i].EnableDrag(target, () => { if (_memberSelected != null && !_memberSelected(id)) { SelectSoldier(id); ActionRequested?.Invoke(); } }, () => !_weapons && id < _data.Soldiers.Length);
+            _rows[i].EnableDrag(target, () => { if (_memberSelected != null && !_memberSelected(id)) { SelectSoldier(id); ActionRequested?.Invoke(); } },
+                () => !_weapons && id < _data.Soldiers.Length, _list.viewport);
         }
     }
     public RectTransform ListViewport => _list.viewport;
@@ -117,6 +128,15 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     {
         if (_roster != null) return;
         _roster = roster;
+        var nameRect = _name.rectTransform;
+        _weaponNameLayout = (nameRect.anchoredPosition, nameRect.sizeDelta, _name.alignment, _name.overflowMode);
+        _portraitTopInset = ((RectTransform)_portraitFrame.transform.parent).offsetMax.y;
+        var art = _portrait.rectTransform;
+        _portraitOffsets = (art.offsetMin, art.offsetMax);
+        _portraitClip = (RectTransform)new GameObject("Art Clip", typeof(RectTransform), typeof(UnityEngine.UI.RectMask2D)).transform;
+        _portraitClip.SetParent(art.parent, false);
+        _portraitClip.SetSiblingIndex(art.GetSiblingIndex());
+        art.SetParent(_portraitClip, false);
         _skills.raycastTarget = true;
         foreach (var label in _skillGroupSkills) label.raycastTarget = true;
         _rows = new CountryRosterRow[Math.Max(_data.Soldiers.Length, _data.Weapons.Length)];
@@ -127,6 +147,14 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
             _rows[i].Bind(() => Select(id));
         }
         _action.onClick.AddListener(() => ActionRequested?.Invoke());
+        _sort.AddOptions(StatSortOptions.Concat(SkillSortKinds.Select(kind => $"{CountryRoster.WeaponName(kind)}のスキル数")).ToList());
+        _sort.onValueChanged.AddListener(_ =>
+        {
+            Refresh();
+            _list.StopMovement();
+            Canvas.ForceUpdateCanvases();
+            _list.verticalNormalizedPosition = 1;
+        });
         if (isActiveAndEnabled) _roster.Changed += RosterChanged;
         Refresh();
     }
@@ -145,10 +173,17 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _weapons = true; _school = -1;
         Refresh(); Canvas.ForceUpdateCanvases(); _list.verticalNormalizedPosition = _weaponScroll;
     }
-    public void ResetDetailScroll()
+    internal Vector2 ScrollOffsets
     {
-        _details.StopMovement(); _details.verticalNormalizedPosition = 1;
+        get => new Vector2(_list.content.anchoredPosition.y, _details.content.anchoredPosition.y);
+        set
+        {
+            StopScrolling();
+            _list.content.anchoredPosition = new Vector2(0, value.x);
+            _details.content.anchoredPosition = new Vector2(0, value.y);
+        }
     }
+    internal void StopScrolling() { _list.StopMovement(); _details.StopMovement(); }
     public void SelectSoldier(int soldier) { _soldier = soldier; if (!_weapons) Select(soldier); }
     private void Select(int id)
     {
@@ -168,10 +203,25 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _actionIcon.sprite = _school >= 0 ? _trainingIcon : chooseMember ? _memberIcon : _equipmentIcon;
         _actionIcon.color = enabled ? Color.white : new Color(1, 1, 1, .4f);
     }
+    private int SortValue(int soldier, int criterion)
+    {
+        if (criterion == 0) return 0;
+        if (criterion >= StatSortOptions.Length)
+        {
+            var kind = SkillSortKinds[criterion - StatSortOptions.Length];
+            return _data.Skills == null ? 0 : _roster.Soldiers[soldier].Learned.Count(id =>
+                _data.Skills.TryGetDefinition(id, out var skill) && skill.RequiredWeaponKind == kind);
+        }
+        if (criterion == 1) return _roster.Soldiers[soldier].CP;
+        var stats = Stats(soldier, Weapon(soldier));
+        return criterion switch { 2 => stats.HP, 3 => stats.STR, 4 => stats.INT, 5 => stats.FAI, _ => stats.AGI };
+    }
     public void Refresh()
     {
         if (_roster == null) return;
         _listCaption.text = "一覧";
+        _sort.gameObject.SetActive(!_weapons);
+        int criterion = _weapons ? 0 : _sort.value;
         int count = _weapons ? _data.Weapons.Length : _data.Soldiers.Length;
         var unavailable = new bool[count];
         var members = new bool[count];
@@ -183,7 +233,8 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
             {
                 _rows[i].SetWeaponIcon(null);
                 var weapon = _data.Weapons[i]; int owner = Owner(i);
-                _rows[i].Refresh(weapon.Name, _weaponCategoryIcons[(int)weapon.Kind - 1], owner < 0 ? "未装備" : _data.Soldiers[owner].Name + "が装備", i == _weapon);
+                _rows[i].Refresh(weapon.Name, _weaponCategoryIcons[(int)weapon.Kind - 1],
+                    owner < 0 ? "未装備" : _data.Soldiers[owner].Name + "が装備", i == _weapon, categoryIcon: true);
                 _rows[i].SetNameHighlighted(_previewSoldier >= 0 && Weapon(_previewSoldier) == i);
                 _rows[i].SetDimmed(false);
             }
@@ -203,7 +254,8 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         }
         int position = 0;
         bool reordered = false;
-        foreach (int i in Enumerable.Range(0, count).OrderByDescending(i => members[i]).ThenBy(i => unavailable[i]))
+        foreach (int i in Enumerable.Range(0, count).OrderByDescending(i => SortValue(i, criterion))
+                     .ThenByDescending(i => members[i]).ThenBy(i => unavailable[i]))
         {
             if (_rows[i].transform.GetSiblingIndex() != position) { _rows[i].transform.SetSiblingIndex(position); reordered = true; }
             position++;
@@ -215,8 +267,10 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     }
     private void KeepSelectionVisible()
     {
+        var row = _rows[_weapons ? _weapon : _soldier];
+        if (!row.gameObject.activeSelf) return;
         Canvas.ForceUpdateCanvases(); _list.StopMovement();
-        var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(_list.viewport, _rows[_weapons ? _weapon : _soldier].transform);
+        var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(_list.viewport, row.transform);
         var viewport = _list.viewport.rect;
         float shift = bounds.max.y > viewport.yMax ? viewport.yMax - bounds.max.y : bounds.min.y < viewport.yMin ? viewport.yMin - bounds.min.y : 0;
         var position = _list.content.anchoredPosition;
@@ -227,15 +281,17 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     {
         var definition = _data.Soldiers[_soldier]; var state = _roster.Soldiers[_soldier];
         _name.text = definition.Name;
+        _name.alignment = TextAlignmentOptions.MidlineGeoAligned;
+        _name.overflowMode = TextOverflowModes.Ellipsis;
         _subtitle.text = "";
-        Portrait(definition.StandingArt, "", true);
+        Portrait(definition.StandingArt, "", true, definition.StandingArtBounds);
         _statsTitle.text = "ステータス";
         ConfigureStatRows(true);
         _cpRow.SetActive(true);
         _cpValue.text = $"{state.CP} / {definition.MaxCP}";
         _cpValue.color = state.CP == 0 ? CountryGovernmentTheme.Error : CountryGovernmentTheme.Text;
         int weapon = Weapon(_soldier);
-        var current = Values(definition.InitialStats + state.Growth + (weapon < 0 ? default : _data.Weapons[weapon].Bonus));
+        var current = Values(Stats(_soldier, weapon));
         for (int i = 0; i < _stats.Length; i++)
             _stats[i].text = current[i].ToString();
         var text = new StringBuilder();
@@ -353,8 +409,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         var scroll = root.GetComponent<UnityEngine.UI.ScrollRect>();
         scroll.content = rect; scroll.viewport = viewport; scroll.horizontal = true; scroll.vertical = false;
         scroll.movementType = UnityEngine.UI.ScrollRect.MovementType.Clamped;
-        var outer = _details.isActiveAndEnabled ? _details : _details.GetComponentsInParent<UnityEngine.UI.ScrollRect>().FirstOrDefault(item => item.isActiveAndEnabled);
-        if (outer != null) viewportObject.AddComponent<CountryNestedScrollInput>().Configure(scroll, outer);
+        viewportObject.AddComponent<CountryNestedScrollInput>().Configure(scroll, _details);
         return description;
     }
     private void ConfigureStatRows(bool compact)
@@ -393,6 +448,13 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     private void RefreshWeapon()
     {
         var weapon = _data.Weapons[_weapon]; int owner = Owner(_weapon);
+        var nameRect = _name.rectTransform;
+        nameRect.anchoredPosition = _weaponNameLayout.Position;
+        nameRect.sizeDelta = _weaponNameLayout.Size;
+        _name.alignment = _weaponNameLayout.Alignment;
+        _name.overflowMode = _weaponNameLayout.Overflow;
+        var portraitColumn = (RectTransform)_portraitFrame.transform.parent;
+        portraitColumn.offsetMax = new Vector2(portraitColumn.offsetMax.x, _portraitTopInset);
         _name.text = weapon.Name; _subtitle.text = CountryRoster.WeaponName(weapon.Kind);
         Portrait(weapon.Image, "", false); _statsTitle.text = "装備中の能力補正";
         ConfigureStatRows(false);
@@ -410,8 +472,9 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         var before = Values(Stats(soldier, Weapon(soldier))); var after = Values(Stats(soldier, weapon));
         _statsTitle.text = "装備変更前 → 変更後";
         int previous = Weapon(soldier);
-        var beforeSkills = SkillNames(soldier, previous); var afterSkills = SkillNames(soldier, weapon);
-        _subtitle.text = $"{(previous < 0 ? "未装備" : CountryRoster.WeaponName(_data.Weapons[previous].Kind))} → {CountryRoster.WeaponName(_data.Weapons[weapon].Kind)}　使用可：{Summary(beforeSkills)} → {Summary(afterSkills)}";
+        _subtitle.text = _weapons
+            ? $"{(previous < 0 ? "未装備" : CountryRoster.WeaponName(_data.Weapons[previous].Kind))} → {CountryRoster.WeaponName(_data.Weapons[weapon].Kind)}　使用可：{Summary(SkillNames(soldier, previous))} → {Summary(SkillNames(soldier, weapon))}"
+            : "";
         for (int i = 0; i < _stats.Length; i++)
         {
             var color = after[i] > before[i] ? CountryGovernmentTheme.Positive : after[i] < before[i] ? CountryGovernmentTheme.Error : CountryGovernmentTheme.Text;
@@ -456,16 +519,40 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
             Refresh(); break;
         }
     }
-    private void Portrait(Sprite image, string placeholder, bool standing)
+    private void Portrait(Sprite image, string placeholder, bool standing, Rect bounds = default)
     {
         _portraitFrame.aspectMode = standing ? UnityEngine.UI.AspectRatioFitter.AspectMode.FitInParent : UnityEngine.UI.AspectRatioFitter.AspectMode.None;
-        if (standing) _portraitFrame.aspectRatio = .5f;
+        if (standing) _portraitFrame.aspectRatio = StandingArtFrameRatio;
         if (!standing)
         {
             var rect = (RectTransform)_portraitFrame.transform;
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
         _portrait.sprite = image; _portrait.enabled = image != null; _placeholder.enabled = standing && image == null;
+        bool fitArtwork = standing && image != null && bounds.width > 0 && bounds.height > 0;
+        _portrait.preserveAspect = !fitArtwork;
+        var inset = fitArtwork ? StandingArtInset : Vector2.zero;
+        _portraitClip.anchorMin = inset;
+        _portraitClip.anchorMax = Vector2.one - inset;
+        _portraitClip.offsetMin = _portraitClip.offsetMax = Vector2.zero;
+        var art = _portrait.rectTransform;
+        var anchorMin = Vector2.zero;
+        var anchorMax = Vector2.one;
+        if (fitArtwork)
+        {
+            var available = Vector2.one - 2 * inset;
+            float clipRatio = StandingArtFrameRatio * available.x / available.y;
+            float imageRatio = image.rect.width / image.rect.height / clipRatio;
+            float height = 1 / bounds.height;
+            var size = new Vector2(height * imageRatio, height);
+            var visibleOrigin = new Vector2((1 - size.x * bounds.width) / 2, 0);
+            anchorMin = visibleOrigin - Vector2.Scale(bounds.min, size);
+            anchorMax = anchorMin + size;
+        }
+        art.anchorMin = anchorMin;
+        art.anchorMax = anchorMax;
+        art.offsetMin = fitArtwork ? Vector2.zero : _portraitOffsets.Min;
+        art.offsetMax = fitArtwork ? Vector2.zero : _portraitOffsets.Max;
         _portraitLabel.text = image == null ? placeholder : "";
     }
     private static string Signed(int value) => value >= 0 ? $"+{value}" : value.ToString();
@@ -481,6 +568,27 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     private void RosterChanged() { Refresh(); SelectionChanged?.Invoke(); }
     private void SaveScroll()
     { if (_weapons) _weaponScroll = _list.verticalNormalizedPosition; else _soldierScroll = _list.verticalNormalizedPosition; }
+    private void LateUpdate()
+    {
+        if (_roster == null || _weapons) return;
+        var title = _name.rectTransform;
+        var frame = (RectTransform)_portraitFrame.transform;
+        var column = (RectTransform)frame.parent;
+        var action = (RectTransform)_action.transform;
+        var center = title.parent.InverseTransformPoint(frame.TransformPoint(frame.rect.center));
+        center.y = title.parent.InverseTransformPoint(action.TransformPoint(action.rect.center)).y;
+        if (Mathf.Abs(title.rect.width - column.rect.width) > .01f)
+            title.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, column.rect.width);
+        var position = title.localPosition;
+        position.x = center.x - title.rect.center.x;
+        position.y = center.y - title.rect.center.y;
+        if (title.localPosition != position) title.localPosition = position;
+        var body = (RectTransform)column.parent;
+        float titleBottom = body.InverseTransformPoint(title.TransformPoint(new Vector3(title.rect.center.x, title.rect.yMin))).y;
+        float topInset = Mathf.Min(_portraitTopInset, titleBottom - body.rect.yMax - 8);
+        if (Mathf.Abs(column.offsetMax.y - topInset) > .01f)
+            column.offsetMax = new Vector2(column.offsetMax.x, topInset);
+    }
     private void Start()
     {
         Canvas.ForceUpdateCanvases();

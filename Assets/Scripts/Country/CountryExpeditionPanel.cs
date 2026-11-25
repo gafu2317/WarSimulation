@@ -19,14 +19,13 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     [SerializeField] private CountryRosterView _view;
     [SerializeField] private CountryRosterRow _tokenPrefab;
     [SerializeField] private RectTransform _members, _logContent;
-    [SerializeField] private ScrollRect _page;
+    [SerializeField] private GameObject _destinationPage, _formationPage, _route;
     [SerializeField] private GameObject _emptySlotPrefab;
-    [SerializeField] private TextMeshProUGUI _formationTarget;
     [SerializeField] private CountryExpeditionRow _rowPrefab;
     [SerializeField] private CountryRosterConfirm _confirmation, _logDetails;
-    [SerializeField] private Button _open, _back, _depart, _equipment, _log, _logClose;
-    [SerializeField] private TextMeshProUGUI _dateText, _context, _targetName, _ownerName, _days, _schedule, _targetNotice, _count, _summary, _departLabel, _logLabel, _logEmpty;
-    [SerializeField] private Graphic _departFrame;
+    [SerializeField] private Button _open, _back, _next, _depart, _equipment, _log, _logClose;
+    [SerializeField] private TextMeshProUGUI _dateText, _context, _targetName, _ownerName, _days, _schedule, _targetNotice, _count, _logLabel, _logEmpty;
+    [SerializeField] private TextMeshProUGUI _targetStep, _memberStep, _departureStatus;
     private readonly List<CountryExpeditionRow> _logRows = new();
     private CountryRosterRow[] _tokens;
     private GameObject[] _emptySlots;
@@ -38,8 +37,11 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     private GameObject _returnFocus;
     private bool _cameraInput, _comparisonInput;
     private int _equipmentSoldier = -1;
+    private Vector2 _formationScrollOffsets;
     private CountryEquipmentPopup _equipmentPopup;
-    private TextMeshProUGUI _targetStep, _memberStep;
+    private RectTransform _pageBand;
+    private Button _targetTab, _memberTab;
+    private bool _showingMembers;
     [SerializeField] private TextMeshProUGUI _hudCount, _departureNotice;
     private float _noticeUntil;
     public bool IsOpen => _window.activeSelf;
@@ -49,6 +51,11 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     private void Awake()
     {
         _open.onClick.AddListener(Open); _back.onClick.AddListener(Back); _depart.onClick.AddListener(ConfirmDeparture);
+        _next.onClick.AddListener(() => ShowPage(true));
+        _targetTab = _targetStep.GetComponentInParent<Button>(true);
+        _memberTab = _memberStep.GetComponentInParent<Button>(true);
+        _targetTab.onClick.AddListener(() => ShowPage(false));
+        _memberTab.onClick.AddListener(() => ShowPage(true));
         _equipment.onClick.AddListener(ChooseEquipment); _log.onClick.AddListener(OpenLog); _logClose.onClick.AddListener(CloseLog);
         _view.SelectionChanged += Refresh; _view.ActionRequested += Choose;
         _escape = new InputAction("Close expedition", InputActionType.Button, "<Keyboard>/escape");
@@ -67,58 +74,9 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         _view.SetMemberSelection(id => _draft != null && _draft.Contains(id), SelectionReason, "遠征メンバー");
         _view.Initialize(_roster); _map.Initialize(_state, SelectRegion);
         _view.PlaceMemberControls(_equipment);
-        _formationTarget.fontSize = 44;
-        var mapTitle = Instantiate(_formationTarget, _page.content.Find("Map"));
-        mapTitle.name = "DestinationHeading"; mapTitle.text = "遠征先を選ぶ";
-        mapTitle.margin = Vector4.zero; mapTitle.raycastTarget = false;
-        var mapTitleRect = mapTitle.rectTransform;
-        mapTitleRect.anchorMin = mapTitleRect.anchorMax = mapTitleRect.pivot = new Vector2(0, 1);
-        mapTitleRect.anchoredPosition = new Vector2(0, 72); mapTitleRect.sizeDelta = new Vector2(480, 64);
-        var header = _shell.transform.Find("Header");
-        var background = header.GetComponent<Image>();
-        background.enabled = false;
-        var band = new GameObject("HeaderBackground", typeof(RectTransform), typeof(Image));
-        var bandRect = (RectTransform)band.transform; bandRect.SetParent(header, false); bandRect.SetAsFirstSibling();
-        bandRect.anchorMin = Vector2.zero; bandRect.anchorMax = Vector2.one;
-        var safeArea = UnityEngine.Device.Screen.safeArea;
-        float scale = header.GetComponentInParent<Canvas>().rootCanvas.scaleFactor;
-        bandRect.offsetMin = new Vector2(-safeArea.xMin / scale, 0);
-        bandRect.offsetMax = new Vector2((UnityEngine.Device.Screen.width - safeArea.xMax) / scale, 0);
-        var bandImage = band.GetComponent<Image>(); bandImage.color = CountryGovernmentTheme.Panel; bandImage.raycastTarget = true;
-        var headerRect = (RectTransform)header;
-        headerRect.sizeDelta = new Vector2(headerRect.sizeDelta.x, 144);
-        var title = HeaderLabel(header, "ExpeditionTitle", "遠征計画", 200, 220);
-        title.fontSize = 36;
-        _targetStep = HeaderLabel(header, "DestinationStep", "遠征先の決定", 450, 260);
-        _targetStep.alignment = TextAlignmentOptions.MidlineRight;
-        float arrowX = 450 + 260 + 24;
-        var arrow = HeaderLabel(header, "StepArrow", "→", arrowX, 48);
-        arrow.alignment = TextAlignmentOptions.Center; arrow.raycastTarget = false;
-        _memberStep = HeaderLabel(header, "MemberStep", "メンバーの決定", arrowX + 72, 340);
-        AddStep(_targetStep, false); AddStep(_memberStep, true);
-        var backRect = (RectTransform)_back.transform; backRect.SetParent(header, false);
-        backRect.anchorMin = backRect.anchorMax = backRect.pivot = new Vector2(0, .5f);
-        backRect.anchoredPosition = new Vector2(24, 0); backRect.sizeDelta = new Vector2(150, 64);
-        var backFeedback = _back.GetComponent<CountryButtonFeedback>();
-        if (backFeedback != null) backFeedback.enabled = false;
-        foreach (string part in new[] { "Shadow", "Focus", "Frame", "Outline" })
-        {
-            var child = _back.transform.Find(part);
-            if (child != null) child.gameObject.SetActive(false);
-        }
-        var backSurface = _back.transform.Find("Surface").GetComponent<Image>();
-        backSurface.sprite = null; backSurface.type = Image.Type.Simple;
-        backSurface.color = CountryGovernmentTheme.Background; _back.targetGraphic = backSurface;
-        var backLabel = _back.GetComponentInChildren<TextMeshProUGUI>();
-        backLabel.text = "‹ 戻る"; backLabel.fontSize = 28; backLabel.color = CountryGovernmentTheme.Text;
-        var departRect = (RectTransform)_depart.transform; departRect.SetParent(header, false);
-        departRect.anchorMin = departRect.anchorMax = departRect.pivot = new Vector2(1, .5f);
-        departRect.anchoredPosition = new Vector2(-24, 0); departRect.sizeDelta = new Vector2(352, 96);
-        _page.content.GetComponent<VerticalLayoutGroup>().padding.top = 248;
-        _summary.gameObject.SetActive(false);
-        var bar = (RectTransform)_page.verticalScrollbar.transform;
-        bar.offsetMin = new Vector2(bar.offsetMin.x, 24);
-        bar.offsetMax = new Vector2(bar.offsetMax.x, -168);
+        var band = new GameObject("PageBarBackground", typeof(RectTransform), typeof(Image));
+        _pageBand = (RectTransform)band.transform; _pageBand.SetParent(_window.transform, false); _pageBand.SetAsFirstSibling();
+        var bandImage = band.GetComponent<Image>(); bandImage.color = CountryGovernmentTheme.Panel; bandImage.raycastTarget = false;
         _equipmentPopup = new CountryEquipmentPopup(_view, _equipment, _shell, _window.transform, ChooseEquipment);
         _tokens = new CountryRosterRow[_roster.Soldiers.Count];
         for (int i = 0; i < _tokens.Length; i++)
@@ -152,11 +110,9 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         if (_government.Comparison != null) _government.Comparison.InputEnabled = false;
         _draft = new CountryExpeditionDraft(_roster); _equipmentSoldier = -1;
         _departureNotice.transform.parent.gameObject.SetActive(false);
-        _window.SetActive(true); _escape.Enable(); _view.ShowSoldiers(); Refresh();
-        _page.GetComponent<CountryExpeditionPageLayout>().Refresh();
-        Canvas.ForceUpdateCanvases(); _page.StopMovement(); _page.verticalNormalizedPosition = 1;
-        _view.ResetDetailScroll();
-        _back.Select();
+        _window.SetActive(true); _escape.Enable(); _view.ShowSoldiers();
+        _view.ScrollOffsets = Vector2.zero;
+        ShowPage(false);
     }
 
     public void SelectRegion(int region)
@@ -167,9 +123,22 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     private void ChooseEquipment()
     {
         int soldier = _view.SelectedSoldier;
-        if (_equipmentSoldier >= 0) { _view.SelectSoldier(_equipmentSoldier); _equipmentSoldier = -1; _equipmentPopup.Close(); _page.GetComponent<CountryExpeditionPageLayout>().enabled = true; _view.ShowSoldiers(); Refresh(); return; }
+        if (_equipmentSoldier >= 0)
+        {
+            _view.SelectSoldier(_equipmentSoldier);
+            _equipmentSoldier = -1;
+            _view.ShowSoldiers();
+            _equipmentPopup.Close();
+            _view.ScrollOffsets = _formationScrollOffsets;
+            Refresh();
+            return;
+        }
         if (_roster.Soldiers[soldier].Expedition != null) return;
-        _equipmentSoldier = soldier; _page.GetComponent<CountryExpeditionPageLayout>().enabled = false; _equipmentPopup.Open(); _view.ShowWeapons(); Refresh();
+        _equipmentSoldier = soldier;
+        _formationScrollOffsets = _view.ScrollOffsets;
+        _view.StopScrolling();
+        _equipmentPopup.Open();
+        _view.ShowWeapons(); Refresh();
     }
     private void Choose()
     {
@@ -189,26 +158,35 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     {
         if (!IsOpen || _draft == null) return;
         _dateText.text = $"{_date.CurrentMonth}月{_date.CurrentDay}日";
-        string targetCaption = _draft.Target < 0 ? "遠征先を選ぶ" : $"遠征先　{_data.Regions[_draft.Target].Name}";
-        string timing = _draft.Target >= 0 && _state.CanTarget(_draft.Target)
-            ? $"　到着 {_state.Today.AddDays(_data.TravelDays(_draft.Target))}　帰還 {_state.Today.AddDays(_data.TravelDays(_draft.Target) * 2)}" : "";
-        _context.text = $"{targetCaption}{timing}　{_draft.Members.Count}人";
-        _formationTarget.text = _equipmentSoldier >= 0 ? $"{_roster.Data.Soldiers[_equipmentSoldier].Name}の武器を選ぶ" : "遠征メンバーを選ぶ";
+        _context.text = "";
         _logLabel.text = $"遠征中 {_state.Active.Count}隊";
         _count.text = $"遠征メンバー　{_draft.Members.Count} / 26人";
         _map.Refresh(_draft.Target);
-        if (_draft.Target >= 0)
+        int target = _draft.Target;
+        bool hasTarget = target >= 0, targetReady = _state.CanTarget(target);
+        bool ownTerritory = hasTarget && _state.Owner(target) == 0;
+        int days = hasTarget ? _data.TravelDays(target) : 0;
+        _route.SetActive(hasTarget && !ownTerritory);
+        _ownerName.gameObject.SetActive(hasTarget);
+        var ownerRect = _ownerName.rectTransform;
+        var noticeRect = _targetNotice.rectTransform;
+        noticeRect.anchoredPosition = new Vector2(noticeRect.anchoredPosition.x,
+            ownerRect.anchoredPosition.y - (hasTarget ? ownerRect.rect.height + 12 : 0));
+        if (hasTarget)
         {
-            int target = _draft.Target, days = _data.TravelDays(target);
+            _context.text = $"遠征先　{_data.Regions[target].Name}";
+            if (targetReady)
+                _context.text += $"　到着 {_state.Today.AddDays(days)}　帰還 {_state.Today.AddDays(days * 2)}";
             _targetName.text = _data.Regions[target].Name;
             _ownerName.text = _data.Nations[_state.Owner(target)].Name;
-            _days.text = _state.Owner(target) == 0 ? "—" : $"{days}日";
-            _schedule.text = !_state.CanTarget(target) ? "" : $"出発　{_state.Today}\n到着　{_state.Today.AddDays(days)}\n帰還　{_state.Today.AddDays(days * 2)}";
-            _targetNotice.text = _state.CanTarget(target) ? "遠征可能・到着すると領地を獲得" : _state.Owner(target) == 0 ? "自国の領地" : _state.Active.Any(trip => trip.Target == target) ? "遠征不可・すでに部隊が遠征中" : "遠征不可・自領に隣接していない";
-            _targetNotice.color = _state.CanTarget(target) ? CountryGovernmentTheme.PositiveInk : _state.Owner(target) == 0 ? CountryGovernmentTheme.PaperMuted : CountryGovernmentTheme.ErrorInk;
+            _days.text = $"{days}日";
+            _targetNotice.text = targetReady ? "遠征可能・到着すると領地を獲得" : ownTerritory ? "自国の領地" : _state.Active.Any(trip => trip.Target == target) ? "遠征不可・すでに部隊が遠征中" : "遠征不可・自領に隣接していない";
         }
-        else { _targetName.text = "領地を選ぶ"; _ownerName.text = ""; _days.text = "—"; _schedule.text = ""; _targetNotice.text = "明るい境界の領地へ遠征できる"; }
-        _schedule.gameObject.SetActive(_schedule.text.Length > 0);
+        else { _targetName.text = "領地を選ぶ"; _targetNotice.text = "明るい境界の領地へ遠征できる"; }
+        _targetNotice.color = targetReady ? CountryGovernmentTheme.PositiveInk :
+            hasTarget && !ownTerritory ? CountryGovernmentTheme.ErrorInk : CountryGovernmentTheme.PaperMuted;
+        _schedule.text = targetReady ? $"出発　{_state.Today}\n到着　{_state.Today.AddDays(days)}\n帰還　{_state.Today.AddDays(days * 2)}" : "";
+        _schedule.gameObject.SetActive(targetReady);
         for (int i = 0; i < _tokens.Length; i++)
         {
             bool selected = _draft.Contains(i); _tokens[i].gameObject.SetActive(selected);
@@ -233,45 +211,31 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
             bool selected = _draft.Contains(soldier), available = _state.CanSelect(soldier, _draft.Target, out string reason);
             _view.SetAction(selected ? "メンバーから外す" : "メンバーに加える", selected || available, available ? "出発までメンバーと武器を変更できる" : reason, chooseMember: true);
         }
-        bool valid = _state.ValidateDeparture(_draft.Target, _draft.Members, _draft.Weapons(), out string notice);
-        bool targetReady = _state.CanTarget(_draft.Target), membersReady = _draft.Members.Count > 0;
-        _targetStep.color = targetReady ? CountryGovernmentTheme.Positive : CountryGovernmentTheme.Text;
-        _memberStep.color = membersReady ? CountryGovernmentTheme.Positive : CountryGovernmentTheme.Text;
+        bool valid = _state.ValidateDeparture(_draft.Target, _draft.Members, _draft.Weapons(), out string departureReason);
+        bool membersReady = _draft.Members.Count > 0;
+        CountryGovernmentTheme.SelectTab(_targetTab, !_showingMembers);
+        CountryGovernmentTheme.SelectTab(_memberTab, _showingMembers);
+        _targetStep.text = targetReady ? "遠征先 ✓" : "遠征先";
+        _memberStep.text = membersReady ? "編成 ✓" : "編成";
         bool missingWeapon = _draft.Members.Any(id => _roster.EquippedWeapon(id) < 0);
         bool canWarn = targetReady && membersReady && missingWeapon && _draft.Members.All(id => _state.CanSelect(id, _draft.Target, out _));
-        _depart.interactable = valid || canWarn; _departLabel.color = valid || canWarn ? CountryGovernmentTheme.Ink : CountryGovernmentTheme.DisabledText;
-        _departFrame.color = CountryGovernmentTheme.Border;
-
+        _depart.interactable = valid || canWarn;
+        _departureStatus.gameObject.SetActive(_showingMembers);
+        _departureStatus.text = valid ? $"{_draft.Members.Count}人で出発" : departureReason;
+        _departureStatus.color = valid ? CountryGovernmentTheme.Text : CountryGovernmentTheme.Error;
     }
 
-    private TextMeshProUGUI HeaderLabel(Transform parent, string name, string text, float x, float width)
+    private void ShowPage(bool formation)
     {
-        var label = Instantiate(_formationTarget, parent);
-        label.name = name; label.text = text; label.fontSize = 32; label.margin = Vector4.zero;
-        label.alignment = TextAlignmentOptions.MidlineLeft; label.raycastTarget = false;
-        var rect = label.rectTransform;
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, .5f);
-        rect.anchoredPosition = new Vector2(x, 0); rect.sizeDelta = new Vector2(width, 96);
-        return label;
-    }
-
-    private void AddStep(TextMeshProUGUI label, bool formation)
-    {
-        label.raycastTarget = true;
-        var button = label.gameObject.AddComponent<Button>();
-        button.targetGraphic = label; button.transition = Selectable.Transition.None;
-        button.onClick.AddListener(() => ScrollToStep(formation));
-    }
-
-    private void ScrollToStep(bool formation)
-    {
-        Canvas.ForceUpdateCanvases(); _page.StopMovement();
-        if (!formation) { _page.verticalNormalizedPosition = 1; return; }
-        var target = (RectTransform)_page.content.Find("Formation");
-        var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(_page.content, target);
-        float extent = Mathf.Max(0, _page.content.rect.height - _page.viewport.rect.height);
-        float offset = Mathf.Clamp(_page.content.rect.yMax - bounds.max.y - 160, 0, extent);
-        _page.verticalNormalizedPosition = extent <= 0 ? 1 : 1 - offset / extent;
+        if (!IsOpen || _draft == null || !_shell.interactable) return;
+        _showingMembers = formation;
+        _view.StopScrolling();
+        _destinationPage.SetActive(!formation);
+        _formationPage.SetActive(formation);
+        _next.gameObject.SetActive(!formation);
+        _depart.gameObject.SetActive(formation);
+        Refresh();
+        _back.Select();
     }
 
     private string SelectionReason(int soldier)
@@ -318,11 +282,14 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     {
         _logDetails.Close(); _logWindow.SetActive(false); _shell.interactable = _shell.blocksRaycasts = true;
     }
-    private void Back() { if (_equipmentSoldier >= 0) ChooseEquipment(); else Close(); }
+    private void Back()
+    {
+        if (_equipmentSoldier >= 0) ChooseEquipment();
+        else Close();
+    }
     public void Close()
     {
         _equipmentPopup?.Close();
-        if (_page != null) _page.GetComponent<CountryExpeditionPageLayout>().enabled = true;
         if (!IsOpen) return;
         _confirmation.Close(); CloseLog(); _window.SetActive(false); _escape.Disable(); _view.PreviewEquipment(null); _draft = null;
         if (_government.CameraControls != null) _government.CameraControls.InputEnabled = _cameraInput;
@@ -337,6 +304,9 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     private void StateChanged() { RefreshHud(); if (IsOpen) Refresh(); }
     private void Update()
     {
+        if (IsOpen && _pageBand != null)
+            CountrySafeArea.FitBottomBand(_pageBand, (RectTransform)_shell.transform,
+                CountryGovernmentTheme.PageBarHeight + CountryGovernmentTheme.PageBarNoticeHeight);
         if (_departureNotice.transform.parent.gameObject.activeSelf && Time.unscaledTime >= _noticeUntil) _departureNotice.transform.parent.gameObject.SetActive(false);
     }
     private void OnDisable() => Close();

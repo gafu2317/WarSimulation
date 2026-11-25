@@ -56,13 +56,6 @@ public sealed class CountryButtonFeedback : MonoBehaviour, IPointerDownHandler, 
         for(int i=0;i<_contents.Length;i++)_positions[i]=_contents[i].anchoredPosition;
     }
 
-    public void SetFocusGraphic(UnityEngine.UI.Graphic focus)
-    {
-        if (_focus != null) _focus.enabled = false;
-        _focus = focus;
-        if (focus != null) { _focusColor = focus.color; focus.enabled = false; }
-    }
-
     private void LateUpdate()
     {
         UpdateDisabledAppearance();

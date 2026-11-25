@@ -3271,22 +3271,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7465799712499048960, guid: 85899b9f238704254bd3f78c369e4776, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7465799712499048960, guid: 85899b9f238704254bd3f78c369e4776, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7465799712499048960, guid: 85899b9f238704254bd3f78c369e4776, type: 3}
-      propertyPath: m_AnchorMin.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7465799712499048960, guid: 85899b9f238704254bd3f78c369e4776, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7497454619304329810, guid: 85899b9f238704254bd3f78c369e4776, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -5118,8 +5102,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayDataManager
   _population: 8500
   _money: 0
-  _wood: 1200
-  _ore: 800
+  _wood: 300
+  _ore: 150
   _taxRemainder: 0
   _woodRemainder: 0
   _oreRemainder: 0

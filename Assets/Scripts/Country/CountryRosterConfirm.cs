@@ -8,21 +8,38 @@ public sealed class CountryRosterConfirm : MonoBehaviour
     [SerializeField] private GameObject _window;
     [SerializeField] private CanvasGroup _blocked;
     [SerializeField] private TextMeshProUGUI _title, _body, _confirmLabel;
-    [SerializeField] private UnityEngine.UI.Button _confirm, _cancel;
+    [SerializeField] private UnityEngine.UI.Button _confirm, _cancel, _returnToCountry;
     [SerializeField] private UnityEngine.UI.ScrollRect _bodyScroll;
     private Action _accept;
     private GameObject _returnFocus;
     public bool IsOpen => _window.activeSelf;
     private void Awake()
     {
-        _confirm.onClick.AddListener(() => { var action = _accept; Close(); action?.Invoke(); });
+        _confirm.onClick.AddListener(Accept);
+        if (_returnToCountry != null) _returnToCountry.onClick.AddListener(Accept);
         _cancel.onClick.AddListener(Close);
     }
-    public void Show(string title, string body, string confirmLabel, Action accept)
+
+    private void Accept()
+    {
+        var action = _accept;
+        Close();
+        action?.Invoke();
+    }
+
+    public void Show(string title, string body, string confirmLabel, Action accept) =>
+        Show(title, body, confirmLabel, accept, false);
+
+    public void ShowReturnToCountry(string title, string body, Action accept) =>
+        Show(title, body, CountryGovernmentTheme.CountryReturnText, accept, true);
+
+    private void Show(string title, string body, string confirmLabel, Action accept, bool returnToCountry)
     {
         _returnFocus = EventSystem.current?.currentSelectedGameObject;
         _title.text = title; _body.text = body; _confirmLabel.text = confirmLabel; _accept = accept;
-        _confirm.gameObject.SetActive(accept != null);
+        bool showReturn = returnToCountry && _returnToCountry != null;
+        _confirm.gameObject.SetActive(accept != null && !showReturn);
+        if (_returnToCountry != null) _returnToCountry.gameObject.SetActive(showReturn);
         _cancel.GetComponentInChildren<TextMeshProUGUI>().text = accept == null ? "閉じる" : "戻る";
         _blocked.interactable = _blocked.blocksRaycasts = false;
         _window.SetActive(true); _cancel.Select();

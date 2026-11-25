@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using Theme = CountryGovernmentTheme;
 
 public sealed class CountryDefensePanel : MonoBehaviour
 {
@@ -35,6 +36,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
     private bool _cameraInput, _comparisonInput;
     private int _equipmentSoldier = -1;
     private CountryEquipmentPopup _equipmentPopup;
+    private RectTransform _footer, _footerBackground, _footerTitle;
     public bool IsOpen => _window.activeSelf;
 
     private void Awake()
@@ -57,6 +59,32 @@ public sealed class CountryDefensePanel : MonoBehaviour
         _view.SetMemberSelection(id => _draft != null && _draft.Contains(id), SelectionReason, "防衛メンバー");
         _view.Initialize(_roster);
         _view.PlaceMemberControls(_equipment);
+        _footer = (RectTransform)_back.transform.parent;
+        _footer.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, CountryGovernmentTheme.PageBarHeight);
+        var header = _personnelBack.transform.parent;
+        _footerTitle = (RectTransform)header.Find("Title");
+        _footerTitle.SetParent(_footer, false);
+        var personnel = (RectTransform)_personnelBack.transform;
+        personnel.SetParent(_footer, false); personnel.anchoredPosition = new Vector2(-408, -4);
+        foreach (var button in new[] { _personnelBack, _save })
+        {
+            var rect = (RectTransform)button.transform;
+            rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, -4);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, CountryGovernmentTheme.PageBarButtonHeight);
+        }
+        header.gameObject.SetActive(false);
+        var background = new GameObject("FooterBackground", typeof(RectTransform), typeof(Image));
+        _footerBackground = (RectTransform)background.transform;
+        _footerBackground.SetParent(_formation.transform, false); _footerBackground.SetAsFirstSibling();
+        var footerImage = _footer.GetComponent<Image>();
+        var backgroundImage = background.GetComponent<Image>();
+        backgroundImage.color = footerImage.color; backgroundImage.raycastTarget = false;
+        footerImage.enabled = false;
+        _summary.rectTransform.offsetMin = new Vector2(670, 8);
+        _summary.rectTransform.offsetMax = new Vector2(-752, -8);
+        var main = (RectTransform)_formation.transform.Find("Main");
+        main.offsetMin = new Vector2(main.offsetMin.x, CountryGovernmentTheme.PageBarHeight + 16);
+        main.offsetMax = new Vector2(main.offsetMax.x, -24);
         _equipmentPopup = new CountryEquipmentPopup(_view, _equipment, _shell, _window.transform, ChooseEquipment);
         _tokens = new CountryRosterRow[_roster.Soldiers.Count];
         _emptySlots = new GameObject[_tokens.Length];
@@ -156,7 +184,10 @@ public sealed class CountryDefensePanel : MonoBehaviour
             : raid ? $"{_data.Regions[_state.Pending.Region].Name}の防衛編成" : "防衛メンバーの登録";
         _count.text = $"防衛メンバー　{_draft.Members.Count} / 26人";
         _personnelBack.gameObject.SetActive(!raid);
-        _back.GetComponentInChildren<TextMeshProUGUI>().text = raid ? "‹ 襲撃へ戻る" : "‹ 国へ戻る";
+        float backWidth = raid ? 320 : Theme.PageBarBackWidth;
+        Theme.PlacePageItem((RectTransform)_back.transform, 0, Theme.PageBarInset, backWidth);
+        Theme.PlacePageItem(_footerTitle, 0, Theme.PageBarInset + backWidth + 20, 270);
+        _back.GetComponentInChildren<TextMeshProUGUI>().text = raid ? "‹ 襲撃へ戻る" : Theme.CountryReturnText;
         _saveLabel.text = raid ? "この編成で防衛" : "登録する";
         for (int i = 0; i < _tokens.Length; i++)
         {
@@ -188,7 +219,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
         _save.interactable = raid ? canFight : valid;
         _saveFrame.color = CountryGovernmentTheme.Border;
         _saveLabel.color = _save.interactable ? CountryGovernmentTheme.Ink : CountryGovernmentTheme.DisabledText;
-        _summary.text = !valid ? reason : raid ? "変更は自動登録" : "登録した編成を次の防衛戦で呼び出す";
+        _summary.text = !valid ? reason : raid ? "変更は自動登録" : "登録した編成は次の防衛戦で使う";
         _fight.interactable = canFight;
         if (!raid) return;
         _raidTitle.text = $"{_data.Regions[_state.Pending.Region].Name}に襲撃";
@@ -222,7 +253,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
         _confirmation.Show("防衛に出撃", body, "防衛する", () => {
             string region = _data.Regions[_state.Pending.Region].Name;
             if (!_state.TryDefend(_draft.Members, _draft.Weapons(), out _)) { Refresh(); return; }
-            _confirmation.Show("防衛成功", $"{region}への襲撃を退けた\n\n{members}", "国へ戻る", Close);
+            _confirmation.ShowReturnToCountry("防衛成功", $"{region}への襲撃を退けた\n\n{members}", Close);
         });
     }
 
@@ -241,6 +272,12 @@ public sealed class CountryDefensePanel : MonoBehaviour
         if (_government.CameraControls != null) _government.CameraControls.InputEnabled = _cameraInput;
         if (_government.Comparison != null) _government.Comparison.InputEnabled = _comparisonInput;
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(_returnFocus != null && _returnFocus.activeInHierarchy ? _returnFocus : null);
+    }
+
+    private void LateUpdate()
+    {
+        if (IsOpen && _formation.activeSelf && _footerBackground != null)
+            CountrySafeArea.FitBottomBand(_footerBackground, _footer, _footer.rect.height);
     }
 
     private void OnEnable() { if (_state?.Pending != null) OpenRaid(); }

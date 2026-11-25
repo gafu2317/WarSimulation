@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="WarSimulation の街に配置されている18の役割施設を、3Dモデルで見比べる図鑑。">
+  <title>王国の施設図鑑 | WarSimulation</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="shell top-inner">
+      <a href="./" class="brand"><span class="crest" aria-hidden="true">♜</span> WarSimulation</a>
+      <span class="top-label">国家資料室 <span>／</span> 建築</span>
+    </div>
+  </header>
+  <main class="shell">
+    <header class="intro">
+      <div>
+        <h1>王国の施設図鑑</h1>
+        <p>街に配置された役割施設を、3Dで見比べる。</p>
+      </div>
+      <div class="catalog-count"><strong id="total">18</strong><span>収録モデル</span></div>
+    </header>
+    <div class="workspace">
+      <section class="exhibit" aria-labelledby="building-name">
+        <div class="stage" id="stage">
+          <canvas id="viewer" tabindex="0" aria-label="施設の3Dモデル。矢印キーで回転、プラスとマイナスで拡大縮小。"></canvas>
+          <div class="plate" aria-hidden="true"></div>
+          <div class="stage-top" aria-hidden="true"><span>3D VIEW</span><span id="scene-tag">CITY V2</span></div>
+          <p class="status" id="status" role="status">モデルを読み込み中</p>
+          <div class="view-controls" aria-label="視点の操作">
+            <button type="button" data-view="front">正面</button>
+            <button type="button" data-view="iso" aria-pressed="true">斜め</button>
+            <button type="button" data-view="top">真上</button>
+          </div>
+          <div class="zoom-controls" aria-label="拡大縮小">
+            <button type="button" data-zoom="-1" aria-label="縮小">−</button>
+            <button type="button" data-zoom="1" aria-label="拡大">＋</button>
+          </div>
+        </div>
+        <div class="exhibit-caption">
+          <div>
+            <div class="caption-label"><span class="category" id="building-group"></span><span id="building-level"></span></div>
+            <h2 id="building-name">戦士学校</h2>
+            <p id="building-description"></p>
+          </div>
+          <div class="metrics">
+            <span>幅 × 奥行 × 高さ</span>
+            <strong id="building-size"></strong>
+          </div>
+        </div>
+      </section>
+      <aside class="index" aria-labelledby="index-title">
+        <div class="index-head">
+          <div class="index-title"><h2 id="index-title">施設一覧</h2><span id="count" aria-live="polite"></span></div>
+          <label class="search"><span class="search-icon" aria-hidden="true"></span>
+            <input id="search" type="search" placeholder="施設名で検索" aria-label="施設名で検索">
+          </label>
+          <div class="filters" id="filters" aria-label="施設の分類"></div>
+        </div>
+        <div class="results" id="results"></div>
+      </aside>
+    </div>
+    <footer class="footer">
+      <span>ドラッグで回転 <span class="divider">·</span> スクロール・ピンチで拡大縮小</span>
+      <span>収録元 <b>Country / CityV2</b></span>
+    </footer>
+  </main>
+</body>
+</html>

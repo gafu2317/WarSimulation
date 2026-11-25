@@ -108,26 +108,14 @@ public static class CountryExpeditionBuilder
         var header = TopFill(shell, "Header", 0, 112); Image(header, Theme.Panel);
         var date = Label(Top(header, "Date", 40, 0, 216, 112), "", 34, Theme.Accent);
         var log = Button(Right(header, "Active", 40, 0, 320, 112), "遠征中 0隊", Theme.Face);
-        var context = Label(Fill(header, "Context", new Vector2(280, 0), new Vector2(-400, 0)), "遠征先を選ぶ", 32, Theme.Accent);
         var main = Fill(shell, "Main", new Vector2(40, 144), new Vector2(-40, -200));
         var pageContent = main.Find("Viewport/Content") ?? main;
-        var mapPage = Fill(pageContent, "Map");
+        var mapPage = (RectTransform)(shell.Find("Map") ?? pageContent.Find("Map")) ?? Fill(shell, "Map");
         var map = BuildMap(mapPage, data);
-        var detail = Fill(mapPage, "Details"); detail.anchorMin = new Vector2(.73f, 0); detail.offsetMin = new Vector2(32, 0);
-        Board(detail);
-        Label(TopFill(detail, "Caption", 8, 48, 24, 24), "遠征先", 28, Theme.Muted);
-        var name = Label(TopFill(detail, "Name", 64, 64, 24, 24), "領地を選ぶ", 44);
-        var owner = Label(TopFill(detail, "Owner", 136, 48, 24, 24), "", 32, Theme.Accent);
-        Image(TopFill(detail, "Divider", 196, 2, 24, 24), Theme.Line);
-        Label(TopFill(detail, "TravelCaption", 216, 48, 24, 24), "片道の移動", 28, Theme.Muted);
-        var days = Label(TopFill(detail, "Days", 268, 100, 24, 24), "—", 64, Theme.Accent);
-        var schedule = Label(TopFill(detail, "Schedule", 376, 160, 24, 24), "", 32); schedule.alignment = TextAlignmentOptions.TopLeft;
-        var notice = Label(BottomFill(detail, "Notice", 96), "", 28, Theme.Muted); notice.margin = new Vector4(24, 0, 24, 12); notice.textWrappingMode = TextWrappingModes.Normal;
         var formation = Fill(pageContent, "Formation");
-        var headerRow = TopFill(formation, "Header", 0, 112);
-        var oldEquipment = formation.Find("Equipment"); if (oldEquipment != null) oldEquipment.SetParent(headerRow, false);
-        var equipment = Button(Right(headerRow, "Equipment", 0, 0, 400, 112), "武器を変更", Theme.Face);
-        var formationTarget = Label(Fill(headerRow, "Target", new Vector2(16, 0), new Vector2(-440, 0)), "", 36, Theme.Accent);
+        var equipmentRect = (RectTransform)formation.Find("Header/Equipment");
+        if (equipmentRect != null) equipmentRect.SetParent(formation, false);
+        var equipment = Button(Right(formation, "Equipment", 0, 0, 400, 112), "武器を変更", Theme.Face);
         var selection = CountryRosterSelectionBuilder.Place(formation);
         var count = selection.Find("Capacity").GetComponent<TextMeshProUGUI>();
         var members = (RectTransform)selection.Find("Members/Viewport/Content");
@@ -135,10 +123,6 @@ public static class CountryExpeditionBuilder
         foreach (string oldName in new[] { "Count", "Members", "Body" })
         { var old = formation.Find(oldName); if (old != null) Object.DestroyImmediate(old.gameObject); }
         var oldCount = shell.Find("MemberCount"); if (oldCount != null) Object.DestroyImmediate(oldCount.gameObject);
-        var footer = BottomFill(shell, "Footer", 128); Image(footer, Theme.Panel);
-        var back = Button(Top(footer, "Back", 32, 8, 280, 112), "‹ 国へ戻る", Theme.Panel);
-        var depart = Button(Right(footer, "Depart", 32, 8, 336, 112), "出発", Theme.Selected, true);
-        var summary = Label(Fill(footer, "Summary", new Vector2(352, 8), new Vector2(-408, -8)), "", 30, Theme.Muted); summary.textWrappingMode = TextWrappingModes.Normal;
         var confirm = Confirmation(window, "Confirm", group);
         var logWindow = Fill(window, "Log"); var logCanvas = Add<Canvas>(logWindow.gameObject); logCanvas.overrideSorting = true; logCanvas.sortingOrder = 70;
         Add<GraphicRaycaster>(logWindow.gameObject); Image(logWindow, new Color(.02f, .04f, .08f, .85f)).raycastTarget = true;
@@ -150,20 +134,18 @@ public static class CountryExpeditionBuilder
         var closeLog = Button(Right(logCard, "Close", 40, 744, 280, 112), "閉じる", Theme.Face);
         var logDetails = Confirmation(logWindow, "Details", logGroup);
         Set(panel, ("_data", data), ("_window", window.gameObject), ("_shell", group),
-            ("_map", map), ("_view", view), ("_dateText", date), ("_context", context), ("_targetName", name), ("_ownerName", owner), ("_days", days), ("_schedule", schedule), ("_targetNotice", notice),
-            ("_formationTarget", formationTarget), ("_emptySlotPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "CountryTrainingEmptySlot.prefab")), ("_members", members), ("_count", count), ("_equipment", equipment), ("_back", back), ("_depart", depart), ("_summary", summary), ("_confirmation", confirm),
-            ("_departLabel", depart.GetComponentInChildren<TextMeshProUGUI>()), ("_departFrame", depart.transform.Find("Frame").GetComponent<CountryGovernmentPlate>()),
+            ("_map", map), ("_view", view), ("_dateText", date),
+            ("_emptySlotPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "CountryTrainingEmptySlot.prefab")), ("_members", members), ("_count", count), ("_equipment", equipment), ("_confirmation", confirm),
             ("_log", log), ("_logLabel", log.GetComponentInChildren<TextMeshProUGUI>()), ("_logEmpty", logEmpty), ("_logWindow", logWindow.gameObject), ("_logContent", logScroll.content), ("_logClose", closeLog), ("_logDetails", logDetails),
             ("_rowPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "CountryExpeditionRow.prefab").GetComponent<CountryExpeditionRow>()),
             ("_tokenPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "CountrySoldierToken.prefab").GetComponent<CountryRosterRow>()));
         CountryExpeditionPageBuilder.Apply(root);
-        CountryExpeditionDetailsBuilder.Apply(root);
         logWindow.gameObject.SetActive(false); window.gameObject.SetActive(false);
     }
 
     private static CountryWorldMapView BuildMap(RectTransform page, CountryWorldMapData data)
     {
-        var area = Fill(page, "MapArea"); area.anchorMax = new Vector2(.73f, 1); area.offsetMax = new Vector2(-16, 0);
+        var area = Fill(page, "MapArea");
         var oldBoard = area.Find("Workboard"); if (oldBoard != null) oldBoard.gameObject.SetActive(false);
         Image(area, new Color32(43, 70, 87, 255)); Plate(Fill(area, "MapFrame"), Theme.Border, 0, 2.5f);
         var plane = Fill(area, "Plane"); var aspect = Add<AspectRatioFitter>(plane.gameObject); aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent; aspect.aspectRatio = 1.6f;

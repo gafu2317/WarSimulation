@@ -125,7 +125,7 @@ public static class CountrySoldierBuilder
         var selected = Fill(rect, "Selected"); selected.anchorMax = new Vector2(0, 1); selected.sizeDelta = new Vector2(4, -16); selected.anchoredPosition = Vector2.zero;
         Image(selected, Theme.Accent);
         Image(BottomFill(rect, "Divider", 1), Theme.Line);
-        var portrait = Top(rect, "Portrait", 12, 20, 88, 88);
+        var portrait = Top(rect, "Portrait", token ? 12 : 30, 20, 88, 88);
         var oldIcon = rect.Find("Icon");
         if (oldIcon != null) oldIcon.SetParent(Fill(portrait, "Clip"), false);
         var icon = RoundIcon(portrait);
@@ -167,7 +167,7 @@ public static class CountrySoldierBuilder
         }
         var aspect = Add<UnityEngine.UI.AspectRatioFitter>(frame.gameObject);
         // None mode replaces the ratio with the current rectangle's ratio in Edit Mode.
-        aspect.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.FitInParent; aspect.aspectRatio = .5f;
+        aspect.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.FitInParent; aspect.aspectRatio = CountryRosterView.StandingArtFrameRatio;
         Plate(Fill(frame, "Surface"), new Color32(83, 97, 112, 255), 0);
         var image = Image(Fill(frame, "Art"), Color.white); image.preserveAspect = true;
         var placeholder = Silhouette(Fill(frame, "Placeholder", Vector2.one * 16, Vector2.one * -16));
@@ -208,7 +208,7 @@ public static class CountrySoldierBuilder
             var group = Child(learned, kind.ToString()); Vertical(group, 8); groups[i] = group.gameObject;
             var header = Child(group, "Header"); Layout(header, 72);
             categoryIcons[i] = WeaponIcon(kind);
-            var categoryIcon = RoundIcon(Top(header, "WeaponIcon", 0, 8, 56, 56)); categoryIcon.sprite = categoryIcons[i];
+            SkillWeaponIcon(Top(header, "WeaponIcon", 0, 8, 56, 56), categoryIcons[i]);
             groupNames[i] = Label(Top(header, "Name", 76, 0, 300, 72), CountryRoster.WeaponName(kind), 32);
             groupStates[i] = Label(Fill(header, "State", new Vector2(392, 0), Vector2.zero), "", 26, Theme.Muted);
             groupStates[i].alignment = TextAlignmentOptions.MidlineRight;
@@ -217,7 +217,8 @@ public static class CountrySoldierBuilder
             groupSkills[i].margin = new Vector4(76, 0, 0, 8);
             groupSkills[i].alignment = TextAlignmentOptions.TopLeft; groupSkills[i].textWrappingMode = TextWrappingModes.Normal;
         }
-        var footer = BottomFill(right, "Actions", 120); footer.anchorMin = new Vector2(.3f, 0); footer.offsetMin = new Vector2(16, 0);
+        var footer = BottomFill(right, "Actions", 120); footer.anchorMin = new Vector2(.3f, 0);
+        footer.offsetMin = new Vector2(16, 0); footer.offsetMax = new Vector2(-40, 0);
         var action = Button(Right(footer, "Action", 0, 4, 400, 112), "装備を変更", Theme.Face, true);
         var actionLabel = action.GetComponentInChildren<TextMeshProUGUI>(); actionLabel.fontSize = 32;
         var hint = Label(Fill(footer, "Hint", new Vector2(16, 0), new Vector2(-424, 0)), "", 26, Theme.Muted); hint.textWrappingMode = TextWrappingModes.Normal;
@@ -231,6 +232,56 @@ public static class CountrySoldierBuilder
         SetArray(view, "_skillGroupStates", groupStates); SetArray(view, "_skillGroupSkills", groupSkills);
         CountryGovernmentControlsBuilder.Roster(root);
         if (CountryRosterArtBuilder.Available) CountryRosterArtBuilder.View(root);
+        ApplyRosterSort(root);
+    }
+
+    private static void ApplyRosterSort(GameObject root)
+    {
+        const int controlHeight = 56, optionHeight = 56;
+        var left = root.transform.Find("Left");
+        var shape = AssetDatabase.LoadAssetAtPath<Sprite>(Folder + "/Shapes/RoundedPanel.png");
+        var control = Right(left, "Sort", 28, 4, 308, controlHeight);
+        var frame = Picture(control, shape);
+        frame.color = Theme.Border; frame.raycastTarget = true;
+        var face = Picture(Fill(control, "Surface", Vector2.one * 2, -Vector2.one * 2), shape);
+        var caption = Label(TopFill(control, "Value", 0, controlHeight, 16, 44), "標準順", 27);
+        Label(Right(control, "Arrow", 14, 0, 20, controlHeight), "▼", 17, Theme.AccentText);
+
+        var template = TopFill(control, "Template", 4, 8 * optionHeight + 4);
+        template.anchorMin = Vector2.zero;
+        template.anchorMax = Vector2.right;
+        Picture(template, shape).color = Theme.Border;
+        var menu = Fill(template, "Menu", Vector2.one * 2, -Vector2.one * 2);
+        Image(menu, Theme.Recess).raycastTarget = true;
+        var scroll = Scroll(menu, false);
+        scroll.inertia = false;
+        scroll.viewport.offsetMax = new Vector2(-16, 0);
+        ((RectTransform)scroll.verticalScrollbar.transform).sizeDelta = new Vector2(16, 0);
+        Object.DestroyImmediate(scroll.content.GetComponent<UnityEngine.UI.ContentSizeFitter>());
+        scroll.content.sizeDelta = new Vector2(0, optionHeight);
+        var item = TopFill(scroll.content, "Item", 0, optionHeight);
+        var itemFace = Image(item, Color.white); itemFace.raycastTarget = true;
+        var mark = Image(Top(item, "Selected", 0, 4, 5, optionHeight - 8), Theme.Accent);
+        var itemText = Label(TopFill(item, "Label", 0, optionHeight, 16, 8), "標準順", 26);
+        var toggle = Add<UnityEngine.UI.Toggle>(item.gameObject);
+        toggle.targetGraphic = itemFace;
+        toggle.graphic = mark;
+        var colors = toggle.colors;
+        colors.normalColor = Theme.Recess;
+        colors.highlightedColor = colors.selectedColor = colors.pressedColor = Theme.Selected;
+        toggle.colors = colors;
+        template.gameObject.SetActive(false);
+
+        var sort = Add<TMP_Dropdown>(control.gameObject);
+        sort.targetGraphic = face;
+        Theme.Colors(sort, Theme.Recess);
+        var colorsForSort = sort.colors;
+        colorsForSort.highlightedColor = colorsForSort.selectedColor = Theme.Panel;
+        sort.colors = colorsForSort;
+        sort.captionText = caption;
+        sort.template = template;
+        sort.itemText = itemText;
+        Set(root.GetComponent<CountryRosterView>(), ("_sort", sort));
     }
 
     private static void BuildTraining(GameObject root)
@@ -260,7 +311,7 @@ public static class CountrySoldierBuilder
         if (legacy != null && legacy.GetComponent<CountryTrainingView>() == null) Object.DestroyImmediate(legacy.gameObject);
         var guide = page.Find("Guide"); if (guide != null) Object.DestroyImmediate(guide.gameObject);
         var training = Instance(page, "Content", "CountryTraining").GetComponent<CountryTrainingView>();
-        var rect = (RectTransform)training.transform; rect.offsetMin = new Vector2(40, 24); rect.offsetMax = new Vector2(-40, 0);
+        CountryRosterSelectionBuilder.SetPageInsets((RectTransform)training.transform);
         var confirm = Instance(panel.transform.Find("Window"), "TrainingConfirm", "CountryRosterConfirm").GetComponent<CountryRosterConfirm>();
         Set(confirm, ("_blocked", panel.transform.Find("Window/Shell").GetComponent<CanvasGroup>()));
         Set(training, ("_confirmation", confirm)); Set(panel, ("_training", training));
@@ -291,10 +342,9 @@ public static class CountrySoldierBuilder
         ConfigurePersonnelView(view);
         var footer = BottomFill(shell, "Footer", 128); Image(footer, Theme.Panel).enabled = false;
         var oldBack = header.Find("Back"); if (oldBack != null) oldBack.SetParent(footer, false);
-        var backRect = Child(footer, "Back"); backRect.anchorMin = backRect.anchorMax = backRect.pivot = Vector2.zero;
-        backRect.anchoredPosition = new Vector2(72, 40); backRect.sizeDelta = new Vector2(224, 112);
-        var back = Button(backRect, "‹ 戻る", Theme.Face);
-        back.GetComponentInChildren<TextMeshProUGUI>(true).fontSize = 36;
+        var backRect = Child(footer, "Back");
+        Theme.PlacePageItem(backRect, 0, Theme.PageBarInset, Theme.PageBarBackWidth);
+        var back = PageButton(backRect, Theme.CountryReturnText);
         var help = footer.Find("Help"); if (help != null) help.gameObject.SetActive(false);
         var confirmation = Instance(window, "Confirm", "CountryRosterConfirm").GetComponent<CountryRosterConfirm>(); Set(confirmation, ("_blocked", group));
         Set(panel, ("_window", window.gameObject), ("_view", view), ("_confirmation", confirmation), ("_soldiersTab", soldiers), ("_weaponsTab", weapons),
@@ -336,6 +386,15 @@ public static class CountrySoldierBuilder
 
     private static CountrySoldierSilhouette Silhouette(RectTransform rect)
     { Add<CanvasRenderer>(rect.gameObject); var graphic = Add<CountrySoldierSilhouette>(rect.gameObject); graphic.color = new Color32(133, 147, 163, 255); graphic.raycastTarget = false; return graphic; }
+    private static void SkillWeaponIcon(RectTransform rect, Sprite sprite)
+    {
+        foreach (string name in new[] { "Clip", "Edge" })
+            if (rect.Find(name) is Transform child) Object.DestroyImmediate(child.gameObject);
+        if (rect.TryGetComponent<CountryCircleGraphic>(out var circle)) Object.DestroyImmediate(circle);
+        var image = Image(rect, Color.white);
+        image.sprite = sprite;
+        image.preserveAspect = true;
+    }
     private static UnityEngine.UI.Image RoundIcon(RectTransform rect)
     {
         Circle(rect, Theme.Recess);

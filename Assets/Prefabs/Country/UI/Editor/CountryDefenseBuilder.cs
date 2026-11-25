@@ -77,7 +77,8 @@ public static class CountryDefenseBuilder
         var view = selection.Find("Body/Roster").GetComponent<CountryRosterView>();
         var members = (RectTransform)selection.Find("Members/Viewport/Content");
         var footer = BottomFill(formation, "Footer", 128); Image(footer, Theme.Panel);
-        var back = Button(Top(footer, "Back", 32, 8, 320, 112), "‹ 国へ戻る", Wine);
+        var back = PageButton(Child(footer, "Back"), Theme.CountryReturnText);
+        Theme.PlacePageItem((RectTransform)back.transform, 0, Theme.PageBarInset, Theme.PageBarBackWidth);
         var save = Button(Right(footer, "Save", 32, 8, 360, 112), "登録する", Red, true);
         var summary = Label(Fill(footer, "Summary", new Vector2(392, 8), new Vector2(-432, -8)), "", 28, Theme.Muted); summary.textWrappingMode = TextWrappingModes.Normal;
 
@@ -101,6 +102,7 @@ public static class CountryDefenseBuilder
         var fight = Button(Right(actions, "Fight", 48, 8, 480, 112), "防衛する", Red, true);
         fight.transform.Find("Frame").GetComponent<Graphic>().color = Copper;
         var confirm = CountryExpeditionBuilder.Confirmation(window, "Confirm", group);
+        AddCountryReturn(confirm);
         var confirmCard = confirm.transform.Find("Window/Card");
         confirmCard.Find("Surface").GetComponent<Graphic>().color = Wine;
         confirmCard.Find("Frame").GetComponent<Graphic>().color = Copper;
@@ -113,6 +115,17 @@ public static class CountryDefenseBuilder
             ("_emptySlotPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "CountryTrainingEmptySlot.prefab")));
         CountryRaidDispatchBuilder.Apply(root);
         formation.gameObject.SetActive(false); alert.gameObject.SetActive(false); window.gameObject.SetActive(false);
+    }
+
+    internal static void AddCountryReturn(CountryRosterConfirm confirmation)
+    {
+        var footer = confirmation.transform.Find("Window/Card/Footer");
+        var rect = Child(footer, "ReturnToCountry");
+        Theme.PlacePageItem(rect, 1, -48, Theme.PageBarBackWidth, 72);
+        var button = PageButton(rect, Theme.CountryReturnText);
+        button.gameObject.SetActive(false);
+        Set(confirmation, ("_returnToCountry", button));
+        PrefabUtility.RecordPrefabInstancePropertyModifications(confirmation);
     }
 
     private static void TintBoard(Transform board, Color color)

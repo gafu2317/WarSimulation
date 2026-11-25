@@ -4,6 +4,22 @@ using TMPro;
 
 public static class CountryGovernmentTheme
 {
+    public const string CountryReturnText = "‹ 国へ";
+    public const float PageBarHeight = 96;
+    public const float PageBarButtonHeight = 88;
+    public const float PageBarNoticeHeight = 36;
+    public const float PageBarInset = 32;
+    public const float PageBarBackWidth = 144;
+    public const float PageBarActionWidth = 380;
+
+    public static void PlacePageItem(RectTransform rect, float anchor, float x, float width,
+        float y = PageBarHeight / 2, float height = PageBarButtonHeight)
+    {
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(anchor, 0);
+        rect.anchoredPosition = new Vector2(x, y - height / 2);
+        rect.sizeDelta = new Vector2(width, height);
+    }
+
     public static readonly Color Background = new Color32(65, 76, 91, 255);
     public static readonly Color Panel = new Color32(82, 96, 113, 255);
     public static readonly Color Face = new Color32(147, 164, 183, 255);

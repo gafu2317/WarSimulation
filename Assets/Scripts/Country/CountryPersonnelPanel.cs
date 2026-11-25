@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using Theme = CountryGovernmentTheme;
 
 public sealed class CountryPersonnelPanel : MonoBehaviour
 {
@@ -41,7 +42,22 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
         _view.Initialize(_roster);
         _view.PlaceMemberControls();
         _view.CreatePersonnelEquipmentAction();
-        CountryGovernmentPanel.StylePageButton(_back, _view.RoundedPanel, CountryGovernmentTheme.Face);
+        var footer = (RectTransform)_back.transform.parent;
+        footer.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, CountryGovernmentTheme.PageBarHeight);
+        var header = (RectTransform)_context.transform.parent;
+        header.SetParent(footer, false);
+        header.anchorMin = Vector2.zero; header.anchorMax = Vector2.one;
+        header.offsetMin = header.offsetMax = Vector2.zero;
+        Theme.PlacePageItem(_context.rectTransform, 0, Theme.PageBarInset + Theme.PageBarBackWidth + 20, 350);
+        Theme.PlacePageItem((RectTransform)_back.transform, 0, Theme.PageBarInset, Theme.PageBarBackWidth);
+        Theme.PlacePageItem((RectTransform)_soldiersTab.transform, .5f, -129, 250);
+        Theme.PlacePageItem((RectTransform)_weaponsTab.transform, .5f, 129, 250);
+        Theme.PlacePageItem((RectTransform)_defenseTab.transform, 1, -Theme.PageBarInset, Theme.PageBarActionWidth);
+        _soldiersTab.GetComponentInChildren<TextMeshProUGUI>(true).text = "兵士";
+        _weaponsTab.GetComponentInChildren<TextMeshProUGUI>(true).text = "武器";
+        var main = (RectTransform)_view.transform.parent;
+        main.offsetMin = new Vector2(main.offsetMin.x, CountryGovernmentTheme.PageBarHeight + 16);
+        main.offsetMax = new Vector2(main.offsetMax.x, -24);
         _equipmentPopup = new CountryEquipmentPopup(_view, _back, _shell, _window.transform, CloseEquipment);
         _dataState.gameObject.SetActive(false);
     }
@@ -61,7 +77,7 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
             _window.SetActive(true); _cancel.Enable();
             var canvas = _window.GetComponent<Canvas>(); canvas.overrideSorting = true; canvas.sortingOrder = 50;
         }
-        Switch(false); _weaponsTab.Select();
+        Switch(false); _soldiersTab.Select();
     }
     private void Switch(bool weapons)
     {
@@ -72,10 +88,10 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
     {
         if (_weapons) _view.ShowWeapons(); else _view.ShowSoldiers();
         bool choosingEquipment = _equipSoldier >= 0 || _equipWeapon >= 0;
-        _soldiersTab.gameObject.SetActive(_weapons && !choosingEquipment);
-        _weaponsTab.gameObject.SetActive(!_weapons && !choosingEquipment);
-        _soldiersTab.GetComponentInChildren<TextMeshProUGUI>(true).text = "‹ 兵士一覧へ";
-        _weaponsTab.GetComponentInChildren<TextMeshProUGUI>(true).text = "武器一覧へ ›";
+        _soldiersTab.gameObject.SetActive(!choosingEquipment);
+        _weaponsTab.gameObject.SetActive(!choosingEquipment);
+        Theme.SelectTab(_soldiersTab, !_weapons);
+        Theme.SelectTab(_weaponsTab, _weapons);
         _view.ShowPersonnelEquipmentAction(!_weapons && !choosingEquipment);
         RefreshAction();
     }
@@ -83,9 +99,8 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
     {
         if (_roster == null) return;
         _context.text = _equipSoldier >= 0 ? $"{_view.Data.Soldiers[_equipSoldier].Name}の装備を選ぶ"
-            : _equipWeapon >= 0 ? $"{_view.Data.Weapons[_equipWeapon].Name}の装備先を選ぶ" : _weapons ? "武器一覧" : "兵士一覧";
-        if (_weapons) _context.text += $"　合計 {_view.Data.Weapons.Length}点";
-        _backLabel.text = "‹ 戻る";
+            : _equipWeapon >= 0 ? $"{_view.Data.Weapons[_equipWeapon].Name}の装備先を選ぶ" : "兵士管理";
+        _backLabel.text = _equipSoldier >= 0 || _equipWeapon >= 0 ? "‹ 戻る" : _weapons ? "‹ 兵士へ" : Theme.CountryReturnText;
         int weapon = _weapons ? _view.SelectedWeapon : _equipWeapon;
         int soldier = _weapons ? _equipSoldier : _view.SelectedSoldier;
         _view.PreviewWeapon(_equipSoldier >= 0 || _equipWeapon >= 0 ? soldier : -1, weapon);
@@ -153,10 +168,7 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
     private void LateUpdate()
     {
         if (!IsOpen) return;
-        var shell = (RectTransform)_shell.transform;
-        _headerBackground.anchorMin = new Vector2(0, shell.anchorMax.y);
-        _headerBackground.anchorMax = new Vector2(1, shell.anchorMax.y);
-        _headerBackground.anchoredPosition = new Vector2(0, shell.offsetMax.y);
+        CountrySafeArea.FitBottomBand(_headerBackground, (RectTransform)_shell.transform, CountryGovernmentTheme.PageBarHeight);
     }
     private void OnDisable() => Close();
     private void OnDestroy() => _cancel?.Dispose();

@@ -23,7 +23,7 @@ public static class CountryTextLayoutBuilder
                 Layout((RectTransform)root.transform,152);
                 TopFill(root.transform,"Name",24,54,120,28);
                 var state=TopFill(root.transform,"State",78,44,120,28).GetComponent<TextMeshProUGUI>();state.textWrappingMode=TextWrappingModes.Normal;
-                var portrait=(RectTransform)root.transform.Find("Portrait");portrait.anchoredPosition=new Vector2(12,-32);Record(portrait);
+                var portrait=(RectTransform)root.transform.Find("Portrait");portrait.anchoredPosition=new Vector2(30,-32);Record(portrait);
                 Record(root.GetComponent<UnityEngine.UI.LayoutElement>());Record(root.transform.Find("Name"));Record(state);Record(state.transform);break;
             case "CountryRosterView": Roster(root.transform);break;
             case "CountryTraining":

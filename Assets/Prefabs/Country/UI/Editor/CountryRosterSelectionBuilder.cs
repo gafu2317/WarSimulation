@@ -32,6 +32,11 @@ public static class CountryRosterSelectionBuilder
         var root = Instance(parent, "Selection", "CountryRosterSelection");
         root.offsetMax = new Vector2(0, -112); return root;
     }
+    internal static void SetPageInsets(RectTransform page)
+    {
+        page.offsetMin = new Vector2(40, 24);
+        page.offsetMax = new Vector2(-40, 0);
+    }
     public static void ApplyTraining(GameObject root)
     {
         var selection = Place(root.transform);

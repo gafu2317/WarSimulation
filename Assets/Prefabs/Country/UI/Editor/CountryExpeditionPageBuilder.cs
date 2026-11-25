@@ -3,25 +3,29 @@ using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 using static CountryGovernmentBuilder;
 using Theme = CountryGovernmentTheme;
 using Object = UnityEngine.Object;
 
 public static class CountryExpeditionPageBuilder
 {
+    private const int PageInset = 32;
+    private const int PageGap = 16;
+
     [MenuItem("WarSim/Country/Set Up Expedition Page")]
     public static void Build()
     {
         if (EditorApplication.isPlaying) throw new InvalidOperationException("Stop Play mode before updating the expedition page.");
         using var scope = new PrefabUtility.EditPrefabContentsScope("Assets/Prefabs/Country/UI/CountryExpedition.prefab");
         Apply(scope.prefabContentsRoot);
-        Debug.Log("Expedition map and formation connected in one scrolling page. The open scene was not saved or reloaded.");
+        Debug.Log("Expedition destination and formation pages updated. The open scene was not saved or reloaded.");
     }
 
     internal static void Apply(GameObject root)
     {
         var shell = root.transform.Find("Window/Shell");
-        var header = shell.Find("Header");
+        var header = BottomFill(shell, "Header", Theme.PageBarHeight);
         foreach (string name in new[] { "Map", "Formation" })
         {
             var tab = header.Find(name);
@@ -29,94 +33,85 @@ public static class CountryExpeditionPageBuilder
         }
         var title = header.Find("Title");
         if (title != null) Object.DestroyImmediate(title.gameObject);
-        var context = shell.Find("Context") ?? header.Find("Context");
-        context.SetParent(header, false);
-        var contextRect = (RectTransform)context;
-        contextRect.anchorMin = Vector2.zero; contextRect.anchorMax = Vector2.one;
-        contextRect.offsetMin = new Vector2(280, 0); contextRect.offsetMax = new Vector2(-400, 0);
-        context.GetComponent<TextMeshProUGUI>().fontSize = 32;
-        var main = (RectTransform)shell.Find("Main");
-        main.offsetMin = new Vector2(40, 0); main.offsetMax = new Vector2(-40, 0);
-        var map = main.Find("Map") ?? main.Find("Viewport/Content/Map");
-        var formation = main.Find("Formation") ?? main.Find("Viewport/Content/Formation");
-        var page = Scroll(main);
-        page.viewport.offsetMax = Vector2.zero;
-        page.scrollSensitivity = 54;
-        page.inertia = true;
-        var bar = (RectTransform)page.verticalScrollbar.transform;
-        bar.anchoredPosition = new Vector2(28, 0);
-        bar.offsetMin = new Vector2(bar.offsetMin.x, 24);
-        bar.offsetMax = new Vector2(bar.offsetMax.x, -24);
-        var layout = page.content.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
-        layout.spacing = 72; layout.padding.top = 128; layout.padding.bottom = 144;
-        header.SetAsLastSibling(); shell.Find("Footer").SetAsLastSibling();
-        map.SetParent(page.content, false); formation.SetParent(page.content, false);
-        map.SetSiblingIndex(0); formation.SetSiblingIndex(1);
-        var mapSize = Add<UnityEngine.UI.LayoutElement>(map.gameObject);
-        var formationSize = Add<UnityEngine.UI.LayoutElement>(formation.gameObject);
-        mapSize.minHeight = mapSize.preferredHeight = 736;
-        formationSize.minHeight = formationSize.preferredHeight = 808;
-        map.gameObject.SetActive(true); formation.gameObject.SetActive(true);
-        var list = formation.Find("Selection/Body/Roster/Left/List").GetComponent<UnityEngine.UI.ScrollRect>();
-        var right = (RectTransform)formation.Find("Selection/Body/Roster/Right");
-        var details = right.Find("Body/Details").GetComponent<UnityEngine.UI.ScrollRect>();
-        right.anchorMin = new Vector2(right.anchorMin.x, 1);
-        right.anchorMax = new Vector2(right.anchorMax.x, 1);
-        right.pivot = new Vector2(right.pivot.x, 1);
-        right.anchoredPosition = new Vector2(right.anchoredPosition.x, 0);
-        right.sizeDelta = new Vector2(right.sizeDelta.x, 600);
-        var body = (RectTransform)right.Find("Body");
-        body.offsetMax = new Vector2(body.offsetMax.x, 0);
-        var portrait = (RectTransform)right.Find("Body/Portrait");
-        portrait.anchorMin = portrait.anchorMax = new Vector2(0, 1);
-        portrait.pivot = new Vector2(0, 1);
-        portrait.anchoredPosition = Vector2.zero;
-        portrait.sizeDelta = new Vector2(340, 680);
-        var detailsRect = (RectTransform)details.transform;
-        detailsRect.anchorMin = new Vector2(0, detailsRect.anchorMin.y);
-        detailsRect.offsetMin = new Vector2(356, detailsRect.offsetMin.y);
-        detailsRect.offsetMax = new Vector2(detailsRect.offsetMax.x, -128);
-        var nameRect = (RectTransform)right.Find("Name");
-        nameRect.offsetMin = new Vector2(356, nameRect.offsetMin.y);
-        nameRect.anchoredPosition = new Vector2(nameRect.anchoredPosition.x, -28);
-        var subtitleRect = (RectTransform)right.Find("Subtitle");
-        subtitleRect.offsetMin = new Vector2(356, subtitleRect.offsetMin.y);
-        right.Find("Name").GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.MidlineLeft;
-        right.Find("Subtitle").GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.MidlineLeft;
-        list.enabled = false;
-        if (list.verticalScrollbar != null) list.verticalScrollbar.gameObject.SetActive(false);
-        details.enabled = false;
-        if (details.verticalScrollbar != null) details.verticalScrollbar.gameObject.SetActive(false);
-        Set(Add<CountryExpeditionPageLayout>(main.gameObject), ("_viewport", page.viewport), ("_map", mapSize), ("_formation", formationSize), ("_list", list), ("_details", details), ("_right", right));
-        Set(root.GetComponent<CountryExpeditionPanel>(), ("_page", page));
-        foreach (var inner in formation.GetComponentsInChildren<UnityEngine.UI.ScrollRect>(true))
+        var main = Fill(shell, "Main", new Vector2(0, Theme.PageBarHeight + PageGap), new Vector2(0, -PageGap));
+        var map = (RectTransform)(shell.Find("Map") ?? main.Find("Map") ?? main.Find("Viewport/Content/Map"));
+        map.SetParent(shell, false); map.SetAsFirstSibling();
+        Stretch(map);
+        map.offsetMin = new Vector2(PageInset, main.offsetMin.y); map.offsetMax = new Vector2(-PageInset, main.offsetMax.y);
+        var mapArea = Fill(map, "MapArea");
+        var itinerary = Fill(map, "Details");
+        mapArea.anchorMax = new Vector2(.70f, 1); mapArea.offsetMax = new Vector2(-PageGap / 2, 0);
+        itinerary.anchorMin = new Vector2(.70f, 0); itinerary.offsetMin = new Vector2(PageGap / 2, 0);
+        if (map.TryGetComponent(out UnityEngine.UI.LayoutElement oldMapSize)) Object.DestroyImmediate(oldMapSize);
+        bool hadPageScroll = main.TryGetComponent(out ScrollRect oldPage);
+        if (hadPageScroll)
         {
-            var relay = Add<CountryNestedScrollInput>(inner.viewport.gameObject);
-            Set(relay, ("_inner", inner), ("_outer", page));
-            relay.enabled = inner != list && inner != details;
+            var oldFormation = oldPage.content.Find("Formation");
+            oldFormation.SetParent(main, false);
+            Object.DestroyImmediate(oldFormation.GetComponent<LayoutElement>());
+            foreach (var relay in oldFormation.GetComponentsInChildren<CountryNestedScrollInput>(true))
+                Object.DestroyImmediate(relay);
+            Object.DestroyImmediate(oldPage.viewport.gameObject);
+            Object.DestroyImmediate(oldPage.verticalScrollbar.gameObject);
+            Object.DestroyImmediate(oldPage);
+            GameObjectUtility.RemoveMonoBehavioursWithMissingScript(main.gameObject);
         }
-        foreach (var value in new Component[] { main, page, page.viewport, bar, page.content.GetComponent<UnityEngine.UI.VerticalLayoutGroup>() })
-            PrefabUtility.RecordPrefabInstancePropertyModifications(value);
-        ApplyControls(header, shell.Find("Footer"));
+        var formation = Fill(main, "Formation");
+        CountryRosterSelectionBuilder.SetPageInsets(formation);
+        header.SetAsLastSibling();
+        map.gameObject.SetActive(true); main.gameObject.SetActive(false);
+        var selection = (RectTransform)formation.Find("Selection");
+        Stretch(selection);
+        var fixedMembers = main.Find("FixedMembers");
+        if (hadPageScroll || fixedMembers != null)
+        {
+            foreach (string path in new[] { "Body", "Body/Roster/Right", "Body/Roster/Right/Name",
+                         "Body/Roster/Right/Subtitle", "Body/Roster/Right/Body",
+                         "Body/Roster/Right/Body/Portrait", "Body/Roster/Right/Body/Details" })
+                PrefabUtility.RevertObjectOverride(selection.Find(path), InteractionMode.AutomatedAction);
+            foreach (string path in new[] { "Body/Roster/Left/List", "Body/Roster/Right/Body/Details" })
+            {
+                var scroll = selection.Find(path).GetComponent<ScrollRect>();
+                PrefabUtility.RevertObjectOverride(scroll, InteractionMode.AutomatedAction);
+                PrefabUtility.RevertObjectOverride(scroll.verticalScrollbar.gameObject, InteractionMode.AutomatedAction);
+            }
+        }
+        var context = fixedMembers?.Find("Context") ?? formation.Find("Header/Context") ?? header.Find("Context") ?? shell.Find("Context");
+        if (context != null) context.SetParent(selection, false);
+        if (fixedMembers != null) Object.DestroyImmediate(fixedMembers.gameObject);
+        var oldHeader = formation.Find("Header");
+        if (oldHeader != null)
+        {
+            var equipment = oldHeader.Find("Equipment");
+            if (equipment != null) equipment.SetParent(formation, false);
+            Object.DestroyImmediate(oldHeader.gameObject);
+        }
+        var contextLabel = Label(TopFill(selection, "Context", 0, 56, 480, 16), "", 28, Theme.Text);
+        contextLabel.alignment = TextAlignmentOptions.MidlineRight;
+        contextLabel.overflowMode = TextOverflowModes.Ellipsis;
+        contextLabel.gameObject.SetActive(true);
+        var panel = root.GetComponent<CountryExpeditionPanel>();
+        Set(panel, ("_destinationPage", map.gameObject), ("_formationPage", main.gameObject), ("_context", contextLabel));
+        ApplyControls(panel, header, shell.Find("Footer"));
+        CountryExpeditionDetailsBuilder.Apply(root);
     }
 
-    private static void ApplyControls(Transform header, Transform footer)
+    private static void ApplyControls(CountryExpeditionPanel panel, RectTransform header, Transform oldFooter)
     {
-        header.GetComponent<UnityEngine.UI.Image>().enabled = false;
-        footer.GetComponent<UnityEngine.UI.Image>().enabled = false;
+        const float footerHeight = Theme.PageBarHeight + Theme.PageBarNoticeHeight;
+        header.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, footerHeight);
+        foreach (string page in new[] { "Map", "Main" })
+        {
+            var rect = (RectTransform)header.parent.Find(page);
+            rect.offsetMin = new Vector2(rect.offsetMin.x, footerHeight + PageGap);
+        }
+        header.GetComponent<Image>().enabled = false;
         header.Find("Date").gameObject.SetActive(false);
-        header.Find("Context").gameObject.SetActive(false);
         header.Find("Active").gameObject.SetActive(false);
 
-        var active = header.Find("Active").GetComponent<UnityEngine.UI.Button>();
-        var back = footer.Find("Back").GetComponent<UnityEngine.UI.Button>();
-        var depart = footer.Find("Depart").GetComponent<UnityEngine.UI.Button>();
+        var active = header.Find("Active").GetComponent<Button>();
         var book = Part(CountryCommandMotifsBuilder.Atlas, "Command-BookCover");
-        var sign = Part(CountryConstructionSignBuilder.Atlas, "Construction-Planks");
-        var pennant = Part(CountryCommandMotifsBuilder.TrainingAtlas, "Training-Pennant");
-        var flag = Part("Assets/Images/UI/Country/Buttons/ExpeditionParts-v1.png", "Expedition-Flag");
         var helmet = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/Country/soldiers-v1.png");
-
         Artwork(active, book);
         Icon(active.transform, helmet, 22, 28, 52, 52);
         var activeLabel = active.transform.Find("Label").GetComponent<TextMeshProUGUI>();
@@ -124,29 +119,57 @@ public static class CountryExpeditionPageBuilder
         activeLabel.fontSize = 30; activeLabel.color = Theme.Text;
         CountryButtonFeedbackBuilder.Configure(active);
 
-        Top(footer, "Back", 32, 0, 320, 128);
-        Artwork(back, sign);
-        var backLabel = back.transform.Find("Label").GetComponent<TextMeshProUGUI>();
-        backLabel.fontSize = 30; backLabel.color = Theme.Text;
-        CountryButtonFeedbackBuilder.Configure(back);
-
-        Right(footer, "Depart", 32, 32, 352, 96);
-        Artwork(depart, pennant);
-        Icon(depart.transform, flag, 26, 17, 54, 62);
-        var departLabel = depart.transform.Find("Label").GetComponent<TextMeshProUGUI>();
+        if (oldFooter != null)
+        {
+            oldFooter.Find("Back").SetParent(header, false);
+            oldFooter.Find("Depart").SetParent(header, false);
+            Object.DestroyImmediate(oldFooter.gameObject);
+        }
+        var back = PageButton(PageItem(header, "Back", 0, PageInset, Theme.PageBarBackWidth), Theme.CountryReturnText);
+        var next = PageButton(PageItem(header, "Next", 1, -PageInset, Theme.PageBarActionWidth), "編成へ ›");
+        var depart = PageButton(PageItem(header, "Depart", 1, -PageInset, Theme.PageBarActionWidth), "出発確認 ›");
+        Artwork(depart, Part(CountryCommandMotifsBuilder.TrainingAtlas, "Training-Pennant"));
+        var flag = Part("Assets/Images/UI/Country/Buttons/ExpeditionParts-v1.png", "Expedition-Flag");
+        Icon(depart.transform, flag, 26, 13, 54, 62);
         Fill(depart.transform, "Label", new Vector2(88, 8), new Vector2(-42, -8));
-        departLabel.fontSize = 36;
         CountryButtonFeedbackBuilder.Configure(depart);
 
-        var summary = Right(footer, "Summary", 32, 0, 720, 30).GetComponent<TextMeshProUGUI>();
-        summary.fontSize = 26; summary.alignment = TextAlignmentOptions.MidlineRight;
-        summary.textWrappingMode = TextWrappingModes.NoWrap;
+        Label(PageItem(header, "ExpeditionTitle", 0, PageInset + Theme.PageBarBackWidth + 20, 168), "遠征計画", 32, Theme.Text);
+        if (header.Find("StepArrow") is Transform arrow) Object.DestroyImmediate(arrow.gameObject);
+        var target = PageStep(PageItem(header, "DestinationStep", .5f, -129, 250), "遠征先");
+        var members = PageStep(PageItem(header, "MemberStep", .5f, 129, 250), "編成");
+        var notice = Child(header, "DepartureStatus");
+        Theme.PlacePageItem(notice, 1, -PageInset, 620, Theme.PageBarHeight + Theme.PageBarNoticeHeight / 2, Theme.PageBarNoticeHeight);
+        var status = Label(notice, "", 24, Theme.Text);
+        status.alignment = TextAlignmentOptions.MidlineRight;
+        status.overflowMode = TextOverflowModes.Ellipsis;
+        status.textWrappingMode = TextWrappingModes.NoWrap;
+        Set(panel, ("_back", back), ("_next", next), ("_depart", depart), ("_targetStep", target), ("_memberStep", members),
+            ("_departureStatus", status));
+    }
+
+    private static RectTransform PageItem(Transform parent, string name, float anchor, float x, float width)
+    {
+        var rect = Child(parent, name);
+        Theme.PlacePageItem(rect, anchor, x, width);
+        return rect;
+    }
+
+    private static TextMeshProUGUI PageStep(RectTransform rect, string text)
+    {
+        if (rect.TryGetComponent(out TextMeshProUGUI oldLabel)) Object.DestroyImmediate(oldLabel);
+        var button = Button(rect, text, Theme.Face);
+        button.transition = Selectable.Transition.ColorTint;
+        Tab(button);
+        var label = rect.Find("Label").GetComponent<TextMeshProUGUI>();
+        label.fontSize = 30;
+        return label;
     }
 
     private static Sprite Part(string path, string name) =>
         AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().First(sprite => sprite.name == name);
 
-    private static void Artwork(UnityEngine.UI.Button button, Sprite sprite)
+    private static void Artwork(Button button, Sprite sprite)
     {
         var root = button.transform;
         if (root.Find("Outline") is Transform outline) outline.gameObject.SetActive(false);
@@ -158,15 +181,6 @@ public static class CountryExpeditionPageBuilder
         var face = Picture(Fill(root, "Surface", Vector2.one * 4, Vector2.one * -4), sprite);
         face.transform.SetSiblingIndex(2); button.targetGraphic = face;
         Theme.Colors(button, Color.white);
-    }
-
-    private static UnityEngine.UI.Image Picture(RectTransform rect, Sprite sprite)
-    {
-        foreach (var graphic in rect.GetComponents<UnityEngine.UI.Graphic>().Where(g => g is not UnityEngine.UI.Image).ToArray())
-            Object.DestroyImmediate(graphic);
-        var image = Image(rect, Color.white); image.sprite = sprite; image.type = UnityEngine.UI.Image.Type.Sliced;
-        image.pixelsPerUnitMultiplier = 4; image.raycastTarget = false;
-        return image;
     }
 
     private static void Icon(Transform parent, Sprite sprite, float x, float y, float width, float height)

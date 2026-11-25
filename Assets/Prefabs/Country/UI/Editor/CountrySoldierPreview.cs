@@ -52,7 +52,7 @@ public static class CountrySoldierPreview
         var government = Object.FindAnyObjectByType<CountryGovernmentPanel>();
         var root = personnel != null && personnel.IsOpen ? personnel.gameObject : government.gameObject;
         bool personnelOpen = personnel != null && personnel.IsOpen;
-        string page = personnelOpen ? root.transform.Find("Window/Shell/Header/Context").GetComponent<TMP_Text>().text
+        string page = personnelOpen ? root.transform.Find("Window/Shell/Footer/Header/Context").GetComponent<TMP_Text>().text
             : root.transform.Find("Window/Shell/Main").Cast<Transform>().First(child => child.gameObject.activeSelf).name;
         PlayModeWindow.GetRenderingResolution(out uint width, out uint height);
         string name = !personnelOpen ? page : page.Contains("装備") ? "Equipment" : page.Contains("武器一覧") ? "Weapons" : "Soldiers";

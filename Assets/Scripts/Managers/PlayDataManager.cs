@@ -56,10 +56,10 @@ public class PlayDataManager : ManagerBase<PlayDataManager>
         return Roster;
     }
 
-    [SerializeField, Min(0)] private int _wood = 1200;
+    [SerializeField, Min(0)] private int _wood = 300;
     public int Wood => _wood;
 
-    [SerializeField, Min(0)] private int _ore = 800;
+    [SerializeField, Min(0)] private int _ore = 150;
     public int Ore => _ore;
 
     [SerializeField, HideInInspector] private int _taxRemainder, _woodRemainder, _oreRemainder;
@@ -96,15 +96,24 @@ public class PlayDataManager : ManagerBase<PlayDataManager>
     {
         if (monthIndex < 0) throw new ArgumentOutOfRangeException(nameof(monthIndex));
         if (monthIndex <= _lastIncomeMonthIndex) return false;
-        int tax = Collect(_population, TaxRate, _taxRemainder, out int taxRemainder);
-        int wood = Collect(_population, WoodRate, _woodRemainder, out int woodRemainder);
-        int ore = Collect(_population, OreRate, _oreRemainder, out int oreRemainder);
+        var (tax, wood, ore) = CalculateMonthlyIncome(out var remainders);
         (_money, _wood, _ore) = (checked(_money + tax), checked(_wood + wood), checked(_ore + ore));
-        (_taxRemainder, _woodRemainder, _oreRemainder) = (taxRemainder, woodRemainder, oreRemainder);
+        (_taxRemainder, _woodRemainder, _oreRemainder) = remainders;
         _lastIncomeMonthIndex = monthIndex;
         _lastIncomeReceipt = new CountryIncomeReceipt(monthIndex, tax, wood, ore);
         OnResourcesChanged?.Invoke();
         return true;
+    }
+
+    public (int Tax, int Wood, int Ore) EstimateMonthlyIncome() => CalculateMonthlyIncome(out _);
+
+    private (int Tax, int Wood, int Ore) CalculateMonthlyIncome(out (int Tax, int Wood, int Ore) remainders)
+    {
+        int tax = Collect(_population, TaxRate, _taxRemainder, out int taxRemainder);
+        int wood = Collect(_population, WoodRate, _woodRemainder, out int woodRemainder);
+        int ore = Collect(_population, OreRate, _oreRemainder, out int oreRemainder);
+        remainders = (taxRemainder, woodRemainder, oreRemainder);
+        return (tax, wood, ore);
     }
 
     private static int Collect(int population, int rate, int remainder, out int nextRemainder)

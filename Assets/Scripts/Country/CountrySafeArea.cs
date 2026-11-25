@@ -65,6 +65,14 @@ public sealed class CountrySafeArea : MonoBehaviour
         _size = default;
     }
 
+    internal static void FitBottomBand(RectTransform band, RectTransform safe, float height)
+    {
+        band.anchorMin = Vector2.zero;
+        band.anchorMax = new Vector2(1, safe.anchorMin.y);
+        band.offsetMin = Vector2.zero;
+        band.offsetMax = new Vector2(0, safe.offsetMin.y + height);
+    }
+
     public void Apply(Rect area, Vector2Int size)
     {
         if (_targets.Length == 0 || size.x <= 0 || size.y <= 0 || area.width <= 0 || area.height <= 0) return;

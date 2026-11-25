@@ -20,7 +20,8 @@ public sealed class CountryExpeditionPageTests
     private CountryRosterView _view;
     private CountryRoster _roster;
     private CountryExpeditionState _state;
-    private ScrollRect _page, _list, _members;
+    private GameObject _formation;
+    private ScrollRect _list, _details, _members;
     private int _destination;
 
     [SetUp]
@@ -37,7 +38,8 @@ public sealed class CountryExpeditionPageTests
         _stateRoot = new GameObject("Expedition page test state"); SceneManager.MoveGameObjectToScene(_stateRoot, _scene);
         var date = _stateRoot.AddComponent<DateManager>();
         var resources = _stateRoot.AddComponent<PlayDataManager>();
-        _hud = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Country/UI/CountryHud.prefab"), _scene);
+        _hud = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Country/UI/CountryHud.prefab"));
+        SceneManager.MoveGameObjectToScene(_hud, _scene);
         var canvas = _hud.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = _camera; canvas.planeDistance = 5;
         _panel = _hud.GetComponentInChildren<CountryExpeditionPanel>(true);
         Call(_panel, "Awake");
@@ -55,7 +57,8 @@ public sealed class CountryExpeditionPageTests
         }
         _roster = resources.Roster; _state = resources.Expeditions;
         _view = Field<CountryRosterView>(_panel, "_view");
-        _page = Field<ScrollRect>(_panel, "_page"); _list = Field<ScrollRect>(_view, "_list");
+        _formation = Field<GameObject>(_panel, "_formationPage");
+        _list = Field<ScrollRect>(_view, "_list"); _details = Field<ScrollRect>(_view, "_details");
         _members = Field<RectTransform>(_panel, "_members").parent.parent.GetComponent<ScrollRect>();
         Call(Field<CountryRosterConfirm>(_panel, "_confirmation"), "Awake");
         Call(Field<CountryRosterConfirm>(_panel, "_logDetails"), "Awake");
@@ -72,118 +75,162 @@ public sealed class CountryExpeditionPageTests
     }
 
     [Test]
-    public void MapAndFormationRemainInTheSameScrollablePage()
+    public void ExpeditionShowsOnePageAtATime()
     {
-        var map = (RectTransform)_page.content.Find("Map");
-        var formation = (RectTransform)_page.content.Find("Formation");
-        Assert.That(map.gameObject.activeInHierarchy && formation.gameObject.activeInHierarchy, Is.True);
-        Assert.That(_page.content.rect.height, Is.GreaterThan(_page.viewport.rect.height));
-        var header = _panel.transform.Find("Window/Shell/Header");
-        Assert.That(header.Find("Map"), Is.Null); Assert.That(header.Find("Formation"), Is.Null);
-        Assert.That(_page.verticalNormalizedPosition, Is.EqualTo(1).Within(.001f));
-        foreach (var relay in formation.GetComponentsInChildren<CountryNestedScrollInput>(true))
-            Assert.That(Field<ScrollRect>(relay, "_outer"), Is.EqualTo(_page));
+        var map = Field<GameObject>(_panel, "_destinationPage");
+        var next = Field<Button>(_panel, "_next");
+        var depart = Field<Button>(_panel, "_depart");
+        Assert.That(map.activeInHierarchy && next.gameObject.activeInHierarchy, Is.True);
+        Assert.That(_formation.activeInHierarchy || depart.gameObject.activeInHierarchy, Is.False);
+
+        next.onClick.Invoke(); Layout();
+        Assert.That(map.activeInHierarchy || next.gameObject.activeInHierarchy, Is.False);
+        Assert.That(_formation.activeInHierarchy && depart.gameObject.activeInHierarchy, Is.True);
+
+        ClickStep("DestinationStep");
+        Assert.That(map.activeInHierarchy, Is.True);
+        ClickStep("MemberStep");
+        Assert.That(_formation.activeInHierarchy, Is.True);
     }
 
     [Test]
-    public void ScrollingAndEquipmentChangesPreserveTheDraftAndActualEquipment()
+    public void ReturningToTheMapPreservesTheDraftAndRosterPosition()
     {
-        _panel.SelectRegion(_destination); AddFirstMember();
-        int original = _roster.EquippedWeapon(0);
-        _page.verticalNormalizedPosition = 0; Layout();
-        Field<Button>(_panel, "_equipment").onClick.Invoke();
-        _list.content.Find("Row02").GetComponent<Button>().onClick.Invoke(); Field<Button>(_view, "_action").onClick.Invoke();
+        _panel.SelectRegion(_destination); OpenMembers(); AddFirstMember();
+        _list.verticalNormalizedPosition = .5f;
+        _details.verticalNormalizedPosition = .75f;
+        ClickStep("DestinationStep");
+        Assert.That(Field<GameObject>(_panel, "_destinationPage").activeInHierarchy, Is.True);
         Assert.That(_panel.Draft.Target, Is.EqualTo(_destination));
+        OpenMembers();
         Assert.That(_panel.Draft.Members, Is.EqualTo(new[] { 0 }));
-        Assert.That(_panel.Draft.Weapon(0), Is.EqualTo(1));
-        Assert.That(_roster.EquippedWeapon(0), Is.EqualTo(original));
-        Assert.That(_page.verticalNormalizedPosition, Is.EqualTo(0).Within(.001f));
+        Assert.That(_list.verticalNormalizedPosition, Is.EqualTo(.5f).Within(.001f));
+        Assert.That(_details.verticalNormalizedPosition, Is.EqualTo(.75f).Within(.001f));
         var context = Field<TextMeshProUGUI>(_panel, "_context").text;
-        Assert.That(context, Does.Contain(_state.Data.Regions[_destination].Name).And.Contain("到着").And.Contain("帰還").And.Contain("1人"));
-        _page.verticalNormalizedPosition = 1; Layout();
-        Assert.That(_panel.Draft.Contains(0), Is.True);
+        Assert.That(context, Does.Contain(_state.Data.Regions[_destination].Name).And.Contain("到着").And.Contain("帰還"));
     }
 
     [Test]
-    public void ClosingAndReopeningDiscardsTheDraftAndReturnsToTheMap()
+    public void EquipmentChangesRemainAppliedAfterReturningToTheMap()
     {
-        _panel.SelectRegion(_destination); AddFirstMember();
-        _page.verticalNormalizedPosition = 0;
-        _panel.Close(); _panel.Open(); Layout();
-        Assert.That(_panel.Draft.Target, Is.EqualTo(-1)); Assert.That(_panel.Draft.Members, Is.Empty);
-        Assert.That(_page.verticalNormalizedPosition, Is.EqualTo(1).Within(.001f));
-        Assert.That(Field<ScrollRect>(_view, "_details").verticalNormalizedPosition, Is.EqualTo(1).Within(.001f));
+        _panel.SelectRegion(_destination); OpenMembers(); AddFirstMember();
+        int original = _roster.EquippedWeapon(0);
+        int replacement = original == 0 ? 1 : 0;
+        _list.verticalNormalizedPosition = .5f;
+        _details.verticalNormalizedPosition = .75f;
+        var listPosition = _list.content.anchoredPosition;
+        var detailPosition = _details.content.anchoredPosition;
+        Field<Button>(_panel, "_equipment").onClick.Invoke();
+        Assert.That(_list.isActiveAndEnabled, Is.True);
+        Assert.That(_details.isActiveAndEnabled, Is.True);
+        _list.content.Find($"Row{replacement + 1:00}").GetComponent<Button>().onClick.Invoke();
+        Field<Button>(_view, "_action").onClick.Invoke();
+        Assert.That(_list.content.anchoredPosition, Is.EqualTo(listPosition));
+        Assert.That(_details.content.anchoredPosition, Is.EqualTo(detailPosition));
+        Assert.That(_roster.EquippedWeapon(0), Is.EqualTo(replacement));
+
+        ClickStep("DestinationStep");
+        OpenMembers();
+        Assert.That(_panel.Draft.Members, Is.EqualTo(new[] { 0 }));
+        Assert.That(_panel.Draft.Weapon(0), Is.EqualTo(replacement));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ReturningToTheCountryDiscardsTheDraftAndResetsTheRosterPosition(bool fromMembers)
+    {
+        _panel.SelectRegion(_destination); OpenMembers(); AddFirstMember();
+        _list.verticalNormalizedPosition = 0;
+        _details.verticalNormalizedPosition = 0;
+        if (!fromMembers) ClickStep("DestinationStep");
+        var back = Field<Button>(_panel, "_back");
+        back.onClick.Invoke();
+        Assert.That(_panel.IsOpen, Is.False);
+        _panel.Open(); Layout();
+        Assert.That(_panel.Draft.Target, Is.EqualTo(-1));
+        Assert.That(_panel.Draft.Members, Is.Empty);
+        Assert.That(Field<GameObject>(_panel, "_destinationPage").activeInHierarchy, Is.True);
+        OpenMembers();
+        Assert.That(_list.verticalNormalizedPosition, Is.EqualTo(1).Within(.001f));
+        Assert.That(_details.verticalNormalizedPosition, Is.EqualTo(1).Within(.001f));
     }
 
     [Test]
     public void DepartureConfirmationKeepsThePageBlockedUntilCancelled()
     {
-        _panel.SelectRegion(_destination); AddFirstMember(); _page.verticalNormalizedPosition = 0;
+        _panel.SelectRegion(_destination); OpenMembers(); AddFirstMember();
         Field<Button>(_panel, "_depart").onClick.Invoke();
         var confirmation = Field<CountryRosterConfirm>(_panel, "_confirmation");
         Assert.That(confirmation.IsOpen, Is.True);
         Assert.That(Field<CanvasGroup>(_panel, "_shell").blocksRaycasts, Is.False);
+        ClickStep("DestinationStep");
+        Assert.That(_formation.activeInHierarchy, Is.True);
         Field<Button>(confirmation, "_cancel").onClick.Invoke();
         Assert.That(Field<CanvasGroup>(_panel, "_shell").blocksRaycasts, Is.True);
         Assert.That(_panel.Draft.Contains(0), Is.True); Assert.That(_state.Active, Is.Empty);
     }
 
-    [Test]
-    public void ListWheelUsesTheListUntilItsEdgeThenMovesThePage()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ScrollingEitherPaneLeavesTheOtherPaneAndMembersInPlace(bool scrollDetails)
     {
-        _page.verticalNormalizedPosition = .5f; _list.verticalNormalizedPosition = .5f; Layout();
-        var relay = _list.viewport.GetComponent<CountryNestedScrollInput>();
-        Vector2 pageBefore = _page.content.anchoredPosition, listBefore = _list.content.anchoredPosition;
-        relay.OnScroll(Pointer(new Vector2(0, -1)));
-        Assert.That(_list.content.anchoredPosition.y, Is.GreaterThan(listBefore.y));
-        Assert.That(_page.content.anchoredPosition.y, Is.EqualTo(pageBefore.y).Within(.01f));
-        _list.verticalNormalizedPosition = 0; Layout();
-        relay.OnScroll(Pointer(new Vector2(0, -1)));
-        Assert.That(_page.content.anchoredPosition.y, Is.GreaterThan(pageBefore.y));
-        _list.verticalNormalizedPosition = 1; Layout();
-        pageBefore = _page.content.anchoredPosition;
-        relay.OnScroll(Pointer(new Vector2(0, 1)));
-        Assert.That(_page.content.anchoredPosition.y, Is.LessThan(pageBefore.y));
+        OpenMembers();
+        var target = scrollDetails ? _details : _list;
+        var other = scrollDetails ? _list : _details;
+        var before = target.content.anchoredPosition;
+        var otherBefore = other.content.anchoredPosition;
+        var count = Field<TextMeshProUGUI>(_panel, "_count").rectTransform;
+        float stripY = _members.content.position.y, countY = count.position.y;
+        ExecuteEvents.ExecuteHierarchy(target.viewport.gameObject, Pointer(Vector2.down), ExecuteEvents.scrollHandler);
+        Assert.That(target.content.anchoredPosition.y, Is.GreaterThan(before.y));
+        Assert.That(other.content.anchoredPosition, Is.EqualTo(otherBefore));
+        Assert.That(_members.content.position.y, Is.EqualTo(stripY).Within(.001f));
+        Assert.That(count.position.y, Is.EqualTo(countY).Within(.001f));
     }
 
     [Test]
-    public void MemberStripSeparatesVerticalPageScrollingFromHorizontalMembers()
+    public void DraggingFromTheCardToTheMemberStripAddsThePressedSoldier()
     {
-        _page.verticalNormalizedPosition = .5f; _members.horizontalNormalizedPosition = 0; Layout();
-        var relay = _members.viewport.GetComponent<CountryNestedScrollInput>();
-        Vector2 membersBefore = _members.content.anchoredPosition;
-        relay.OnScroll(Pointer(new Vector2(0, -1)));
-        Assert.That(_members.content.anchoredPosition, Is.EqualTo(membersBefore));
-        Vector2 pageBefore = _page.content.anchoredPosition;
-        relay.OnScroll(Pointer(new Vector2(-1, 0)));
+        _panel.SelectRegion(_destination); OpenMembers();
+        var card = (RectTransform)_list.content.Find("Row02");
+        var pointer = BeginCardDrag(card);
+        pointer.position = RectTransformUtility.WorldToScreenPoint(_camera, _members.viewport.TransformPoint(_members.viewport.rect.center));
+        ExecuteEvents.Execute(card.gameObject, pointer, ExecuteEvents.endDragHandler);
+        Assert.That(_panel.Draft.Members, Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void DraggingTheCardWithinTheListScrollsWithoutAddingAMember()
+    {
+        _panel.SelectRegion(_destination); OpenMembers();
+        var card = (RectTransform)_list.content.Find("Row02");
+        var pointer = BeginCardDrag(card);
+        var before = _list.content.anchoredPosition;
+        pointer.position += Vector2.up * 48;
+        ExecuteEvents.Execute(card.gameObject, pointer, ExecuteEvents.dragHandler);
+        ExecuteEvents.Execute(card.gameObject, pointer, ExecuteEvents.endDragHandler);
+        Assert.That(_list.content.anchoredPosition.y, Is.GreaterThan(before.y));
+        Assert.That(_panel.Draft.Members, Is.Empty);
+    }
+
+    [Test]
+    public void DraggingTheMemberStripOnlyMovesItsHorizontalContent()
+    {
+        OpenMembers();
+        var listBefore = _list.content.anchoredPosition;
+        var detailsBefore = _details.content.anchoredPosition;
+        var membersBefore = _members.content.anchoredPosition;
+        var pointer = Pointer(Vector2.zero);
+        pointer.position = new Vector2(500, 250);
+        var handler = ExecuteEvents.GetEventHandler<IDragHandler>(_members.viewport.gameObject);
+        ExecuteEvents.Execute(handler, pointer, ExecuteEvents.initializePotentialDrag);
+        ExecuteEvents.Execute(handler, pointer, ExecuteEvents.beginDragHandler);
+        pointer.position += Vector2.left * 80;
+        ExecuteEvents.Execute(handler, pointer, ExecuteEvents.dragHandler);
+        ExecuteEvents.Execute(handler, pointer, ExecuteEvents.endDragHandler);
         Assert.That(_members.content.anchoredPosition.x, Is.LessThan(membersBefore.x));
-        Assert.That(_page.content.anchoredPosition.y, Is.EqualTo(pageBefore.y).Within(.01f));
-    }
-
-    [Test]
-    public void VerticalMemberDragMovesOnlyThePage()
-    {
-        _page.verticalNormalizedPosition = .5f; Layout();
-        var relay = _members.viewport.GetComponent<CountryNestedScrollInput>();
-        Vector2 pageBefore = _page.content.anchoredPosition, membersBefore = _members.content.anchoredPosition;
-        var pointer = Pointer(Vector2.zero); pointer.pressPosition = new Vector2(300, 250); pointer.position = new Vector2(300, 280);
-        relay.OnInitializePotentialDrag(pointer); relay.OnBeginDrag(pointer);
-        pointer.position = new Vector2(300, 320); relay.OnDrag(pointer); relay.OnEndDrag(pointer);
-        Assert.That(_page.content.anchoredPosition.y, Is.GreaterThan(pageBefore.y));
-        Assert.That(_members.content.anchoredPosition, Is.EqualTo(membersBefore));
-    }
-
-    [Test]
-    public void HorizontalMemberDragMovesOnlyTheMemberStrip()
-    {
-        _page.verticalNormalizedPosition = .5f; _members.horizontalNormalizedPosition = 0; Layout();
-        var relay = _members.viewport.GetComponent<CountryNestedScrollInput>();
-        Vector2 pageBefore = _page.content.anchoredPosition, membersBefore = _members.content.anchoredPosition;
-        var pointer = Pointer(Vector2.zero); pointer.pressPosition = new Vector2(300, 250); pointer.position = new Vector2(270, 250);
-        relay.OnInitializePotentialDrag(pointer); relay.OnBeginDrag(pointer);
-        pointer.position = new Vector2(220, 250); relay.OnDrag(pointer); relay.OnEndDrag(pointer);
-        Assert.That(_members.content.anchoredPosition.x, Is.LessThan(membersBefore.x));
-        Assert.That(_page.content.anchoredPosition, Is.EqualTo(pageBefore));
+        Assert.That(_list.content.anchoredPosition, Is.EqualTo(listBefore));
+        Assert.That(_details.content.anchoredPosition, Is.EqualTo(detailsBefore));
     }
 
     [Test]
@@ -219,11 +266,21 @@ public sealed class CountryExpeditionPageTests
         public bool IsDestroyed() => _map == null;
     }
 
+    private void OpenMembers() { Field<Button>(_panel, "_next").onClick.Invoke(); Layout(); }
+    private void ClickStep(string step) => _panel.transform.Find($"Window/Shell/Header/{step}").GetComponent<Button>().onClick.Invoke();
     private void AddFirstMember() { _view.SelectSoldier(0); Field<Button>(_view, "_action").onClick.Invoke(); Layout(); }
     private void Layout()
     {
-        Canvas.ForceUpdateCanvases(); _page.GetComponent<CountryExpeditionPageLayout>().Refresh();
         Canvas.ForceUpdateCanvases(); _camera.Render();
+    }
+    private PointerEventData BeginCardDrag(RectTransform card)
+    {
+        var point = new Vector2(card.rect.xMax - 24, card.rect.center.y);
+        var pointer = Pointer(Vector2.zero);
+        pointer.pressPosition = pointer.position = RectTransformUtility.WorldToScreenPoint(_camera, card.TransformPoint(point));
+        ExecuteEvents.Execute(card.gameObject, pointer, ExecuteEvents.initializePotentialDrag);
+        ExecuteEvents.Execute(card.gameObject, pointer, ExecuteEvents.beginDragHandler);
+        return pointer;
     }
     private PointerEventData Pointer(Vector2 delta) => new(null) { scrollDelta = delta, pointerPressRaycast = new RaycastResult { module = _hud.GetComponent<GraphicRaycaster>() } };
     private static T Field<T>(object target, string name) => (T)target.GetType().GetField(name, Private).GetValue(target);

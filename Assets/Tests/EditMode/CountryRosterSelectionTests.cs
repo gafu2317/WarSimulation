@@ -10,6 +10,7 @@ public sealed class CountryRosterSelectionTests
 {
     private GameObject _root;
     private CountryRosterView _view;
+    private CountryRoster _roster;
     private ScrollRect _list;
     private bool _member, _unavailable;
 
@@ -21,7 +22,8 @@ public sealed class CountryRosterSelectionTests
         _view = _root.GetComponent<CountryRosterView>();
         _list = (ScrollRect)new SerializedObject(_view).FindProperty("_list").objectReferenceValue;
         _view.SetMemberSelection(id => id == 0 && _member, id => id == 0 && _unavailable ? "訓練中" : "", "選択中");
-        _view.Initialize(new CountryRoster(_view.Data, new CountryDate(0, 1, 1)));
+        _roster = new CountryRoster(_view.Data, new CountryDate(0, 1, 1));
+        _view.Initialize(_roster);
         _view.ShowSoldiers(0);
     }
 
@@ -94,6 +96,41 @@ public sealed class CountryRosterSelectionTests
         Assert.That(Opacity(0), Is.EqualTo(1));
         _view.ShowSoldiers(0);
         Assert.That(Row(0).GetSiblingIndex(), Is.EqualTo(_view.Data.Soldiers.Length - 1));
+    }
+
+    [Test]
+    public void CPSortFollowsChangesAndKeepsSelectedMembers()
+    {
+        _member = true;
+        var sort = _root.GetComponentInChildren<TMP_Dropdown>();
+        sort.value = sort.options.FindIndex(option => option.text == "CP");
+        Assert.That(_roster.TrySetCP(0, 1), Is.True);
+        Assert.That(Row(0).GetSiblingIndex(), Is.EqualTo(_view.Data.Soldiers.Length - 1));
+        Assert.That(Row(0).gameObject.activeSelf, Is.True);
+        Assert.That(State(0), Is.EqualTo("選択中"));
+        Assert.That(_view.SelectedSoldier, Is.Zero);
+
+        _view.ShowWeapons();
+        Assert.That(Row(0).GetSiblingIndex(), Is.Zero);
+        _view.ShowSoldiers();
+        Assert.That(Row(0).GetSiblingIndex(), Is.EqualTo(_view.Data.Soldiers.Length - 1));
+        sort.value = 0;
+        Assert.That(Row(0).GetSiblingIndex(), Is.Zero);
+    }
+
+    [Test]
+    public void SkillCountSortUpdatesOnTrainingCompletionAndIgnoresEquippedKind()
+    {
+        Assert.That(_roster.Profession(1), Is.EqualTo(WeaponKind.Shield));
+        var sort = _root.GetComponentInChildren<TMP_Dropdown>();
+        sort.value = sort.options.FindIndex(option => option.text == "剣のスキル数");
+        Assert.That(Row(1).GetSiblingIndex(), Is.GreaterThan(Row(0).GetSiblingIndex()));
+        Assert.That(_roster.TryStartTraining(0, new[] { 1 }, out var reason), Is.True, reason);
+        Assert.That(Row(1).GetSiblingIndex(), Is.GreaterThan(Row(0).GetSiblingIndex()));
+        _roster.AdvanceTo(_roster.Today.AddMonths(2));
+        Assert.That(Row(1).GetSiblingIndex(), Is.Zero);
+        Assert.That(Row(1).gameObject.activeSelf, Is.True);
+        Assert.That(Row(0).gameObject.activeSelf, Is.True);
     }
 }
 

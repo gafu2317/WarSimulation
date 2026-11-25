@@ -110,8 +110,6 @@ public static class CountryRosterArtBuilder
         }
         var rim = Picture(Fill(frame,"Rim"),"Roster-PortraitFrame",Theme.Border,true);rim.pixelsPerUnitMultiplier=3;
         rim.transform.SetAsLastSibling();
-        foreach (var edge in root.GetComponentsInChildren<CountryCircleGraphic>(true).Where(graphic=>graphic.name=="Edge" && graphic.transform.parent.name=="WeaponIcon").ToArray())
-            Picture((RectTransform)edge.transform,"Roster-IconRing",Theme.Border);
         var action = root.transform.Find("Right/Actions/Action").GetComponent<UnityEngine.UI.Button>();
         Picture((RectTransform)action.transform.Find("Frame"),"Roster-RowFrame",Theme.Accent,true);
         Picture((RectTransform)action.transform.Find("Shadow"),"Roster-RowFace",Theme.Recess,true);

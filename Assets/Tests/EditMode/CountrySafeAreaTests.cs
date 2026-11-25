@@ -90,7 +90,8 @@ public sealed class CountrySafeAreaTests
     public void FullScreenBackgroundsCoverTheDisplayAndControlsStaySafe()
     {
         _layout.Apply(_safe, _size); Canvas.ForceUpdateCanvases();
-        foreach (string name in new[] { "Government/Window", "Personnel/Window", "Expeditions/Window", "Defense/Window/Dim", "Defense/Window/Shell/Formation", "Settings/Window/Dim" })
+        const string facilityModal = "FacilityLayer/Popup/Modal/";
+        foreach (string name in new[] { "Government/Window", "Personnel/Window", "Expeditions/Window", "Defense/Window/Dim", "Defense/Window/Shell/Formation", "Settings/Window/Dim", facilityModal + "Dim" })
         {
             var rect = Bounds(name);
             Assert.That(rect.xMin, Is.EqualTo(0).Within(.1f), name);
@@ -98,8 +99,10 @@ public sealed class CountrySafeAreaTests
             Assert.That(rect.yMin, Is.EqualTo(0).Within(.1f), name);
             Assert.That(rect.yMax, Is.EqualTo(_size.y).Within(.1f), name);
         }
-        foreach (string name in new[] { "Government/Window/Shell", "Personnel/Window/Shell", "Expeditions/Window/Shell", "Defense/Window/Shell/Formation/Header", "Defense/Window/Shell/Formation/Footer", "Settings/Window/Panel" })
+        foreach (string name in new[] { "Government/Window/Shell", "Personnel/Window/Shell", "Expeditions/Window/Shell", "Defense/Window/Shell/Formation/Header", "Defense/Window/Shell/Formation/Footer", "Settings/Window/Panel",
+            "FacilityLayer/Banners", facilityModal + "Panel", facilityModal + "Panel/CloseButton", facilityModal + "Panel/CloseIcon" })
             Inside(Bounds(name), name);
+        Assert.That(Vector2.Distance(Bounds(facilityModal + "Panel").center, _safe.center), Is.LessThan(.1f));
     }
 
     [Test]

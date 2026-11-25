@@ -4,9 +4,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using Theme = CountryGovernmentTheme;
 
 public sealed class CountryGovernmentPanel : MonoBehaviour
 {
+    private const float FooterHeight = Theme.PageBarHeight + Theme.PageBarNoticeHeight;
+    private static readonly string[] PageNames = { "報告", "配分", "建設", "育成" };
     public enum Page { Income, Budget, Construction, Training }
     [SerializeField] private CountryGovernmentData _data;
     [SerializeField] private GameObject _window;
@@ -15,7 +18,6 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _dateText, _treasuryText, _status;
     [SerializeField] private TextMeshProUGUI _treasuryCaption, _fundingBasis;
     [SerializeField] private UnityEngine.UI.Button _backButton, _confirmButton;
-    [SerializeField] private Sprite _roundedPanel;
     [SerializeField] private TextMeshProUGUI _confirmLabel;
     [SerializeField] private UnityEngine.UI.Button _constructionCommand;
     [SerializeField] private TextMeshProUGUI _constructionCommandLabel;
@@ -63,9 +65,8 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     private TextMeshProUGUI _pageHeading;
     private RectTransform _headerBackground;
     private GameObject[] _headerDetails;
-    private RectTransform[] _commandRects;
-    private Vector2[] _commandMin, _commandMax, _commandPivot, _commandPosition, _commandSize;
-    private Vector2 _statusMin, _statusMax, _statusOffsetMin, _statusOffsetMax;
+    private string _feedback = "";
+    private bool _feedbackError;
     private int _building;
     private bool _upgrade = true, _cameraInput, _comparisonInput;
     public bool IsOpen => _window.activeSelf;
@@ -81,6 +82,14 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     {
         for (int i = 0; i < _tabs.Length; i++) { var page = (Page)i; _tabs[i].onClick.AddListener(() => Open(page)); }
         _backButton.onClick.AddListener(PreviousPage);
+        _confirmButton.onClick.AddListener(() =>
+        {
+            if (_page == Page.Construction) ToggleConstruction();
+            else if (_page == Page.Training) _training.ConfirmStart();
+        });
+        if (_constructionCommand != null) _constructionCommand.onClick.AddListener(ToggleConstruction);
+        if (_trainingCommand != null) _trainingCommand.onClick.AddListener(_training.ConfirmStart);
+        if (_budgetCommand != null) _budgetCommand.onClick.AddListener(NextPage);
         _useTreasury.onValueChanged.AddListener(SetTreasury);
         _upgradeButton.onClick.AddListener(() => SetConstructionMode(true));
         _newButton.onClick.AddListener(() => SetConstructionMode(false));
@@ -138,7 +147,7 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
             }
             var choice = Instantiate(_choicePrefab, _constructionContent);
             choice.name = facility.Name;
-            choice.Bind(facility.Name, () => { _building = id; ToggleConstruction(id); });
+            choice.Bind(facility.Name, () => { _building = id; Feedback(""); Refresh(); });
             _buildingRows[i] = choice;
         }
     }
@@ -147,11 +156,13 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     private void ResourcesChanged()
     {
         var receipt = _resources.LastIncomeReceipt;
-        bool projectIncome = !_monthlyFlow || (_date.CurrentDay != 1 && (!receipt.Recorded || receipt.MonthIndex < _date.ElapsedMonths));
-        int tax = _monthlyFlow && _date.CurrentDay == 1 && receipt.Recorded ? receipt.Tax : (int)_resources.MonthlyTaxIncome;
-        _draft.UpdateResources(_resources.Treasury + (projectIncome ? (int)_resources.MonthlyTaxIncome : 0), tax,
-            _resources.Wood + (projectIncome ? (int)_resources.MonthlyWoodIncome : 0),
-            _resources.Ore + (projectIncome ? (int)_resources.MonthlyOreIncome : 0), taxIncluded: receipt.Recorded || projectIncome);
+        int startMonth = PlanningStart.MonthIndex;
+        bool hasReceipt = receipt.Recorded && receipt.MonthIndex == startMonth - 1;
+        bool projectIncome = startMonth > _date.ElapsedMonths && !hasReceipt;
+        var income = hasReceipt ? (receipt.Tax, receipt.Wood, receipt.Ore) : _resources.EstimateMonthlyIncome();
+        _draft.UpdateResources(_resources.Treasury + (projectIncome ? income.Tax : 0), income.Tax,
+            _resources.Wood + (projectIncome ? income.Wood : 0),
+            _resources.Ore + (projectIncome ? income.Ore : 0), taxIncluded: hasReceipt || projectIncome);
         if (IsOpen) Refresh();
     }
 
@@ -207,11 +218,12 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     private void SetupPages()
     {
         var footer = (RectTransform)_backButton.transform.parent;
-        var footerGraphic = footer.GetComponent<UnityEngine.UI.Graphic>();
-        if (footerGraphic != null) footerGraphic.enabled = false;
-        var edge = footer.Find("Edge"); if (edge != null) edge.gameObject.SetActive(false);
+        footer.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, FooterHeight);
+        footer.GetComponent<UnityEngine.UI.Graphic>().enabled = false;
+        if (footer.Find("Edge") is Transform edge) edge.gameObject.SetActive(false);
         var main = (RectTransform)_pages[0].transform.parent;
-        main.offsetMin = new Vector2(main.offsetMin.x, 0);
+        main.offsetMin = new Vector2(main.offsetMin.x, FooterHeight + 16);
+        main.offsetMax = new Vector2(main.offsetMax.x, -16);
         foreach (string path in new[] { "Budget/Facilities/Workboard", "Construction/Content/Workboard" })
         {
             var board = (RectTransform)main.Find(path);
@@ -219,40 +231,62 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
             board.offsetMin = new Vector2(0, board.offsetMin.y);
             board.offsetMax = new Vector2(0, board.offsetMax.y);
         }
-        var navigation = _tabs[0].transform.parent;
-        var source = _tabs[0].GetComponentInChildren<TextMeshProUGUI>();
-        _pageHeading = Instantiate(source, navigation); _pageHeading.name = "PageHeading";
-        _pageHeading.gameObject.SetActive(true); _pageHeading.fontSize = 36;
-        _pageHeading.color = CountryGovernmentTheme.Text; _pageHeading.raycastTarget = false;
-        var headingLayout = _pageHeading.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
-        headingLayout.flexibleWidth = 1;
+
+        var navigation = (RectTransform)_tabs[0].transform.parent;
+        _pageHeading = Instantiate(_tabs[0].GetComponentInChildren<TextMeshProUGUI>(), navigation);
+        _pageHeading.name = "PageHeading";
+        _pageHeading.gameObject.SetActive(true);
+        _pageHeading.fontSize = 32;
+        _pageHeading.color = Theme.Text;
+        _pageHeading.raycastTarget = false;
+        navigation.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().enabled = false;
+        Place(_pageHeading.transform, 0, 1);
         foreach (var tab in _tabs) tab.gameObject.SetActive(false);
-        SetupPageHeader(main, (RectTransform)navigation.parent);
-        _nextPage = Instantiate(_backButton, _backButton.transform.parent);
-        _nextPage.name = "NextPage"; _nextPage.onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
+        var header = (RectTransform)navigation.parent;
+        header.SetParent(footer, false);
+        header.anchorMin = Vector2.zero; header.anchorMax = Vector2.one;
+        header.offsetMin = header.offsetMax = Vector2.zero;
+        header.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().enabled = false;
+
+        const float headingX = Theme.PageBarInset + Theme.PageBarBackWidth + 20;
+        Theme.PlacePageItem(navigation, 0, headingX, 220, 64, 34);
+        Theme.PlacePageItem(_dateText.rectTransform, 0, headingX, 220, 32, 30);
+        _dateText.fontSize = 23;
+        SetupPageHeader(main, header);
+
+        _nextPage = Instantiate(_backButton, footer);
+        _nextPage.name = "NextPage";
+        _nextPage.onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
         _nextPage.onClick.AddListener(NextPage);
-        var backRect = (RectTransform)_backButton.transform;
-        backRect.anchorMin = backRect.anchorMax = backRect.pivot = Vector2.zero;
-        backRect.anchoredPosition = new Vector2(72, 40); backRect.sizeDelta = new Vector2(224, 112);
-        var nextRect = (RectTransform)_nextPage.transform;
-        nextRect.anchorMin = nextRect.anchorMax = nextRect.pivot = new Vector2(1, 0);
-        nextRect.anchoredPosition = new Vector2(-72, 40); nextRect.sizeDelta = new Vector2(224, 112);
-        StylePageButton(_backButton, _roundedPanel, CountryGovernmentTheme.Face);
-        StylePageButton(_nextPage, _roundedPanel, new Color32(133, 190, 179, 255));
-        var buttons = new[] { _confirmButton, _budgetCommand, _constructionCommand, _trainingCommand };
-        _commandRects = new RectTransform[buttons.Length];
-        _commandMin = new Vector2[buttons.Length]; _commandMax = new Vector2[buttons.Length];
-        _commandPivot = new Vector2[buttons.Length]; _commandPosition = new Vector2[buttons.Length]; _commandSize = new Vector2[buttons.Length];
-        for (int i = 0; i < buttons.Length; i++)
+        Theme.PlacePageItem((RectTransform)_backButton.transform, 0, Theme.PageBarInset, Theme.PageBarBackWidth);
+        Theme.Colors(_nextPage, new Color32(133, 190, 179, 255));
+        foreach (var button in new[] { _confirmButton, _budgetCommand, _constructionCommand, _trainingCommand })
         {
-            if (buttons[i] == null) continue;
-            var rect = (RectTransform)buttons[i].transform; _commandRects[i] = rect;
-            _commandMin[i] = rect.anchorMin; _commandMax[i] = rect.anchorMax; _commandPivot[i] = rect.pivot;
-            _commandPosition[i] = rect.anchoredPosition; _commandSize[i] = rect.sizeDelta;
+            if (button == null) continue;
+            Theme.PlacePageItem((RectTransform)button.transform, 1, -Theme.PageBarInset, Theme.PageBarActionWidth);
+            CenterCommandArt(button.transform.Find("Icon"), Theme.PageBarButtonHeight);
         }
-        var status = _status.rectTransform;
-        _statusMin = status.anchorMin; _statusMax = status.anchorMax;
-        _statusOffsetMin = status.offsetMin; _statusOffsetMax = status.offsetMax;
+        CenterCommandArt(_constructionCommand?.transform.Find("Surface/LeftBrace"), 76);
+        CenterCommandArt(_constructionCommand?.transform.Find("Surface/RightBrace"), 76);
+        CenterCommandArt(_trainingCommand?.transform.Find("Surface/Staff"), Theme.PageBarButtonHeight);
+        CenterCommandArt(_budgetCommand?.transform.Find("Surface/Seal"), 56);
+        Theme.PlacePageItem(_status.rectTransform, 1, -Theme.PageBarInset, 620,
+            Theme.PageBarHeight + Theme.PageBarNoticeHeight / 2, Theme.PageBarNoticeHeight);
+        _status.alignment = TextAlignmentOptions.MidlineRight;
+        _status.fontSize = 24;
+        _status.textWrappingMode = TextWrappingModes.NoWrap;
+        _status.overflowMode = TextOverflowModes.Ellipsis;
+        _status.raycastTarget = false;
+    }
+
+    private static void CenterCommandArt(Transform part, float maxHeight)
+    {
+        if (part is not RectTransform rect) return;
+        float height = Mathf.Min(rect.rect.height, maxHeight);
+        rect.anchorMin = new Vector2(rect.anchorMin.x, .5f);
+        rect.anchorMax = new Vector2(rect.anchorMax.x, .5f);
+        rect.sizeDelta = new Vector2(rect.sizeDelta.x, height);
+        rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, (rect.pivot.y - .5f) * height);
     }
 
     private void SetupPageHeader(RectTransform main, RectTransform header)
@@ -265,65 +299,93 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         backgroundImage.color = headerImage.color; backgroundImage.raycastTarget = false;
         headerImage.enabled = false;
         UpdateHeaderBackground();
-        var navigation = header.Find("Navigation").GetComponent<UnityEngine.UI.LayoutElement>();
-        navigation.minWidth = 120; navigation.preferredWidth = 120; navigation.flexibleWidth = 0;
-        var treasury = header.Find("Treasury");
-        var treasuryLayout = treasury.GetComponent<UnityEngine.UI.LayoutElement>();
-        treasuryLayout.minWidth = 300; treasuryLayout.preferredWidth = 300;
+
+        var treasury = (RectTransform)_treasuryText.transform.parent;
         var treasuryIcon = treasury.Find("Icon").GetComponent<UnityEngine.UI.Image>();
-        var treasurySprite = treasuryIcon.sprite;
         treasuryIcon.gameObject.SetActive(false);
-        PlaceStack(treasury.Find("Caption"), 0, 1, true);
-        PlaceStack(treasury.Find("Value"), 0, 1, false);
-        treasury.Find("Caption").GetComponent<TextMeshProUGUI>().fontSize = 24;
-        treasury.Find("Value").GetComponent<TextMeshProUGUI>().fontSize = 30;
+        PlaceStack(_treasuryCaption.transform, 0, 1, true);
+        PlaceStack(_treasuryText.transform, 0, 1, false);
+        _treasuryCaption.fontSize = 24;
+        _treasuryText.fontSize = 34;
+        AddMoneyIcon(_treasuryText, treasuryIcon.sprite, 36);
+
         var budget = (RectTransform)main.Find("Budget/Summary");
-        var constructionGuide = (RectTransform)main.Find("Construction/Guide");
-        var constructionModes = (RectTransform)main.Find("Construction/Modes");
+        var modes = (RectTransform)main.Find("Construction/Modes");
         var schools = (RectTransform)_training.transform.Find("Schools");
-        var construction = new GameObject("ConstructionHeader", typeof(RectTransform)).GetComponent<RectTransform>();
-        constructionGuide.SetParent(construction, false); constructionModes.SetParent(construction, false);
-        _headerDetails = new[] { budget.gameObject, construction.gameObject, schools.gameObject };
-        foreach (var detail in _headerDetails)
-        {
-            detail.transform.SetParent(header, false);
-            detail.transform.SetSiblingIndex(header.Find("Treasury").GetSiblingIndex());
-            var layout = detail.AddComponent<UnityEngine.UI.LayoutElement>();
-            layout.minWidth = 0; layout.flexibleWidth = 1;
-        }
+        _headerDetails = new[] { budget.gameObject, modes.gameObject, schools.gameObject };
+        foreach (var detail in _headerDetails) detail.transform.SetParent(header, false);
+
+        Theme.PlacePageItem(budget, .5f, 0, 650);
         budget.GetComponent<UnityEngine.UI.Graphic>().enabled = false;
         budget.Find("TaxIcon").gameObject.SetActive(false);
-        PlaceStack(budget.Find("TaxCaption"), 0, .24f, true); PlaceStack(budget.Find("Tax"), 0, .24f, false);
-        PlaceStack(budget.Find("TotalCaption"), .25f, .49f, true); PlaceStack(budget.Find("Total"), .25f, .49f, false);
-        PlaceStack(budget.Find("FlowCaption"), .50f, .74f, true); PlaceStack(budget.Find("Remainder"), .50f, .74f, false);
-        Place(budget.Find("UseTreasury"), .75f, 1);
-        foreach (var label in budget.GetComponentsInChildren<TextMeshProUGUI>(true)) label.fontSize = 22;
-        foreach (string name in new[] { "Tax", "Total", "Remainder" }) budget.Find(name).GetComponent<TextMeshProUGUI>().fontSize = 30;
-        var switchLabel = budget.Find("UseTreasury/Label").GetComponent<TextMeshProUGUI>();
+        PlaceStack(_taxBudgetCaption.transform, 0, .26f, true);
+        PlaceStack(_taxBudget.transform, 0, .26f, false);
+        PlaceStack(budget.Find("TotalCaption"), .29f, .55f, true);
+        PlaceStack(_fundingTotal.transform, .29f, .55f, false);
+        _cashFlowCaption.gameObject.SetActive(false);
+        Place(_useTreasury.transform, .58f, 1);
+        var switchLabel = _treasuryToggleLabel;
         switchLabel.alignment = TextAlignmentOptions.MidlineRight;
         switchLabel.margin = new Vector4(0, 0, 10, 0);
+        foreach (var label in budget.GetComponentsInChildren<TextMeshProUGUI>(true)) label.fontSize = 24;
+        _taxBudget.fontSize = _fundingTotal.fontSize = 32;
         var coin = _tabs[0].transform.Find("Icon").GetComponent<UnityEngine.UI.Image>().sprite;
-        foreach (var value in new[] { _taxBudget, _fundingTotal, _cashFlow }) AddMoneyIcon(value, coin);
-        AddMoneyIcon(_treasuryText, treasurySprite, 36);
-        constructionGuide.gameObject.SetActive(false);
-        constructionModes.Find("Caption").gameObject.SetActive(false);
-        constructionModes.Find("Count").gameObject.SetActive(false);
-        Place(constructionModes, 0, 1);
-        Place(constructionModes.Find("Upgrade"), 0, .18f); Place(constructionModes.Find("New"), .19f, .37f);
-        foreach (var label in constructionModes.GetComponentsInChildren<TextMeshProUGUI>(true)) label.fontSize = 26;
-        Place(schools.Find("School1"), 0, .18f); Place(schools.Find("School2"), .18f, .36f);
-        Place(schools.Find("School3"), .36f, .54f); Place(schools.Find("SchoolName"), .55f, 1);
-        foreach (var label in schools.GetComponentsInChildren<TextMeshProUGUI>(true)) label.fontSize = 24;
-        var facilities = (RectTransform)main.Find("Budget/Facilities"); facilities.offsetMax = new Vector2(facilities.offsetMax.x, -72);
-        var content = (RectTransform)main.Find("Construction/Content"); content.offsetMax = new Vector2(content.offsetMax.x, -72);
-        var title = content.Find("Right/Detail/Title");
-        ((RectTransform)title.Find("Plaque")).anchoredPosition = new Vector2(-16, 0);
-        var titleName = (RectTransform)title.Find("Name");
-        titleName.offsetMin = new Vector2(116, -4); titleName.offsetMax = new Vector2(-300, -4);
-        ((RectTransform)title.Find("Symbol")).anchoredPosition = new Vector2(0, -8);
-        ((RectTransform)title.Find("Level")).anchoredPosition = new Vector2(0, -4);
+        AddMoneyIcon(_taxBudget, coin);
+        AddMoneyIcon(_fundingTotal, coin);
+        Theme.PlacePageItem(_cashFlow.rectTransform, 1, 0, 276, 110, 32);
+        _cashFlow.alignment = TextAlignmentOptions.Center;
+
+        main.Find("Construction/Guide").gameObject.SetActive(false);
+        modes.GetComponent<UnityEngine.UI.Graphic>().enabled = false;
+        modes.Find("Caption").gameObject.SetActive(false);
+        _orderCount.gameObject.SetActive(false);
+        Theme.PlacePageItem(modes, .5f, 0, 500);
+        Place(_upgradeButton.transform, 0, .5f, 4);
+        Place(_newButton.transform, .5f, 1, 4);
+        Theme.PlacePageItem(schools, .5f, 0, 684);
+        schools.Find("SchoolName").gameObject.SetActive(false);
+        for (int i = 0; i < 3; i++)
+        {
+            var school = schools.Find($"School{i + 1}");
+            Place(school, i / 3f, (i + 1) / 3f, 4);
+            if (school.Find("Icon") is RectTransform icon)
+                icon.anchoredPosition = new Vector2(icon.anchoredPosition.x, -12);
+            school.Find("Label").GetComponent<TextMeshProUGUI>().fontSize = 26;
+        }
+        var facilities = (RectTransform)main.Find("Budget/Facilities"); facilities.offsetMax = new Vector2(facilities.offsetMax.x, -8);
+        LayoutConstruction((RectTransform)main.Find("Construction/Content"));
         var selection = (RectTransform)_training.transform.Find("Selection"); selection.offsetMax = new Vector2(selection.offsetMax.x, 0);
         foreach (var detail in _headerDetails) detail.SetActive(false);
+    }
+
+    private static void LayoutConstruction(RectTransform content)
+    {
+        const float split = .28f;
+        content.offsetMax = new Vector2(content.offsetMax.x, -8);
+        var left = (RectTransform)content.Find("Left");
+        var right = (RectTransform)content.Find("Right");
+        var detail = (RectTransform)right.Find("Detail");
+        left.anchorMax = new Vector2(split, 1);
+        left.offsetMin = detail.offsetMin;
+        left.offsetMax = new Vector2(-32, detail.offsetMax.y);
+        right.anchorMin = new Vector2(split, 0);
+        var divider = (RectTransform)content.Find("ColumnDivider");
+        divider.anchorMin = new Vector2(split, 0); divider.anchorMax = new Vector2(split, 1);
+        divider.offsetMin = new Vector2(-1, detail.offsetMin.y); divider.offsetMax = new Vector2(1, detail.offsetMax.y);
+
+        var title = detail.Find("Title");
+        var plaque = (RectTransform)title.Find("Plaque");
+        plaque.anchoredPosition = Vector2.zero;
+        float headingHeight = plaque.rect.height;
+        ((RectTransform)left.Find("Caption")).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, headingHeight);
+        ((RectTransform)left.Find("FacilityList")).offsetMax = new Vector2(0, -headingHeight - 16);
+        var symbol = (RectTransform)title.Find("Symbol");
+        symbol.anchoredPosition = new Vector2(20, (symbol.rect.height - headingHeight) * .5f);
+        var name = (RectTransform)title.Find("Name");
+        name.anchoredPosition = new Vector2(name.anchoredPosition.x, -4);
+        ((RectTransform)title.Find("Level")).anchoredPosition = new Vector2(0, -4);
+        var empty = (RectTransform)right.Find("Empty");
+        empty.offsetMin = detail.offsetMin; empty.offsetMax = detail.offsetMax;
     }
 
     private void LateUpdate()
@@ -333,13 +395,7 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
 
     private void UpdateHeaderBackground()
     {
-        var shell = (RectTransform)_shell.transform;
-        float top = shell.anchorMax.y;
-        _headerBackground.anchorMin = new Vector2(0, top);
-        _headerBackground.anchorMax = new Vector2(1, top);
-        _headerBackground.pivot = new Vector2(0, 1);
-        _headerBackground.anchoredPosition = new Vector2(0, shell.offsetMax.y);
-        _headerBackground.sizeDelta = new Vector2(0, ((RectTransform)shell.Find("Header")).rect.height);
+        CountrySafeArea.FitBottomBand(_headerBackground, (RectTransform)_shell.transform, FooterHeight);
     }
 
     private static void Place(Transform child, float left, float right, float inset = 0)
@@ -352,8 +408,8 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     private static void PlaceStack(Transform child, float left, float right, bool caption)
     {
         var rect = (RectTransform)child;
-        rect.anchorMin = new Vector2(left, caption ? .5f : .18f);
-        rect.anchorMax = new Vector2(right, caption ? .82f : .5f);
+        rect.anchorMin = new Vector2(left, caption ? .41f : .09f);
+        rect.anchorMax = new Vector2(right, caption ? .91f : .59f);
         rect.offsetMin = rect.offsetMax = Vector2.zero;
     }
 
@@ -370,46 +426,36 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         value.margin = new Vector4(size + 8, 0, 0, 0);
     }
 
-    internal static void StylePageButton(UnityEngine.UI.Button button, Sprite roundedPanel, Color color)
-    {
-        button.GetComponentInChildren<TextMeshProUGUI>(true).color = CountryGovernmentTheme.Ink;
-        var outline = button.transform.Find("Outline").GetComponent<UnityEngine.UI.Graphic>();
-        outline.enabled = false;
-        var border = (UnityEngine.UI.Image)button.targetGraphic;
-        border.sprite = roundedPanel; border.type = UnityEngine.UI.Image.Type.Sliced;
-        border.color = Color.black; border.raycastTarget = false;
-        border.rectTransform.anchorMin = Vector2.zero; border.rectTransform.anchorMax = Vector2.one;
-        border.rectTransform.offsetMin = new Vector2(0, 8); border.rectTransform.offsetMax = new Vector2(0, -8);
-        var faceObject = new GameObject("RoundedFace", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
-        var face = faceObject.GetComponent<UnityEngine.UI.Image>();
-        face.transform.SetParent(border.transform, false);
-        face.sprite = roundedPanel; face.type = UnityEngine.UI.Image.Type.Sliced;
-        face.color = Color.white; face.raycastTarget = false;
-        face.rectTransform.anchorMin = Vector2.zero; face.rectTransform.anchorMax = Vector2.one;
-        face.rectTransform.offsetMin = Vector2.one * 5; face.rectTransform.offsetMax = Vector2.one * -5;
-        button.targetGraphic = face;
-        CountryGovernmentTheme.Colors(button, color);
-        button.GetComponent<CountryButtonFeedback>().SetFocusGraphic(null);
-    }
     private void UpdatePageControls()
     {
-        _nextPage.gameObject.SetActive(_monthlyFlow);
-        _backButton.gameObject.SetActive(!_monthlyFlow || _page != Page.Income);
-        _backButton.GetComponentInChildren<TextMeshProUGUI>(true).text = "‹ 戻る";
-        _nextPage.GetComponentInChildren<TextMeshProUGUI>().text = !_monthlyFlow || _page == Page.Training ? "完了" : "次へ ›";
-        for (int i = 0; i < _commandRects.Length; i++)
+        bool report = _page == Page.Income;
+        bool budget = _page == Page.Budget;
+        bool usePaper = _monthlyFlow && budget && _budgetCommand != null;
+        _nextPage.gameObject.SetActive(_monthlyFlow && !usePaper);
+        _backButton.gameObject.SetActive(!_monthlyFlow || !report);
+        _backButton.GetComponentInChildren<TextMeshProUGUI>(true).text = !_monthlyFlow || report ? Theme.CountryReturnText : $"‹ {PageNames[(int)_page - 1]}へ";
+        _nextPage.GetComponentInChildren<TextMeshProUGUI>().text = _page == Page.Training ? "完了" : $"{PageNames[(int)_page + 1]}へ ›";
+        Theme.PlacePageItem((RectTransform)_nextPage.transform, 1,
+            report || budget ? -Theme.PageBarInset : -Theme.PageBarInset - Theme.PageBarActionWidth - 12,
+            report || budget ? Theme.PageBarActionWidth : Theme.PageBarBackWidth);
+
+        var treasury = (RectTransform)_treasuryText.transform.parent;
+        treasury.gameObject.SetActive(report || budget);
+        if (_monthlyFlow)
+            Theme.PlacePageItem(treasury, 1, report ? -Theme.PageBarInset - Theme.PageBarActionWidth - 24 : -Theme.PageBarInset,
+                report ? 174 : Theme.PageBarActionWidth, report ? Theme.PageBarHeight / 2 : Theme.PageBarHeight + 18,
+                report ? Theme.PageBarButtonHeight : Theme.PageBarNoticeHeight);
+        else
+            Theme.PlacePageItem(treasury, 1, -Theme.PageBarInset, 174);
+        _treasuryCaption.gameObject.SetActive(!_monthlyFlow || report);
+        _treasuryText.fontSize = budget && _monthlyFlow ? 24 : 34;
+        if (budget && _monthlyFlow) Place(_treasuryText.transform, 0, 1);
+        else PlaceStack(_treasuryText.transform, 0, 1, false);
+        if (_budgetCommand != null)
         {
-            var rect = _commandRects[i]; if (rect == null) continue;
-            rect.anchorMin = _monthlyFlow ? new Vector2(.5f, .5f) : _commandMin[i];
-            rect.anchorMax = _monthlyFlow ? new Vector2(.5f, .5f) : _commandMax[i];
-            rect.pivot = _monthlyFlow ? new Vector2(.5f, .5f) : _commandPivot[i];
-            rect.anchoredPosition = _monthlyFlow ? Vector2.zero : _commandPosition[i]; rect.sizeDelta = _commandSize[i];
+            _budgetCommand.gameObject.SetActive(usePaper);
+            if (usePaper) _budgetCommandLabel.text = "建設へ ›";
         }
-        var status = _status.rectTransform;
-        status.anchorMin = _monthlyFlow ? Vector2.zero : _statusMin;
-        status.anchorMax = _monthlyFlow ? new Vector2(.5f, 1) : _statusMax;
-        status.offsetMin = _monthlyFlow ? new Vector2(292, 8) : _statusOffsetMin;
-        status.offsetMax = _monthlyFlow ? new Vector2(-240, -8) : _statusOffsetMax;
     }
     private void PreviousPage()
     {
@@ -422,10 +468,12 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         Open((Page)((int)_page + 1));
     }
 
-    private void ToggleConstruction(int id)
+    private void ToggleConstruction()
     {
-        if (_draft.IsOrdered(id)) _draft.RemoveConstruction(id);
-        else if (!_draft.PlanConstruction(id, _upgrade)) Feedback("建設に必要な資源を確認する", true);
+        if (_building < 0) return;
+        Feedback("");
+        if (_draft.IsOrdered(_building)) _draft.RemoveConstruction(_building);
+        else _draft.PlanConstruction(_building, _upgrade);
         Refresh();
     }
 
@@ -462,11 +510,17 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         {
             _pages[i].SetActive(i == (int)_page);
         }
-        _pageHeading.text = new[] { "報告", "配分", "建設", "育成" }[(int)_page];
+        _pageHeading.text = PageNames[(int)_page];
         for (int i = 0; i < _headerDetails.Length; i++) _headerDetails[i].SetActive((int)_page == i + 1);
         UpdatePageControls();
-        _dateText.text = $"{_date.CurrentMonth}月{_date.CurrentDay}日";
-        _treasuryText.text = CountryResourceDisplay.Format(_page == Page.Income ? _resources.Treasury : _draft.TreasuryForecast);
+        _dateText.text = _page switch
+        {
+            Page.Budget => $"{PlanningStart.Month}月分",
+            Page.Construction => $"{PlanningStart}着工",
+            _ => $"{_date.CurrentMonth}月{_date.CurrentDay}日"
+        };
+        string treasury = CountryResourceDisplay.Format(_page == Page.Income ? _resources.Treasury : _draft.TreasuryForecast);
+        _treasuryText.text = _monthlyFlow && _page == Page.Budget ? $"計画後国庫 {treasury}" : treasury;
         _treasuryCaption.text = _page == Page.Income ? "国庫" : "計画後国庫";
         var receipt = _resources.LastIncomeReceipt;
         _incomeTitle.text = "報告書";
@@ -477,11 +531,13 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         if (_page == Page.Income) _expeditionReport?.Refresh();
         _budgetTitle.text = $"{PlanningMonth} {PlanningStart.Month}月の配分";
         _constructionTitle.text = $"{PlanningMonth} {PlanningStart.Month}月の建設";
-        _taxBudgetCaption.text = $"{PlanningStart.Month}月の税収{(_monthlyFlow && _date.CurrentDay == 1 && receipt.Recorded ? "" : "見込")}";
+        _taxBudgetCaption.text = _monthlyFlow && _date.CurrentDay == 1 && receipt.Recorded ? "税収" : "税収見込";
         _taxBudget.text = CountryResourceDisplay.Format(_draft.Tax);
         _fundingTotal.text = CountryResourceDisplay.Format(_draft.FundingTotal);
-        _cashFlowCaption.text = _draft.TreasuryUsed > 0 ? "国庫から補填" : "残りは国庫へ";
-        _cashFlow.text = CountryResourceDisplay.Format(_draft.TreasuryUsed > 0 ? _draft.TreasuryUsed : _draft.RemainingTax);
+        _cashFlow.text = _draft.TreasuryUsed > 0
+            ? $"国庫から {CountryResourceDisplay.Format(_draft.TreasuryUsed)} 補填"
+            : $"国庫へ {CountryResourceDisplay.Format(_draft.RemainingTax)}";
+        _cashFlow.gameObject.SetActive(_draft.TreasuryUsed > 0 || _draft.RemainingTax != _draft.TreasuryForecast);
         _cashFlow.color = CountryGovernmentTheme.Text;
         _useTreasury.SetIsOnWithoutNotify(_draft.UseTreasury);
         _treasuryToggleLabel.text = "国庫も使う";
@@ -490,35 +546,58 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
             if (_budgetRows[i] != null) _budgetRows[i].Refresh(_draft.Funding(i), _draft.MaximumFunding(i), _draft.FundingBasis);
         RefreshConstruction();
         _training.Refresh();
-        var command = _page switch {
-            Page.Budget => _budgetCommand, Page.Construction => _constructionCommand,
-            Page.Training => _trainingCommand, _ => null
-        };
-        _confirmButton.gameObject.SetActive(false);
-        _confirmLabel.text = _page switch {
-            Page.Budget => $"{PlanningMonth}の配分を確定", Page.Training => _date.CurrentDay == 1 ? "今月の訓練を開始" : "来月の訓練を予約",
-            _ => _building >= 0 && _draft.IsOrdered(_building) ? "計画済み" : _date.CurrentDay != 1 ? $"来月から{(_upgrade ? "強化" : "建設")}" : _upgrade ? "強化する" : "建設する"
-        };
-        _confirmButton.interactable = _page switch {
-            Page.Budget => _draft.CanConfirmFunding, Page.Training => _training.CanStart,
-            Page.Construction => _building >= 0 && _draft.CanConstruct(_building, _upgrade), _ => true
-        };
-        _confirmFrame.color = CountryGovernmentTheme.Border;
-        _confirmLabel.color = _confirmButton.interactable ? CountryGovernmentTheme.Ink : CountryGovernmentTheme.DisabledText;
-        _confirmIcon.sprite = _confirmIcons[(int)_page];
-        _confirmIcon.color = _confirmButton.interactable ? Color.white : new Color(1, 1, 1, .4f);
-        if (_constructionCommand != null) _constructionCommand.gameObject.SetActive(false);
-        if (_budgetCommand != null) _budgetCommand.gameObject.SetActive(false);
-        if (_trainingCommand != null) _trainingCommand.gameObject.SetActive(false);
-        if (_page == Page.Budget && !_draft.CanConfirmFunding) Feedback("配分に必要な資金が不足している", true);
-        if (_page == Page.Construction && _building >= 0 && !_draft.IsOrdered(_building) && !_draft.CanConstruct(_building, _upgrade))
+        bool ordered = _building >= 0 && _draft.IsOrdered(_building);
+        bool canConstruct = _building >= 0 && _draft.CanConstruct(_building, _upgrade);
+        string construction = ordered ? "計画を外す" : _upgrade ? "強化を計画" : "新築を計画";
+        string training = _date.CurrentDay == 1 ? "訓練を開始" : "訓練を予約";
+        if (_constructionCommand != null)
+            ShowCommand(_constructionCommand, _constructionCommandLabel, _page == Page.Construction, ordered || canConstruct, construction);
+        if (_trainingCommand != null)
+            ShowCommand(_trainingCommand, _trainingCommandLabel, _page == Page.Training, _training.CanStart, training);
+        bool fallback = (_page == Page.Construction && _constructionCommand == null) || (_page == Page.Training && _trainingCommand == null);
+        ShowCommand(_confirmButton, _confirmLabel, fallback,
+            _page == Page.Construction ? ordered || canConstruct : _training.CanStart,
+            _page == Page.Construction ? construction : training);
+        if (fallback)
         {
-            var cost = _draft.Cost(_building, _upgrade);
-            string missing = _draft.TreasuryForecast < cost.Money ? $" 国庫 {CountryResourceDisplay.Format(cost.Money - _draft.TreasuryForecast)}" : "";
-            if (_draft.WoodForecast < cost.Wood) missing += $" 木材 {CountryResourceDisplay.Format(cost.Wood - _draft.WoodForecast)}";
-            if (_draft.OreForecast < cost.Ore) missing += $" 鉱石 {CountryResourceDisplay.Format(cost.Ore - _draft.OreForecast)}";
-            Feedback("不足：" + missing, true);
+            _confirmFrame.color = Theme.Border;
+            _confirmIcon.sprite = _confirmIcons[(int)_page];
         }
+
+        string notice = _feedback;
+        bool error = _feedbackError;
+        if (string.IsNullOrEmpty(notice))
+        {
+            if (_page == Page.Budget && !_draft.CanConfirmFunding)
+            {
+                notice = "配分に必要な資金が不足している";
+                error = true;
+            }
+            else if (_page == Page.Construction)
+            {
+                if (_building < 0) notice = "施設を選ぶ";
+                else if (!ordered && !canConstruct)
+                {
+                    var cost = _draft.Cost(_building, _upgrade);
+                    string missing = _draft.TreasuryForecast < cost.Money ? $" 国庫 {CountryResourceDisplay.Format(cost.Money - _draft.TreasuryForecast)}" : "";
+                    if (_draft.WoodForecast < cost.Wood) missing += $" 木材 {CountryResourceDisplay.Format(cost.Wood - _draft.WoodForecast)}";
+                    if (_draft.OreForecast < cost.Ore) missing += $" 鉱石 {CountryResourceDisplay.Format(cost.Ore - _draft.OreForecast)}";
+                    notice = "不足：" + missing;
+                    error = true;
+                }
+                else if (_draft.OrderCount > 0) notice = _orderCount.text;
+            }
+            else if (_page == Page.Training)
+                notice = _training.CanStart ? $"{_training.SelectedCount}人・{_training.StartDate}開始" : "訓練対象を選ぶ";
+        }
+        SetNotice(notice, error);
+    }
+
+    private static void ShowCommand(UnityEngine.UI.Button button, TextMeshProUGUI label, bool visible, bool available, string text)
+    {
+        button.interactable = available;
+        label.text = text;
+        button.gameObject.SetActive(visible);
     }
 
     private void RefreshConstruction()
@@ -583,11 +662,18 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     }
     private void Feedback(string message, bool error = false)
     {
-        string period = _page == Page.Income ? "" : $"{PlanningMonth} {PlanningStart}から適用";
-        if (error) message = $"<color=#{ColorUtility.ToHtmlStringRGB(CountryGovernmentTheme.Error)}>{message}</color>";
-        _status.text = string.IsNullOrEmpty(message) ? "" : period + "\n" + message;
+        _feedback = message;
+        _feedbackError = error;
+        SetNotice(message, error);
+    }
+
+    private void SetNotice(string message, bool error)
+    {
+        _status.text = message;
+        _status.color = error ? Theme.Error : Theme.Text;
         _status.gameObject.SetActive(!string.IsNullOrEmpty(message));
-        _status.color = CountryGovernmentTheme.Text;
+        if (_monthlyFlow && _page == Page.Budget)
+            _treasuryText.transform.parent.gameObject.SetActive(string.IsNullOrEmpty(message));
     }
     private static void SetSelected(UnityEngine.UI.Button button, bool selected)
     {

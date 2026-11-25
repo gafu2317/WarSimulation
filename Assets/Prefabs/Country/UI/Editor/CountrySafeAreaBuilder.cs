@@ -25,7 +25,7 @@ public static class CountrySafeAreaBuilder
                     Rect = rect, Min = rect.anchorMin, Max = rect.anchorMax,
                     Horizontal = horizontal, Vertical = vertical });
             }
-            Add("FacilityLayer");
+            Add("FacilityLayer/Banners");
             Add("TopBar", false);
             Add("BottomLeftButtons"); Add("BottomRightButton"); Add("Minimap");
             foreach (var screen in new[] { "Government", "Personnel", "Expeditions", "Defense", "Settings" }) Add(screen, false, false);
@@ -35,7 +35,8 @@ public static class CountrySafeAreaBuilder
                 "Government/Window/Details/Card", "Government/Window/TrainingConfirm/Window/Card", "Government/Window/ExpeditionDetails/Window/Card",
                 "Personnel/Window/Confirm/Window/Card", "Expeditions/Window/Confirm/Window/Card", "Expeditions/Window/Log/Card", "Expeditions/Window/Log/Details/Window/Card",
                 "Defense/Window/Shell/Formation/Header", "Defense/Window/Shell/Formation/Main", "Defense/Window/Shell/Formation/Footer",
-                "Defense/Window/Shell/Alert/Card", "Defense/Window/Confirm/Window/Card", "Settings/Window/Panel" }) Add(path);
+                "Defense/Window/Shell/Alert/Card", "Defense/Window/Confirm/Window/Card", "Settings/Window/Panel",
+                "FacilityLayer/Popup/Modal/Panel" }) Add(path);
             layout.Configure(targets.ToArray());
             EditorUtility.SetDirty(layout);
         }

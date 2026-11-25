@@ -100,6 +100,7 @@ public static class CountryPaletteBuilder
         { face.color = new Color(.03f, .04f, .06f, .72f); Record(face); return; }
         var image = face as UnityEngine.UI.Image;
         string art = image != null && image.sprite != null ? image.sprite.texture.name : "";
+        if (art == "RoundedPanel" && button.name is ("Back" or "ReturnToCountry")) return;
         bool row = button.GetComponent<CountryRosterRow>() != null || button.GetComponent<CountryGovernmentChoice>() != null;
         if (button.GetComponent<CountryGovernmentChoice>() != null)
         {

@@ -102,7 +102,7 @@ public static class CountryExpeditionPreview
     public static void VerifySharedLayout()
     {
         const string folder = "Assets/Prefabs/Country/UI/";
-        foreach (var entry in new[] { (Name: "CountryExpedition", Selection: "Window/Shell/Main/Viewport/Content/Formation/Selection"), (Name: "CountryTraining", Selection: "Selection") })
+        foreach (var entry in new[] { (Name: "CountryExpedition", Selection: "Window/Shell/Main/Formation/Selection"), (Name: "CountryTraining", Selection: "Selection") })
         {
             string path = folder + entry.Name + ".prefab";
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -115,19 +115,32 @@ public static class CountryExpeditionPreview
     [MenuItem("WarSim/Country/Expedition Preview/Verify Scroll")]
     public static void VerifyScroll()
     {
-        string root = "CountryHud/Expeditions/Window/Shell/Main/Viewport/Content/Formation/";
-        var vertical = GameObject.Find(root + "Selection/Body/Roster/Left/List").GetComponent<ScrollRect>();
-        var horizontal = GameObject.Find(root + "Selection/Members").GetComponent<ScrollRect>();
-        Canvas.ForceUpdateCanvases(); vertical.verticalNormalizedPosition = 1; horizontal.horizontalNormalizedPosition = 0;
-        var beforeVertical = vertical.content.anchoredPosition;
-        var beforeHorizontal = horizontal.content.anchoredPosition;
-        vertical.OnScroll(new PointerEventData(EventSystem.current) { scrollDelta = new Vector2(0, -1) });
-        horizontal.OnScroll(new PointerEventData(EventSystem.current) { scrollDelta = new Vector2(-1, 0) });
-        var result = new ScrollReport { Vertical = vertical.content.anchoredPosition.y - beforeVertical.y, Horizontal = beforeHorizontal.x - horizontal.content.anchoredPosition.x };
+        var main = Panel.transform.Find("Window/Shell/Main");
+        if (!main.gameObject.activeInHierarchy) throw new InvalidOperationException("Open the expedition members page first.");
+        var selection = main.Find("Formation/Selection");
+        var roster = selection.Find("Body/Roster");
+        var list = roster.Find("Left/List").GetComponent<ScrollRect>();
+        var details = roster.Find("Right/Body/Details").GetComponent<ScrollRect>();
+        var members = selection.Find("Members").GetComponent<ScrollRect>();
+        Canvas.ForceUpdateCanvases();
+        var result = new ScrollReport { List = Step(list, Vector2.down), Details = Step(details, Vector2.down), Horizontal = Step(members, Vector2.left) };
+        Directory.CreateDirectory(Records);
         PlayModeWindow.GetRenderingResolution(out uint width, out uint height);
         File.WriteAllText($"{Records}/scroll-{width}x{height}.json", JsonUtility.ToJson(result, true));
-        if (Mathf.Abs(result.Vertical - 18) > .1f || Mathf.Abs(result.Horizontal - 18) > .1f) throw new InvalidOperationException("Expedition scroll step differs from 18 reference units.");
-        Debug.Log("Expedition vertical and horizontal scroll steps are both 18.");
+        if (Mathf.Abs(result.List - list.scrollSensitivity) > .1f ||
+            Mathf.Abs(result.Details - details.scrollSensitivity) > .1f ||
+            Mathf.Abs(result.Horizontal - members.scrollSensitivity) > .1f)
+            throw new InvalidOperationException("The soldier list, details or member strip did not scroll by the configured step.");
+        Debug.Log("The expedition list and details scroll vertically and the member strip scrolls horizontally.");
+
+        float Step(ScrollRect scroll, Vector2 delta)
+        {
+            if (scroll.vertical) scroll.verticalNormalizedPosition = 1;
+            else scroll.horizontalNormalizedPosition = 0;
+            var before = scroll.content.anchoredPosition;
+            ExecuteEvents.ExecuteHierarchy(scroll.viewport.gameObject, new PointerEventData(EventSystem.current) { scrollDelta = delta }, ExecuteEvents.scrollHandler);
+            return Mathf.Abs(Vector2.Dot(scroll.content.anchoredPosition - before, delta));
+        }
     }
 
     [MenuItem("WarSim/Country/Expedition Preview/Capture")]
@@ -160,7 +173,7 @@ public static class CountryExpeditionPreview
     private static TripReport Trip(CountryExpeditionTrip trip) => new() { Target = trip.Target, Returning = trip.Returning, Departure = trip.Departure.ToString(), Arrival = trip.Arrival.ToString(), Return = trip.Return.ToString(), Members = trip.Members.ToArray(), ReportMonth = trip.ReportMonth };
     [Serializable] private sealed class TestResult { public string Name, Error; public bool Passed; }
     [Serializable] private sealed class RuleReport { public TestResult[] Tests; }
-    [Serializable] private sealed class ScrollReport { public float Vertical, Horizontal; }
+    [Serializable] private sealed class ScrollReport { public float List, Details, Horizontal; }
     [Serializable] private sealed class TripReport { public int Target, ReportMonth; public bool Returning; public string Departure, Arrival, Return; public int[] Members; }
     [Serializable] private sealed class NationLabelReport { public string Name, Material; public float OutlineWidth; public Color Face, Outline; }
     [Serializable] private sealed class CaptureReport { public int RegionCount; public NationLabelReport[] NationLabels; public bool Open, GovernmentOpen, Running, CameraInput; public string Today; public int Target, Capitals, TerrainImages, EmptySlots; public int[] Members, Owners, Available, Weapons, Deployable; public TripReport[] Active, Returned; public string[] TextOverflows; }

@@ -16,9 +16,15 @@ MonoBehaviour:
   Skills: {fileID: 11400000, guid: d7e8f9a0b1c28345a61728394a5b6c7d, type: 2}
   Soldiers:
   - Id: soldier-01
-    Name: "\u5175\u58EB01"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a6\u30eb\u30b7\u30e3"
+    Icon: {fileID: 21300000, guid: ab97ea2a5fc5444981fa56e627401613, type: 3}
+    StandingArt: {fileID: 21300000, guid: a4bf91ca4e3f40fa84bbe68e0c541a08, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.12866667
+      y: 0
+      width: 0.68733333
+      height: 0.82458629
     InitialStats:
       HP: 100
       STR: 10
@@ -28,9 +34,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-01
   - Id: soldier-02
-    Name: "\u5175\u58EB02"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30ce\u30a8\u30eb"
+    Icon: {fileID: 21300000, guid: 0f4f7937209f4c07bd15e0483b22d368, type: 3}
+    StandingArt: {fileID: 21300000, guid: 85c5a276ab1d4544ba793743c01c9b37, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.13133333
+      y: 0
+      width: 0.674
+      height: 0.86241135
     InitialStats:
       HP: 103
       STR: 11
@@ -40,9 +52,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-02
   - Id: soldier-03
-    Name: "\u5175\u58EB03"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30b7\u30e3\u30ed"
+    Icon: {fileID: 21300000, guid: 1db89d02c8dd44feb12d723e0fb61bf9, type: 3}
+    StandingArt: {fileID: 21300000, guid: f41fe5af947a4568894fec213faaa497, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.19066667
+      y: 0
+      width: 0.60466667
+      height: 0.84397163
     InitialStats:
       HP: 106
       STR: 12
@@ -52,9 +70,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-03
   - Id: soldier-04
-    Name: "\u5175\u58EB04"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a8\u30ec\u30ce\u30a2"
+    Icon: {fileID: 21300000, guid: 7f3dd54e03224fde87ccca7abf868a0e, type: 3}
+    StandingArt: {fileID: 21300000, guid: b5ac396b037d4dd7b9f30e8f1528ca16, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.011333333
+      y: 0
+      width: 0.846
+      height: 0.88652482
     InitialStats:
       HP: 109
       STR: 13
@@ -64,9 +88,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-04
   - Id: soldier-05
-    Name: "\u5175\u58EB05"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a4\u30ea\u30a2"
+    Icon: {fileID: 21300000, guid: 37d1dabd772849c18875ffd59272afd9, type: 3}
+    StandingArt: {fileID: 21300000, guid: 32cbae4adbaf49b7b2734fdbccafa9ce, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.25
+      y: 0
+      width: 0.50933333
+      height: 0.87943262
     InitialStats:
       HP: 112
       STR: 14
@@ -76,9 +106,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-05
   - Id: soldier-06
-    Name: "\u5175\u58EB06"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30e2\u30ca"
+    Icon: {fileID: 21300000, guid: fef265e4c94e47c08f7a2d1700a355df, type: 3}
+    StandingArt: {fileID: 21300000, guid: 55ac2fcf483847e3869d95e5f0c0f148, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.064
+      y: 0
+      width: 0.80733333
+      height: 0.86099291
     InitialStats:
       HP: 115
       STR: 15
@@ -88,9 +124,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-06
   - Id: soldier-07
-    Name: "\u5175\u58EB07"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30df\u30aa"
+    Icon: {fileID: 21300000, guid: 008dba057b7f4b06af8692deb4c287c1, type: 3}
+    StandingArt: {fileID: 21300000, guid: 6b8b0032f8634cd9b12b7f9bf3540630, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.15666667
+      y: 0
+      width: 0.698
+      height: 0.87092199
     InitialStats:
       HP: 118
       STR: 16
@@ -100,9 +142,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-07
   - Id: soldier-08
-    Name: "\u5175\u58EB08"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a4\u30f3\u30b0\u30ea\u30c3\u30c9"
+    Icon: {fileID: 21300000, guid: 202757bfd97143ddb5c781b0e0796275, type: 3}
+    StandingArt: {fileID: 21300000, guid: e105b5348a424748abb8e1ff61a7799b, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.10933333
+      y: 0
+      width: 0.82866667
+      height: 0.86241135
     InitialStats:
       HP: 121
       STR: 10
@@ -112,9 +160,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-08
   - Id: soldier-09
-    Name: "\u5175\u58EB09"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a2\u30ea\u30b9"
+    Icon: {fileID: 21300000, guid: e1db3f5b862543db9e6d5c54f62fa69e, type: 3}
+    StandingArt: {fileID: 21300000, guid: dce5ae0653ce435ea6aec23375e30b69, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.142
+      y: 0
+      width: 0.674
+      height: 0.73333333
     InitialStats:
       HP: 124
       STR: 11
@@ -124,9 +178,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-09
   - Id: soldier-10
-    Name: "\u5175\u58EB10"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30ec\u30a4\u30cd\u30fc"
+    Icon: {fileID: 21300000, guid: b246afa973e14db9abe814631c0a023d, type: 3}
+    StandingArt: {fileID: 21300000, guid: 2ba84a6454b3424d8cdf988aff480655, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.064
+      y: 0
+      width: 0.81533333
+      height: 0.85106383
     InitialStats:
       HP: 127
       STR: 12
@@ -136,9 +196,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-10
   - Id: soldier-11
-    Name: "\u5175\u58EB11"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30df\u30b7\u30a7\u30eb"
+    Icon: {fileID: 21300000, guid: fbab09b27fc7429dbec1d4b996002a90, type: 3}
+    StandingArt: {fileID: 21300000, guid: 4f818288a4bd4d3ab1f91d61d1360cdc, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.22266667
+      y: 0
+      width: 0.61066667
+      height: 0.77635934
     InitialStats:
       HP: 130
       STR: 13
@@ -148,9 +214,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-11
   - Id: soldier-12
-    Name: "\u5175\u58EB12"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30c9\u30df\u30cb\u30af"
+    Icon: {fileID: 21300000, guid: 7d573f24e0d94010a5fba2877ffc8cae, type: 3}
+    StandingArt: {fileID: 21300000, guid: aa74643a0168459a81f29425afb99658, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.054
+      y: 0
+      width: 0.858
+      height: 0.93380615
     InitialStats:
       HP: 133
       STR: 14
@@ -160,9 +232,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-12
   - Id: soldier-13
-    Name: "\u5175\u58EB13"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30bc\u30aa"
+    Icon: {fileID: 21300000, guid: 8db48ac2dded4ed4b7f392e63e73304a, type: 3}
+    StandingArt: {fileID: 21300000, guid: 938c16763828414ab47cdb723a41c223, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.16866667
+      y: 0
+      width: 0.61466667
+      height: 0.78392435
     InitialStats:
       HP: 136
       STR: 15
@@ -172,9 +250,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-13
   - Id: soldier-14
-    Name: "\u5175\u58EB14"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30de\u30fc\u30cb\u30e3"
+    Icon: {fileID: 21300000, guid: 5ef141d8f870487d91bc8bc30d4c014b, type: 3}
+    StandingArt: {fileID: 21300000, guid: 4ddfb137c0ba49fda9077d850e66bb74, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.047333333
+      y: 0
+      width: 0.83866667
+      height: 0.73049645
     InitialStats:
       HP: 139
       STR: 16
@@ -184,9 +268,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-14
   - Id: soldier-15
-    Name: "\u5175\u58EB15"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30e6\u30fc\u30a4"
+    Icon: {fileID: 21300000, guid: 03745a0ce558448a83647e2fda0b7fe0, type: 3}
+    StandingArt: {fileID: 21300000, guid: 8ff0ef49aa864d51a40404fb5af165b2, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.065333333
+      y: 0
+      width: 0.77666667
+      height: 0.76595745
     InitialStats:
       HP: 142
       STR: 10
@@ -196,9 +286,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-15
   - Id: soldier-16
-    Name: "\u5175\u58EB16"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a2\u30b9\u30c6\u30a3\u30ca"
+    Icon: {fileID: 21300000, guid: 826a843b3abc4418be0ad54260c371f4, type: 3}
+    StandingArt: {fileID: 21300000, guid: f7ee12cae5554413951c93b544868507, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.006
+      y: 0
+      width: 0.82533333
+      height: 0.86193853
     InitialStats:
       HP: 145
       STR: 11
@@ -208,9 +304,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-16
   - Id: soldier-17
-    Name: "\u5175\u58EB17"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30ac\u30e9\u30e0"
+    Icon: {fileID: 21300000, guid: 14fcb97dea4b423cb990d9c57aa26385, type: 3}
+    StandingArt: {fileID: 21300000, guid: a21e44c9db8d48139da2fe46b3be74be, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.15909091
+      y: 0
+      width: 0.61432507
+      height: 0.93847656
     InitialStats:
       HP: 148
       STR: 12
@@ -220,9 +322,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-17
   - Id: soldier-18
-    Name: "\u5175\u58EB18"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30eb\u30fc\u30eb\u30fc"
+    Icon: {fileID: 21300000, guid: 52075542f11c45d2833f055d34c85b03, type: 3}
+    StandingArt: {fileID: 21300000, guid: d5d9d98992414e9ea7e52b1e38203180, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.12190083
+      y: 0
+      width: 0.68181818
+      height: 0.89208984
     InitialStats:
       HP: 151
       STR: 13
@@ -232,9 +340,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-18
   - Id: soldier-19
-    Name: "\u5175\u58EB19"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30e1\u30d5\u30a3\u30ca"
+    Icon: {fileID: 21300000, guid: e1ac671d99a241c483e1bf786c794e12, type: 3}
+    StandingArt: {fileID: 21300000, guid: 37ed6ef5d65b4f9dbf66906f50ffdc76, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.019972452
+      y: 0
+      width: 0.8684573
+      height: 0.73046875
     InitialStats:
       HP: 154
       STR: 14
@@ -244,9 +358,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-19
   - Id: soldier-20
-    Name: "\u5175\u58EB20"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30ed\u30f3"
+    Icon: {fileID: 21300000, guid: fc4522919fcf42c79488c37cda3a16f9, type: 3}
+    StandingArt: {fileID: 21300000, guid: 6da08bf621f145e6b958ed2065853e48, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.069559229
+      y: 0
+      width: 0.87190083
+      height: 0.85107422
     InitialStats:
       HP: 157
       STR: 15
@@ -256,9 +376,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-20
   - Id: soldier-21
-    Name: "\u5175\u58EB21"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30b7\u30fc\u30bf"
+    Icon: {fileID: 21300000, guid: 6c3053212c814de6a39b16d79e15f1bd, type: 3}
+    StandingArt: {fileID: 21300000, guid: fe2274b1875e4f8a9d9b0efdd9cf1987, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.028666667
+      y: 0
+      width: 0.91933333
+      height: 0.89267139
     InitialStats:
       HP: 160
       STR: 16
@@ -268,9 +394,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-21
   - Id: soldier-22
-    Name: "\u5175\u58EB22"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30a2\u30e9\u30f3"
+    Icon: {fileID: 21300000, guid: b28ba49c1127416d807bbf9bf0152163, type: 3}
+    StandingArt: {fileID: 21300000, guid: b798ffa0acf44538b53b690935aea9be, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.0046666667
+      y: 0
+      width: 0.92333333
+      height: 0.96359338
     InitialStats:
       HP: 163
       STR: 10
@@ -280,9 +412,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-22
   - Id: soldier-23
-    Name: "\u5175\u58EB23"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30ec\u30f3"
+    Icon: {fileID: 21300000, guid: 8cfd92a8602343fd89666158f1c53f36, type: 3}
+    StandingArt: {fileID: 21300000, guid: 8b305eeea0ee4480a1181305fcd0f8ad, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.07
+      y: 0
+      width: 0.80533333
+      height: 0.76595745
     InitialStats:
       HP: 166
       STR: 11
@@ -292,9 +430,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-23
   - Id: soldier-24
-    Name: "\u5175\u58EB24"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30e9\u30a4\u30a2\u30f3"
+    Icon: {fileID: 21300000, guid: f1591b8b7f104de98e66f3f18ccfc80c, type: 3}
+    StandingArt: {fileID: 21300000, guid: 861b25f913294b40863f6df305020fe5, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.058
+      y: 0
+      width: 0.76066667
+      height: 0.89030733
     InitialStats:
       HP: 169
       STR: 12
@@ -304,9 +448,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-24
   - Id: soldier-25
-    Name: "\u5175\u58EB25"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30e2\u30eb\u30b2\u30f3"
+    Icon: {fileID: 21300000, guid: aeb3002828e845db9a95d1f248183ce4, type: 3}
+    StandingArt: {fileID: 21300000, guid: ca792d8165054836baee285c0a73c0de, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.024
+      y: 0
+      width: 0.976
+      height: 0.95602837
     InitialStats:
       HP: 172
       STR: 13
@@ -316,9 +466,15 @@ MonoBehaviour:
     MaxCP: 100
     InitialWeaponId: weapon-25
   - Id: soldier-26
-    Name: "\u5175\u58EB26"
-    Icon: {fileID: 0}
-    StandingArt: {fileID: 0}
+    Name: "\u30f4\u30a3\u30b9\u30bf"
+    Icon: {fileID: 21300000, guid: a96494de53074725949750f7ffba73a6, type: 3}
+    StandingArt: {fileID: 21300000, guid: a8a4acb76d8c458d8fbf48d2d09e07a7, type: 3}
+    StandingArtBounds:
+      serializedVersion: 2
+      x: 0.0086666667
+      y: 0
+      width: 0.952
+      height: 0.89503546
     InitialStats:
       HP: 175
       STR: 14

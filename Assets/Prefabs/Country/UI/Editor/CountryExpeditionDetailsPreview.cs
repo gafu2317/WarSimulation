@@ -30,12 +30,12 @@ public static class CountryExpeditionDetailsPreview
     public static void Capture()
     {
         if (!EditorApplication.isPlaying || Panel == null || !Panel.IsOpen) throw new InvalidOperationException("Open the expedition map first.");
-        Canvas.ForceUpdateCanvases(); var detail = Panel.transform.Find("Window/Shell/Main/Viewport/Content/Map/Details");
+        Canvas.ForceUpdateCanvases(); var detail = Panel.transform.Find("Window/Shell/Map/Details");
         var overflowing = detail.GetComponentsInChildren<TextMeshProUGUI>().Where(t => t.isTextOverflowing && t.overflowMode != TextOverflowModes.Ellipsis).Select(t => t.name + ": " + t.text).ToArray();
         if (overflowing.Length != 0) throw new InvalidOperationException("Expedition details overflow: " + string.Join(", ", overflowing));
         int target = Panel.Draft.Target;
         var schedule = Ref<TextMeshProUGUI>("_schedule");
-        bool hasItinerary = target >= 0 && State.Owner(target) != 0;
+        bool hasItinerary = State.CanTarget(target);
         if (schedule.gameObject.activeSelf != hasItinerary) throw new InvalidOperationException("Itinerary must match the selected destination.");
         if (target >= 0 && Ref<TextMeshProUGUI>("_targetName").text != State.Data.Regions[target].Name) throw new InvalidOperationException("Selected territory name is incorrect.");
         if (hasItinerary && (!schedule.text.Contains("出発") || !schedule.text.Contains("到着") || !schedule.text.Contains("帰還"))) throw new InvalidOperationException("All three itinerary dates are required.");
