@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using TMPro;
 using UnityEditor;
@@ -121,6 +122,9 @@ public sealed class CountryRosterSelectionTests
     [Test]
     public void SkillCountSortUpdatesOnTrainingCompletionAndIgnoresEquippedKind()
     {
+        Assert.That(_roster.Profession(1), Is.EqualTo(WeaponKind.Unarmed));
+        int shield = Enumerable.Range(0, _roster.WeaponCount).First(id => _roster.Weapon(id).Kind == WeaponKind.Shield);
+        Assert.That(_roster.TryEquip(1, shield), Is.True);
         Assert.That(_roster.Profession(1), Is.EqualTo(WeaponKind.Shield));
         var sort = _root.GetComponentInChildren<TMP_Dropdown>();
         sort.value = sort.options.FindIndex(option => option.text == "剣のスキル数");
@@ -150,6 +154,9 @@ public sealed class CountryTrainingSelectionTests
         _training = _root.GetComponent<CountryTrainingView>();
         var properties = new SerializedObject(_training);
         _view = (CountryRosterView)properties.FindProperty("_view").objectReferenceValue;
+        var selection = PrefabUtility.GetOutermostPrefabInstanceRoot(_view.gameObject);
+        if (selection != null)
+            PrefabUtility.UnpackPrefabInstance(selection, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
         var confirm = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Country/UI/CountryRosterConfirm.prefab"), _root.transform).GetComponent<CountryRosterConfirm>();
         properties.FindProperty("_confirmation").objectReferenceValue = confirm;
         properties.ApplyModifiedPropertiesWithoutUndo();

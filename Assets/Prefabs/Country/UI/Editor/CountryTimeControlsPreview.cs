@@ -46,13 +46,18 @@ public static class CountryTimeControlsPreview
             typeof(CountryTimeControls).GetMethod("Awake", Private).Invoke(controls, null);
             typeof(CountryTimeControls).GetField("_date", Private).SetValue(controls, date);
             typeof(CountryTimeControls).GetMethod("Subscribe", Private).Invoke(controls, null);
-            var button = (Button)typeof(CountryTimeControls).GetField("_modeButton", Private).GetValue(controls);
-            var feedback = button.GetComponent<CountryButtonFeedback>();
-            typeof(CountryButtonFeedback).GetMethod("Awake", Private).Invoke(feedback, null);
-            typeof(CountryButtonFeedback).GetMethod("OnEnable", Private).Invoke(feedback, null);
-            Directory.CreateDirectory(Folder);
-            foreach (string mode in new[] { "Stopped", "Running", "DoubleSpeed" })
+            var buttons = (Button[])typeof(CountryTimeControls).GetField("_modeButtons", Private).GetValue(controls);
+            foreach (var button in buttons)
             {
+                var feedback = button.GetComponent<CountryButtonFeedback>();
+                typeof(CountryButtonFeedback).GetMethod("Awake", Private).Invoke(feedback, null);
+                typeof(CountryButtonFeedback).GetMethod("OnEnable", Private).Invoke(feedback, null);
+            }
+            Directory.CreateDirectory(Folder);
+            string[] modes = { "Stopped", "Running", "DoubleSpeed" };
+            for (int i = 0; i < modes.Length; i++)
+            {
+                buttons[i].onClick.Invoke();
                 Canvas.ForceUpdateCanvases();
                 foreach (var label in hud.GetComponentsInChildren<TextMeshProUGUI>()) label.ForceMeshUpdate();
                 camera.Render();
@@ -61,12 +66,11 @@ public static class CountryTimeControlsPreview
                 try
                 {
                     image.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0); image.Apply();
-                    File.WriteAllBytes(Path.Combine(Folder, $"{mode}-{size.x}x{size.y}.png"), image.EncodeToPNG());
+                    File.WriteAllBytes(Path.Combine(Folder, $"{modes[i]}-{size.x}x{size.y}.png"), image.EncodeToPNG());
                 }
                 finally { Object.DestroyImmediate(image); }
-                button.onClick.Invoke();
             }
-            var corners = new Vector3[4]; button.GetComponent<RectTransform>().GetWorldCorners(corners);
+            var corners = new Vector3[4]; ((RectTransform)buttons[0].transform).GetWorldCorners(corners);
             var bottom = RectTransformUtility.WorldToScreenPoint(camera, corners[0]);
             var top = RectTransformUtility.WorldToScreenPoint(camera, corners[2]);
             File.WriteAllText(Path.Combine(Folder, "layout.json"), JsonUtility.ToJson(new LayoutReport {

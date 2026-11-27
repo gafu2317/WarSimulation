@@ -53,8 +53,9 @@ public sealed class CountrySafeAreaTests
         Assert.That(Bounds("Minimap").xMin, Is.LessThan(_safe.xMin));
         var buttonSize = Bounds("BottomLeftButtons").size;
         _layout.Apply(_safe, _size); Canvas.ForceUpdateCanvases();
-        foreach (string name in new[] { "TopBar/Content", "Minimap", "BottomLeftButtons", "BottomRightButton", "Government/Window/Shell", "Personnel/Window/Shell", "Expeditions/Window/Shell", "Defense/Window/Shell/Formation/Main", "Settings/Window/Panel" })
+        foreach (string name in new[] { "TopBar/Content", "TopBar/Content/DateControls", "Minimap", "BottomLeftButtons", "BottomRightButton", "Government/Window/Shell", "Personnel/Window/Shell", "Expeditions/Window/Shell", "Defense/Window/Shell/Formation/Main", "Settings/Window/Panel" })
             Inside(Bounds(name), name);
+        Assert.That(Bounds("TopBar/Content/DateControls").yMax, Is.LessThan(Bounds("TopBar").yMin));
         Assert.That(Bounds("TopBar").xMin, Is.EqualTo(0).Within(.1f));
         Assert.That(Bounds("TopBar").xMax, Is.EqualTo(_size.x).Within(.1f));
         Assert.That(Vector2.Distance(Bounds("BottomLeftButtons").size, buttonSize), Is.LessThan(.1f));

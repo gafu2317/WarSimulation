@@ -93,6 +93,16 @@ public sealed class CountryIncomeTests
     }
 
     [Test]
+    public void IncomeAtStorageLimitRecordsOnlyTheAmountActuallyReceived()
+    {
+        _resources.SetResources(8500, int.MaxValue, int.MaxValue - 1, int.MaxValue - 5);
+        Assert.That(_resources.TryCollectMonthlyIncome(0), Is.True);
+        Assert.That(Stocks(), Is.EqualTo(new[] { int.MaxValue, int.MaxValue, int.MaxValue }));
+        Assert.That(Receipt(), Is.EqualTo(new[] { 0, 1, 5 }));
+        Assert.That(_resources.TryCollectMonthlyIncome(0), Is.False);
+    }
+
+    [Test]
     public void FractionalIncomeIsCarriedIntoTheNextMonth()
     {
         _resources.SetPopulation(8555);

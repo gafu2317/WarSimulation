@@ -39,6 +39,9 @@ public sealed class CombatAiPersonalityProfile : ScriptableObject
         };
     }
 
+    internal static int ApplyStatMultiplier(int value, float multiplier) =>
+        Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(1, value) * multiplier));
+
     public string DisplayNameJapanese => _displayNameJapanese;
     public CombatAiPersonalityKind Kind => _kind;
 

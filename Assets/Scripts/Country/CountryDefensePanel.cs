@@ -33,7 +33,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
     private CountryExpeditionDraft _draft;
     private InputAction _escape;
     private GameObject _returnFocus;
-    private bool _cameraInput, _comparisonInput;
+    private bool _cameraInput, _comparisonInput, _showingResult;
     private int _equipmentSoldier = -1;
     private CountryEquipmentPopup _equipmentPopup;
     private RectTransform _footer, _footerBackground, _footerTitle;
@@ -47,7 +47,12 @@ public sealed class CountryDefensePanel : MonoBehaviour
         _personnelBack.onClick.AddListener(() => { Close(); _personnel.OpenSoldiers(); });
         _view.SelectionChanged += Refresh; _view.ActionRequested += Choose;
         _escape = new InputAction("Close defense", InputActionType.Button, "<Keyboard>/escape");
-        _escape.performed += _ => { if (_confirmation.IsOpen) _confirmation.Close(); else Back(); };
+        _escape.performed += _ =>
+        {
+            if (_showingResult) Close();
+            else if (_confirmation.IsOpen) _confirmation.Close();
+            else Back();
+        };
     }
 
     private void Start()
@@ -100,6 +105,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
         for (int i = 0; i < _tokens.Length; i++)
         {
             int id = i;
+            _view.BindMemberClicks(_tokens[i], id, memberSlot: true);
             _tokens[i].EnableDrag(_view.ListViewport, () => { if (_draft != null && _draft.Contains(id) && _equipmentSoldier < 0) { _view.SelectSoldier(id); Choose(); } });
         }
         _raidTokens = new CountryRosterRow[_tokens.Length];
@@ -112,6 +118,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
         }
         _raidEmpty = Instantiate(_emptySlotPrefab, _raidMembers);
         _state.RaidStarted += OpenRaid;
+        _state.RaidDefeated += ShowDefeat;
         if (_state.Pending != null) OpenRaid();
     }
 
@@ -151,9 +158,12 @@ public sealed class CountryDefensePanel : MonoBehaviour
 
     private void Choose()
     {
+        if (PlayDataManager.Instance.Battle != null) return;
         if (_equipmentSoldier >= 0)
         {
-            int weapon = _view.SelectedWeapon, owner = _roster.WeaponOwner(weapon);
+            int weapon = _view.SelectedWeapon;
+            if (!_roster.IsUsableWeapon(weapon)) return;
+            int owner = _roster.WeaponOwner(weapon);
             if (owner >= 0 && _roster.Soldiers[owner].Expedition != null) return;
             if (_roster.TryEquip(_equipmentSoldier, weapon)) ChooseEquipment(); else Refresh();
         }
@@ -195,7 +205,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
             if (!selected) continue;
             int weapon = _draft.Weapon(i);
             _tokens[i].Refresh(_roster.Data.Soldiers[i].Name, _roster.Data.Soldiers[i].Icon,
-                weapon < 0 ? "武器を選ぶ" : _roster.Data.Weapons[weapon].Name, _view.SelectedSoldier == i, !_roster.CanDeploy(i) || weapon < 0);
+                weapon < 0 ? "武器を選ぶ" : _roster.Weapon(weapon).Name, _view.SelectedSoldier == i, !_roster.CanDeploy(i) || weapon < 0);
         }
         for (int i = 0; i < _emptySlots.Length; i++) _emptySlots[i].SetActive(i < _tokens.Length - _draft.Members.Count);
         _view.PreviewEquipment(_draft, "防衛メンバー");
@@ -205,7 +215,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
         if (_equipmentSoldier >= 0)
         {
             int owner = _roster.WeaponOwner(_view.SelectedWeapon);
-            bool available = owner < 0 || _roster.Soldiers[owner].Expedition == null;
+            bool available = _roster.IsUsableWeapon(_view.SelectedWeapon) && (owner < 0 || _roster.Soldiers[owner].Expedition == null);
             _view.SetAction("この武器を装備", available, available ? "選択すると装備を変更する" : "帰還まで持ち出し中");
         }
         else
@@ -241,20 +251,54 @@ public sealed class CountryDefensePanel : MonoBehaviour
     private void Save()
     {
         if (_state.Pending != null) { Fight(); return; }
-        if (_state.TryRegister(_draft.Members, _draft.Weapons(), out _)) Close(); else Refresh();
+        if (!_state.Validate(_draft.Members, _draft.Weapons(), out _)) { Refresh(); return; }
+        string warnings = BattleWarnings();
+        if (warnings.Length == 0) Register();
+        else _confirmation.Show("防衛メンバーを登録", warnings, "登録する", Register);
+        void Register()
+        {
+            if (_state.TryRegister(_draft.Members, _draft.Weapons(), out _)) Close(); else Refresh();
+        }
     }
+
+    private string BattleWarnings() => string.Join("\n", _draft.Members
+        .Select(id => _roster.BattleWarning(id, _draft.Weapon(id), _state.CPCost)).Where(text => text.Length > 0));
 
     private void Fight()
     {
         if (_state.Pending == null || !_state.Validate(_draft.Members, _draft.Weapons(), out _) || _draft.Members.Count == 0) { Refresh(); return; }
         string members = string.Join("\n", _draft.Members.Select(id =>
-            $"{_roster.Data.Soldiers[id].Name}　{_roster.Data.Weapons[_draft.Weapon(id)].Name}"));
-        string body = members + "\n\nこの編成を次回の防衛メンバーにも登録する。";
+            $"{_roster.Data.Soldiers[id].Name}　{_roster.Weapon(_draft.Weapon(id)).Name}"));
+        string body = $"1人につきCP{_state.CPCost}・武器耐久1を消費する。\n\n" +
+            members + "\n\nこの編成を次回の防衛メンバーにも登録する。";
+        string warnings = BattleWarnings();
+        if (warnings.Length > 0) body += "\n\n" + warnings;
         _confirmation.Show("防衛に出撃", body, "防衛する", () => {
-            string region = _data.Regions[_state.Pending.Region].Name;
-            if (!_state.TryDefend(_draft.Members, _draft.Weapons(), out _)) { Refresh(); return; }
-            _confirmation.ShowReturnToCountry("防衛成功", $"{region}への襲撃を退けた\n\n{members}", Close);
+            if (PlayDataManager.Instance.TryOpenDefenseBattle(_draft.Members, _draft.Weapons(), out string reason))
+            {
+                _shell.interactable = false;
+                _escape.Disable();
+            }
+            else
+                _confirmation.ShowDetails("防衛に出撃できなかった", reason);
         });
+    }
+
+    private void ShowDefeat(CountryRaid raid)
+    {
+        if (!isActiveAndEnabled) return;
+        Show(false);
+        ShowResult("防衛敗北", $"{_data.Regions[raid.Region].Name}への襲撃を防げなかった。\n出撃できる兵士と武器が揃っていない。");
+    }
+
+    private void ShowResult(string title, string body)
+    {
+        var notices = _roster.TakeBattleNotices();
+        if (notices.Count > 0) body += "\n\n" + string.Join("\n", notices);
+        _showingResult = true;
+        _alert.SetActive(false);
+        _formation.SetActive(false);
+        _confirmation.ShowReturnToCountry(title, body, Close);
     }
 
     private void Back()
@@ -268,6 +312,7 @@ public sealed class CountryDefensePanel : MonoBehaviour
     {
         _equipmentPopup?.Close();
         if (!IsOpen) return;
+        _showingResult = false;
         _confirmation.Close(); _window.SetActive(false); _escape?.Disable(); _view.PreviewEquipment(null); _draft = null;
         if (_government.CameraControls != null) _government.CameraControls.InputEnabled = _cameraInput;
         if (_government.Comparison != null) _government.Comparison.InputEnabled = _comparisonInput;
@@ -282,5 +327,11 @@ public sealed class CountryDefensePanel : MonoBehaviour
 
     private void OnEnable() { if (_state?.Pending != null) OpenRaid(); }
     private void OnDisable() => Close();
-    private void OnDestroy() { _escape?.Dispose(); if (_state != null) _state.RaidStarted -= OpenRaid; }
+    private void OnDestroy()
+    {
+        _escape?.Dispose();
+        if (_state == null) return;
+        _state.RaidStarted -= OpenRaid;
+        _state.RaidDefeated -= ShowDefeat;
+    }
 }

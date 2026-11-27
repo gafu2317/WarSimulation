@@ -19,6 +19,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     private sealed class DebugTeamUi
     {
+        public RectTransform Root;
         public TMP_Text StoneTitle;
         public TMP_Text StoneHp;
         public Image StoneFill;
@@ -57,6 +58,13 @@ public sealed class CombatBattleHudView : MonoBehaviour
     private CombatCharacterSystem _debugCharacterSystem;
     private CombatMagicStoneSystem _debugMagicStoneSystem;
     private bool _debugUiVisible = true;
+    private bool _countryBattle;
+    private bool UseTeamPanels => _debugUiVisible || _countryBattle;
+    private bool DebugCommandsEnabled => _debugUiVisible && !_countryBattle;
+    private TMP_Text _countryClock;
+    private int _lastCountrySeconds = -1;
+    private float _nextTeamRefresh;
+    private TMP_FontAsset _teamFont;
     private bool _listenersAttached;
     private bool _isPaused;
     private bool _controlsVisible;
@@ -113,8 +121,10 @@ public sealed class CombatBattleHudView : MonoBehaviour
     {
         ApplyDebugPanelVisibility();
         RefreshRockControls();
-        if (_debugUiVisible && _debugPanel != null && _debugPanel.activeSelf)
+        if (UseTeamPanels && _debugPanel != null && _debugPanel.activeSelf)
         {
+            if (_countryBattle && Time.unscaledTime < _nextTeamRefresh) return;
+            _nextTeamRefresh = Time.unscaledTime + .1f;
             RefreshDebugUi();
         }
     }
@@ -130,8 +140,8 @@ public sealed class CombatBattleHudView : MonoBehaviour
         EnsureTemporaryControls();
         EnsureDebugPanel();
         EnsureRockControls();
-        SetProductionUiVisible(!_debugUiVisible);
-        ConfigureTemporaryControls(_debugUiVisible);
+        SetProductionUiVisible(!UseTeamPanels);
+        ConfigureTemporaryControls(UseTeamPanels);
         ApplyDebugPanelVisibility();
         if (isActiveAndEnabled)
         {
@@ -145,10 +155,10 @@ public sealed class CombatBattleHudView : MonoBehaviour
         _debugUiVisible = visible;
         if (!visible) ResetRockPlacement();
         RefreshRockControls();
-        SetProductionUiVisible(!visible);
-        ConfigureTemporaryControls(visible);
+        SetProductionUiVisible(!UseTeamPanels);
+        ConfigureTemporaryControls(UseTeamPanels);
         ApplyDebugPanelVisibility();
-        if (visible)
+        if (UseTeamPanels)
         {
             RefreshDebugUi();
         }
@@ -159,7 +169,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         _controlsVisible = visible;
         if (!visible) ResetRockPlacement();
         RefreshRockControls();
-        if (_debugUiVisible)
+        if (UseTeamPanels)
         {
             if (_temporaryControls != null)
             {
@@ -197,6 +207,31 @@ public sealed class CombatBattleHudView : MonoBehaviour
         {
             _pauseButtonText.text = visible ? "再開" : "一時停止";
         }
+    }
+
+    internal void ConfigureCountryBattle(TMP_Text fontSource)
+    {
+        _countryBattle = true;
+        var label = _returnButton?.GetComponentInChildren<TMP_Text>(true);
+        if (label != null) label.text = "撤退";
+        if (_temporaryControls != null)
+        {
+            _countryClock = CreateDebugText(_temporaryControls.transform, "CountryBattleClock", string.Empty,
+                fontSource != null ? fontSource.font : _temporarySpeedText?.font, 18f, TextAlignmentOptions.Center, 32f);
+            if (fontSource != null) _countryClock.fontSharedMaterial = fontSource.fontSharedMaterial;
+            _countryClock.transform.SetAsFirstSibling();
+        }
+        if (_debugAllies != null && UnityEngine.InputSystem.Touchscreen.current != null)
+            _debugAllies.Root.offsetMin = new Vector2(0f, 228f);
+        CountrySafeArea.Track(_debugPanel?.transform as RectTransform);
+        CountrySafeArea.Track(_temporaryControls?.transform as RectTransform);
+    }
+
+    internal void SetCountryTimeRemaining(int seconds)
+    {
+        if (_countryClock == null || seconds == _lastCountrySeconds) return;
+        _lastCountrySeconds = seconds;
+        _countryClock.text = $"残り {seconds / 60}:{seconds % 60:00}";
     }
 
     public void SetSpeedLabel(float speed)
@@ -296,17 +331,17 @@ public sealed class CombatBattleHudView : MonoBehaviour
             panelRect.offsetMin = Vector2.zero;
             panelRect.offsetMax = Vector2.zero;
         }
-        TMP_FontAsset font = GetComponentInChildren<TMP_Text>(includeInactive: true)?.font;
+        _teamFont = GetComponentInChildren<TMP_Text>(includeInactive: true)?.font;
         _debugAllies = CreateDebugTeamUi(
             "DebugAlliesPanel",
             "味方魔石",
             CombatTeam.Ally,
-            font);
+            _teamFont);
         _debugEnemies = CreateDebugTeamUi(
             "DebugEnemiesPanel",
             "敵魔石",
             CombatTeam.Enemy,
-            font);
+            _teamFont);
     }
 
     private DebugTeamUi CreateDebugTeamUi(
@@ -345,7 +380,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        DebugTeamUi teamUi = new DebugTeamUi();
+        DebugTeamUi teamUi = new DebugTeamUi { Root = root };
         GameObject stoneObject = new GameObject(
             team == CombatTeam.Ally ? "AllyStoneStatus" : "EnemyStoneStatus",
             typeof(RectTransform),
@@ -532,7 +567,10 @@ public sealed class CombatBattleHudView : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        const float statusIconSize = 40f;
+        float statusIconSize = _countryBattle ? 30f : 40f;
+        float nameRowHeight = _countryBattle ? 34f : 48f;
+        float nameFontSize = _countryBattle ? 23f : 27f;
+        float detailHeight = _countryBattle ? 29f : 44f;
         DebugCharacterUi card = new DebugCharacterUi
         {
             Root = cardObject,
@@ -547,7 +585,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             typeof(LayoutElement));
         RectTransform weaponHpRect = weaponHpRow.GetComponent<RectTransform>();
         weaponHpRect.SetParent(cardRect, false);
-        weaponHpRow.GetComponent<LayoutElement>().preferredHeight = 48f;
+        weaponHpRow.GetComponent<LayoutElement>().preferredHeight = nameRowHeight;
 
         HorizontalLayoutGroup weaponHpLayout = weaponHpRow.GetComponent<HorizontalLayoutGroup>();
         weaponHpLayout.spacing = 4f;
@@ -556,8 +594,15 @@ public sealed class CombatBattleHudView : MonoBehaviour
         weaponHpLayout.childForceExpandWidth = true;
         weaponHpLayout.childForceExpandHeight = false;
 
-        card.Weapon = CreateDebugText(weaponHpRect, "Weapon", string.Empty, font, 27f, TextAlignmentOptions.Left, 48f);
-        card.Hp = CreateDebugText(weaponHpRect, "Hp", string.Empty, font, 27f, TextAlignmentOptions.Right, 48f);
+        card.Weapon = CreateDebugText(weaponHpRect, "Weapon", string.Empty, font, nameFontSize, TextAlignmentOptions.Left, nameRowHeight);
+        card.Hp = CreateDebugText(weaponHpRect, "Hp", string.Empty, font, nameFontSize, TextAlignmentOptions.Right, nameRowHeight);
+        if (_countryBattle)
+        {
+            card.Weapon.textWrappingMode = TextWrappingModes.NoWrap;
+            card.Weapon.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            card.Hp.GetComponent<LayoutElement>().preferredWidth = 68f;
+            weaponHpLayout.childForceExpandWidth = false;
+        }
 
         CreateDebugBar(cardRect, "HpBar", 8f, out Image hpFill);
         hpFill.color = new Color(0.35f, 0.95f, 0.4f, 1f);
@@ -578,9 +623,9 @@ public sealed class CombatBattleHudView : MonoBehaviour
             "Objective",
             string.Empty,
             font,
-            25f,
+            _countryBattle ? 20f : 25f,
             TextAlignmentOptions.Left,
-            44f);
+            detailHeight);
         card.Objective.textWrappingMode = TextWrappingModes.NoWrap;
         card.Objective.overflowMode = TextOverflowModes.Ellipsis;
         card.Skills = CreateDebugText(
@@ -588,9 +633,9 @@ public sealed class CombatBattleHudView : MonoBehaviour
             "Skills",
             string.Empty,
             font,
-            25f,
+            _countryBattle ? 20f : 25f,
             TextAlignmentOptions.Left,
-            44f);
+            detailHeight);
         card.Skills.textWrappingMode = TextWrappingModes.Normal;
         card.Skills.overflowMode = TextOverflowModes.Ellipsis;
 
@@ -715,7 +760,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
     {
         if (_debugPanel != null)
         {
-            bool visible = _debugUiVisible && CombatBattleFlow.IsRunning;
+            bool visible = UseTeamPanels && CombatBattleFlow.IsRunning;
             if (_debugPanel.activeSelf != visible)
             {
                 _debugPanel.SetActive(visible);
@@ -779,17 +824,17 @@ public sealed class CombatBattleHudView : MonoBehaviour
         }
 
         int count = characters != null ? characters.Count : 0;
-        TMP_FontAsset font = GetComponentInChildren<TMP_Text>(includeInactive: true)?.font;
         while (teamUi.Characters.Count < count)
         {
-            teamUi.Characters.Add(CreateDebugCharacterUi(teamUi.CharacterContent, isAlly, font));
+            teamUi.Characters.Add(CreateDebugCharacterUi(teamUi.CharacterContent, isAlly, _teamFont));
         }
 
         for (int i = 0; i < teamUi.Characters.Count; i++)
         {
             DebugCharacterUi card = teamUi.Characters[i];
             Character character = characters != null && i < count ? characters[i] : null;
-            if (card.Character != character)
+            bool changed = card.Character != character;
+            if (changed)
             {
                 ClearDebugSkill(card);
             }
@@ -802,16 +847,22 @@ public sealed class CombatBattleHudView : MonoBehaviour
             }
 
             int maxHp = Mathf.Max(1, character.MaxHP);
-            card.Weapon.text =
-                $"{CombatAiDebugLabels.WeaponShort(character.EquippedWeapon)} {CombatAiDebugLabels.PersonalityShort(character.PersonalityProfile)}";
-            card.Hp.text = character.HP.ToString();
+            card.Hp.SetText("{0}", character.HP);
             card.HpFill.fillAmount = Mathf.Clamp01(character.HP / (float)maxHp);
             card.StatusIcons.Refresh(character);
-            CombatAiBrain aiBrain = character.GetComponent<CombatAiBrain>();
-            CombatObjective objective = aiBrain != null
-                ? aiBrain.LastPlan.Objective
-                : CombatObjective.Search;
-            card.Objective.text = $"AI目的: {CombatAiDebugLabels.ObjectiveShort(objective)}";
+            if (!_countryBattle || changed)
+            {
+                string weapon = CombatAiDebugLabels.WeaponShort(character.EquippedWeapon);
+                string personality = CombatAiDebugLabels.PersonalityShort(character.PersonalityProfile);
+                card.Weapon.text = _countryBattle ? character.DisplayName : $"{weapon} {personality}";
+                if (_countryBattle) card.Objective.text = $"{character.RuntimeWeaponName ?? weapon}　{personality}";
+            }
+            if (!_countryBattle)
+            {
+                CombatAiBrain aiBrain = character.GetComponent<CombatAiBrain>();
+                CombatObjective objective = aiBrain != null ? aiBrain.LastPlan.Objective : CombatObjective.Search;
+                card.Objective.text = $"AI目的: {CombatAiDebugLabels.ObjectiveShort(objective)}";
+            }
             if (card.SkillHideAt != float.NegativeInfinity && Time.unscaledTime >= card.SkillHideAt)
             {
                 ClearDebugSkill(card);
@@ -971,7 +1022,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
             ResetRockPlacement();
             _rockMap = map;
         }
-        bool visible = _debugUiVisible && _controlsVisible && CombatBattleFlow.IsRunning;
+        bool visible = DebugCommandsEnabled && _controlsVisible && CombatBattleFlow.IsRunning;
         _rockControls.gameObject.SetActive(visible);
         _magicControls.gameObject.SetActive(visible);
         foreach (Button button in _magicButtons) button.interactable = map != null;
@@ -981,7 +1032,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     public bool OpenRockPlacement(CombatRockShape shape, CombatMapSystem mapSystem, CombatCharacterSystem characters)
     {
-        if (!_debugUiVisible || !_controlsVisible || !CombatBattleFlow.IsRunning) return false;
+        if (!DebugCommandsEnabled || !_controlsVisible || !CombatBattleFlow.IsRunning) return false;
         return _rockPlacementView != null && !_magicView.IsOpen && _rockPlacementView.Open(shape, mapSystem, characters);
     }
 
@@ -989,7 +1040,7 @@ public sealed class CombatBattleHudView : MonoBehaviour
 
     public bool OpenPlayerMagic(CombatPlayerMagicKind kind, CombatMapSystem map, CombatCharacterSystem characters)
     {
-        if (!_debugUiVisible || !_controlsVisible || !CombatBattleFlow.IsRunning || _rockPlacementView.IsOpen) return false;
+        if (!DebugCommandsEnabled || !_controlsVisible || !CombatBattleFlow.IsRunning || _rockPlacementView.IsOpen) return false;
         return _magicView.Open(kind, map, characters);
     }
 

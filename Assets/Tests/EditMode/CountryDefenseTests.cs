@@ -27,7 +27,7 @@ public sealed class CountryDefenseTests
         _data.Soldiers = Enumerable.Range(0, 3).Select(i => new CountrySoldierDefinition { Id = $"s{i}", Name = $"Soldier{i}", MaxCP = 100, InitialWeaponId = $"w{i}" }).ToArray();
         _data.Weapons = Enumerable.Range(0, 3).Select(i => new CountryWeaponDefinition { Id = $"w{i}", Kind = WeaponKind.Sword }).ToArray();
         _data.Schools = new[] { FacilityType.WarriorSchool, FacilityType.MagicSchool, FacilityType.Church }
-            .Select(facility => new CountrySchoolDefinition { InitialLevel = 1, Facility = facility }).ToArray();
+            .Select(facility => new CountrySchoolDefinition { Name = facility.ToString() }).ToArray();
         _roster = new CountryRoster(_data, _start); _world = new CountryExpeditionState(_map, _roster, _start);
         _defense = new CountryDefenseState(_world, _roster, _start);
     }
@@ -63,7 +63,7 @@ public sealed class CountryDefenseTests
         Assert.That(_roster.CanDeploy(0), Is.False);
         Assert.That(_defense.TryRegister(new[] { 0 }, new[] { 0 }, out _), Is.False);
         Advance(_start.AddDays(2));
-        Assert.That(_defense.TryDefend(_defense.Members, _defense.Weapons, out _), Is.False);
+        Assert.That(_defense.ResolveBattle(_defense.Pending, _defense.Members, _defense.Weapons), Is.False);
         Assert.That(_defense.Members, Is.EqualTo(new[] { 0 }));
     }
     [TestCase(0)] [TestCase(1)] [TestCase(2)]
@@ -106,14 +106,16 @@ public sealed class CountryDefenseTests
     [Test]
     public void RaidEditsReplaceTheNextDefaultAndBattleConsumesOnlyParticipantsCpOnce()
     {
+        _map.BattleCPCost = 23;
+        _map.DefenseBattleCPCost = 12;
         _defense.TryRegister(new[] { 0 }, new[] { 0 }, out _); Advance(_start.AddDays(2));
         _roster.TryEquip(1, -1); _roster.TryEquip(1, 2); _roster.TryEquip(2, 1);
-        Assert.That(_defense.TryDefend(new[] { 1, 2 }, new[] { 2, 1 }, out _), Is.True);
+        Assert.That(_defense.ResolveBattle(_defense.Pending, new[] { 1, 2 }, new[] { 2, 1 }), Is.True);
         Assert.That(_defense.Members, Is.EqualTo(new[] { 1, 2 })); Assert.That(_defense.Weapons, Is.EqualTo(new[] { 2, 1 }));
-        Assert.That(_roster.Soldiers.Select(s => s.CP), Is.EqualTo(new[] { 100, 80, 80 }));
+        Assert.That(_roster.Soldiers.Select(s => s.CP), Is.EqualTo(new[] { 100, 88, 88 }));
         Assert.That(_roster.EquippedWeapon(1), Is.EqualTo(2)); Assert.That(_roster.EquippedWeapon(2), Is.EqualTo(1));
-        Assert.That(_defense.TryDefend(new[] { 1, 2 }, new[] { 2, 1 }, out _), Is.False);
-        Assert.That(_roster.Soldiers[1].CP, Is.EqualTo(80)); Assert.That(_defense.Pending, Is.Null);
+        Assert.That(_defense.ResolveBattle(_defense.Pending, new[] { 1, 2 }, new[] { 2, 1 }), Is.False);
+        Assert.That(_roster.Soldiers[1].CP, Is.EqualTo(88)); Assert.That(_defense.Pending, Is.Null);
         Advance(_start.AddDays(4)); Assert.That(_defense.Pending, Is.Not.Null);
     }
     [Test]
@@ -121,9 +123,9 @@ public sealed class CountryDefenseTests
     {
         _defense.TryRegister(new[] { 0 }, new[] { 0 }, out _);
         _roster.TryStartTraining(0, new[] { 0 }, out _); Advance(_start.AddDays(2));
-        Assert.That(_defense.TryDefend(_defense.Members, _defense.Weapons, out _), Is.False);
+        Assert.That(_defense.ResolveBattle(_defense.Pending, _defense.Members, _defense.Weapons), Is.False);
         Assert.That(_defense.Pending, Is.Not.Null); Assert.That(_defense.Members[0], Is.Zero);
-        Assert.That(_defense.TryDefend(new[] { 1 }, new[] { 1 }, out _), Is.True);
+        Assert.That(_defense.ResolveBattle(_defense.Pending, new[] { 1 }, new[] { 1 }), Is.True);
     }
     [Test]
     public void TravelingSoldiersAndCarriedWeaponsCannotBeRegistered()
@@ -137,7 +139,7 @@ public sealed class CountryDefenseTests
     public void CpIsClampedAtZeroAndRevivalCancelsReservedTraining()
     {
         Advance(_start.AddDays(1)); _roster.TryStartTraining(0, new[] { 0 }, out _); _roster.TrySetCP(0, 10);
-        Advance(_start.AddDays(2)); Assert.That(_defense.TryDefend(new[] { 0 }, new[] { 0 }, out _), Is.True);
+        Advance(_start.AddDays(2)); Assert.That(_defense.ResolveBattle(_defense.Pending, new[] { 0 }, new[] { 0 }), Is.True);
         Assert.That(_roster.Soldiers[0].CP, Is.Zero); Assert.That(_roster.Soldiers[0].Training, Is.Null);
         Assert.That(_roster.Soldiers[0].RevivalDue.Value.ToString(), Is.EqualTo("2月3日"));
         _roster.AdvanceTo(new CountryDate(1, 2, 3)); Assert.That(_roster.Soldiers[0].CP, Is.EqualTo(100));
@@ -145,9 +147,60 @@ public sealed class CountryDefenseTests
     [Test]
     public void EmptyFormationCannotFightAndRaidRemainsPending()
     {
-        Advance(_start.AddDays(2)); Assert.That(_defense.TryDefend(Array.Empty<int>(), Array.Empty<int>(), out _), Is.False);
+        Advance(_start.AddDays(2)); Assert.That(_defense.ResolveBattle(_defense.Pending, Array.Empty<int>(), Array.Empty<int>()), Is.False);
         Assert.That(_defense.Pending, Is.Not.Null);
         Assert.That(_defense.Members, Is.Empty);
         Assert.That(_roster.Soldiers.All(s => s.CP == 100), Is.True);
+    }
+
+    [Test]
+    public void RaidWithNobodyDeployableResolvesAsDefeatAndSchedulesTheNextRaid()
+    {
+        for (int soldier = 0; soldier < _roster.Soldiers.Count; soldier++)
+            Assert.That(_roster.TrySetCP(soldier, 0), Is.True);
+        int opened = 0;
+        var defeats = new System.Collections.Generic.List<CountryRaid>();
+        _defense.RaidStarted += () => opened++;
+        _defense.RaidDefeated += defeats.Add;
+        var date = _defense.NextRaid;
+
+        Assert.That(_defense.AdvanceTo(date), Is.True);
+        Assert.That(_defense.Pending, Is.Null);
+        Assert.That(_defense.NextRaid.CompareTo(date), Is.GreaterThan(0));
+        Assert.That(defeats.Single().Date, Is.EqualTo(date));
+        Assert.That(opened, Is.Zero);
+        Assert.That(_roster.Durability(0), Is.EqualTo(_data.Weapons[0].MaxDurability));
+        Assert.That(_defense.AdvanceTo(date), Is.False);
+        Assert.That(defeats.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ADeployableUnarmedSoldierCanDefendIfAWeaponCanBeEquipped()
+    {
+        Assert.That(_roster.TryEquip(0, -1), Is.True);
+        Assert.That(_roster.TrySetCP(1, 0), Is.True);
+        Assert.That(_roster.TrySetCP(2, 0), Is.True);
+        Advance(_defense.NextRaid);
+        Assert.That(_defense.Pending, Is.Not.Null);
+        Assert.That(_roster.TryEquip(0, 0), Is.True);
+        Assert.That(_defense.ResolveBattle(_defense.Pending, new[] { 0 }, new[] { 0 }), Is.True);
+    }
+
+    [Test]
+    public void ADeployableSoldierWithoutAnyUsableWeaponCannotDefend()
+    {
+        foreach (var weapon in _data.Weapons) weapon.MaxDurability = 1;
+        _roster = new CountryRoster(_data, _start);
+        _world = new CountryExpeditionState(_map, _roster, _start);
+        _defense = new CountryDefenseState(_world, _roster, _start);
+        _roster.ConsumeBattleCP(new[] { 0, 1, 2 }, 1, _start);
+        CountryRaid defeat = null;
+        _defense.RaidDefeated += raid => defeat = raid;
+
+        Advance(_defense.NextRaid);
+
+        Assert.That(_roster.CanDeploy(0), Is.True);
+        Assert.That(_defense.Pending, Is.Null);
+        Assert.That(defeat, Is.Not.Null);
     }
 }

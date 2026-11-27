@@ -37,7 +37,7 @@ public static class CountrySafeAreaBuilder
                 "Defense/Window/Shell/Formation/Header", "Defense/Window/Shell/Formation/Main", "Defense/Window/Shell/Formation/Footer",
                 "Defense/Window/Shell/Alert/Card", "Defense/Window/Confirm/Window/Card", "Settings/Window/Panel",
                 "FacilityLayer/Popup/Modal/Panel" }) Add(path);
-            layout.Configure(targets.ToArray());
+            layout.Configure(targets.ToArray(), matchPhoneOnDesktopWeb: true);
             EditorUtility.SetDirty(layout);
         }
         Debug.Log("Country HUD safe-area targets updated in the prefab.");

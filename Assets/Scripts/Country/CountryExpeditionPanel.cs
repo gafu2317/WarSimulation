@@ -40,22 +40,19 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     private Vector2 _formationScrollOffsets;
     private CountryEquipmentPopup _equipmentPopup;
     private RectTransform _pageBand;
-    private Button _targetTab, _memberTab;
     private bool _showingMembers;
     [SerializeField] private TextMeshProUGUI _hudCount, _departureNotice;
     private float _noticeUntil;
     public bool IsOpen => _window.activeSelf;
     public CountryExpeditionDraft Draft => _draft;
     public CountryExpeditionState State => _state;
+    internal CountryWorldMapData WorldData => _data;
+    internal CountryRosterData RosterData => _view.Data;
 
     private void Awake()
     {
         _open.onClick.AddListener(Open); _back.onClick.AddListener(Back); _depart.onClick.AddListener(ConfirmDeparture);
         _next.onClick.AddListener(() => ShowPage(true));
-        _targetTab = _targetStep.GetComponentInParent<Button>(true);
-        _memberTab = _memberStep.GetComponentInParent<Button>(true);
-        _targetTab.onClick.AddListener(() => ShowPage(false));
-        _memberTab.onClick.AddListener(() => ShowPage(true));
         _equipment.onClick.AddListener(ChooseEquipment); _log.onClick.AddListener(OpenLog); _logClose.onClick.AddListener(CloseLog);
         _view.SelectionChanged += Refresh; _view.ActionRequested += Choose;
         _escape = new InputAction("Close expedition", InputActionType.Button, "<Keyboard>/escape");
@@ -91,6 +88,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         for (int i = 0; i < _tokens.Length; i++)
         {
             int id = i;
+            _view.BindMemberClicks(_tokens[i], id, memberSlot: true);
             _tokens[i].EnableDrag(_view.ListViewport, () => { if (_draft != null && _draft.Contains(id) && _equipmentSoldier < 0) { _view.SelectSoldier(id); Choose(); } });
         }
         for (int i = 0; i < _emptySlots.Length; i++) _emptySlots[i] = Instantiate(_emptySlotPrefab, _members);
@@ -144,7 +142,9 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     {
         if (_equipmentSoldier >= 0)
         {
-            int weapon = _view.SelectedWeapon, owner = _roster.WeaponOwner(weapon);
+            int weapon = _view.SelectedWeapon;
+            if (!_roster.IsUsableWeapon(weapon)) return;
+            int owner = _roster.WeaponOwner(weapon);
             if (owner >= 0 && _roster.Soldiers[owner].Expedition != null) return;
             if (_roster.TryEquip(_equipmentSoldier, weapon)) ChooseEquipment(); else Refresh();
             return;
@@ -180,7 +180,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
             _targetName.text = _data.Regions[target].Name;
             _ownerName.text = _data.Nations[_state.Owner(target)].Name;
             _days.text = $"{days}日";
-            _targetNotice.text = targetReady ? "遠征可能・到着すると領地を獲得" : ownTerritory ? "自国の領地" : _state.Active.Any(trip => trip.Target == target) ? "遠征不可・すでに部隊が遠征中" : "遠征不可・自領に隣接していない";
+            _targetNotice.text = targetReady ? "遠征可能・到着すると戦闘" : ownTerritory ? "自国の領地" : _state.Active.Any(trip => trip.Target == target) ? "遠征不可・すでに部隊が遠征中" : "遠征不可・自領に隣接していない";
         }
         else { _targetName.text = "領地を選ぶ"; _targetNotice.text = "明るい境界の領地へ遠征できる"; }
         _targetNotice.color = targetReady ? CountryGovernmentTheme.PositiveInk :
@@ -192,7 +192,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
             bool selected = _draft.Contains(i); _tokens[i].gameObject.SetActive(selected);
             if (!selected) continue;
             int weapon = _draft.Weapon(i);
-            _tokens[i].Refresh(_roster.Data.Soldiers[i].Name, _roster.Data.Soldiers[i].Icon, weapon < 0 ? "武器なし" : _roster.Data.Weapons[weapon].Name, _view.SelectedSoldier == i, weapon < 0);
+            _tokens[i].Refresh(_roster.Data.Soldiers[i].Name, _roster.Data.Soldiers[i].Icon, weapon < 0 ? "武器なし" : _roster.Weapon(weapon).Name, _view.SelectedSoldier == i, weapon < 0);
         }
         for (int i = 0; i < _emptySlots.Length; i++) _emptySlots[i].SetActive(i < 26 - _draft.Members.Count);
         _view.PreviewEquipment(_draft);
@@ -202,7 +202,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         if (_equipmentSoldier >= 0)
         {
             int owner = _roster.WeaponOwner(_view.SelectedWeapon);
-            bool available = owner < 0 || _roster.Soldiers[owner].Expedition == null;
+            bool available = _roster.IsUsableWeapon(_view.SelectedWeapon) && (owner < 0 || _roster.Soldiers[owner].Expedition == null);
             _view.SetAction("この武器を装備", available, available ? "選択すると装備を変更する" : "帰還まで持ち出し中");
         }
         else
@@ -213,16 +213,20 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         }
         bool valid = _state.ValidateDeparture(_draft.Target, _draft.Members, _draft.Weapons(), out string departureReason);
         bool membersReady = _draft.Members.Count > 0;
-        CountryGovernmentTheme.SelectTab(_targetTab, !_showingMembers);
-        CountryGovernmentTheme.SelectTab(_memberTab, _showingMembers);
-        _targetStep.text = targetReady ? "遠征先 ✓" : "遠征先";
-        _memberStep.text = membersReady ? "編成 ✓" : "編成";
+        UpdateStep(_targetStep, "領地選択", !_showingMembers, targetReady);
+        UpdateStep(_memberStep, "編成", _showingMembers, valid);
         bool missingWeapon = _draft.Members.Any(id => _roster.EquippedWeapon(id) < 0);
         bool canWarn = targetReady && membersReady && missingWeapon && _draft.Members.All(id => _state.CanSelect(id, _draft.Target, out _));
         _depart.interactable = valid || canWarn;
         _departureStatus.gameObject.SetActive(_showingMembers);
         _departureStatus.text = valid ? $"{_draft.Members.Count}人で出発" : departureReason;
         _departureStatus.color = valid ? CountryGovernmentTheme.Text : CountryGovernmentTheme.Error;
+    }
+
+    private static void UpdateStep(TextMeshProUGUI label, string name, bool current, bool ready)
+    {
+        label.text = $"{(current ? "› " : "")}{name}{(ready ? " ✓" : "")}";
+        label.color = current ? CountryGovernmentTheme.AccentText : CountryGovernmentTheme.Muted;
     }
 
     private void ShowPage(bool formation)
@@ -234,6 +238,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         _formationPage.SetActive(formation);
         _next.gameObject.SetActive(!formation);
         _depart.gameObject.SetActive(formation);
+        _back.GetComponentInChildren<TextMeshProUGUI>().text = formation ? "‹ 領地を選ぶ" : CountryGovernmentTheme.CountryReturnText;
         Refresh();
         _back.Select();
     }
@@ -249,22 +254,34 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         if (!_state.ValidateDeparture(_draft.Target, _draft.Members, _draft.Weapons(), out _))
         {
             var unarmed = _draft.Members.Where(id => _roster.EquippedWeapon(id) < 0).Select(id => _roster.Data.Soldiers[id].Name).ToArray();
-            if (unarmed.Length > 0) _confirmation.ShowDetails("武器が未設定", string.Join("、", unarmed) + "の武器を設定する");
+            if (unarmed.Length > 0) _confirmation.ShowDetails("武器を選ぶ", string.Join("、", unarmed) + "の武器を設定する");
             else Refresh();
             return;
         }
         int target = _draft.Target; int[] members = _draft.Members.ToArray(), weapons = _draft.Weapons();
         var trip = new CountryExpeditionTrip(target, _state.Today, _data.TravelDays(target), members, weapons);
-        string body = CountryExpeditionRow.Details(_state, trip, _roster.Data, false) + "\n\n帰還までメンバーと装備は変更できない。";
+        string body = $"1人につきCP{_data.BattleCPCost}・武器耐久1を消費する。\n\n" +
+            CountryExpeditionRow.Details(_state, trip, _roster, false) + "\n\n帰還までメンバーと装備は変更できない。";
+        string warnings = string.Join("\n", members.Select((id, i) => _roster.BattleWarning(id, weapons[i], _data.BattleCPCost)).Where(text => text.Length > 0));
+        if (warnings.Length > 0) body += "\n\n" + warnings;
         _confirmation.Show("遠征に出発", body, "出発する", () => {
             if (_state.TryDepart(target, members, weapons, out _))
             {
                 Close();
-                _departureNotice.text = $"{_data.Regions[target].Name}へ出発\n到着 {trip.Arrival} ／ 帰還 {trip.Return}";
-                _departureNotice.transform.parent.gameObject.SetActive(true); _departureNotice.gameObject.SetActive(true); _noticeUntil = Time.unscaledTime + 5;
+                ShowHudNotice($"{_data.Regions[target].Name}へ出発\n到着 {trip.Arrival} ／ 帰還 {trip.Return}");
             }
             else Refresh();
         });
+    }
+
+    internal void ShowBattleLaunchFailure() => ShowHudNotice("戦闘画面を開けなかった\n時間を進めると再試行できる");
+
+    private void ShowHudNotice(string message)
+    {
+        _departureNotice.text = message;
+        _departureNotice.transform.parent.gameObject.SetActive(true);
+        _departureNotice.gameObject.SetActive(true);
+        _noticeUntil = Time.unscaledTime + 5;
     }
     private void OpenLog()
     {
@@ -274,7 +291,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
         foreach (var trip in _state.Active)
         {
             var row = Instantiate(_rowPrefab, _logContent); _logRows.Add(row);
-            row.Bind(_state, trip, false, () => _logDetails.ShowDetails("遠征の状況", CountryExpeditionRow.Details(_state, trip, _roster.Data, false)));
+            row.Bind(_state, trip, false, () => _logDetails.ShowDetails("遠征の状況", CountryExpeditionRow.Details(_state, trip, _roster, false)));
         }
         _logClose.Select();
     }
@@ -285,6 +302,7 @@ public sealed class CountryExpeditionPanel : MonoBehaviour
     private void Back()
     {
         if (_equipmentSoldier >= 0) ChooseEquipment();
+        else if (_showingMembers) ShowPage(false);
         else Close();
     }
     public void Close()

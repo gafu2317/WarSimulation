@@ -14,12 +14,21 @@ public sealed class CountryExpeditionRow : MonoBehaviour
     {
         _name.text = state.Data.Regions[trip.Target].Name;
         _detail.text = $"帰還 {trip.Return}　{trip.Members.Count}人";
-        _status.text = returned ? "領地獲得　›" : trip.Returning ? "帰路　›" : "往路　›";
+        _status.text = returned ? $"{Outcome(trip)}　›" : trip.Returning ? "帰路　›" : state.Today.CompareTo(trip.Arrival) >= 0 ? "交戦待ち　›" : "往路　›";
         _status.color = CountryGovernmentTheme.Ink;
         _selected = selected;
     }
-    public static string Details(CountryExpeditionState state, CountryExpeditionTrip trip, CountryRosterData roster, bool returned)
-        => $"{state.Data.Regions[trip.Target].Name}　{(returned ? "領地獲得・帰還" : trip.Returning ? "領地獲得・帰路" : "往路")}\n" +
+    public void BindGovernment(string title, string summary, Action selected)
+    {
+        _name.text = title;
+        _detail.text = summary;
+        _status.text = "詳細　›";
+        _selected = selected;
+    }
+
+    private static string Outcome(CountryExpeditionTrip trip) => trip.Won == true ? "領地獲得" : "敗北";
+    public static string Details(CountryExpeditionState state, CountryExpeditionTrip trip, CountryRoster roster, bool returned)
+        => $"{state.Data.Regions[trip.Target].Name}　{(returned ? Outcome(trip) + "・帰還" : trip.Returning ? Outcome(trip) + "・帰路" : state.Today.CompareTo(trip.Arrival) >= 0 ? "交戦待ち" : "往路")}\n" +
            $"出発 {trip.Departure}　到着 {trip.Arrival}\n帰還 {trip.Return}　片道 {trip.Days}日\n\n" +
-           string.Join("\n", trip.Members.Select((id, i) => $"{roster.Soldiers[id].Name}　{roster.Weapons[trip.Weapons[i]].Name}"));
+           string.Join("\n", trip.Members.Select((id, i) => $"{roster.Data.Soldiers[id].Name}　{roster.Weapon(trip.Weapons[i]).Name}"));
 }

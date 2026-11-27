@@ -9,7 +9,13 @@ public sealed class CountryWorldMapData : ScriptableObject
     public Vector2[] Coastline = Array.Empty<Vector2>();
     public int HomeRegion;
     [Min(1)] public int BattleCPCost = 20;
+    [Min(1)] public int DefenseBattleCPCost = 15;
     [Min(1)] public int RaidMinDays = 20, RaidMaxDays = 30;
+    [Range(1, 200)] public int DefenseEnemyStartPercent = 85;
+    [Range(0, 100)] public int EnemyMonthlyGrowthPercent = 5;
+    [Range(0, 120)] public int EnemyGrowthMonths = 24;
+    [Min(1)] public int EnemySkillIntervalMonths = 3;
+    [Min(1)] public int BattleTimeLimitSeconds = 300;
     public CountryWorldNation[] Nations = Array.Empty<CountryWorldNation>();
     public CountryWorldRegion[] Regions = Array.Empty<CountryWorldRegion>();
     public int Capital(int nation) => nation == 0 ? HomeRegion : Nations[nation].CapitalRegion >= 0 ? Nations[nation].CapitalRegion : Array.FindIndex(Regions, region => region.InitialOwner == nation);
@@ -47,8 +53,14 @@ public sealed class CountryWorldMapData : ScriptableObject
 
     public void Validate()
     {
-        if (BattleCPCost < 1 || RaidMinDays < 1 || RaidMaxDays < RaidMinDays)
+        if (BattleCPCost < 1 || DefenseBattleCPCost < 1 || RaidMinDays < 1 || RaidMaxDays < RaidMinDays)
             throw new ArgumentException("Battle CP cost and raid intervals must be positive.");
+        if (DefenseEnemyStartPercent < 1 || DefenseEnemyStartPercent > 200)
+            throw new ArgumentException("The starting raid enemy stat percentage must be between 1 and 200.");
+        if (EnemyMonthlyGrowthPercent < 0 || EnemyMonthlyGrowthPercent > 100 ||
+            EnemyGrowthMonths < 0 || EnemyGrowthMonths > 120 || EnemySkillIntervalMonths < 1)
+            throw new ArgumentException("Enemy growth must have a nonnegative rate, a bounded duration and a positive skill interval.");
+        if (BattleTimeLimitSeconds < 1) throw new ArgumentException("Battle time limit must be positive.");
         if (Nations.Length < 2 || HomeRegion < 0 || HomeRegion >= Regions.Length || Regions[HomeRegion].InitialOwner != 0)
             throw new ArgumentException("World map requires a player home region and at least two nations.");
         if (Regions.Select(region => region.Id).Any(string.IsNullOrWhiteSpace) || Regions.Select(region => region.Id).Distinct().Count() != Regions.Length)

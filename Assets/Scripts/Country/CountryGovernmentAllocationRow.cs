@@ -23,14 +23,14 @@ public sealed class CountryGovernmentAllocationRow : MonoBehaviour
         _details.onClick.AddListener(() => details());
     }
 
-    public void Refresh(int amount, int maximum, int basis)
+    public void Refresh(int amount, int maximum, int basis, string effect)
     {
         _amount.text = CountryResourceDisplay.Format(amount);
-        _maximum.text = $"調整 {CountryResourceDisplay.Format(_facility.Minimum)}〜{CountryResourceDisplay.Format(maximum)}　100%＝{CountryResourceDisplay.Format(basis)}";
+        _maximum.text = $"調整 {CountryResourceDisplay.Format(_facility.FundingFloor)}〜{CountryResourceDisplay.Format(maximum)}　100%＝{CountryResourceDisplay.Format(basis)}";
         _slider.maxValue = Mathf.Max(0, basis);
         _slider.SetValueWithoutNotify(amount);
-        _scale.SetRange(_facility.Minimum, maximum);
-        _slider.interactable = basis > 0 && (maximum > _facility.Minimum || amount > _facility.Minimum);
-        _effect.text = _facility.Role;
+        _scale.SetRange(_facility.FundingFloor, maximum);
+        _slider.interactable = basis > 0 && (maximum > _facility.FundingFloor || amount > _facility.FundingFloor);
+        _effect.text = effect;
     }
 }

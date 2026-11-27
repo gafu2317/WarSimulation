@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.IO;
+using System.Globalization;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -80,33 +82,109 @@ public static class CountrySoldierBuilder
         if (existing != null) return existing;
         var data = ScriptableObject.CreateInstance<CountryRosterData>();
         data.Skills = AssetDatabase.LoadAssetAtPath<CombatSkillCatalog>("Assets/Data/Combat/Skills/CombatSkillCatalog.asset");
-        data.Soldiers = new CountrySoldierDefinition[26]; data.Weapons = new CountryWeaponDefinition[26];
-        for (int i = 0; i < 26; i++)
-        {
-            var kind = (WeaponKind)(i % 6 + 1);
-            string id = $"weapon-{i + 1:00}";
-            data.Weapons[i] = new CountryWeaponDefinition {
-                Id = id, Name = $"{CountryRoster.WeaponName(kind)}{i / 6 + 1:00}", Kind = kind,
-                Bonus = new CountrySoldierStats { HP = i % 4 * 2, STR = i % 5 + 1, INT = (i + 2) % 5, FAI = (i + 3) % 4, AGI = i % 3 }
-            };
-            data.Soldiers[i] = new CountrySoldierDefinition {
-                Id = $"soldier-{i + 1:00}", Name = $"兵士{i + 1:00}", InitialWeaponId = id, MaxCP = 100,
-                InitialStats = new CountrySoldierStats { HP = 100 + i * 3, STR = 10 + i % 7, INT = 9 + i % 5, FAI = 8 + i % 6, AGI = 10 + i % 4 }
-            };
-        }
         data.Schools = new[] {
-            new CountrySchoolDefinition { Name = "戦士学校", Facility = FacilityType.WarriorSchool, FirstWeapon = WeaponKind.Sword, SecondWeapon = WeaponKind.Shield,
+            new CountrySchoolDefinition { Name = "戦士学校", FirstWeapon = WeaponKind.Sword, SecondWeapon = WeaponKind.Shield,
                 FirstSkills = new[] { SkillId.Sword_QuickSlash, SkillId.Sword_StrongSlash, SkillId.None, SkillId.None, SkillId.None },
                 SecondSkills = new[] { SkillId.Shield_ShoulderGuard, SkillId.Shield_IronWall, SkillId.Shield_Taunt, SkillId.None, SkillId.None } },
-            new CountrySchoolDefinition { Name = "魔法学校", Facility = FacilityType.MagicSchool, FirstWeapon = WeaponKind.Wand, SecondWeapon = WeaponKind.Grimoire,
+            new CountrySchoolDefinition { Name = "魔法学校", FirstWeapon = WeaponKind.Wand, SecondWeapon = WeaponKind.Grimoire,
                 FirstSkills = new[] { SkillId.Wand_ArcaneBlast, SkillId.Wand_AreaBlast, SkillId.Wand_GodsHand, SkillId.None, SkillId.None },
                 SecondSkills = new[] { SkillId.Grimoire_StrDebuff, SkillId.StatDebuff_AGI, SkillId.Grimoire_Bind, SkillId.Grimoire_Poison, SkillId.Grimoire_Stealth } },
-            new CountrySchoolDefinition { Name = "教会", Facility = FacilityType.Church, FirstWeapon = WeaponKind.Bible, SecondWeapon = WeaponKind.Rosary,
+            new CountrySchoolDefinition { Name = "教会", FirstWeapon = WeaponKind.Bible, SecondWeapon = WeaponKind.Rosary,
                 FirstSkills = new[] { SkillId.Bible_StrBuff, SkillId.Bible_FaiBuff, SkillId.Bible_IntBuff, SkillId.Bible_Invulnerable, SkillId.Bible_Gotsume },
                 SecondSkills = new[] { SkillId.Rosary_DistantHeal, SkillId.Rosary_CloseHeal, SkillId.Rosary_Regeneration, SkillId.Rosary_HealingArea, SkillId.Rosary_SacrificeThunder } }
         };
+        ImportRoster(data, ReadRosterSource(), createSoldiers: true);
         AssetDatabase.CreateAsset(data, DataPath);
         return data;
+    }
+
+    [MenuItem("WarSim/Country/Import Roster CSV")]
+    public static void ImportRosterCsv()
+    {
+        var data = AssetDatabase.LoadAssetAtPath<CountryRosterData>(DataPath);
+        if (data == null) { BuildData(); return; }
+        ImportRoster(data, ReadRosterSource());
+        EditorUtility.SetDirty(data);
+        AssetDatabase.SaveAssetIfDirty(data);
+    }
+
+    private static string[][] ReadRosterSource() => File.ReadLines("Assets/Data/Country/Source/基礎ステータス.csv")
+        .Where(line => !string.IsNullOrWhiteSpace(line))
+        .Select(line => line.Split(',').Select(cell => cell.Trim()).ToArray()).ToArray();
+
+    private static void ImportRoster(CountryRosterData data, string[][] table, bool createSoldiers = false)
+    {
+        if (table.Length < 2 || table.Skip(1).Any(row => row.Length != table[0].Length))
+            throw new FormatException("The roster CSV rows must match the header width.");
+
+        string[] statNames = { "HP", "STR", "INT", "FAI", "AGI" };
+        int NameColumn(string name, string prefix)
+        {
+            int column = Array.IndexOf(table[0], name);
+            if (column < 0 || !table[0].Skip(column + 1).Take(statNames.Length).SequenceEqual(statNames.Select(stat => prefix + stat)))
+                throw new FormatException($"Invalid roster CSV section: {name}");
+            return column;
+        }
+
+        var rows = table.Skip(1).ToArray();
+        int soldierColumn = NameColumn("キャラ名", "基礎");
+        int schoolColumn = NameColumn("施設名", "増加");
+        int weaponColumn = NameColumn("武器名", "増加");
+        var soldierRows = rows.Where(row => row[soldierColumn] is not ("" or "下限-上限" or "平均" or "分散")).ToArray();
+        var soldiers = soldierRows.ToDictionary(row => row[soldierColumn], row => ReadStats(row, soldierColumn + 1, false));
+        var schools = rows.Where(row => row[schoolColumn].Length > 0).ToDictionary(row => row[schoolColumn], row => ReadStats(row, schoolColumn + 1, true));
+        var weapons = rows.Where(row => row[weaponColumn].Length > 0).ToDictionary(row => row[weaponColumn], row => ReadStats(row, weaponColumn + 1, false));
+        var roster = createSoldiers
+            ? soldierRows.Select((row, i) => new CountrySoldierDefinition { Id = $"soldier-{i + 1:00}", Name = row[soldierColumn] }).ToArray()
+            : data.Soldiers;
+        if (soldiers.Count != 26 || roster.Length != soldiers.Count || roster.Select(soldier => soldier.Name).Distinct().Count() != soldiers.Count ||
+            data.Schools.Length * 5 != schools.Count || data.Schools.Select(school => school.Name).Distinct().Count() != data.Schools.Length ||
+            weapons.Count != 24)
+            throw new FormatException("The CSV does not match the roster, schools and weapon catalogue.");
+
+        var stats = roster.Select(soldier => soldiers[soldier.Name]).ToArray();
+        var bonuses = data.Schools.Select(school => Enumerable.Range(1, 5).Select(level => schools[$"{school.Name}lv{level}"]).ToArray()).ToArray();
+        var templates = (from tier in Enumerable.Range(1, 4)
+                         from kind in Enumerable.Range(1, 6).Select(value => (WeaponKind)value)
+                         let title = CountryRoster.WeaponName(kind)
+                         let name = tier == 1 ? $"訓練用{title}" : title + "ⅡⅢⅣ"[tier - 2]
+                         let previous = data.Weapons.FirstOrDefault(weapon => weapon.Tier == tier && weapon.Kind == kind)
+                         select new CountryWeaponDefinition {
+                             Id = $"weapon-{tier}-{(int)kind}", Name = name, Kind = kind, Tier = tier,
+                             Bonus = weapons[name], Image = previous?.Image, MaxDurability = previous?.MaxDurability ?? 5
+                         }).ToArray();
+        var government = AssetDatabase.LoadAssetAtPath<CountryGovernmentData>("Assets/Data/Country/CountryGovernmentExample.asset");
+        if (government == null) throw new InvalidOperationException("Country government data is missing.");
+
+        Undo.RecordObject(data, "Import Country Roster CSV");
+        for (int i = 0; i < stats.Length; i++)
+        {
+            roster[i].InitialStats = stats[i];
+            roster[i].InitialWeaponId = "";
+        }
+        data.Soldiers = roster;
+        for (int i = 0; i < bonuses.Length; i++) data.Schools[i].LevelBonusPercent = bonuses[i];
+        data.Weapons = templates;
+        data.Government = government;
+        data.Provisional = false;
+    }
+
+    private static CountrySoldierStats ReadStats(string[] row, int start, bool percent)
+    {
+        int Value(int offset)
+        {
+            string cell = row[start + offset];
+            if (percent && cell.Length == 0) return 0;
+            if (percent)
+            {
+                if (!cell.EndsWith("%", StringComparison.Ordinal)) throw new FormatException($"Invalid percentage: {cell}");
+                cell = cell[..^1];
+            }
+            int value = int.Parse(cell, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            if (value < 0) throw new FormatException($"Negative stat: {cell}");
+            return value;
+        }
+        return new CountrySoldierStats { HP = Value(0), STR = Value(1), INT = Value(2), FAI = Value(3), AGI = Value(4) };
     }
 
     private static Sprite WeaponIcon(WeaponKind kind)

@@ -12,6 +12,7 @@ public sealed class CountrySafeArea : MonoBehaviour
         public bool Horizontal, Vertical;
     }
 
+    [SerializeField] private bool _matchPhoneOnDesktopWeb;
     [SerializeField] private Target[] _targets = System.Array.Empty<Target>();
     private DrivenRectTransformTracker _tracker;
     private Rect _area;
@@ -56,11 +57,45 @@ public sealed class CountrySafeArea : MonoBehaviour
             Apply(new Rect(Vector2.zero, displaySize), display);
         }
         if (Mathf.RoundToInt(displaySize.x) != size.x || Mathf.RoundToInt(displaySize.y) != size.y) return;
-        Apply(Screen.safeArea, size);
+        Apply(_matchPhoneOnDesktopWeb ? GetCountryArea(size) : Screen.safeArea, size);
     }
 
-    public void Configure(Target[] targets)
+    internal static Rect GetCountryArea(Vector2Int size)
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        _isDesktopBrowser ??= CountryIsDesktopBrowser() != 0;
+        if (_isDesktopBrowser.Value)
+        {
+            // iOS Notch Device (1170x2532), LandscapeLeft.
+            float side = size.x * (141f / 2532f);
+            float bottom = size.y * (63f / 1170f);
+            return Rect.MinMaxRect(side, bottom, size.x - side, size.y);
+        }
+#endif
+        return Screen.safeArea;
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    private static bool? _isDesktopBrowser;
+
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    private static extern int CountryIsDesktopBrowser();
+#endif
+
+    internal static void Track(RectTransform rect)
+    {
+        if (rect == null) return;
+        var canvas = rect.GetComponentInParent<Canvas>(true);
+        if (canvas == null) return;
+        var safe = canvas.rootCanvas.GetComponent<CountrySafeArea>() ?? canvas.rootCanvas.gameObject.AddComponent<CountrySafeArea>();
+        System.Array.Resize(ref safe._targets, safe._targets.Length + 1);
+        safe._targets[^1] = new Target { Rect = rect, Min = rect.anchorMin, Max = rect.anchorMax, Horizontal = true, Vertical = true };
+        safe._size = default;
+    }
+
+    public void Configure(Target[] targets, bool matchPhoneOnDesktopWeb = false)
+    {
+        _matchPhoneOnDesktopWeb = matchPhoneOnDesktopWeb;
         _targets = targets;
         _size = default;
     }

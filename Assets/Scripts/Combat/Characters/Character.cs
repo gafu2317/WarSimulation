@@ -31,10 +31,12 @@ public class Character : MonoBehaviour
 
     // キャラクターの基礎データ
     [field: SerializeField] public CharacterData CharacterData { private set; get; }
-    public string DisplayName =>
+    internal string RuntimeDisplayName { get; set; }
+    internal string RuntimeWeaponName { get; set; }
+    public string DisplayName => RuntimeDisplayName ?? (
         CharacterData != null && !string.IsNullOrWhiteSpace(CharacterData.CharacterName)
             ? CharacterData.CharacterName
-            : gameObject.name;
+            : gameObject.name);
     public int BattleParticipantId { get; private set; }
     public CombatTeam Team => _team;
     public CombatVision Vision => _vision != null ? _vision : GetComponent<CombatVision>();
@@ -391,13 +393,11 @@ public class Character : MonoBehaviour
             _ => 0,
         };
         int adjustment = _runtimeStatAdjustments.TryGetValue(stat, out int value) ? value : 0;
-        int configured = Mathf.Max(1, baseValue + weapon.GetStatBonus(stat) + adjustment);
         CombatAiPersonalityKind kind = PersonalityProfile?.Kind ?? CombatAiPersonalityKind.Neutral;
         float multiplier = stat == CombatStat.AGI && kind == CombatAiPersonalityKind.Reckless && _recklessAgiMultiplierOverride.HasValue
             ? _recklessAgiMultiplierOverride.Value
             : CombatAiPersonalityProfile.GetStatMultiplier(kind, stat);
-        configured = Mathf.Max(1, Mathf.RoundToInt(configured * multiplier));
-        return configured;
+        return CombatAiPersonalityProfile.ApplyStatMultiplier(baseValue + weapon.GetStatBonus(stat) + adjustment, multiplier);
     }
 
     public void SetLearnedSkillIds(IEnumerable<SkillId> skillIds)

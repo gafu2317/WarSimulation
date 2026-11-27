@@ -74,9 +74,10 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     public CountryCameraController CameraControls => _cameraControls;
     public CountryComparisonView Comparison => _comparison;
     public CountryFacilityPopup FacilityPopup => _facilityPopup;
-    private CountryDate PlanningStart => !_monthlyFlow && _date.CurrentDay == 1
-        ? CountryDate.From(_date).AddMonths(1) : CountryDate.From(_date).PlanningStart;
-    private string PlanningMonth => _monthlyFlow && _date.CurrentDay == 1 ? "今月" : "来月";
+    private CountryDate PlanningStart => CountryDate.From(_date).PlanningStart;
+    private CountryDate FundingStart => _resources.HasAppliedFunding(PlanningStart) ? PlanningStart.AddMonths(1) : PlanningStart;
+    private CountryDate ResourceStart => _page == Page.Budget ? FundingStart : PlanningStart;
+    private string MonthLabel(CountryDate start) => start.MonthIndex == _date.ElapsedMonths ? "今月" : "来月";
 
     private void Awake()
     {
@@ -126,6 +127,7 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     {
         _date.OnMonthChanged += MonthChanged;
         _resources.OnResourcesChanged += ResourcesChanged;
+        _resources.OnGovernmentChanged += ResourcesChanged;
         ResourcesChanged();
     }
 
@@ -138,13 +140,10 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         {
             int id = i;
             var facility = _data.Facilities[i];
-            if (facility.InitialLevel > 0)
-            {
-                var row = Instantiate(_allocationPrefab, _budgetContent);
-                row.name = facility.Name;
-                row.Bind(facility, value => { _draft.SetFunding(id, value); Feedback(""); Refresh(); }, () => FundingDetails(id));
-                _budgetRows[i] = row;
-            }
+            var row = Instantiate(_allocationPrefab, _budgetContent);
+            row.name = facility.Name;
+            row.Bind(facility, value => { _draft.SetFunding(id, value); Feedback(""); Refresh(); }, () => FundingDetails(id));
+            _budgetRows[i] = row;
             var choice = Instantiate(_choicePrefab, _constructionContent);
             choice.name = facility.Name;
             choice.Bind(facility.Name, () => { _building = id; Feedback(""); Refresh(); });
@@ -152,18 +151,26 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         }
     }
 
-    private void MonthChanged(int month) { _monthlyFlow = true; Open(Page.Income); }
+    private void MonthChanged(int month) => OpenMonthlyReport();
+    internal void OpenMonthlyReport() { _monthlyFlow = true; Open(Page.Income); }
     private void ResourcesChanged()
     {
+        UpdateForecast(ResourceStart);
+        if (IsOpen) Refresh();
+    }
+
+    private void UpdateForecast(CountryDate start)
+    {
         var receipt = _resources.LastIncomeReceipt;
-        int startMonth = PlanningStart.MonthIndex;
+        int startMonth = start.MonthIndex;
         bool hasReceipt = receipt.Recorded && receipt.MonthIndex == startMonth - 1;
         bool projectIncome = startMonth > _date.ElapsedMonths && !hasReceipt;
         var income = hasReceipt ? (receipt.Tax, receipt.Wood, receipt.Ore) : _resources.EstimateMonthlyIncome();
-        _draft.UpdateResources(_resources.Treasury + (projectIncome ? income.Tax : 0), income.Tax,
-            _resources.Wood + (projectIncome ? income.Wood : 0),
-            _resources.Ore + (projectIncome ? income.Ore : 0), taxIncluded: hasReceipt || projectIncome);
-        if (IsOpen) Refresh();
+        _draft.UpdateResources(Forecast(_resources.Treasury, income.Tax), income.Tax,
+            Forecast(_resources.Wood, income.Wood), Forecast(_resources.Ore, income.Ore),
+            reserveFunding: FundingStart.CompareTo(start) == 0, reserveConstruction: PlanningStart.CompareTo(start) == 0);
+
+        int Forecast(int balance, int gain) => projectIncome ? (int)Math.Min((long)balance + gain, int.MaxValue) : balance;
     }
 
     public void OpenIncome() => OpenDirect(Page.Income);
@@ -205,7 +212,6 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         CloseDetails();
         _expeditionReport?.CloseDetails();
         _training.CloseConfirmation();
-        if (!_monthlyFlow) _resources.SetGovernmentDraft(_draft.Copy());
         _monthlyFlow = false;
         _window.SetActive(false);
         _cancel?.Disable();
@@ -430,31 +436,40 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     {
         bool report = _page == Page.Income;
         bool budget = _page == Page.Budget;
-        bool usePaper = _monthlyFlow && budget && _budgetCommand != null;
-        _nextPage.gameObject.SetActive(_monthlyFlow && !usePaper);
-        _backButton.gameObject.SetActive(!_monthlyFlow || !report);
+        bool usePaper = !_monthlyFlow && budget && _budgetCommand != null;
+        bool directConfirm = !_monthlyFlow && (budget || _page == Page.Construction);
+        _nextPage.gameObject.SetActive((_monthlyFlow || directConfirm) && !usePaper);
+        _backButton.gameObject.SetActive(true);
         _backButton.GetComponentInChildren<TextMeshProUGUI>(true).text = !_monthlyFlow || report ? Theme.CountryReturnText : $"‹ {PageNames[(int)_page - 1]}へ";
-        _nextPage.GetComponentInChildren<TextMeshProUGUI>().text = _page == Page.Training ? "完了" : $"{PageNames[(int)_page + 1]}へ ›";
-        Theme.PlacePageItem((RectTransform)_nextPage.transform, 1,
-            report || budget ? -Theme.PageBarInset : -Theme.PageBarInset - Theme.PageBarActionWidth - 12,
-            report || budget ? Theme.PageBarActionWidth : Theme.PageBarBackWidth);
+        _nextPage.GetComponentInChildren<TextMeshProUGUI>().text = directConfirm ? "決定" : _page == Page.Training ? "完了" : $"{PageNames[(int)_page + 1]}へ ›";
+        float nextInset = _monthlyFlow || report || budget
+            ? Theme.PageBarInset : Theme.PageBarInset + Theme.PageBarActionWidth + 12;
+        float nextWidth = !_monthlyFlow && (report || budget) ? Theme.PageBarActionWidth : Theme.PageBarBackWidth;
+        Theme.PlacePageItem((RectTransform)_nextPage.transform, 1, -nextInset, nextWidth);
+        var command = _page == Page.Construction ? _constructionCommand ?? _confirmButton :
+            _page == Page.Training ? _trainingCommand ?? _confirmButton : null;
+        if (command != null)
+        {
+            float inset = Theme.PageBarInset + (_monthlyFlow ? nextWidth + 12 : 0);
+            Theme.PlacePageItem((RectTransform)command.transform, 1, -inset, Theme.PageBarActionWidth);
+        }
 
         var treasury = (RectTransform)_treasuryText.transform.parent;
         treasury.gameObject.SetActive(report || budget);
-        if (_monthlyFlow)
-            Theme.PlacePageItem(treasury, 1, report ? -Theme.PageBarInset - Theme.PageBarActionWidth - 24 : -Theme.PageBarInset,
+        if (_monthlyFlow || budget)
+            Theme.PlacePageItem(treasury, 1, report ? -Theme.PageBarInset - nextWidth - 24 : -Theme.PageBarInset,
                 report ? 174 : Theme.PageBarActionWidth, report ? Theme.PageBarHeight / 2 : Theme.PageBarHeight + 18,
                 report ? Theme.PageBarButtonHeight : Theme.PageBarNoticeHeight);
         else
             Theme.PlacePageItem(treasury, 1, -Theme.PageBarInset, 174);
-        _treasuryCaption.gameObject.SetActive(!_monthlyFlow || report);
-        _treasuryText.fontSize = budget && _monthlyFlow ? 24 : 34;
-        if (budget && _monthlyFlow) Place(_treasuryText.transform, 0, 1);
+        _treasuryCaption.gameObject.SetActive(report);
+        _treasuryText.fontSize = budget ? 24 : 34;
+        if (budget) Place(_treasuryText.transform, 0, 1);
         else PlaceStack(_treasuryText.transform, 0, 1, false);
         if (_budgetCommand != null)
         {
             _budgetCommand.gameObject.SetActive(usePaper);
-            if (usePaper) _budgetCommandLabel.text = "建設へ ›";
+            if (usePaper) _budgetCommandLabel.text = _monthlyFlow ? "建設へ ›" : "決定";
         }
     }
     private void PreviousPage()
@@ -479,10 +494,17 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
 
     private void Complete()
     {
-        if ((_monthlyFlow || _page == Page.Budget || _page == Page.Construction) && !_draft.CanConfirmFunding) { Feedback("配分に必要な資金が不足している", true); return; }
-        if (!_training.ValidateDrafts(out string reason)) { Feedback(reason, true); return; }
-        if (!_training.CommitDrafts(out reason)) { Feedback(reason, true); return; }
-        _resources.SetGovernmentDraft(_draft);
+        bool funding = _monthlyFlow || _page == Page.Budget;
+        bool construction = _monthlyFlow || _page == Page.Construction;
+        if (funding)
+        {
+            UpdateForecast(FundingStart);
+            bool canFund = _draft.CanConfirmFunding;
+            UpdateForecast(ResourceStart);
+            if (!canFund) { Feedback("配分に必要な資金が不足している", true); return; }
+        }
+        if ((_monthlyFlow || _page == Page.Training) && !_training.CommitDrafts(out string reason)) { Feedback(reason, true); return; }
+        _resources.ConfirmGovernment(_draft, CountryDate.From(_date), FundingStart, funding, construction);
         Close();
     }
 
@@ -515,12 +537,12 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         UpdatePageControls();
         _dateText.text = _page switch
         {
-            Page.Budget => $"{PlanningStart.Month}月分",
+            Page.Budget => $"{FundingStart.Month}月分",
             Page.Construction => $"{PlanningStart}着工",
             _ => $"{_date.CurrentMonth}月{_date.CurrentDay}日"
         };
         string treasury = CountryResourceDisplay.Format(_page == Page.Income ? _resources.Treasury : _draft.TreasuryForecast);
-        _treasuryText.text = _monthlyFlow && _page == Page.Budget ? $"計画後国庫 {treasury}" : treasury;
+        _treasuryText.text = _page == Page.Budget ? $"計画後国庫 {treasury}" : treasury;
         _treasuryCaption.text = _page == Page.Income ? "国庫" : "計画後国庫";
         var receipt = _resources.LastIncomeReceipt;
         _incomeTitle.text = "報告書";
@@ -529,8 +551,8 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         if (_taxStock != null) _taxStock.text = CountryResourceDisplay.Format(_resources.Treasury);
         _woodStock.text = CountryResourceDisplay.Format(_resources.Wood); _oreStock.text = CountryResourceDisplay.Format(_resources.Ore);
         if (_page == Page.Income) _expeditionReport?.Refresh();
-        _budgetTitle.text = $"{PlanningMonth} {PlanningStart.Month}月の配分";
-        _constructionTitle.text = $"{PlanningMonth} {PlanningStart.Month}月の建設";
+        _budgetTitle.text = $"{MonthLabel(FundingStart)} {FundingStart.Month}月の配分";
+        _constructionTitle.text = $"{MonthLabel(PlanningStart)} {PlanningStart.Month}月の建設";
         _taxBudgetCaption.text = _monthlyFlow && _date.CurrentDay == 1 && receipt.Recorded ? "税収" : "税収見込";
         _taxBudget.text = CountryResourceDisplay.Format(_draft.Tax);
         _fundingTotal.text = CountryResourceDisplay.Format(_draft.FundingTotal);
@@ -543,7 +565,11 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         _treasuryToggleLabel.text = "国庫も使う";
         _fundingBasis.text = $"100%の基準：{(_draft.UseTreasury ? "税収＋国庫" : "税収")} {CountryResourceDisplay.Format(_draft.FundingBasis)}　／　金色の区間で調整";
         for (int i = 0; i < _budgetRows.Length; i++)
-            if (_budgetRows[i] != null) _budgetRows[i].Refresh(_draft.Funding(i), _draft.MaximumFunding(i), _draft.FundingBasis);
+        {
+            bool built = _draft.Level(i) > 0;
+            _budgetRows[i].gameObject.SetActive(built);
+            if (built) _budgetRows[i].Refresh(_draft.Funding(i), _draft.MaximumFunding(i), _draft.FundingBasis, FundingEffect(i));
+        }
         RefreshConstruction();
         _training.Refresh();
         bool ordered = _building >= 0 && _draft.IsOrdered(_building);
@@ -610,7 +636,7 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         for (int i = 0; i < _buildingRows.Length; i++)
         {
             _buildingRows[i].gameObject.SetActive(_draft.IsCandidate(i, _upgrade));
-            _buildingRows[i].Refresh(_draft.IsOrdered(i) ? "計画済み" : _upgrade ? $"Lv.{_data.Facilities[i].InitialLevel}" : "未建設", i == _building);
+            _buildingRows[i].Refresh(_draft.IsOrdered(i) ? "計画済み" : _upgrade ? $"Lv.{_draft.Level(i)}" : "未建設", i == _building);
         }
         SetSelected(_upgradeButton, _upgrade); SetSelected(_newButton, !_upgrade);
         _orderCount.text = $"建設計画 {_draft.OrderCount}件";
@@ -622,7 +648,7 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         var cost = _draft.Cost(_building, _upgrade);
         _constructionName.text = facility.Name;
         _constructionSymbol.SetFacility(facility.Name);
-        _level.text = _upgrade ? $"Lv.{facility.InitialLevel} → Lv.{facility.InitialLevel + 1}" : "新築 Lv.1";
+        _level.text = _upgrade ? $"Lv.{_draft.Level(_building)} → Lv.{_draft.Level(_building) + 1}" : "新築 Lv.1";
         _moneyCost.text = CountryResourceDisplay.Format(cost.Money); _woodCost.text = CountryResourceDisplay.Format(cost.Wood); _oreCost.text = CountryResourceDisplay.Format(cost.Ore);
         _months.text = $"{cost.Months}か月";
         _constructionEffect.text = ConstructionEffect(facility);
@@ -630,21 +656,41 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
 
     private string ConstructionEffect(CountryGovernmentFacility facility)
     {
+        if (_upgrade && facility.Name == CountryGovernmentData.SpiritSchool)
+        {
+            int spiritLevel = _draft.Level(_building);
+            int before = CountryGovernmentData.SpiritCPBonus(spiritLevel);
+            int after = CountryGovernmentData.SpiritCPBonus(spiritLevel + 1);
+            return $"全員の最大CP ＋{before} → ＋{after}";
+        }
         if (!_upgrade || !facility.TrainingSchool) return facility.Role;
-        int level = facility.InitialLevel;
+        int level = _draft.Level(_building);
         return $"訓練定員 {Mathf.Min(7, level + 2)}人 → {Mathf.Min(7, level + 3)}人 ／ 習得できる学校Lv {level} → {Mathf.Min(5, level + 1)}";
+    }
+
+    private string FundingEffect(int id)
+    {
+        var facility = _data.Facilities[id];
+        if (facility.Name != CountryGovernmentData.Blacksmith || _resources.Roster == null) return facility.Role;
+        if (_draft.Funding(id) < facility.Minimum) return "配分不足・製作なし";
+        float chance = _resources.Roster.HighestTierChance(_draft.Level(id), _draft.Funding(id), facility.Minimum);
+        return $"最高段階の出現率　{chance:P0}";
     }
 
     private void FundingDetails(int id)
     {
         var facility = _data.Facilities[id];
-        Details(facility.Name + "の配分", $"{PlanningMonth} {PlanningStart}から適用\n最低必要額　{CountryResourceDisplay.Format(facility.Minimum)}\n今回の配分　{CountryResourceDisplay.Format(_draft.Funding(id))}\n追加配分　{CountryResourceDisplay.Format(_draft.Funding(id) - facility.Minimum)}\n\n施設の役割\n{facility.Role}");
+        string effect = facility.Name == CountryGovernmentData.Blacksmith ? "\n" + FundingEffect(id) : "";
+        string role = facility.Role.Length == 0 ? "" : $"\n\n施設の役割\n{facility.Role}";
+        Details(facility.Name + "の配分", $"{MonthLabel(FundingStart)} {FundingStart}から適用\n最低必要額　{CountryResourceDisplay.Format(facility.Minimum)}\n今回の配分　{CountryResourceDisplay.Format(_draft.Funding(id))}\n追加配分　{CountryResourceDisplay.Format(Math.Max(0, _draft.Funding(id) - facility.Minimum))}{role}{effect}");
     }
     private void ConstructionDetails()
     {
         if (_building < 0) return;
         var facility = _data.Facilities[_building]; var cost = _draft.Cost(_building, _upgrade);
-        Details(facility.Name + "の建設内容", $"{_level.text}\n{PlanningMonth} {PlanningStart}着工 → {PlanningStart.AddMonths(cost.Months)}完成予定\n費用　{CountryResourceDisplay.Format(cost.Money)} ／ 木材 {CountryResourceDisplay.Format(cost.Wood)} ／ 鉱石 {CountryResourceDisplay.Format(cost.Ore)}\n工期　{cost.Months}か月\n\n完成後の役割\n{ConstructionEffect(facility)}");
+        string effect = ConstructionEffect(facility);
+        string role = effect.Length == 0 ? "" : $"\n\n完成後の役割\n{effect}";
+        Details(facility.Name + "の建設内容", $"{_level.text}\n{MonthLabel(PlanningStart)} {PlanningStart}着工 → {PlanningStart.AddMonths(cost.Months)}完成予定\n費用　{CountryResourceDisplay.Format(cost.Money)} ／ 木材 {CountryResourceDisplay.Format(cost.Wood)} ／ 鉱石 {CountryResourceDisplay.Format(cost.Ore)}\n工期　{cost.Months}か月{role}");
     }
     private void Details(string title, string body)
     {
@@ -672,7 +718,7 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
         _status.text = message;
         _status.color = error ? Theme.Error : Theme.Text;
         _status.gameObject.SetActive(!string.IsNullOrEmpty(message));
-        if (_monthlyFlow && _page == Page.Budget)
+        if (_page == Page.Budget)
             _treasuryText.transform.parent.gameObject.SetActive(string.IsNullOrEmpty(message));
     }
     private static void SetSelected(UnityEngine.UI.Button button, bool selected)
@@ -683,7 +729,11 @@ public sealed class CountryGovernmentPanel : MonoBehaviour
     private void OnDisable()
     {
         if (_date != null) _date.OnMonthChanged -= MonthChanged;
-        if (_resources != null) _resources.OnResourcesChanged -= ResourcesChanged;
+        if (_resources != null)
+        {
+            _resources.OnResourcesChanged -= ResourcesChanged;
+            _resources.OnGovernmentChanged -= ResourcesChanged;
+        }
         Close();
     }
     private void OnDestroy() => _cancel?.Dispose();

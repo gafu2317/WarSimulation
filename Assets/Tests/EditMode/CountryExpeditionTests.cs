@@ -26,17 +26,22 @@ public sealed class CountryExpeditionTests
         _data = ScriptableObject.CreateInstance<CountryRosterData>();
         _data.Soldiers = Enumerable.Range(0, 26).Select(i => new CountrySoldierDefinition { Id = $"s{i}", Name = $"Soldier{i}", MaxCP = 100, InitialWeaponId = $"w{i}" }).ToArray();
         _data.Weapons = Enumerable.Range(0, 26).Select(i => new CountryWeaponDefinition { Id = $"w{i}", Name = $"Weapon{i}", Kind = (WeaponKind)(i % 6 + 1), Bonus = new CountrySoldierStats { STR = i + 1 } }).ToArray();
-        _data.Schools = new[] { new CountrySchoolDefinition { Name = "School", Facility = FacilityType.WarriorSchool } };
+        _data.Schools = new[] { new CountrySchoolDefinition { Name = "School" } };
         _roster = new CountryRoster(_data, _start); _state = new CountryExpeditionState(_map, _roster, _start);
     }
     [TearDown] public void TearDown() { Object.DestroyImmediate(_map); Object.DestroyImmediate(_data); }
-    private void Advance(CountryDate date) { _state.AdvanceTo(date); _roster.AdvanceTo(date); }
+    private void Advance(CountryDate date)
+    {
+        _state.AdvanceTo(date);
+        while (_state.Arrived is { } trip) Assert.That(_state.ResolveBattle(trip, true), Is.True);
+        _roster.AdvanceTo(date);
+    }
 
     [Test]
     public void ExpeditionDetailsShowThePartyWithoutTemporaryBattleCost()
     {
         var trip = new CountryExpeditionTrip(1, _start, _map.TravelDays(1), new[] { 0 }, new[] { 0 });
-        string details = CountryExpeditionRow.Details(_state, trip, _data, false);
+        string details = CountryExpeditionRow.Details(_state, trip, _roster, false);
         Assert.That(details, Does.Contain("Region1").And.Contain("Soldier0").And.Contain("Weapon0"));
         Assert.That(details, Does.Not.Contain("CP"));
     }
@@ -124,7 +129,7 @@ public sealed class CountryExpeditionTests
         Assert.That(_roster.TryEquip(2, 1), Is.True);
     }
     [Test]
-    public void ArrivalAcquiresLandAndOpensItsBorderBeforeThePartyReturns()
+    public void VictoryAcquiresLandAndOpensItsBorderBeforeThePartyReturns()
     {
         _state.TryDepart(1, new[] { 0 }, new[] { 0 }, out _);
         var trip = _state.Active[0];
@@ -135,7 +140,7 @@ public sealed class CountryExpeditionTests
         Advance(trip.Return); Assert.That(_state.Active, Is.Empty); Assert.That(_roster.CanDeploy(0), Is.True);
     }
     [Test]
-    public void SkippedBattleConsumesCpOnceAtArrivalAndPreservesStatsAndSkills()
+    public void BattleResolutionConsumesCpOnceAndPreservesStatsAndSkills()
     {
         var skills = _roster.Soldiers[0].Learned.ToArray(); var stats = _roster.Stats(0);
         _state.TryDepart(1, new[] { 0 }, new[] { 0 }, out _);
@@ -229,4 +234,52 @@ public sealed class CountryExpeditionTests
         Assert.That((due.MonthIndex,due.Month,due.Day), Is.EqualTo((dueIndex,dueMonth,dueDay)));
     }
     [Test] public void NegativeDayDurationsAreRejected() => Assert.Throws<ArgumentOutOfRangeException>(() => _start.AddDays(-1));
+
+    [Test]
+    public void BrokenWeaponStaysWithTheExpeditionUntilReturnAndReportsOnlyOnce()
+    {
+        _data.Weapons[0].MaxDurability = 1;
+        _roster = new CountryRoster(_data, _start);
+        _state = new CountryExpeditionState(_map, _roster, _start);
+        Assert.That(_roster.TrySetCP(0, 1), Is.True);
+        Assert.That(_state.TryDepart(1, new[] { 0 }, new[] { 0 }, out _), Is.True);
+        var trip = _state.Active[0];
+
+        Advance(trip.Arrival);
+        Assert.That(_roster.Durability(0), Is.Zero);
+        Assert.That(_roster.Soldiers[0].CP, Is.Zero);
+        Assert.That(_roster.WeaponOwner(0), Is.Zero);
+        Assert.That(_roster.TryEquip(1, 0), Is.False);
+        Assert.That(_roster.TakeBattleNotices().Count, Is.EqualTo(2));
+        Advance(trip.Arrival);
+        Assert.That(_roster.TakeBattleNotices(), Is.Empty);
+
+        Advance(trip.Return);
+        Assert.That(_roster.WeaponOwner(0), Is.EqualTo(-1));
+        Assert.That(_roster.TryEquip(1, 0), Is.False);
+        Assert.That(_roster.TakeBattleNotices(), Is.Empty);
+    }
+
+
+    [Test]
+    public void ArrivalAwaitsTheBattleAndDefeatReturnsWithoutAcquiringLand()
+    {
+        Assert.That(_state.TryDepart(1, new[] { 0 }, new[] { 0 }, out _), Is.True);
+        var trip = _state.Active[0];
+        Assert.That(_state.ResolveBattle(trip, true), Is.False);
+        _state.AdvanceTo(trip.Arrival);
+        Assert.That(_state.Arrived, Is.SameAs(trip));
+        Assert.That(_state.Owner(1), Is.EqualTo(1));
+        Assert.That(_roster.Soldiers[0].CP, Is.EqualTo(100));
+
+        Assert.That(_state.ResolveBattle(trip, false), Is.True);
+        Assert.That(_state.ResolveBattle(trip, true), Is.False);
+        Assert.That(trip.Won, Is.False);
+        Assert.That(_state.Owner(1), Is.EqualTo(1));
+        Assert.That(_roster.Soldiers[0].CP, Is.EqualTo(80));
+        Assert.That(_roster.CanDeploy(0), Is.False);
+        _state.AdvanceTo(trip.Return);
+        Assert.That(_state.Returned.Single(), Is.SameAs(trip));
+        Assert.That(_roster.CanDeploy(0), Is.True);
+    }
 }

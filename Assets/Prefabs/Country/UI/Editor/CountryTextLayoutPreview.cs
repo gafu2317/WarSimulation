@@ -137,7 +137,8 @@ public static class CountryTextLayoutPreview
     {
         if(!EditorApplication.isPlaying)throw new InvalidOperationException("Use only the current Play session.");
         var data=PlayDataManager.Instance;data.SetRaidsEnabled(false);
-        foreach(var school in data.Roster.Data.Schools)data.Roster.SetSchoolLevel(school.Facility,5);
+        foreach (var school in new[] { FacilityType.WarriorSchool, FacilityType.MagicSchool, FacilityType.Church })
+            data.SaveFacilityLevelChange(school, 5);
         if(!data.Roster.TryStartTraining(0,new[] { 0 },out string reason))throw new InvalidOperationException(reason);
         data.Roster.TrySetCP(25,0);
     }

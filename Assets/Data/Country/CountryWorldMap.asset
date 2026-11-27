@@ -186,8 +186,14 @@ MonoBehaviour:
   - {x: 0.1471875, y: 0.776875}
   HomeRegion: 5
   BattleCPCost: 20
+  DefenseBattleCPCost: 15
   RaidMinDays: 20
   RaidMaxDays: 30
+  DefenseEnemyStartPercent: 85
+  EnemyMonthlyGrowthPercent: 5
+  EnemyGrowthMonths: 24
+  EnemySkillIntervalMonths: 3
+  BattleTimeLimitSeconds: 300
   Nations:
   - Name: "\u30A2\u30EB\u30C8\u30EA\u30A2\u738B\u56FD"
     Color: {r: 0.5882353, g: 0.7607843, b: 0.80784315, a: 1}

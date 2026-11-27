@@ -146,7 +146,9 @@ public static class CountryUsabilityPreview
             Check(state.Active.Count == 1 && Field<TextMeshProUGUI>(expeditions, "_hudCount").transform.parent.gameObject.activeSelf, "Departure updates the HUD unit badge");
             Check(Field<TextMeshProUGUI>(expeditions, "_departureNotice").transform.parent.gameObject.activeSelf && !date.IsRunning, "Departure feedback is visible while the clock stays paused");
             Field<TextMeshProUGUI>(expeditions, "_departureNotice").transform.parent.gameObject.SetActive(false); Shot("HUD-Active", hud);
-            state.AdvanceTo(state.Active[0].Return);
+            var trip = state.Active[0];
+            state.AdvanceTo(trip.Return);
+            state.ResolveBattle(trip, true);
             Check(state.Active.Count == 0 && !Field<TextMeshProUGUI>(expeditions, "_hudCount").transform.parent.gameObject.activeSelf, "Returning clears the active unit badge");
             Field<TextMeshProUGUI>(expeditions, "_departureNotice").transform.parent.gameObject.SetActive(false);
             var settingsIcon = hud.GetComponentsInChildren<Image>(true).First(i => i.sprite != null && i.sprite.texture.name == "settings-v1");

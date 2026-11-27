@@ -24,6 +24,7 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
     private bool _weapons, _cameraInput, _comparisonInput;
     private int _equipSoldier = -1, _equipWeapon = -1;
     private CountryEquipmentPopup _equipmentPopup;
+    private bool _battleNoticeOpen, _noticeCamera, _noticeComparison;
     public bool IsOpen => _window.activeSelf;
     private void Awake()
     {
@@ -40,6 +41,9 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
         if (_date == null || PlayDataManager.Instance == null) { enabled = false; return; }
         _roster = PlayDataManager.Instance.GetOrCreateRoster(_view.Data, CountryDate.From(_date));
         _view.Initialize(_roster);
+        _confirmation.transform.SetParent(transform, false);
+        _confirmation.Closed += RestoreBattleNoticeControls;
+        PlayDataManager.Instance.OnBattleNotices += ShowBattleNotices;
         _view.PlaceMemberControls();
         _view.CreatePersonnelEquipmentAction();
         var footer = (RectTransform)_back.transform.parent;
@@ -61,6 +65,49 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
         _equipmentPopup = new CountryEquipmentPopup(_view, _back, _shell, _window.transform, CloseEquipment);
         _dataState.gameObject.SetActive(false);
     }
+    private void ShowQueuedSaveNotice()
+    {
+        var game = PlayDataManager.Instance;
+        if (game == null || game.Battle != null || game.Defense?.Pending != null ||
+            PlaytestSceneNavigation.IsLoading || _battleNoticeOpen || IsOpen || _government.IsOpen) return;
+        string message = game.TakeCountrySaveNotice();
+        if (message != null)
+        {
+            _date.Pause();
+            ShowNotice("進行の保存", message);
+        }
+    }
+
+    private void ShowBattleNotices(string body) => ShowNotice("戦闘の消耗", body);
+
+    private void ShowNotice(string title, string body)
+    {
+        _battleNoticeOpen = true;
+        var camera = _government.CameraControls;
+        var comparison = _government.Comparison;
+        _noticeCamera = camera != null && camera.InputEnabled;
+        _noticeComparison = comparison != null && comparison.InputEnabled;
+        if (camera != null) camera.InputEnabled = false;
+        if (comparison != null) comparison.InputEnabled = false;
+        _confirmation.ShowDetails(title, body);
+        _cancel.Enable();
+    }
+
+    private void RestoreBattleNoticeControls()
+    {
+        if (!_battleNoticeOpen) return;
+        _battleNoticeOpen = false;
+        if (_government.CameraControls != null) _government.CameraControls.InputEnabled = _noticeCamera;
+        if (_government.Comparison != null) _government.Comparison.InputEnabled = _noticeComparison;
+        if (!IsOpen) _cancel.Disable();
+    }
+
+    private void OnDestroy()
+    {
+        if (PlayDataManager.Instance != null) PlayDataManager.Instance.OnBattleNotices -= ShowBattleNotices;
+        _cancel?.Dispose();
+    }
+
     public void OpenSoldiers()
     {
         if (_roster == null) return;
@@ -99,11 +146,16 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
     {
         if (_roster == null) return;
         _context.text = _equipSoldier >= 0 ? $"{_view.Data.Soldiers[_equipSoldier].Name}の装備を選ぶ"
-            : _equipWeapon >= 0 ? $"{_view.Data.Weapons[_equipWeapon].Name}の装備先を選ぶ" : "兵士管理";
+            : _equipWeapon >= 0 ? $"{_roster.Weapon(_equipWeapon).Name}の装備先を選ぶ" : "兵士管理";
         _backLabel.text = _equipSoldier >= 0 || _equipWeapon >= 0 ? "‹ 戻る" : _weapons ? "‹ 兵士へ" : Theme.CountryReturnText;
         int weapon = _weapons ? _view.SelectedWeapon : _equipWeapon;
         int soldier = _weapons ? _equipSoldier : _view.SelectedSoldier;
         _view.PreviewWeapon(_equipSoldier >= 0 || _equipWeapon >= 0 ? soldier : -1, weapon);
+        if ((_weapons || _equipWeapon >= 0) && !_roster.IsUsableWeapon(weapon))
+        {
+            _view.SetAction("武器を選ぶ", false);
+            return;
+        }
         if (_equipSoldier >= 0 || _equipWeapon >= 0)
         {
             int owner = _roster.WeaponOwner(weapon);
@@ -125,7 +177,7 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
             int soldier = _weapons ? _equipSoldier : _view.SelectedSoldier;
             int weapon = _weapons ? _view.SelectedWeapon : _equipWeapon;
             int owner = _roster.WeaponOwner(weapon), old = _roster.EquippedWeapon(soldier);
-            string body = $"{_view.Data.Soldiers[soldier].Name}\n{(old < 0 ? "未装備" : _view.Data.Weapons[old].Name)} → {_view.Data.Weapons[weapon].Name}";
+            string body = $"{_view.Data.Soldiers[soldier].Name}\n{(old < 0 ? "未装備" : _roster.Weapon(old).Name)} → {_roster.Weapon(weapon).Name}";
             body += "\n\n" + _view.EquipmentComparison(soldier, weapon);
             if (owner >= 0 && owner != soldier) body += $"\n\n{_view.Data.Soldiers[owner].Name}はこの武器の装備が外れる。";
             _confirmation.Show("装備の変更", body, "付け替える", () => {
@@ -167,9 +219,9 @@ public sealed class CountryPersonnelPanel : MonoBehaviour
     }
     private void LateUpdate()
     {
-        if (!IsOpen) return;
-        CountrySafeArea.FitBottomBand(_headerBackground, (RectTransform)_shell.transform, CountryGovernmentTheme.PageBarHeight);
+        if (IsOpen)
+            CountrySafeArea.FitBottomBand(_headerBackground, (RectTransform)_shell.transform, CountryGovernmentTheme.PageBarHeight);
+        else ShowQueuedSaveNotice();
     }
     private void OnDisable() => Close();
-    private void OnDestroy() => _cancel?.Dispose();
 }

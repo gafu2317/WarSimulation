@@ -47,9 +47,9 @@ public sealed class CombatHealth : MonoBehaviour, ICombatHealthSource
     }
 
     public int MaxHPBeforePersonality => Mathf.Max(1, _maxHP + _maxHPAdjustment);
-    public int MaxHP => Mathf.Max(1, Mathf.RoundToInt(MaxHPBeforePersonality *
+    public int MaxHP => CombatAiPersonalityProfile.ApplyStatMultiplier(MaxHPBeforePersonality,
         CombatAiPersonalityProfile.GetStatMultiplier(
-            ResolveOwner()?.PersonalityProfile?.Kind ?? CombatAiPersonalityKind.Neutral, CombatStat.HP)));
+            ResolveOwner()?.PersonalityProfile?.Kind ?? CombatAiPersonalityKind.Neutral, CombatStat.HP));
     public int HP => _hp;
     public bool IsAlive => _hp > 0;
     public LifeState LifeState { get; private set; } = LifeState.Active;

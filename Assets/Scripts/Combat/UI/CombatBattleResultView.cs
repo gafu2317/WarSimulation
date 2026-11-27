@@ -37,7 +37,8 @@ public sealed class CombatBattleResultView : MonoBehaviour
         public RectTransform SupportRows { get; set; }
     }
 
-    private RectTransform _summaryRoot;
+    private static readonly Vector2 CountryResultSize = new(1920, 1080);
+    private RectTransform _summaryRoot, _safeViewport, _scaledContent, _countryTitle;
     private TMP_FontAsset _font;
     private Material _fontMaterial;
     private TeamUi _allyUi;
@@ -63,6 +64,41 @@ public sealed class CombatBattleResultView : MonoBehaviour
         MoveChild("ResultTitle", new Vector2(0f, 450f));
         MoveChild("BackToSelectionButton", new Vector2(0f, -490f));
         _summaryRoot.gameObject.SetActive(false);
+    }
+
+    public void RespectCountryBattleSafeArea()
+    {
+        EnsureBuilt();
+        if (_summaryRoot == null) return;
+        _safeViewport = new GameObject("Safe Content", typeof(RectTransform)).GetComponent<RectTransform>();
+        _safeViewport.SetParent(transform, false);
+        _safeViewport.anchorMin = Vector2.zero;
+        _safeViewport.anchorMax = Vector2.one;
+        _safeViewport.offsetMin = _safeViewport.offsetMax = Vector2.zero;
+        CountrySafeArea.Track(_safeViewport);
+
+        _scaledContent = new GameObject("Result Content", typeof(RectTransform)).GetComponent<RectTransform>();
+        _scaledContent.SetParent(_safeViewport, false);
+        _scaledContent.sizeDelta = CountryResultSize;
+        _summaryRoot.SetParent(_scaledContent, false);
+        _countryTitle = transform.Find("ResultTitle") as RectTransform;
+        _countryTitle?.SetParent(_scaledContent, false);
+        transform.Find("BackToSelectionButton")?.SetParent(_scaledContent, false);
+    }
+
+    internal void SetCountryTitleLayout(bool forMessage)
+    {
+        if (_countryTitle == null) return;
+        _countryTitle.anchoredPosition = forMessage ? Vector2.zero : new Vector2(0f, 450f);
+        _countryTitle.sizeDelta = forMessage ? new Vector2(1440f, 220f) : new Vector2(1760f, 100f);
+    }
+
+    private void LateUpdate()
+    {
+        if (_safeViewport == null) return;
+        var size = _safeViewport.rect.size;
+        float scale = Mathf.Min(1f, size.x / CountryResultSize.x, size.y / CountryResultSize.y);
+        if (scale > 0f) _scaledContent.localScale = Vector3.one * scale;
     }
 
     public void Show(CombatBattleResult result)

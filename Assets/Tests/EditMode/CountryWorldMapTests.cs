@@ -23,6 +23,17 @@ public sealed class CountryWorldMapTests
         }).ToArray();
     }
     [TearDown] public void TearDown() => Object.DestroyImmediate(_map);
+    [TestCase(-1, 24, 3)] [TestCase(101, 24, 3)]
+    [TestCase(5, -1, 3)] [TestCase(5, 121, 3)] [TestCase(5, 24, 0)]
+    public void InvalidEnemyGrowthSettingsAreRejected(int rate, int months, int interval)
+    {
+        _map.Validate();
+        _map.EnemyMonthlyGrowthPercent = rate;
+        _map.EnemyGrowthMonths = months;
+        _map.EnemySkillIntervalMonths = interval;
+        Assert.Throws<ArgumentException>(_map.Validate);
+    }
+
     [Test] public void CapitalLocationsAreSeparateFromTheTerritories()
     {
         _map.Nations[0].CapitalRegion = 3;

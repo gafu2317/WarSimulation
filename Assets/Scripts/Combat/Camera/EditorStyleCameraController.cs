@@ -299,7 +299,8 @@ public class EditorStyleCameraController : MonoBehaviour
 
     private void UpdateTouchControls()
     {
-        bool touchAvailable = Touchscreen.current != null && !CombatAudioSettingsView.IsOpen;
+        bool touchAvailable = Touchscreen.current != null && !CombatAudioSettingsView.IsOpen
+            && (PlayDataManager.Instance?.Battle == null || CombatBattleFlow.IsRunning);
         if (!touchAvailable)
         {
             if (_touchControlsRoot != null) _touchControlsRoot.SetActive(false);
@@ -340,6 +341,7 @@ public class EditorStyleCameraController : MonoBehaviour
         CreateTouchKey("Q", "q", new Vector2(24f, 22f));
         CreateTouchKey("Shift", "leftShift", new Vector2(108f, 22f), new Vector2(120f, 72f));
         CreateTouchKey("E", "e", new Vector2(240f, 22f));
+        foreach (var rect in _touchControlRegions) CountrySafeArea.Track(rect);
     }
 
     private void CreateTouchStick(Vector2 position)
@@ -425,7 +427,7 @@ public class EditorStyleCameraController : MonoBehaviour
 
         Text text = labelObject.GetComponent<Text>();
         text.text = label;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = label == "Shift" ? 20 : 30;
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.white;

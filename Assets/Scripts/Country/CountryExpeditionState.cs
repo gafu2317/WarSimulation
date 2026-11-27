@@ -13,6 +13,8 @@ public sealed class CountryExpeditionState
     public IReadOnlyList<CountryExpeditionTrip> Active { get; }
     public IReadOnlyList<CountryExpeditionTrip> Returned { get; }
     public event Action Changed;
+    public CountryExpeditionTrip Arrived => _active.Where(trip => !trip.Returning && Today.CompareTo(trip.Arrival) >= 0)
+        .OrderBy(trip => trip.Arrival).FirstOrDefault();
 
     public CountryExpeditionState(CountryWorldMapData data, CountryRoster roster, CountryDate today)
     {
@@ -26,6 +28,79 @@ public sealed class CountryExpeditionState
     }
 
     public int Owner(int region) => _owners[region];
+
+    internal int RegionIndex(string id)
+    {
+        int index = Array.FindIndex(Data.Regions, region => region.Id == id);
+        CountryCheckpoint.Require(index >= 0, "region ID");
+        return index;
+    }
+
+    internal CountryCheckpoint.WorldState Capture(CountryCheckpoint.DefenseState defense) => new() {
+        Conquered = Data.Regions.Where((region, i) => region.InitialOwner != 0 && _owners[i] == 0).Select(region => region.Id).ToArray(),
+        Active = _active.Select(CaptureTrip).ToArray(),
+        Returned = _returned.Select(CaptureTrip).ToArray(),
+        Defense = defense
+    };
+
+    private CountryCheckpoint.Trip CaptureTrip(CountryExpeditionTrip trip) => new() {
+        Target = Data.Regions[trip.Target].Id,
+        Departure = new CountryCheckpoint.Date(trip.Departure),
+        Days = trip.Days,
+        Members = trip.Members.Select(_roster.SoldierId).ToArray(),
+        Weapons = trip.Weapons.ToArray(),
+        Outcome = trip.Won switch { true => CountryCheckpoint.Result.Victory, false => CountryCheckpoint.Result.Defeat, _ => CountryCheckpoint.Result.Pending }
+    };
+
+    internal void Restore(CountryCheckpoint.WorldState save)
+    {
+        CountryCheckpoint.Require(save.Conquered != null && save.Active != null && save.Returned != null, "world");
+        foreach (string region in save.Conquered) _owners[RegionIndex(region)] = 0;
+        var targets = new HashSet<int>();
+        foreach (var entry in save.Active)
+        {
+            var trip = RestoreTrip(entry);
+            CountryCheckpoint.Require(targets.Add(trip.Target) && (!trip.Returning || Today.CompareTo(trip.Arrival) >= 0) &&
+                Today.CompareTo(trip.Return) < 0 && (trip.Won == true) == (_owners[trip.Target] == 0), "active expedition");
+            for (int i = 0; i < trip.Members.Count; i++)
+            {
+                int soldier = trip.Members[i], weapon = trip.Weapons[i];
+                CountryCheckpoint.Require(_roster.Soldiers[soldier].Expedition == null &&
+                    _roster.EquippedWeapon(soldier) == weapon && (trip.Returning || _roster.IsUsableWeapon(weapon)),
+                    "expedition equipment");
+            }
+            _active.Add(trip);
+            _roster.Depart(trip);
+        }
+        foreach (var entry in save.Returned)
+        {
+            var trip = RestoreTrip(entry);
+            CountryCheckpoint.Require(trip.Returning && Today.CompareTo(trip.Return) >= 0, "returned expedition");
+            _returned.Add(trip);
+        }
+        for (int i = 0; i < _roster.WeaponCount; i++)
+        {
+            int owner = _roster.WeaponOwner(i);
+            CountryCheckpoint.Require(owner < 0 || _roster.IsUsableWeapon(i) || _roster.Soldiers[owner].Expedition != null,
+                "broken weapon");
+        }
+    }
+
+    private CountryExpeditionTrip RestoreTrip(CountryCheckpoint.Trip entry)
+    {
+        var departure = entry.Departure.ToDate();
+        CountryCheckpoint.Require(departure.CompareTo(Today) <= 0 && entry.Days is >= 10 and <= 30 &&
+            entry.Members != null && entry.Members.Length is >= 1 and <= 26 && entry.Weapons != null &&
+            entry.Members.Length == entry.Weapons.Length && entry.Members.Distinct().Count() == entry.Members.Length &&
+            entry.Weapons.Distinct().Count() == entry.Weapons.Length &&
+            entry.Weapons.All(weapon => weapon >= 0 && weapon < _roster.WeaponCount) &&
+            Enum.IsDefined(typeof(CountryCheckpoint.Result), entry.Outcome), "expedition");
+        return new CountryExpeditionTrip(RegionIndex(entry.Target), departure, entry.Days,
+            entry.Members.Select(_roster.SoldierIndex).ToArray(), entry.Weapons) {
+            Won = entry.Outcome switch { CountryCheckpoint.Result.Victory => true, CountryCheckpoint.Result.Defeat => false, _ => null }
+        };
+    }
+
     public bool CanTarget(int region) => region >= 0 && region < _owners.Length && _owners[region] != 0 &&
         !_active.Any(trip => trip.Target == region) && Enumerable.Range(0, _owners.Length).Any(i => _owners[i] == 0 && _adjacent[i, region]);
 
@@ -57,7 +132,7 @@ public sealed class CountryExpeditionState
             if (!CanSelect(members[i], target, out reason)) return false;
             int weapon = weapons[i];
             if (_roster.EquippedWeapon(members[i]) != weapon) { reason = "装備が変更されたため確認する"; return false; }
-            if (weapon < 0 || weapon >= _roster.Data.Weapons.Length) { reason = "全員の武器を選ぶ"; return false; }
+            if (!_roster.IsUsableWeapon(weapon)) { reason = "全員の武器を選ぶ"; return false; }
             if (!items.Add(weapon)) { reason = "同じ武器は複数人に持たせられない"; return false; }
             int owner = _roster.WeaponOwner(weapon);
             if (owner >= 0 && _roster.Soldiers[owner].Expedition != null) { reason = "遠征中の武器は使えない"; return false; }
@@ -82,15 +157,24 @@ public sealed class CountryExpeditionState
         bool changed = false;
         foreach (var trip in _active.ToArray())
         {
-            if (!trip.Returning && today.CompareTo(trip.Arrival) >= 0)
-            {
-                _owners[trip.Target] = 0; trip.Returning = true; changed = true;
-                _roster.ConsumeBattleCP(trip.Members, Data.BattleCPCost, trip.Arrival);
-            }
-            if (today.CompareTo(trip.Return) < 0) continue;
+            if (!trip.Returning || today.CompareTo(trip.Return) < 0) continue;
             _active.Remove(trip); _returned.Add(trip); _roster.Return(trip); changed = true;
         }
         if (changed) Changed?.Invoke();
+    }
+
+    public bool ResolveBattle(CountryExpeditionTrip trip, bool won)
+    {
+        if (trip == null || !_active.Contains(trip) || trip.Returning || Today.CompareTo(trip.Arrival) < 0) return false;
+        trip.Won = won;
+        if (won) _owners[trip.Target] = 0;
+        _roster.ConsumeBattleCP(trip.Members, Data.BattleCPCost, trip.Arrival);
+        if (Today.CompareTo(trip.Return) >= 0)
+        {
+            _active.Remove(trip); _returned.Add(trip); _roster.Return(trip);
+        }
+        Changed?.Invoke();
+        return true;
     }
 }
 
@@ -103,7 +187,8 @@ public sealed class CountryExpeditionTrip
     public CountryDate Return { get; }
     public IReadOnlyList<int> Members { get; }
     public IReadOnlyList<int> Weapons { get; }
-    public bool Returning { get; internal set; }
+    public bool? Won { get; internal set; }
+    public bool Returning => Won.HasValue;
     public int ReportMonth => Return.MonthIndex + (Return.Day == 1 ? 0 : 1);
     public CountryExpeditionTrip(int target, CountryDate departure, int days, IReadOnlyList<int> members, IReadOnlyList<int> weapons)
     {

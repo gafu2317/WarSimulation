@@ -648,6 +648,13 @@ public class CombatCharacterSystem : MonoBehaviour
         GenerateTeamCandidates(root.transform, CombatTeam.Enemy, EnemyCharacters);
     }
 
+    internal Character CreateExtraAlly()
+    {
+        if (_characterPrefab == null) return null;
+        var parent = _generatedCharactersRoot != null ? _generatedCharactersRoot.transform : transform;
+        return Instantiate(_characterPrefab, parent);
+    }
+
     private void GenerateTeamCandidates(
         Transform parent,
         CombatTeam team,

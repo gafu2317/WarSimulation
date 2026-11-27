@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using System;
 
-public sealed class CountryRosterRow : MonoBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+public sealed class CountryRosterRow : MonoBehaviour, IPointerClickHandler, IScrollHandler, IInitializePotentialDragHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [SerializeField] private UnityEngine.UI.Button _button;
     [SerializeField] private UnityEngine.UI.Image _icon;
@@ -12,12 +12,31 @@ public sealed class CountryRosterRow : MonoBehaviour, IInitializePotentialDragHa
     [SerializeField] private TextMeshProUGUI _name, _state;
     [SerializeField] private GameObject _selected;
     private RectTransform _dragTarget, _cardViewport, _pendingPortrait;
-    private Action _drop;
+    private Action _drop, _memberClick, _cancelMemberClick;
     private Func<bool> _canDrag;
     private UnityEngine.UI.ScrollRect _scroll;
     private RectTransform _ghost;
     private UnityEngine.UI.Image _weaponBadge;
     private bool _categoryIcon;
+
+    internal void BindMemberClick(Action click, Action cancel)
+    {
+        _memberClick = click;
+        _cancelMemberClick = cancel;
+    }
+
+    public void OnPointerClick(PointerEventData e)
+    {
+        if (e.button == PointerEventData.InputButton.Left && !e.dragging && _button.IsInteractable())
+            _memberClick?.Invoke();
+    }
+
+    public void OnScroll(PointerEventData e)
+    {
+        _cancelMemberClick?.Invoke();
+        ExecuteEvents.ExecuteHierarchy(transform.parent.gameObject, e, ExecuteEvents.scrollHandler);
+    }
+
     public void EnableDrag(RectTransform target, Action drop, Func<bool> canDrag = null, RectTransform cardViewport = null)
     {
         _dragTarget = target; _drop = drop; _canDrag = canDrag;
@@ -35,6 +54,7 @@ public sealed class CountryRosterRow : MonoBehaviour, IInitializePotentialDragHa
     public void OnBeginDrag(PointerEventData e)
     {
         if (e.button != PointerEventData.InputButton.Left) return;
+        _cancelMemberClick?.Invoke();
         if (_dragTarget != null && (_canDrag == null || _canDrag()) && transform.Find("Portrait") is RectTransform portrait)
         {
             if (RectTransformUtility.RectangleContainsScreenPoint(portrait, e.pressPosition, e.pressEventCamera))

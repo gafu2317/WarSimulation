@@ -59,6 +59,7 @@ public sealed class CountryTrainingView : MonoBehaviour
         for (int i = 0; i < _tokens.Length; i++)
         {
             int id = i;
+            _view.BindMemberClicks(_tokens[i], id, memberSlot: true);
             _tokens[i].EnableDrag(_view.ListViewport, () => { if (_drafts[_school].Contains(id)) { _view.SelectSoldier(id); ToggleCandidate(); } });
         }
         _view.SelectionChanged += Refresh;
@@ -187,6 +188,9 @@ public sealed class CountryTrainingView : MonoBehaviour
         bool reservation = start.CompareTo(_roster.Today) > 0;
         string names = string.Join("、", ids.Select(id => Data.Soldiers[id].Name));
         string notice = reservation ? "予約を確定すると、開始前でも変更・キャンセルはできない。\n開始日までは出撃可能。開始前にCP0になると予約解除。\n" : "";
+        var unchanged = ids.Where(id => _roster.Soldiers[id].BestSchoolLevel(school) >= _roster.SchoolLevel(school))
+            .Select(id => Data.Soldiers[id].Name).ToArray();
+        if (unchanged.Length > 0) notice += $"{string.Join("、", unchanged)}の能力は今回の訓練では上がらない。\n";
         _confirmation.Show(reservation ? "来月の訓練を予約" : "2か月の訓練を開始", $"{Data.Schools[school].Name} Lv.{_roster.SchoolLevel(school)}\n{names}\n\n開始 {start} → 完了 {start.AddMonths(2)}\n{notice}訓練中は出撃できず、途中変更・キャンセルもできない。", reservation ? "訓練を予約" : "訓練を開始", () => {
             if (_roster.TryStartTraining(school, ids, out _)) { _drafts[school].Clear(); _schools[school].Select(); }
             Refresh(); Changed?.Invoke();

@@ -240,11 +240,23 @@ public class CombatMapSystem : MonoBehaviour
             yield break;
         }
 
+        string path = definition.BakedRuntimeScenePath;
+        if (!Application.CanStreamedLevelBeLoaded(path))
+        {
+            FailPreparation(CombatMapApplyFailure.BakedRuntimeSceneLoadFailed);
+            yield break;
+        }
         if (map == null && !TryCreateRuntimeMap(definition, out map)) yield break;
 
-        AsyncOperation load = SceneManager.LoadSceneAsync(
-            definition.BakedRuntimeScenePath,
-            LoadSceneMode.Additive);
+        AsyncOperation load = null;
+        try
+        {
+            load = SceneManager.LoadSceneAsync(path, LoadSceneMode.Additive);
+        }
+        catch (ArgumentException ex)
+        {
+            Debug.LogWarning($"Could not load battlefield scene '{path}': {ex.Message}", this);
+        }
         if (load == null)
         {
             FailPreparation(CombatMapApplyFailure.BakedRuntimeSceneLoadFailed);
@@ -252,7 +264,7 @@ public class CombatMapSystem : MonoBehaviour
         }
 
         while (!load.isDone) yield return null;
-        Scene loadedScene = SceneManager.GetSceneByPath(definition.BakedRuntimeScenePath);
+        Scene loadedScene = SceneManager.GetSceneByPath(path);
         if (!loadedScene.IsValid() || !loadedScene.isLoaded)
         {
             FailPreparation(CombatMapApplyFailure.BakedRuntimeSceneLoadFailed);

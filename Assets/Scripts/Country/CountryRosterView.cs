@@ -40,6 +40,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     private readonly float[] _statValueFonts = new float[4], _statCaptionFonts = new float[4];
     private bool _statRowsCompact;
     private bool _weapons;
+    private int[] _visibleWeapons = Array.Empty<int>();
     private int _soldier, _weapon, _school = -1;
     private float _soldierScroll = 1, _weaponScroll = 1;
     private bool _shown;
@@ -56,6 +57,9 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     private float _portraitTopInset;
     private (Vector2 Min, Vector2 Max) _portraitOffsets;
     private RectTransform _portraitClip;
+    private CountryRosterRow _lastMemberRow;
+    private double _lastMemberClick;
+    private Vector3 _lastMemberPosition;
     public CountryRosterData Data => _data;
     public Sprite RoundedPanel => _roundedPanel;
     public int SelectedSoldier => _soldier;
@@ -72,10 +76,36 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         for (int i = 0; i < _rows.Length; i++)
         {
             int id = i;
+            BindMemberClicks(_rows[i], id);
             _rows[i].EnableDrag(target, () => { if (_memberSelected != null && !_memberSelected(id)) { SelectSoldier(id); ActionRequested?.Invoke(); } },
                 () => !_weapons && id < _data.Soldiers.Length, _list.viewport);
         }
     }
+
+    internal void BindMemberClicks(CountryRosterRow row, int soldier, bool memberSlot = false)
+    {
+        row.BindMemberClick(() =>
+        {
+            if (_weapons || (memberSlot && !_memberSelected(soldier)))
+            {
+                ResetMemberClicks();
+                return;
+            }
+            double now = Time.unscaledTimeAsDouble;
+            var position = row.transform.position;
+            bool doubleClick = _lastMemberRow == row && now - _lastMemberClick <= .30d &&
+                (position - _lastMemberPosition).sqrMagnitude < 1f;
+            _lastMemberRow = doubleClick ? null : row;
+            _lastMemberClick = now;
+            _lastMemberPosition = position;
+            if (!doubleClick) return;
+            SelectSoldier(soldier);
+            if (_action.IsInteractable()) ActionRequested?.Invoke();
+        }, ResetMemberClicks);
+    }
+
+    private void ResetMemberClicks() => _lastMemberRow = null;
+
     public RectTransform ListViewport => _list.viewport;
     public void PlaceMemberControls(UnityEngine.UI.Button equipment = null)
     {
@@ -122,7 +152,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     }
     private int Weapon(int soldier) => _expeditionDraft == null ? _roster.EquippedWeapon(soldier) : _expeditionDraft.Weapon(soldier);
     private int Owner(int weapon) => _expeditionDraft == null ? _roster.WeaponOwner(weapon) : _expeditionDraft.Owner(weapon);
-    private WeaponKind Profession(int soldier) => Weapon(soldier) < 0 ? WeaponKind.Unarmed : _data.Weapons[Weapon(soldier)].Kind;
+    private WeaponKind Profession(int soldier) => !_roster.IsUsableWeapon(Weapon(soldier)) ? WeaponKind.Unarmed : _roster.Weapon(Weapon(soldier)).Kind;
 
     public void Initialize(CountryRoster roster)
     {
@@ -139,13 +169,8 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         art.SetParent(_portraitClip, false);
         _skills.raycastTarget = true;
         foreach (var label in _skillGroupSkills) label.raycastTarget = true;
-        _rows = new CountryRosterRow[Math.Max(_data.Soldiers.Length, _data.Weapons.Length)];
-        for (int i = 0; i < _rows.Length; i++)
-        {
-            int id = i;
-            _rows[i] = Instantiate(_rowPrefab, _list.content); _rows[i].name = $"Row{i + 1:00}";
-            _rows[i].Bind(() => Select(id));
-        }
+        _rows = Array.Empty<CountryRosterRow>();
+        EnsureRows(_data.Soldiers.Length);
         _action.onClick.AddListener(() => ActionRequested?.Invoke());
         _sort.AddOptions(StatSortOptions.Concat(SkillSortKinds.Select(kind => $"{CountryRoster.WeaponName(kind)}のスキル数")).ToList());
         _sort.onValueChanged.AddListener(_ =>
@@ -159,8 +184,23 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         Refresh();
     }
 
+    private void EnsureRows(int count)
+    {
+        int oldCount = _rows.Length;
+        if (oldCount >= count) return;
+        Array.Resize(ref _rows, count);
+        for (int i = oldCount; i < count; i++)
+        {
+            int index = i;
+            _rows[i] = Instantiate(_rowPrefab, _list.content);
+            _rows[i].name = $"Row{i + 1:00}";
+            _rows[i].Bind(() => Select(_weapons ? _visibleWeapons[index] : index));
+        }
+    }
+
     public void ShowSoldiers(int school = -1)
     {
+        ResetMemberClicks();
         if (_shown) SaveScroll();
         _shown = true;
         _weapons = false; _school = school;
@@ -168,6 +208,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     }
     public void ShowWeapons()
     {
+        ResetMemberClicks();
         if (_shown) SaveScroll();
         _shown = true;
         _weapons = true; _school = -1;
@@ -183,7 +224,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
             _details.content.anchoredPosition = new Vector2(0, value.y);
         }
     }
-    internal void StopScrolling() { _list.StopMovement(); _details.StopMovement(); }
+    internal void StopScrolling() { ResetMemberClicks(); _list.StopMovement(); _details.StopMovement(); }
     public void SelectSoldier(int soldier) { _soldier = soldier; if (!_weapons) Select(soldier); }
     private void Select(int id)
     {
@@ -222,7 +263,13 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _listCaption.text = "一覧";
         _sort.gameObject.SetActive(!_weapons);
         int criterion = _weapons ? 0 : _sort.value;
-        int count = _weapons ? _data.Weapons.Length : _data.Soldiers.Length;
+        if (_weapons)
+        {
+            _visibleWeapons = Enumerable.Range(0, _roster.WeaponCount).Where(_roster.IsUsableWeapon).ToArray();
+            if (!_roster.IsUsableWeapon(_weapon)) _weapon = _visibleWeapons.Length == 0 ? -1 : _visibleWeapons[0];
+        }
+        int count = _weapons ? _visibleWeapons.Length : _data.Soldiers.Length;
+        EnsureRows(count);
         var unavailable = new bool[count];
         var members = new bool[count];
         for (int i = 0; i < _rows.Length; i++)
@@ -232,10 +279,12 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
             if (_weapons)
             {
                 _rows[i].SetWeaponIcon(null);
-                var weapon = _data.Weapons[i]; int owner = Owner(i);
+                int id = _visibleWeapons[i];
+                var weapon = _roster.Weapon(id); int owner = Owner(id);
+                string status = owner < 0 ? "未装備" : _data.Soldiers[owner].Name;
                 _rows[i].Refresh(weapon.Name, _weaponCategoryIcons[(int)weapon.Kind - 1],
-                    owner < 0 ? "未装備" : _data.Soldiers[owner].Name + "が装備", i == _weapon, categoryIcon: true);
-                _rows[i].SetNameHighlighted(_previewSoldier >= 0 && Weapon(_previewSoldier) == i);
+                    $"{status}・耐久 {_roster.Durability(id)}/{weapon.MaxDurability}", id == _weapon, categoryIcon: true);
+                _rows[i].SetNameHighlighted(_previewSoldier >= 0 && Weapon(_previewSoldier) == id);
                 _rows[i].SetDimmed(false);
             }
             else
@@ -247,7 +296,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
                 string status = member ? unavailable[i] ? "選択中・" + reason : _memberLabel : unavailable[i] ? reason : State(i);
                 bool warning = _unavailableReason == null ? !_roster.CanDeploy(i) : unavailable[i];
                 int equipped = Weapon(i);
-                _rows[i].SetWeaponIcon(equipped < 0 ? null : _weaponCategoryIcons[(int)_data.Weapons[equipped].Kind - 1]);
+                _rows[i].SetWeaponIcon(equipped < 0 ? null : _weaponCategoryIcons[(int)_roster.Weapon(equipped).Kind - 1]);
                 _rows[i].Refresh(_data.Soldiers[i].Name, _data.Soldiers[i].Icon, status, i == _soldier, warning, member);
                 _rows[i].SetDimmed(unavailable[i]);
             }
@@ -260,14 +309,19 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
             if (_rows[i].transform.GetSiblingIndex() != position) { _rows[i].transform.SetSiblingIndex(position); reordered = true; }
             position++;
         }
-        if (_weapons) RefreshWeapon(); else RefreshSoldier();
-        if (_previewSoldier >= 0 && _previewWeapon >= 0) RefreshEquipmentPreview();
+        _details.viewport.gameObject.SetActive(!_weapons || _weapon >= 0);
+        if (!_weapons) RefreshSoldier();
+        else if (_weapon >= 0) RefreshWeapon();
+        else _listCaption.text = "武器はない";
+        if (_previewSoldier >= 0 && _roster.IsUsableWeapon(_previewWeapon)) RefreshEquipmentPreview();
         if (reordered)
             KeepSelectionVisible();
     }
     private void KeepSelectionVisible()
     {
-        var row = _rows[_weapons ? _weapon : _soldier];
+        int index = _weapons ? Array.IndexOf(_visibleWeapons, _weapon) : _soldier;
+        if (index < 0) return;
+        var row = _rows[index];
         if (!row.gameObject.activeSelf) return;
         Canvas.ForceUpdateCanvases(); _list.StopMovement();
         var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(_list.viewport, row.transform);
@@ -283,12 +337,12 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _name.text = definition.Name;
         _name.alignment = TextAlignmentOptions.MidlineGeoAligned;
         _name.overflowMode = TextOverflowModes.Ellipsis;
-        _subtitle.text = "";
+        _subtitle.text = $"性格　{CombatAiPersonalityProfile.GetDisplayNameJapanese(state.Personality)}";
         Portrait(definition.StandingArt, "", true, definition.StandingArtBounds);
         _statsTitle.text = "ステータス";
         ConfigureStatRows(true);
         _cpRow.SetActive(true);
-        _cpValue.text = $"{state.CP} / {definition.MaxCP}";
+        _cpValue.text = $"{state.CP} / {_roster.MaxCP(_soldier)}";
         _cpValue.color = state.CP == 0 ? CountryGovernmentTheme.Error : CountryGovernmentTheme.Text;
         int weapon = Weapon(_soldier);
         var current = Values(Stats(_soldier, weapon));
@@ -303,14 +357,16 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         }
         if (state.RevivalDue.HasValue) text.AppendLine($"復活予定　{state.RevivalDue.Value}\n");
         if (state.Expedition != null) text.AppendLine($"遠征中　帰還 {state.Expedition.Return}\n");
-        _skillsTitle.text = weapon >= 0 ? $"装備　{_data.Weapons[weapon].Name}" : "装備　なし";
+        _skillsTitle.text = weapon >= 0 ? $"装備　{_roster.Weapon(weapon).Name}" : "装備　なし";
         if (_school >= 0)
         {
             int previewSchool = training?.School ?? _school;
             var school = _data.Schools[previewSchool];
             text.AppendLine($"{school.Name}　2か月");
-            if (!school.Gains.Equals(default(CountrySoldierStats)))
-                text.AppendLine($"成長 最大HP＋{school.Gains.HP} STR＋{school.Gains.STR} INT＋{school.Gains.INT} FAI＋{school.Gains.FAI} AGI＋{school.Gains.AGI}");
+            var next = Values(_roster.BattleStats(_soldier, weapon, previewSchool, training?.Level ?? _roster.SchoolLevel(previewSchool)));
+            var labels = new[] { "最大HP", "STR", "INT", "FAI", "AGI" };
+            var gains = labels.Select((label, i) => next[i] > current[i] ? $"{label} ＋{next[i] - current[i]}" : "").Where(value => value.Length > 0).ToArray();
+            text.AppendLine(gains.Length > 0 ? string.Join("　", gains) : "この訓練での能力上昇はない");
             AppendTraining(school.FirstWeapon, school.FirstSkills); AppendTraining(school.SecondWeapon, school.SecondSkills);
         }
         _skills.text = text.ToString();
@@ -447,7 +503,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
     }
     private void RefreshWeapon()
     {
-        var weapon = _data.Weapons[_weapon]; int owner = Owner(_weapon);
+        var weapon = _roster.Weapon(_weapon); int owner = Owner(_weapon);
         var nameRect = _name.rectTransform;
         nameRect.anchoredPosition = _weaponNameLayout.Position;
         nameRect.sizeDelta = _weaponNameLayout.Size;
@@ -464,7 +520,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         for (int i = 0; i < _stats.Length; i++)
             _stats[i].text = Signed(values[i]);
         _skillsTitle.text = "装備情報";
-        _skills.text = $"装備者　{(owner < 0 ? "なし" : _data.Soldiers[owner].Name)}\n\n装備中だけ能力補正が加わる。\n習得済みスキルは持ち替えても残る。\n\n同じ品を複数人へ同時に装備することはできない。";
+        _skills.text = $"装備者　{(owner < 0 ? "なし" : _data.Soldiers[owner].Name)}\n耐久　{_roster.Durability(_weapon)} / {weapon.MaxDurability}\n\n装備中だけ能力補正が加わる。\n習得済みスキルは持ち替えても残る。\n\n同じ品を複数人へ同時に装備することはできない。";
     }
     private void RefreshEquipmentPreview()
     {
@@ -473,7 +529,7 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _statsTitle.text = "装備変更前 → 変更後";
         int previous = Weapon(soldier);
         _subtitle.text = _weapons
-            ? $"{(previous < 0 ? "未装備" : CountryRoster.WeaponName(_data.Weapons[previous].Kind))} → {CountryRoster.WeaponName(_data.Weapons[weapon].Kind)}　使用可：{Summary(SkillNames(soldier, previous))} → {Summary(SkillNames(soldier, weapon))}"
+            ? $"{(previous < 0 ? "未装備" : CountryRoster.WeaponName(_roster.Weapon(previous).Kind))} → {CountryRoster.WeaponName(_roster.Weapon(weapon).Kind)}　使用可：{Summary(SkillNames(soldier, previous))} → {Summary(SkillNames(soldier, weapon))}"
             : "";
         for (int i = 0; i < _stats.Length; i++)
         {
@@ -484,15 +540,15 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _skills.text = EquipmentSkills(soldier, weapon);
         string Summary(string[] names) => names.Length == 1 ? names[0] : $"{names.Length}技";
     }
-    private CountrySoldierStats Stats(int soldier, int weapon) => _data.Soldiers[soldier].InitialStats + _roster.Soldiers[soldier].Growth + (weapon < 0 ? default : _data.Weapons[weapon].Bonus);
+    private CountrySoldierStats Stats(int soldier, int weapon) => _roster.BattleStats(soldier, weapon);
     private string EquipmentSkills(int soldier, int weapon)
     {
         int previous = Weapon(soldier);
-        return $"{(previous < 0 ? "未装備" : _data.Weapons[previous].Name)} → {_data.Weapons[weapon].Name}\n\n使用可能な技\n{SkillsFor(previous)} → {SkillsFor(weapon)}";
+        return $"{(previous < 0 ? "未装備" : _roster.Weapon(previous).Name)} → {_roster.Weapon(weapon).Name}\n\n使用可能な技\n{SkillsFor(previous)} → {SkillsFor(weapon)}";
         string SkillsFor(int item) => item < 0 ? "なし" : string.Join("、", SkillNames(soldier, item));
     }
     private string[] SkillNames(int soldier, int weapon) => weapon < 0 ? Array.Empty<string>() : _roster.Soldiers[soldier].Learned
-        .Where(id => _data.Skills.TryGetDefinition(id, out var definition) && definition.RequiredWeaponKind == _data.Weapons[weapon].Kind).Select(SkillName).ToArray();
+        .Where(id => _data.Skills.TryGetDefinition(id, out var definition) && definition.RequiredWeaponKind == _roster.Weapon(weapon).Kind).Select(SkillName).ToArray();
     public string EquipmentComparison(int soldier, int weapon)
     {
         var before = Values(Stats(soldier, Weapon(soldier))); var after = Values(Stats(soldier, weapon));
@@ -596,7 +652,11 @@ public sealed class CountryRosterView : MonoBehaviour, IPointerClickHandler
         _soldierScroll = _weaponScroll = 1;
     }
     private void OnEnable() { if (_roster != null) { _roster.Changed += RosterChanged; Refresh(); } }
-    private void OnDisable() { if (_roster != null) _roster.Changed -= RosterChanged; }
+    private void OnDisable()
+    {
+        ResetMemberClicks();
+        if (_roster != null) _roster.Changed -= RosterChanged;
+    }
 }
 
 internal sealed class CountryEquipmentPopup
@@ -643,8 +703,8 @@ internal sealed class CountryEquipmentPopup
 
     public void Open()
     {
-        var area = UnityEngine.Device.Screen.safeArea;
-        float width = UnityEngine.Device.Screen.width, height = UnityEngine.Device.Screen.height;
+        int width = UnityEngine.Device.Screen.width, height = UnityEngine.Device.Screen.height;
+        var area = CountrySafeArea.GetCountryArea(new Vector2Int(width, height));
         _safe.anchorMin = width > 0 && height > 0 ? new Vector2(area.xMin / width, area.yMin / height) : Vector2.zero;
         _safe.anchorMax = width > 0 && height > 0 ? new Vector2(area.xMax / width, area.yMax / height) : Vector2.one;
         _parent = _viewRect.parent; _sibling = _viewRect.GetSiblingIndex();

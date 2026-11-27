@@ -47,10 +47,34 @@ public sealed class CountryFacilityLayer : MonoBehaviour
         if (_viewCamera != null) _popup.BindControls(_viewCamera.GetComponent<CountryCameraController>(), _country);
     }
 
-    private void OnEnable() => Canvas.preWillRenderCanvases += Refresh;
+    private PlayDataManager _resources;
+    private void Start()
+    {
+        _resources = PlayDataManager.Instance;
+        SubscribeFacilities();
+    }
+    private void SubscribeFacilities()
+    {
+        if (_resources == null) return;
+        _resources.OnGovernmentChanged += UpdateBuildings;
+        UpdateBuildings();
+    }
+    private void UpdateBuildings()
+    {
+        foreach (var target in _targets)
+            if (target.building != null)
+                target.building.gameObject.SetActive(_resources.FacilityLevel(target.name, 1) > 0);
+    }
+
+    private void OnEnable()
+    {
+        Canvas.preWillRenderCanvases += Refresh;
+        SubscribeFacilities();
+    }
     private void OnDisable()
     {
         Canvas.preWillRenderCanvases -= Refresh;
+        if (_resources != null) _resources.OnGovernmentChanged -= UpdateBuildings;
         _popup?.Close();
     }
 

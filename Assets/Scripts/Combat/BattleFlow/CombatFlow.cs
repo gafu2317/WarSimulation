@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Globalization;
@@ -26,6 +27,10 @@ public sealed class CombatFlow : MonoBehaviour
 
     private readonly List<Character> _allyCandidates = new();
     private readonly List<Character> _enemies = new();
+    private readonly List<ScriptableObject> _countryBattleAssets = new();
+    private CountryBattle _countryBattle;
+    private double _countryBattleEndAt;
+    private bool _countryBattleTimedOut;
     private CombatBattleResultRecorder _battleResultRecorder;
     private CombatBattleResultView _battleResultView;
     private CombatBattleHudView _battleHudView;
@@ -71,28 +76,53 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void Start()
     {
+        _countryBattle = PlayDataManager.Instance?.Battle;
         ResolveDependencies();
-        if (_characterSystem == null || _battleFlow == null || _characterSelection == null ||
-            _mapSelectionView == null || _mapSystem == null)
+        _backToSelectionButton?.onClick.AddListener(ReturnFromResult);
+        if (_countryBattle != null)
         {
-            Debug.LogError($"[{nameof(CombatFlow)}] Required references are not configured.", this);
+            _battleResultView?.RespectCountryBattleSafeArea();
+            SetCountryResultButton("国へ戻る");
+        }
+
+        if (_characterSystem == null || _battleFlow == null || _mapSystem == null ||
+            (_countryBattle == null && (_characterSelection == null || _mapSelectionView == null)))
+        {
+            if (_countryBattle != null) ShowStartFailure("戦闘シーンの準備が整っていない");
+            else Debug.LogError($"[{nameof(CombatFlow)}] Required references are not configured.", this);
             enabled = false;
             return;
         }
 
         CopyCharacters(_characterSystem.AllyCharacters, _allyCandidates);
         CopyCharacters(_characterSystem.EnemyCharacters, _enemies);
-        CombatPlaytestDebugSettings.ApplyToScene();
+        CombatPlaytestDebugSettings.ApplyToScene(showDebugViews: _countryBattle == null);
         EnsureBattleControls();
         _characterSystem.CandidatesReady += OnCandidatesReady;
         _battleFlow.BattleEnded += ShowResult;
+        if (_countryBattle != null)
+        {
+            _battleHudView?.ConfigureCountryBattle(_resultTitle);
+            StartCoroutine(StartCountryBattle());
+            return;
+        }
+
         _characterSelection.StonePositionReversedChanged += OnStonePositionReversedChanged;
         _mapSelectionView.SelectionChanged += OnMapSelectionChanged;
-        _backToSelectionButton?.onClick.AddListener(ShowSelection);
         _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
         _mapSelectionView.Initialize(_mapSystem.AuthoredMap, _characterSelection.IsStonePositionReversed);
         BeginMapPreparation();
         ShowSelection();
+    }
+
+    private void Update()
+    {
+        if (_countryBattle == null || _battleFlow.State != CombatBattleState.Running) return;
+        int remaining = Math.Max(0, (int)Math.Ceiling(_countryBattleEndAt - Time.timeAsDouble));
+        _battleHudView?.SetCountryTimeRemaining(remaining);
+        if (remaining > 0) return;
+        _countryBattleTimedOut = true;
+        _battleFlow.EndBattle(_countryBattle.IsDefense ? CombatBattleState.Victory : CombatBattleState.Defeat);
     }
 
     private void OnDisable()
@@ -121,7 +151,8 @@ public sealed class CombatFlow : MonoBehaviour
 
         _battleResultRecorder?.Clear();
         _battleResultView?.Clear();
-        _backToSelectionButton?.onClick.RemoveListener(ShowSelection);
+        _backToSelectionButton?.onClick.RemoveListener(ReturnFromResult);
+        foreach (var asset in _countryBattleAssets) Destroy(asset);
         ClearBattleControlListeners();
         RestoreNormalSpeed();
     }
@@ -131,9 +162,9 @@ public sealed class CombatFlow : MonoBehaviour
         IReadOnlyList<CombatParticipantSetup> selectedEnemies)
     {
         ResetRockPlacement();
-        CombatMapAvailability availability = CombatMapAvailability.Evaluate(
-            _mapSelectionView.SelectedMap,
-            _characterSelection.IsStonePositionReversed);
+        var map = _mapSelectionView.SelectedMap;
+        bool reversed = _characterSelection.IsStonePositionReversed;
+        CombatMapAvailability availability = CombatMapAvailability.Evaluate(map, reversed);
         if (!availability.CanStartBattle)
         {
             _mapSelectionView.ShowFailure(availability.Message);
@@ -141,10 +172,8 @@ public sealed class CombatFlow : MonoBehaviour
             return;
         }
 
-        if (!_mapSystem.IsMapReady(_mapSelectionView.SelectedMap))
+        if (!_mapSystem.IsMapReady(map))
         {
-            _mapSelectionView.ShowPreparation("マップ準備中です");
-            RefreshStartAvailability();
             BeginMapPreparation();
             return;
         }
@@ -152,28 +181,35 @@ public sealed class CombatFlow : MonoBehaviour
         _mapSelectionView.ClearFailure();
         _mapSelectionView.SetInteractionEnabled(false);
         _characterSelection.SetExternalStartAllowed(false);
-        if (!_mapSystem.TryApplyBakedAuthoredMap(
-                _mapSelectionView.SelectedMap,
-                out _,
-                out CombatMapApplyFailure mapFailure))
+        if (PrepareBattleMap(map, reversed)) BeginBattle(selectedAllies, selectedEnemies);
+    }
+
+    private bool PrepareBattleMap(AuthoredMapDefinition map, bool reversed)
+    {
+        if (!_mapSystem.TryActivatePreparedMap(map, out CombatMapApplyFailure mapFailure))
         {
             ShowStartFailure(MapFailureMessage(mapFailure));
-            return;
+            return false;
         }
 
         if (!_mapSystem.ResetRuntimeMapState())
         {
             ShowStartFailure("戦闘マップの状態を初期化できませんでした");
-            return;
+            return false;
         }
 
-        if (!TryApplyStonePositionReversed(_characterSelection.IsStonePositionReversed))
+        if (!_mapSystem.TrySetStonePositionsReversed(reversed))
         {
             ShowStartFailure("魔石位置の反転を適用できませんでした");
-            return;
+            return false;
         }
         ApplyCombatCamera();
+        return true;
+    }
 
+    private void BeginBattle(IReadOnlyList<CombatParticipantSetup> selectedAllies,
+        IReadOnlyList<CombatParticipantSetup> selectedEnemies)
+    {
         _characterSystem.SetParticipants(selectedAllies, selectedEnemies);
         _battleResultRecorder?.Begin(
             _characterSystem.AllyCharacters,
@@ -188,25 +224,142 @@ public sealed class CombatFlow : MonoBehaviour
 
         SetVisible(_characterSelectionPanel, false);
         SetBattleUiVisible(true);
-        _battleHudView?.SetDebugUiVisible(CombatPlaytestDebugSettings.UseDebugBattleUi);
+        _battleHudView?.SetDebugUiVisible(_countryBattle == null && CombatPlaytestDebugSettings.UseDebugBattleUi);
+        if (_countryBattle != null)
+        {
+            _countryBattleEndAt = Time.timeAsDouble + _countryBattle.TimeLimitSeconds;
+            _battleHudView?.SetCountryTimeRemaining(_countryBattle.TimeLimitSeconds);
+        }
         SetVisible(_resultPanel, false);
+        if (_backToSelectionButton != null) _backToSelectionButton.gameObject.SetActive(true);
         SetBattleControlsVisible(true);
         SetPauseMenuVisible(false);
         ApplySelectedBattleSpeed();
     }
 
+    private IEnumerator StartCountryBattle()
+    {
+        SetVisible(_characterSelectionPanel, false);
+        SetBattleUiVisible(false);
+        SetVisible(_resultPanel, true);
+        if (_backToSelectionButton != null) _backToSelectionButton.gameObject.SetActive(false);
+        SetCountryBattleMessage($"{_countryBattle.Region}　戦場を準備中");
+        var map = _mapSystem.AuthoredMap;
+        var availability = CombatMapAvailability.Evaluate(map, stonePositionsReversed: false, requirePreview: false);
+        if (!availability.CanStartBattle)
+        {
+            ShowStartFailure(availability.Message);
+            yield break;
+        }
+
+        yield return _mapSystem.PrepareMapAsync(map);
+        if (!_mapSystem.IsMapReady(map))
+        {
+            ShowStartFailure(MapFailureMessage(_mapSystem.PreparationFailure));
+            yield break;
+        }
+        if (!PrepareBattleMap(map, reversed: false)) yield break;
+
+        int allyCount = _countryBattle.Soldiers.Count;
+        int enemyCount = Math.Min(5, allyCount);
+        if (enemyCount == 0 || _enemies.Count < enemyCount)
+        {
+            ShowStartFailure("交戦に必要な部隊を配置できなかった");
+            yield break;
+        }
+
+        var allies = new List<CombatParticipantSetup>(allyCount);
+        foreach (var soldier in _countryBattle.Soldiers)
+        {
+            var character = allies.Count < _allyCandidates.Count ? _allyCandidates[allies.Count] : _characterSystem.CreateExtraAlly();
+            if (character == null)
+            {
+                ShowStartFailure("出撃する兵士を配置できなかった");
+                yield break;
+            }
+            character.RuntimeDisplayName = soldier.Name;
+            character.RuntimeWeaponName = soldier.WeaponName;
+            var weapon = CreateCountryWeapon(soldier.Weapon);
+            var personality = CombatAiPersonalityProfile.CreateBuiltInProfile(soldier.Personality);
+            _countryBattleAssets.Add(personality);
+            character.SetLearnedSkillIds(soldier.Skills);
+            var bonus = weapon.CreateWeapon();
+            var stats = soldier.Stats;
+            var adjustments = new Dictionary<CombatStat, int> {
+                [CombatStat.HP] = stats.HP - character.Health.MaxHPBeforePersonality,
+                [CombatStat.STR] = stats.STR - character.STR - bonus.GetStatBonus(CombatStat.STR),
+                [CombatStat.INT] = stats.INT - character.INT - bonus.GetStatBonus(CombatStat.INT),
+                [CombatStat.FAI] = stats.FAI - character.FAI - bonus.GetStatBonus(CombatStat.FAI),
+                [CombatStat.AGI] = stats.AGI - character.AGI - bonus.GetStatBonus(CombatStat.AGI),
+            };
+            var follow = soldier.Personality == CombatAiPersonalityKind.Tagalong && allies.Count > 0 ? allies[^1].Character : null;
+            allies.Add(new CombatParticipantSetup(character, weapon, personality, tagalongTarget: follow, statAdjustments: adjustments));
+        }
+
+        var enemies = new List<CombatParticipantSetup>(enemyCount);
+        for (int i = 0; i < enemyCount; i++)
+        {
+            var enemy = _enemies[i];
+            enemy.RuntimeDisplayName = $"敵兵 {i + 1}";
+            enemy.SetLearnedSkillIds(_countryBattle.EnemySkills);
+            var weapon = CreateCountryWeapon((WeaponKind)(i + 1));
+            var bonus = weapon.CreateWeapon();
+            var adjustments = new Dictionary<CombatStat, int> {
+                [CombatStat.HP] = Adjustment(enemy.Health.MaxHPBeforePersonality),
+                [CombatStat.STR] = Adjustment(enemy.STR + bonus.GetStatBonus(CombatStat.STR)),
+                [CombatStat.INT] = Adjustment(enemy.INT + bonus.GetStatBonus(CombatStat.INT)),
+                [CombatStat.FAI] = Adjustment(enemy.FAI + bonus.GetStatBonus(CombatStat.FAI)),
+                [CombatStat.AGI] = Adjustment(enemy.AGI + bonus.GetStatBonus(CombatStat.AGI)),
+            };
+            enemies.Add(new CombatParticipantSetup(enemy, weapon, null, statAdjustments: adjustments));
+        }
+        BeginBattle(allies, enemies);
+
+        int Adjustment(int value) => _countryBattle.ScaleEnemyStat(value) - value;
+    }
+
+    private WeaponConfig CreateCountryWeapon(WeaponKind kind)
+    {
+        var weapon = ScriptableObject.CreateInstance<WeaponConfig>();
+        weapon.hideFlags = HideFlags.DontSave;
+        weapon.ApplyKindDefaults(kind);
+        _countryBattleAssets.Add(weapon);
+        return weapon;
+    }
+
+    private void SetCountryResultButton(string text)
+    {
+        var label = _backToSelectionButton?.GetComponentInChildren<TMP_Text>(true);
+        if (label != null) label.text = text;
+    }
+
+    private void ReturnFromResult()
+    {
+        if (_countryBattle == null) { ShowSelection(); return; }
+        if (PlaytestSceneNavigation.IsLoading) return;
+        if (PlaytestSceneNavigation.TryReturnFromCountryBattle())
+            PlayDataManager.Instance?.ReturnFromCountryBattle(_countryBattle);
+        else if (_resultTitle != null)
+            _resultTitle.text = "国へ戻れなかった。もう一度試せる";
+    }
+
     private void ShowResult(CombatBattleState outcome)
     {
+        bool applied = _countryBattle == null ||
+            PlayDataManager.Instance?.ResolveCountryBattle(_countryBattle, outcome == CombatBattleState.Victory) == true;
         ResetRockPlacement();
         CombatBattleResult result = _battleResultRecorder?.Complete(outcome);
         _battleResultView?.Show(result);
 
         if (_resultTitle != null)
         {
+            if (_countryBattle != null) _battleResultView?.SetCountryTitleLayout(forMessage: false);
             _resultTitle.textWrappingMode = TextWrappingModes.NoWrap;
             _resultTitle.overflowMode = TextOverflowModes.Overflow;
             string outcomeText = outcome == CombatBattleState.Victory ? "勝利" : "敗北";
-            _resultTitle.text = result == null
+            if (_countryBattle != null) outcomeText = $"{_countryBattle.Region}　{outcomeText}";
+            if (_countryBattleTimedOut) outcomeText += "（時間切れ）";
+            _resultTitle.text = !applied ? "戦闘結果を反映できなかった" : result == null
                 ? outcomeText
                 : string.Format(
                     CultureInfo.InvariantCulture,
@@ -289,13 +442,13 @@ public sealed class CombatFlow : MonoBehaviour
     {
         CopyCharacters(_characterSystem.AllyCharacters, _allyCandidates);
         CopyCharacters(_characterSystem.EnemyCharacters, _enemies);
-        _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
+        if (_countryBattle == null) _characterSelection.Initialize(_allyCandidates, _enemies, StartBattle);
         RefreshStartAvailability();
     }
 
     private void RefreshStartAvailability()
     {
-        if (_characterSelection == null || _mapSelectionView == null) return;
+        if (_countryBattle != null || _characterSelection == null || _mapSelectionView == null) return;
         bool ready = _mapSystem != null && _mapSystem.IsMapReady(_mapSelectionView.SelectedMap);
         _characterSelection.SetExternalStartAllowed(_mapSelectionView.CanStartBattle && ready);
     }
@@ -332,8 +485,28 @@ public sealed class CombatFlow : MonoBehaviour
 
     private void ShowStartFailure(string message)
     {
-        ShowSelectionInternal(clearMapFailure: false);
-        _mapSelectionView.ShowFailure(message);
+        if (_countryBattle == null)
+        {
+            ShowSelectionInternal(clearMapFailure: false);
+            _mapSelectionView.ShowFailure(message);
+            return;
+        }
+        Debug.LogWarning($"Country battle could not start: {message}", this);
+        SetVisible(_characterSelectionPanel, false);
+        SetBattleUiVisible(false);
+        SetBattleControlsVisible(false);
+        SetVisible(_resultPanel, true);
+        if (_backToSelectionButton != null) _backToSelectionButton.gameObject.SetActive(true);
+        SetCountryBattleMessage("戦場に入れなかった" +
+            (_countryBattle.IsDefense ? "\n防衛編成から再出撃できる" : "\n国へ戻り、時間を進めると再試行できる"));
+    }
+
+    private void SetCountryBattleMessage(string message)
+    {
+        if (_resultTitle == null) return;
+        _battleResultView?.SetCountryTitleLayout(forMessage: true);
+        _resultTitle.textWrappingMode = TextWrappingModes.Normal;
+        _resultTitle.text = message;
     }
 
     private static string MapFailureMessage(CombatMapApplyFailure failure) => failure switch
@@ -381,18 +554,6 @@ public sealed class CombatFlow : MonoBehaviour
         ResolveDependencies();
         if (_mapSystem == null || _mapSystem.CurrentMap == null || _mapSelectionView == null) return false;
         if (_mapSelectionView.SelectedMap != _mapSystem.AuthoredMap) return false;
-        return _mapSystem.TrySetStonePositionsReversed(reversed);
-    }
-
-    private bool TryApplyStonePositionReversed(bool reversed)
-    {
-        ResolveDependencies();
-        if (_mapSystem == null)
-        {
-            Debug.LogWarning($"[{nameof(CombatFlow)}] Cannot change stone positions because CombatMapSystem is missing.", this);
-            return false;
-        }
-
         return _mapSystem.TrySetStonePositionsReversed(reversed);
     }
 
@@ -587,7 +748,8 @@ public sealed class CombatFlow : MonoBehaviour
     private void ReturnToSelection()
     {
         SetPauseMenuVisible(false);
-        ShowSelection();
+        if (_countryBattle != null) _battleFlow.EndBattle(CombatBattleState.Defeat);
+        else ShowSelection();
     }
 
     private void ApplySelectedBattleSpeed()
@@ -665,7 +827,7 @@ public sealed class CombatFlow : MonoBehaviour
             _battleResultView ??= _resultPanel.AddComponent<CombatBattleResultView>();
             _battleResultView.EnsureBuilt();
         }
-        if (_mapSelectionView == null && _characterSelectionPanel != null)
+        if (_countryBattle == null && _mapSelectionView == null && _characterSelectionPanel != null)
             _mapSelectionView = _characterSelectionPanel.GetComponentInChildren<CombatMapSelectionView>(true);
         _characterSystem ??= FindAnyObjectByType<CombatCharacterSystem>();
         _battleFlow ??= FindAnyObjectByType<CombatBattleFlow>();

@@ -75,7 +75,7 @@ public sealed class CountryExpeditionPageTests
     }
 
     [Test]
-    public void ExpeditionShowsOnePageAtATime()
+    public void SideButtonsShowOnePageAtATimeAndProgressDoesNotNavigate()
     {
         var map = Field<GameObject>(_panel, "_destinationPage");
         var next = Field<Button>(_panel, "_next");
@@ -87,9 +87,19 @@ public sealed class CountryExpeditionPageTests
         Assert.That(map.activeInHierarchy || next.gameObject.activeInHierarchy, Is.False);
         Assert.That(_formation.activeInHierarchy && depart.gameObject.activeInHierarchy, Is.True);
 
-        ClickStep("DestinationStep");
+        var back = Field<Button>(_panel, "_back");
+        Assert.That(back.GetComponentInChildren<TextMeshProUGUI>().text, Does.Contain("領地を選ぶ"));
+        foreach (string field in new[] { "_targetStep", "_memberStep" })
+        {
+            var step = Field<TextMeshProUGUI>(_panel, field);
+            Assert.That(step.GetComponentInParent<Button>(), Is.Null);
+            Assert.That(step.raycastTarget, Is.False);
+            ExecuteEvents.ExecuteHierarchy(step.gameObject, Pointer(Vector2.zero), ExecuteEvents.pointerClickHandler);
+            Assert.That(_formation.activeInHierarchy, Is.True);
+        }
+        Back();
         Assert.That(map.activeInHierarchy, Is.True);
-        ClickStep("MemberStep");
+        next.onClick.Invoke();
         Assert.That(_formation.activeInHierarchy, Is.True);
     }
 
@@ -99,7 +109,7 @@ public sealed class CountryExpeditionPageTests
         _panel.SelectRegion(_destination); OpenMembers(); AddFirstMember();
         _list.verticalNormalizedPosition = .5f;
         _details.verticalNormalizedPosition = .75f;
-        ClickStep("DestinationStep");
+        Back();
         Assert.That(Field<GameObject>(_panel, "_destinationPage").activeInHierarchy, Is.True);
         Assert.That(_panel.Draft.Target, Is.EqualTo(_destination));
         OpenMembers();
@@ -129,22 +139,20 @@ public sealed class CountryExpeditionPageTests
         Assert.That(_details.content.anchoredPosition, Is.EqualTo(detailPosition));
         Assert.That(_roster.EquippedWeapon(0), Is.EqualTo(replacement));
 
-        ClickStep("DestinationStep");
+        Back();
         OpenMembers();
         Assert.That(_panel.Draft.Members, Is.EqualTo(new[] { 0 }));
         Assert.That(_panel.Draft.Weapon(0), Is.EqualTo(replacement));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void ReturningToTheCountryDiscardsTheDraftAndResetsTheRosterPosition(bool fromMembers)
+    [Test]
+    public void ReturningToTheCountryDiscardsTheDraftAndResetsTheRosterPosition()
     {
         _panel.SelectRegion(_destination); OpenMembers(); AddFirstMember();
         _list.verticalNormalizedPosition = 0;
         _details.verticalNormalizedPosition = 0;
-        if (!fromMembers) ClickStep("DestinationStep");
-        var back = Field<Button>(_panel, "_back");
-        back.onClick.Invoke();
+        Back();
+        Back();
         Assert.That(_panel.IsOpen, Is.False);
         _panel.Open(); Layout();
         Assert.That(_panel.Draft.Target, Is.EqualTo(-1));
@@ -163,7 +171,7 @@ public sealed class CountryExpeditionPageTests
         var confirmation = Field<CountryRosterConfirm>(_panel, "_confirmation");
         Assert.That(confirmation.IsOpen, Is.True);
         Assert.That(Field<CanvasGroup>(_panel, "_shell").blocksRaycasts, Is.False);
-        ClickStep("DestinationStep");
+        Back();
         Assert.That(_formation.activeInHierarchy, Is.True);
         Field<Button>(confirmation, "_cancel").onClick.Invoke();
         Assert.That(Field<CanvasGroup>(_panel, "_shell").blocksRaycasts, Is.True);
@@ -211,6 +219,34 @@ public sealed class CountryExpeditionPageTests
         ExecuteEvents.Execute(card.gameObject, pointer, ExecuteEvents.endDragHandler);
         Assert.That(_list.content.anchoredPosition.y, Is.GreaterThan(before.y));
         Assert.That(_panel.Draft.Members, Is.Empty);
+    }
+
+    [Test]
+    public void TwoConsecutiveClicksToggleMembershipButAFirstClickOrDragDoesNot()
+    {
+        OpenMembers();
+        var row = (RectTransform)_list.content.Find("Row01");
+        var other = _list.content.Find("Row02");
+        ClickRow(row);
+        Assert.That(_panel.Draft.Members, Is.Empty);
+        ClickRow(other);
+        ClickRow(row);
+        Assert.That(_panel.Draft.Members, Is.Empty);
+        var drag = BeginCardDrag(row);
+        ExecuteEvents.Execute(row.gameObject, drag, ExecuteEvents.endDragHandler);
+        ClickRow(row);
+        Assert.That(_panel.Draft.Members, Is.Empty);
+        ExecuteEvents.Execute(row.gameObject, Pointer(Vector2.down), ExecuteEvents.scrollHandler);
+        ClickRow(row);
+        Assert.That(_panel.Draft.Members, Is.Empty);
+        ClickRow(row);
+        Assert.That(_panel.Draft.Members, Is.EqualTo(new[] { 0 }));
+        var member = Field<RectTransform>(_panel, "_members").Find("Member01");
+        ClickRow(member);
+        Assert.That(_panel.Draft.Members, Is.EqualTo(new[] { 0 }));
+        ClickRow(member);
+        Assert.That(_panel.Draft.Members, Is.Empty);
+        Assert.That(_state.Active, Is.Empty);
     }
 
     [Test]
@@ -267,7 +303,8 @@ public sealed class CountryExpeditionPageTests
     }
 
     private void OpenMembers() { Field<Button>(_panel, "_next").onClick.Invoke(); Layout(); }
-    private void ClickStep(string step) => _panel.transform.Find($"Window/Shell/Header/{step}").GetComponent<Button>().onClick.Invoke();
+    private void Back() => Field<Button>(_panel, "_back").onClick.Invoke();
+    private void ClickRow(Transform row) => ExecuteEvents.Execute(row.gameObject, Pointer(Vector2.zero), ExecuteEvents.pointerClickHandler);
     private void AddFirstMember() { _view.SelectSoldier(0); Field<Button>(_view, "_action").onClick.Invoke(); Layout(); }
     private void Layout()
     {

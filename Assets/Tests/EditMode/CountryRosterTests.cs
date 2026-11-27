@@ -8,10 +8,12 @@ public sealed class CountryRosterTests
 {
     private CountryRosterData _data;
     private CountryRoster _roster;
+    private int _schoolLevel;
     private readonly CountryDate _start = new(0, 1, 1);
     [SetUp]
     public void SetUp()
     {
+        _schoolLevel = 1;
         _data = ScriptableObject.CreateInstance<CountryRosterData>();
         _data.Skills = CombatSkillCatalog.CreateDefaultRuntimeCatalog();
         _data.Soldiers = Enumerable.Range(0, 8).Select(i => new CountrySoldierDefinition {
@@ -23,12 +25,12 @@ public sealed class CountryRosterTests
             Id = $"w{i}", Kind = (WeaponKind)(i + 1), Name = $"Weapon {i}", Bonus = new CountrySoldierStats { STR = i + 2 }
         }).ToArray();
         _data.Schools = new[] {
-            new CountrySchoolDefinition { Name = "戦士学校", Facility = FacilityType.WarriorSchool, FirstWeapon = WeaponKind.Sword, SecondWeapon = WeaponKind.Shield,
-                Gains = new CountrySoldierStats { HP = 5, STR = 2 },
+            new CountrySchoolDefinition { Name = "戦士学校", FirstWeapon = WeaponKind.Sword, SecondWeapon = WeaponKind.Shield,
+                LevelBonusPercent = Enumerable.Range(1, 5).Select(level => new CountrySoldierStats { HP = 5 * level, STR = 20 * level }).ToArray(),
                 FirstSkills = new[] { SkillId.Sword_QuickSlash, SkillId.Sword_StrongSlash, SkillId.None, SkillId.None, SkillId.None },
                 SecondSkills = new[] { SkillId.Shield_ShoulderGuard, SkillId.Shield_IronWall, SkillId.Shield_Taunt, SkillId.None, SkillId.None } }
         };
-        _roster = new CountryRoster(_data, _start);
+        _roster = new CountryRoster(_data, _start, _ => _schoolLevel);
     }
     [TearDown]
     public void TearDown()
@@ -62,7 +64,7 @@ public sealed class CountryRosterTests
     [TestCase(1, 3)] [TestCase(2, 4)] [TestCase(3, 5)] [TestCase(4, 6)] [TestCase(5, 7)]
     public void SchoolLevelControlsConcurrentCapacity(int level, int capacity)
     {
-        _roster.SetSchoolLevel(FacilityType.WarriorSchool, level);
+        _schoolLevel = level;
         Assert.That(_roster.Capacity(0), Is.EqualTo(capacity));
         Assert.That(_roster.TryStartTraining(0, Enumerable.Range(0, capacity).ToArray(), out _), Is.True);
         Assert.That(_roster.TryStartTraining(0, new[] { 7 }, out _), Is.False);
@@ -94,26 +96,25 @@ public sealed class CountryRosterTests
         _roster.TryStartTraining(0, new[] { 2 }, out _);
         _roster.AdvanceTo(new CountryDate(1, 2, 28));
         Assert.That(_roster.Soldiers[2].Learned, Has.No.Member(SkillId.Sword_QuickSlash));
-        Assert.That(_roster.Soldiers[2].Growth.STR, Is.Zero);
+        Assert.That((_roster.Stats(2, -1).STR - _data.Soldiers[2].InitialStats.STR), Is.Zero);
         Assert.That(_roster.CanDeploy(2), Is.False);
         _roster.AdvanceTo(new CountryDate(2, 3, 1));
         Assert.That(_roster.Soldiers[2].Learned, Has.Member(SkillId.Sword_QuickSlash).And.Member(SkillId.Shield_ShoulderGuard));
-        Assert.That(_roster.Soldiers[2].Growth.STR, Is.EqualTo(2));
+        Assert.That((_roster.Stats(2, -1).STR - _data.Soldiers[2].InitialStats.STR), Is.EqualTo(2));
         Assert.That(_roster.CanDeploy(2), Is.True);
         Assert.That(_roster.Soldiers[2].Training, Is.Null);
         _roster.AdvanceTo(new CountryDate(3, 4, 30));
-        Assert.That(_roster.Soldiers[2].Growth.STR, Is.EqualTo(2));
+        Assert.That((_roster.Stats(2, -1).STR - _data.Soldiers[2].InitialStats.STR), Is.EqualTo(2));
     }
 
     [Test]
     public void StartedTrainingKeepsItsLevelAndRewardsAfterSchoolUpgradeAndWeaponChange()
     {
         _roster.TryStartTraining(0, new[] { 0 }, out _);
-        _roster.SetSchoolLevel(FacilityType.WarriorSchool, 5);
-        _data.Schools[0].Gains = new CountrySoldierStats { STR = 99 };
+        _schoolLevel = 5;
         _roster.TryEquip(0, 2);
         _roster.AdvanceTo(_start.AddMonths(2));
-        Assert.That(_roster.Soldiers[0].Growth.STR, Is.EqualTo(2));
+        Assert.That((_roster.Stats(0, -1).STR - _data.Soldiers[0].InitialStats.STR), Is.EqualTo(2));
         Assert.That(_roster.Soldiers[0].Learned, Has.No.Member(SkillId.Sword_StrongSlash));
         Assert.That(_roster.Soldiers[0].Learned, Has.Member(SkillId.Shield_ShoulderGuard));
     }
@@ -121,7 +122,7 @@ public sealed class CountryRosterTests
     [Test]
     public void MissingSkillsRemainUnlearnedAndRepeatedTrainingDoesNotDuplicateSkills()
     {
-        _roster.SetSchoolLevel(FacilityType.WarriorSchool, 5);
+        _schoolLevel = 5;
         for (int i = 1; i <= 2; i++)
         { _roster.TryStartTraining(0, new[] { 0 }, out _); _roster.AdvanceTo(_start.AddMonths(i * 2)); }
         Assert.That(_roster.Soldiers[0].Learned.Count, Is.EqualTo(11));
@@ -143,7 +144,7 @@ public sealed class CountryRosterTests
         Assert.That(_roster.Soldiers[0].CP, Is.Zero);
         _roster.AdvanceTo(new CountryDate(3, 4, 30));
         Assert.That(_roster.Soldiers[0].CP, Is.EqualTo(100));
-        Assert.That(_roster.Soldiers[0].Growth.STR, Is.Zero);
+        Assert.That((_roster.Stats(0, -1).STR - _data.Soldiers[0].InitialStats.STR), Is.Zero);
         Assert.That(_roster.Soldiers[0].Learned, Is.EquivalentTo(CountryRoster.BasicSkills));
         Assert.That(_roster.Stats(0).HP, Is.EqualTo(100));
         Assert.That(_roster.Stats(1).HP, Is.EqualTo(106));
@@ -190,9 +191,9 @@ public sealed class CountryRosterTests
         Assert.That(_roster.IsTraining(0), Is.True);
         Assert.That(_roster.CanDeploy(0), Is.False);
         _roster.AdvanceTo(new CountryDate(2, 3, 31));
-        Assert.That(_roster.Soldiers[0].Growth.STR, Is.Zero);
+        Assert.That((_roster.Stats(0, -1).STR - _data.Soldiers[0].InitialStats.STR), Is.Zero);
         _roster.AdvanceTo(new CountryDate(3, 4, 1));
-        Assert.That(_roster.Soldiers[0].Growth.STR, Is.EqualTo(2));
+        Assert.That((_roster.Stats(0, -1).STR - _data.Soldiers[0].InitialStats.STR), Is.EqualTo(2));
         Assert.That(_roster.Soldiers[0].Learned, Has.Member(SkillId.Sword_QuickSlash));
         Assert.That(_roster.CanDeploy(0), Is.True);
     }
@@ -212,7 +213,7 @@ public sealed class CountryRosterTests
         Assert.That(_roster.Soldiers[0].RevivalDue.Value.ToString(), Is.EqualTo("2月2日"));
         Assert.That(_roster.CanDeploy(0), Is.False);
         _roster.AdvanceTo(new CountryDate(3, 4, 1));
-        Assert.That(_roster.Soldiers[0].Growth.STR, Is.Zero);
+        Assert.That((_roster.Stats(0, -1).STR - _data.Soldiers[0].InitialStats.STR), Is.Zero);
         Assert.That(_roster.Soldiers[0].Learned, Is.EquivalentTo(CountryRoster.BasicSkills));
     }
 
@@ -226,8 +227,8 @@ public sealed class CountryRosterTests
     [Test]
     public void ASecondSchoolCannotTakeASoldierWhoIsAlreadyTraining()
     {
-        _data.Schools = new[] { _data.Schools[0], new CountrySchoolDefinition { Name = "魔法学校", Facility = FacilityType.MagicSchool } };
-        _roster = new CountryRoster(_data, _start);
+        _data.Schools = new[] { _data.Schools[0], new CountrySchoolDefinition { Name = "魔法学校" } };
+        _roster = new CountryRoster(_data, _start, _ => _schoolLevel);
         _roster.TryStartTraining(0, new[] { 0 }, out _);
         Assert.That(_roster.TryStartTraining(1, new[] { 1, 0 }, out _), Is.False);
         Assert.That(_roster.Soldiers[1].Training, Is.Null);
@@ -237,7 +238,7 @@ public sealed class CountryRosterTests
     [Test]
     public void UnconfiguredGrowthDoesNotInventStatsButStillTeachesConfiguredSkills()
     {
-        _data.Schools[0].Gains = default;
+        _data.Schools[0].LevelBonusPercent[0] = default;
         int initial = _roster.Stats(0).STR;
         _roster.TryStartTraining(0, new[] { 0 }, out _);
         _roster.AdvanceTo(_start.AddMonths(2));
@@ -253,5 +254,93 @@ public sealed class CountryRosterTests
         skill.ConfigureForTests(SkillId.Grimoire_StrDebuff, WeaponKind.Grimoire, legacy);
         Assert.That(_data.SkillName(SkillId.Grimoire_StrDebuff), Is.EqualTo("STRデバフ"));
         Assert.That(skill.DisplayName, Is.EqualTo(legacy));
+    }
+
+    [Test]
+    public void TrainingUsesOnlyHighestCompletedLevelAndRoundsTheCombinedPercentOnce()
+    {
+        _data.Soldiers[0].InitialStats = new CountrySoldierStats { STR = 3 };
+        _data.Schools[0].LevelBonusPercent[2].STR = 20;
+        _data.Schools[0].LevelBonusPercent[4].STR = 25;
+        _data.Schools = new[] { _data.Schools[0], new CountrySchoolDefinition { Name = "魔法学校" } };
+        _data.Schools[1].LevelBonusPercent[2].STR = 20;
+        _roster = new CountryRoster(_data, _start, _ => _schoolLevel);
+
+        Train(0, 3);
+        Assert.That(_roster.Stats(0).STR, Is.EqualTo(5));
+        Train(0, 5);
+        Train(0, 5);
+        Train(0, 3);
+        Assert.That(_roster.Soldiers[0].BestSchoolLevel(0), Is.EqualTo(5));
+        Train(1, 3);
+        Assert.That(_roster.Stats(0, -1).STR, Is.EqualTo(4));
+        Assert.That(_roster.Stats(0).STR, Is.EqualTo(6));
+
+        void Train(int school, int level)
+        {
+            _schoolLevel = level;
+            Assert.That(_roster.TryStartTraining(school, new[] { 0 }, out _), Is.True);
+            _roster.AdvanceTo(_roster.Today.AddMonths(2));
+        }
+    }
+
+    [Test]
+    public void ForgeProducesThreeDistinctItemsAndOnlyUnlockedTiersOncePerFundedMonth()
+    {
+        foreach (var weapon in _data.Weapons) weapon.Tier = (int)weapon.Kind <= 3 ? 1 : 2;
+        foreach (var soldier in _data.Soldiers) soldier.InitialWeaponId = null;
+        _roster = new CountryRoster(_data, _start);
+        int before = _roster.WeaponCount;
+        Assert.That(_roster.Forge(_start, 2, 69, 70), Is.Empty);
+        Assert.That(_roster.Forge(_start, 2, 140, 70), Is.Empty);
+        var next = _start.AddMonths(1);
+        Assert.That(_roster.Forge(next, 1, 70, 70).Count, Is.EqualTo(3));
+        Assert.That(_roster.Forge(next, 1, 70, 70), Is.Empty);
+        Assert.That(_roster.WeaponCount, Is.EqualTo(before + 3));
+        Assert.That(Enumerable.Range(before, 3).Select(id => _roster.Weapon(id).Tier), Is.All.EqualTo(1));
+        Assert.That(_roster.TryEquip(0, before), Is.True);
+        Assert.That(_roster.TryEquip(1, before + 1), Is.True);
+        Assert.That(_roster.EquippedWeapon(0), Is.EqualTo(before));
+        Assert.That(_roster.HighestTierChance(2, 140, 70), Is.GreaterThan(_roster.HighestTierChance(2, 70, 70)));
+    }
+
+
+    [Test]
+    public void PersonalityIsRolledOncePerRevivalAndMayRepeat()
+    {
+        var random = new FixedPersonalityRoll();
+        _roster = new CountryRoster(_data, _start, null, random);
+        var initial = _roster.Soldiers[0].Personality;
+        Assert.That(random.Count, Is.Zero);
+
+        Assert.That(_roster.TrySetCP(0, 0), Is.True);
+        _roster.AdvanceTo(_start.AddDays(1));
+        Assert.That(_roster.Soldiers[0].Personality, Is.EqualTo(initial));
+        Assert.That(random.Count, Is.Zero);
+
+        var revival = _start.AddMonths(1);
+        _roster.AdvanceTo(revival);
+        var personality = _roster.Soldiers[0].Personality;
+        Assert.That(personality, Is.EqualTo(CombatAiPersonalityProfile.BuiltInKinds[1]));
+        Assert.That(_roster.Soldiers[1].Personality, Is.EqualTo(initial));
+        _roster.AdvanceTo(revival);
+        _roster.AdvanceTo(revival.AddDays(1));
+        Assert.That(random.Count, Is.EqualTo(1));
+
+        Assert.That(_roster.TrySetCP(0, 0), Is.True);
+        _roster.AdvanceTo(_roster.Today.AddMonths(1));
+        Assert.That(random.Count, Is.EqualTo(2));
+        Assert.That(_roster.Soldiers[0].Personality, Is.EqualTo(personality));
+    }
+
+    private sealed class FixedPersonalityRoll : System.Random
+    {
+        public int Count { get; private set; }
+        public override int Next(int maxValue)
+        {
+            Count++;
+            Assert.That(maxValue, Is.EqualTo(CombatAiPersonalityProfile.BuiltInKinds.Length));
+            return 1;
+        }
     }
 }

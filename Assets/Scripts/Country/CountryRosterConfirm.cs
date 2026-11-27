@@ -11,6 +11,7 @@ public sealed class CountryRosterConfirm : MonoBehaviour
     [SerializeField] private UnityEngine.UI.Button _confirm, _cancel, _returnToCountry;
     [SerializeField] private UnityEngine.UI.ScrollRect _bodyScroll;
     private Action _accept;
+    public event Action Closed;
     private GameObject _returnFocus;
     public bool IsOpen => _window.activeSelf;
     private void Awake()
@@ -42,7 +43,9 @@ public sealed class CountryRosterConfirm : MonoBehaviour
         if (_returnToCountry != null) _returnToCountry.gameObject.SetActive(showReturn);
         _cancel.GetComponentInChildren<TextMeshProUGUI>().text = accept == null ? "閉じる" : "戻る";
         _blocked.interactable = _blocked.blocksRaycasts = false;
-        _window.SetActive(true); _cancel.Select();
+        _cancel.gameObject.SetActive(!returnToCountry);
+        _window.SetActive(true);
+        (showReturn ? _returnToCountry : returnToCountry ? _confirm : _cancel).Select();
         var canvas = _window.GetComponent<Canvas>(); canvas.overrideSorting = true; canvas.sortingOrder = 80;
         if (_bodyScroll != null) { Canvas.ForceUpdateCanvases(); _bodyScroll.verticalNormalizedPosition = 1; }
     }
@@ -54,6 +57,7 @@ public sealed class CountryRosterConfirm : MonoBehaviour
         _blocked.interactable = _blocked.blocksRaycasts = true;
         if (EventSystem.current != null && _returnFocus != null && _returnFocus.activeInHierarchy)
             EventSystem.current.SetSelectedGameObject(_returnFocus);
+        Closed?.Invoke();
     }
     private void OnDisable() => Close();
 }

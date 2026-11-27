@@ -99,12 +99,12 @@ public static class CombatPlaytestDebugSettings
         Changed?.Invoke();
     }
 
-    public static void ApplyToScene()
+    public static void ApplyToScene(bool showDebugViews = true)
     {
-        SetEnabled<CombatCharacterRouteDebugView>(ShowCharacterRoutes);
-        SetEnabled<CombatStoneAssaultRouteDebugView>(ShowAssaultRoutes);
-        SetEnabled<CombatAiWorldLabelDebugView>(ShowAiLabels);
-        SetEnabled<CombatVisionDebugRayView>(ShowVision);
+        SetEnabled<CombatCharacterRouteDebugView>(showDebugViews && ShowCharacterRoutes);
+        SetEnabled<CombatStoneAssaultRouteDebugView>(showDebugViews && ShowAssaultRoutes);
+        SetEnabled<CombatAiWorldLabelDebugView>(showDebugViews && ShowAiLabels);
+        SetEnabled<CombatVisionDebugRayView>(showDebugViews && ShowVision);
 
         ApplyDetails<CombatCharacterRouteDebugView>(view => view.ApplyPlaytestSettings());
         ApplyDetails<CombatAiWorldLabelDebugView>(view => view.ApplyPlaytestSettings());

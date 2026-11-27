@@ -20,6 +20,7 @@ public class DateManager : ManagerBase<DateManager>
     public int CurrentDay => _currentDay;
     public int DaysInCurrentMonth => DaysPerMonth[_currentMonth - 1];
     public int ElapsedMonths => _elapsedMonths;
+    internal double DayProgress => _dayProgress;
     public bool IsRunning => _progression != Progression.Paused;
     public int SpeedMultiplier => !IsRunning ? 0 : _progression == Progression.DoubleSpeed ? 2 : 1;
     public bool IsAdvancingToMonthEnd => _progression == Progression.MonthEnd;
@@ -29,6 +30,12 @@ public class DateManager : ManagerBase<DateManager>
     public event Action OnProgressionChanged;
 
     protected override void OnAwakeInitialize() => ValidateSettings();
+    internal void Restore(CountryDate date, double progress)
+    {
+        (_elapsedMonths, _currentMonth, _currentDay) = (date.MonthIndex, date.Month, date.Day);
+        _dayProgress = progress;
+        _progression = Progression.Paused;
+    }
     private void OnValidate() => ValidateSettings();
     private void Update() => AdvanceTime(Time.unscaledDeltaTime);
 
@@ -88,6 +95,7 @@ public class DateManager : ManagerBase<DateManager>
     private void SetProgression(Progression progression)
     {
         if (_progression == progression) return;
+        if (_progression == Progression.MonthEnd) _dayProgress = 0;
         _progression = progression;
         OnProgressionChanged?.Invoke();
     }

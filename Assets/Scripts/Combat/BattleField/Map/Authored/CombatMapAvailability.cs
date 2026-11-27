@@ -37,7 +37,8 @@ namespace WarSimulation.Combat.Map
 
         public static CombatMapAvailability Evaluate(
             AuthoredMapDefinition definition,
-            bool stonePositionsReversed)
+            bool stonePositionsReversed,
+            bool requirePreview = true)
         {
             if (definition == null)
                 return Unavailable(CombatMapUnavailableReason.NoMapSelected, "マップが登録されていません");
@@ -81,13 +82,13 @@ namespace WarSimulation.Combat.Map
                 return Unavailable(CombatMapUnavailableReason.MissingAssaultRoutes, "侵攻ルートが未ベイクです");
             if (!definition.HasValidBakedAssaultRoutes)
                 return Unavailable(CombatMapUnavailableReason.StaleAssaultRoutes, "マップ変更後に侵攻ルートが再ベイクされていません");
-            if (definition.BakedPreview == null)
-                return Unavailable(CombatMapUnavailableReason.MissingPreview, "プレビューが未生成です");
-            int previewFingerprint = definition.AssaultRoutes != null && definition.AssaultRoutes.Count > 0
-                ? definition.ComputeAssaultRouteFingerprint()
-                : fingerprint;
-            if (definition.PreviewBakeFingerprint != previewFingerprint)
-                return Unavailable(CombatMapUnavailableReason.StalePreview, "マップ変更後にプレビューが再生成されていません");
+            if (requirePreview)
+            {
+                if (definition.BakedPreview == null)
+                    return Unavailable(CombatMapUnavailableReason.MissingPreview, "プレビューが未生成です");
+                if (!definition.HasValidBakedPreview)
+                    return Unavailable(CombatMapUnavailableReason.StalePreview, "マップ変更後にプレビューが再生成されていません");
+            }
             if (!definition.HasValidBakedRuntimeScene)
                 return Unavailable(
                     CombatMapUnavailableReason.MissingBakedRuntimeScene,

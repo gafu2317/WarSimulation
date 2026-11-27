@@ -7,7 +7,9 @@ public sealed class CountryRosterData : ScriptableObject
 {
     public bool Provisional = true;
     public CombatSkillCatalog Skills;
+    public CountryGovernmentData Government;
     public CountrySoldierDefinition[] Soldiers = Array.Empty<CountrySoldierDefinition>();
+    public UnityEngine.Vector4[] ForgeWeights = { new(100, 0, 0, 0), new(40, 60, 0, 0), new(20, 30, 50, 0), new(10, 20, 30, 40) };
     public CountryWeaponDefinition[] Weapons = Array.Empty<CountryWeaponDefinition>();
     public CountrySchoolDefinition[] Schools = Array.Empty<CountrySchoolDefinition>();
 
@@ -34,6 +36,8 @@ public sealed class CountryWeaponDefinition
 {
     public string Id, Name;
     public WeaponKind Kind;
+    [Range(0, 4)] public int Tier;
+    [Min(1)] public int MaxDurability = 5;
     public Sprite Image;
     public CountrySoldierStats Bonus;
 }
@@ -42,10 +46,9 @@ public sealed class CountryWeaponDefinition
 public sealed class CountrySchoolDefinition
 {
     public string Name;
-    public FacilityType Facility;
-    [Range(1, 5)] public int InitialLevel = 1;
     public WeaponKind FirstWeapon, SecondWeapon;
-    public CountrySoldierStats Gains;
+    public CountrySoldierStats BonusAt(int level) => level > 0 && level <= LevelBonusPercent.Length ? LevelBonusPercent[level - 1] : default;
+    public CountrySoldierStats[] LevelBonusPercent = new CountrySoldierStats[5];
     public SkillId[] FirstSkills = new SkillId[5], SecondSkills = new SkillId[5];
 }
 
@@ -56,5 +59,9 @@ public struct CountrySoldierStats
     public static CountrySoldierStats operator +(CountrySoldierStats a, CountrySoldierStats b) => new() {
         HP = a.HP + b.HP, STR = a.STR + b.STR, INT = a.INT + b.INT,
         FAI = a.FAI + b.FAI, AGI = a.AGI + b.AGI
+    };
+    public CountrySoldierStats Grown(CountrySoldierStats percent) => new() {
+        HP = HP + HP * percent.HP / 100, STR = STR + STR * percent.STR / 100, INT = INT + INT * percent.INT / 100,
+        FAI = FAI + FAI * percent.FAI / 100, AGI = AGI + AGI * percent.AGI / 100
     };
 }

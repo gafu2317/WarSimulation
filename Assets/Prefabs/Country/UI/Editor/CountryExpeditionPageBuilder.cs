@@ -125,7 +125,8 @@ public static class CountryExpeditionPageBuilder
             oldFooter.Find("Depart").SetParent(header, false);
             Object.DestroyImmediate(oldFooter.gameObject);
         }
-        var back = PageButton(PageItem(header, "Back", 0, PageInset, Theme.PageBarBackWidth), Theme.CountryReturnText);
+        const int backWidth = 216;
+        var back = PageButton(PageItem(header, "Back", 0, PageInset, backWidth), Theme.CountryReturnText);
         var next = PageButton(PageItem(header, "Next", 1, -PageInset, Theme.PageBarActionWidth), "編成へ ›");
         var depart = PageButton(PageItem(header, "Depart", 1, -PageInset, Theme.PageBarActionWidth), "出発確認 ›");
         Artwork(depart, Part(CountryCommandMotifsBuilder.TrainingAtlas, "Training-Pennant"));
@@ -134,10 +135,12 @@ public static class CountryExpeditionPageBuilder
         Fill(depart.transform, "Label", new Vector2(88, 8), new Vector2(-42, -8));
         CountryButtonFeedbackBuilder.Configure(depart);
 
-        Label(PageItem(header, "ExpeditionTitle", 0, PageInset + Theme.PageBarBackWidth + 20, 168), "遠征計画", 32, Theme.Text);
-        if (header.Find("StepArrow") is Transform arrow) Object.DestroyImmediate(arrow.gameObject);
-        var target = PageStep(PageItem(header, "DestinationStep", .5f, -129, 250), "遠征先");
-        var members = PageStep(PageItem(header, "MemberStep", .5f, 129, 250), "編成");
+        Label(PageItem(header, "ExpeditionTitle", 0, PageInset + backWidth + 20, 168), "遠征計画", 32, Theme.Text);
+        foreach (string name in new[] { "DestinationStep", "MemberStep", "StepArrow" })
+            if (header.Find(name) is Transform current) Object.DestroyImmediate(current.gameObject);
+        var target = PageStep(PageItem(header, "DestinationStep", .5f, -100, 176), "領地選択");
+        PageStep(PageItem(header, "StepArrow", .5f, 0, 44), "→");
+        var members = PageStep(PageItem(header, "MemberStep", .5f, 100, 176), "編成");
         var notice = Child(header, "DepartureStatus");
         Theme.PlacePageItem(notice, 1, -PageInset, 620, Theme.PageBarHeight + Theme.PageBarNoticeHeight / 2, Theme.PageBarNoticeHeight);
         var status = Label(notice, "", 24, Theme.Text);
@@ -157,12 +160,9 @@ public static class CountryExpeditionPageBuilder
 
     private static TextMeshProUGUI PageStep(RectTransform rect, string text)
     {
-        if (rect.TryGetComponent(out TextMeshProUGUI oldLabel)) Object.DestroyImmediate(oldLabel);
-        var button = Button(rect, text, Theme.Face);
-        button.transition = Selectable.Transition.ColorTint;
-        Tab(button);
-        var label = rect.Find("Label").GetComponent<TextMeshProUGUI>();
-        label.fontSize = 30;
+        var label = Label(rect, text, 30, Theme.Muted);
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
         return label;
     }
 

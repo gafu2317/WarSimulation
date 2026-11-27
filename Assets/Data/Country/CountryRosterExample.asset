@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 295b00e0c77d049a88f403981efd4d44, type: 3}
   m_Name: CountryRosterExample
   m_EditorClassIdentifier: WarSimulation.Runtime::CountryRosterData
-  Provisional: 1
+  Provisional: 0
   Skills: {fileID: 11400000, guid: d7e8f9a0b1c28345a61728394a5b6c7d, type: 2}
+  Government: {fileID: 11400000, guid: cc820d6e9139a4632a68ba3a00d4ed7a, type: 2}
   Soldiers:
   - Id: soldier-01
     Name: "\u30a6\u30eb\u30b7\u30e3"
@@ -26,13 +27,13 @@ MonoBehaviour:
       width: 0.68733333
       height: 0.82458629
     InitialStats:
-      HP: 100
-      STR: 10
-      INT: 9
-      FAI: 8
-      AGI: 10
+      HP: 120
+      STR: 30
+      INT: 20
+      FAI: 30
+      AGI: 40
     MaxCP: 100
-    InitialWeaponId: weapon-01
+    InitialWeaponId:
   - Id: soldier-02
     Name: "\u30ce\u30a8\u30eb"
     Icon: {fileID: 21300000, guid: 0f4f7937209f4c07bd15e0483b22d368, type: 3}
@@ -44,13 +45,13 @@ MonoBehaviour:
       width: 0.674
       height: 0.86241135
     InitialStats:
-      HP: 103
-      STR: 11
-      INT: 10
-      FAI: 9
-      AGI: 11
+      HP: 120
+      STR: 25
+      INT: 30
+      FAI: 40
+      AGI: 25
     MaxCP: 100
-    InitialWeaponId: weapon-02
+    InitialWeaponId:
   - Id: soldier-03
     Name: "\u30b7\u30e3\u30ed"
     Icon: {fileID: 21300000, guid: 1db89d02c8dd44feb12d723e0fb61bf9, type: 3}
@@ -62,13 +63,13 @@ MonoBehaviour:
       width: 0.60466667
       height: 0.84397163
     InitialStats:
-      HP: 106
-      STR: 12
-      INT: 11
-      FAI: 10
-      AGI: 12
+      HP: 120
+      STR: 30
+      INT: 30
+      FAI: 30
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-03
+    InitialWeaponId:
   - Id: soldier-04
     Name: "\u30a8\u30ec\u30ce\u30a2"
     Icon: {fileID: 21300000, guid: 7f3dd54e03224fde87ccca7abf868a0e, type: 3}
@@ -80,13 +81,13 @@ MonoBehaviour:
       width: 0.846
       height: 0.88652482
     InitialStats:
-      HP: 109
-      STR: 13
-      INT: 12
-      FAI: 11
-      AGI: 13
+      HP: 120
+      STR: 25
+      INT: 40
+      FAI: 35
+      AGI: 20
     MaxCP: 100
-    InitialWeaponId: weapon-04
+    InitialWeaponId:
   - Id: soldier-05
     Name: "\u30a4\u30ea\u30a2"
     Icon: {fileID: 21300000, guid: 37d1dabd772849c18875ffd59272afd9, type: 3}
@@ -98,13 +99,13 @@ MonoBehaviour:
       width: 0.50933333
       height: 0.87943262
     InitialStats:
-      HP: 112
-      STR: 14
-      INT: 13
-      FAI: 12
-      AGI: 10
+      HP: 120
+      STR: 30
+      INT: 30
+      FAI: 20
+      AGI: 40
     MaxCP: 100
-    InitialWeaponId: weapon-05
+    InitialWeaponId:
   - Id: soldier-06
     Name: "\u30e2\u30ca"
     Icon: {fileID: 21300000, guid: fef265e4c94e47c08f7a2d1700a355df, type: 3}
@@ -116,13 +117,13 @@ MonoBehaviour:
       width: 0.80733333
       height: 0.86099291
     InitialStats:
-      HP: 115
-      STR: 15
-      INT: 9
-      FAI: 13
-      AGI: 11
+      HP: 120
+      STR: 30
+      INT: 40
+      FAI: 20
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-06
+    InitialWeaponId:
   - Id: soldier-07
     Name: "\u30df\u30aa"
     Icon: {fileID: 21300000, guid: 008dba057b7f4b06af8692deb4c287c1, type: 3}
@@ -134,13 +135,13 @@ MonoBehaviour:
       width: 0.698
       height: 0.87092199
     InitialStats:
-      HP: 118
-      STR: 16
-      INT: 10
-      FAI: 8
-      AGI: 12
+      HP: 120
+      STR: 30
+      INT: 30
+      FAI: 25
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-07
+    InitialWeaponId:
   - Id: soldier-08
     Name: "\u30a4\u30f3\u30b0\u30ea\u30c3\u30c9"
     Icon: {fileID: 21300000, guid: 202757bfd97143ddb5c781b0e0796275, type: 3}
@@ -152,13 +153,13 @@ MonoBehaviour:
       width: 0.82866667
       height: 0.86241135
     InitialStats:
-      HP: 121
-      STR: 10
-      INT: 11
-      FAI: 9
-      AGI: 13
+      HP: 100
+      STR: 25
+      INT: 40
+      FAI: 30
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-08
+    InitialWeaponId:
   - Id: soldier-09
     Name: "\u30a2\u30ea\u30b9"
     Icon: {fileID: 21300000, guid: e1db3f5b862543db9e6d5c54f62fa69e, type: 3}
@@ -170,13 +171,13 @@ MonoBehaviour:
       width: 0.674
       height: 0.73333333
     InitialStats:
-      HP: 124
-      STR: 11
-      INT: 12
-      FAI: 10
-      AGI: 10
+      HP: 80
+      STR: 25
+      INT: 35
+      FAI: 40
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-09
+    InitialWeaponId:
   - Id: soldier-10
     Name: "\u30ec\u30a4\u30cd\u30fc"
     Icon: {fileID: 21300000, guid: b246afa973e14db9abe814631c0a023d, type: 3}
@@ -188,13 +189,13 @@ MonoBehaviour:
       width: 0.81533333
       height: 0.85106383
     InitialStats:
-      HP: 127
-      STR: 12
-      INT: 13
-      FAI: 11
-      AGI: 11
+      HP: 120
+      STR: 30
+      INT: 30
+      FAI: 30
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-10
+    InitialWeaponId:
   - Id: soldier-11
     Name: "\u30df\u30b7\u30a7\u30eb"
     Icon: {fileID: 21300000, guid: fbab09b27fc7429dbec1d4b996002a90, type: 3}
@@ -206,13 +207,13 @@ MonoBehaviour:
       width: 0.61066667
       height: 0.77635934
     InitialStats:
-      HP: 130
-      STR: 13
-      INT: 9
-      FAI: 12
-      AGI: 12
+      HP: 120
+      STR: 35
+      INT: 35
+      FAI: 25
+      AGI: 25
     MaxCP: 100
-    InitialWeaponId: weapon-11
+    InitialWeaponId:
   - Id: soldier-12
     Name: "\u30c9\u30df\u30cb\u30af"
     Icon: {fileID: 21300000, guid: 7d573f24e0d94010a5fba2877ffc8cae, type: 3}
@@ -224,13 +225,13 @@ MonoBehaviour:
       width: 0.858
       height: 0.93380615
     InitialStats:
-      HP: 133
-      STR: 14
-      INT: 10
-      FAI: 13
-      AGI: 13
+      HP: 140
+      STR: 30
+      INT: 35
+      FAI: 20
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-12
+    InitialWeaponId:
   - Id: soldier-13
     Name: "\u30bc\u30aa"
     Icon: {fileID: 21300000, guid: 8db48ac2dded4ed4b7f392e63e73304a, type: 3}
@@ -242,13 +243,13 @@ MonoBehaviour:
       width: 0.61466667
       height: 0.78392435
     InitialStats:
-      HP: 136
-      STR: 15
-      INT: 11
-      FAI: 8
-      AGI: 10
+      HP: 100
+      STR: 30
+      INT: 25
+      FAI: 35
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-13
+    InitialWeaponId:
   - Id: soldier-14
     Name: "\u30de\u30fc\u30cb\u30e3"
     Icon: {fileID: 21300000, guid: 5ef141d8f870487d91bc8bc30d4c014b, type: 3}
@@ -260,13 +261,13 @@ MonoBehaviour:
       width: 0.83866667
       height: 0.73049645
     InitialStats:
-      HP: 139
-      STR: 16
-      INT: 12
-      FAI: 9
-      AGI: 11
+      HP: 100
+      STR: 40
+      INT: 30
+      FAI: 20
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-14
+    InitialWeaponId:
   - Id: soldier-15
     Name: "\u30e6\u30fc\u30a4"
     Icon: {fileID: 21300000, guid: 03745a0ce558448a83647e2fda0b7fe0, type: 3}
@@ -278,13 +279,13 @@ MonoBehaviour:
       width: 0.77666667
       height: 0.76595745
     InitialStats:
-      HP: 142
-      STR: 10
-      INT: 13
-      FAI: 10
-      AGI: 12
+      HP: 80
+      STR: 20
+      INT: 35
+      FAI: 40
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-15
+    InitialWeaponId:
   - Id: soldier-16
     Name: "\u30a2\u30b9\u30c6\u30a3\u30ca"
     Icon: {fileID: 21300000, guid: 826a843b3abc4418be0ad54260c371f4, type: 3}
@@ -296,13 +297,13 @@ MonoBehaviour:
       width: 0.82533333
       height: 0.86193853
     InitialStats:
-      HP: 145
-      STR: 11
-      INT: 9
-      FAI: 11
-      AGI: 13
+      HP: 140
+      STR: 35
+      INT: 30
+      FAI: 20
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-16
+    InitialWeaponId:
   - Id: soldier-17
     Name: "\u30ac\u30e9\u30e0"
     Icon: {fileID: 21300000, guid: 14fcb97dea4b423cb990d9c57aa26385, type: 3}
@@ -314,13 +315,13 @@ MonoBehaviour:
       width: 0.61432507
       height: 0.93847656
     InitialStats:
-      HP: 148
-      STR: 12
-      INT: 10
-      FAI: 12
-      AGI: 10
+      HP: 100
+      STR: 35
+      INT: 35
+      FAI: 20
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-17
+    InitialWeaponId:
   - Id: soldier-18
     Name: "\u30eb\u30fc\u30eb\u30fc"
     Icon: {fileID: 21300000, guid: 52075542f11c45d2833f055d34c85b03, type: 3}
@@ -332,13 +333,13 @@ MonoBehaviour:
       width: 0.68181818
       height: 0.89208984
     InitialStats:
-      HP: 151
-      STR: 13
-      INT: 11
-      FAI: 13
-      AGI: 11
+      HP: 120
+      STR: 25
+      INT: 30
+      FAI: 30
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-18
+    InitialWeaponId:
   - Id: soldier-19
     Name: "\u30e1\u30d5\u30a3\u30ca"
     Icon: {fileID: 21300000, guid: e1ac671d99a241c483e1bf786c794e12, type: 3}
@@ -350,13 +351,13 @@ MonoBehaviour:
       width: 0.8684573
       height: 0.73046875
     InitialStats:
-      HP: 154
-      STR: 14
-      INT: 12
-      FAI: 8
-      AGI: 12
+      HP: 100
+      STR: 25
+      INT: 40
+      FAI: 30
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-19
+    InitialWeaponId:
   - Id: soldier-20
     Name: "\u30ed\u30f3"
     Icon: {fileID: 21300000, guid: fc4522919fcf42c79488c37cda3a16f9, type: 3}
@@ -368,13 +369,13 @@ MonoBehaviour:
       width: 0.87190083
       height: 0.85107422
     InitialStats:
-      HP: 157
-      STR: 15
-      INT: 13
-      FAI: 9
-      AGI: 13
+      HP: 100
+      STR: 25
+      INT: 40
+      FAI: 30
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-20
+    InitialWeaponId:
   - Id: soldier-21
     Name: "\u30b7\u30fc\u30bf"
     Icon: {fileID: 21300000, guid: 6c3053212c814de6a39b16d79e15f1bd, type: 3}
@@ -386,13 +387,13 @@ MonoBehaviour:
       width: 0.91933333
       height: 0.89267139
     InitialStats:
-      HP: 160
-      STR: 16
-      INT: 9
-      FAI: 10
-      AGI: 10
+      HP: 120
+      STR: 30
+      INT: 30
+      FAI: 30
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-21
+    InitialWeaponId:
   - Id: soldier-22
     Name: "\u30a2\u30e9\u30f3"
     Icon: {fileID: 21300000, guid: b28ba49c1127416d807bbf9bf0152163, type: 3}
@@ -404,13 +405,13 @@ MonoBehaviour:
       width: 0.92333333
       height: 0.96359338
     InitialStats:
-      HP: 163
-      STR: 10
-      INT: 10
-      FAI: 11
-      AGI: 11
+      HP: 160
+      STR: 35
+      INT: 25
+      FAI: 25
+      AGI: 25
     MaxCP: 100
-    InitialWeaponId: weapon-22
+    InitialWeaponId:
   - Id: soldier-23
     Name: "\u30ec\u30f3"
     Icon: {fileID: 21300000, guid: 8cfd92a8602343fd89666158f1c53f36, type: 3}
@@ -422,13 +423,13 @@ MonoBehaviour:
       width: 0.80533333
       height: 0.76595745
     InitialStats:
-      HP: 166
-      STR: 11
-      INT: 11
-      FAI: 12
-      AGI: 12
+      HP: 80
+      STR: 25
+      INT: 30
+      FAI: 40
+      AGI: 35
     MaxCP: 100
-    InitialWeaponId: weapon-23
+    InitialWeaponId:
   - Id: soldier-24
     Name: "\u30e9\u30a4\u30a2\u30f3"
     Icon: {fileID: 21300000, guid: f1591b8b7f104de98e66f3f18ccfc80c, type: 3}
@@ -440,13 +441,13 @@ MonoBehaviour:
       width: 0.76066667
       height: 0.89030733
     InitialStats:
-      HP: 169
-      STR: 12
-      INT: 12
-      FAI: 13
-      AGI: 13
+      HP: 140
+      STR: 40
+      INT: 20
+      FAI: 25
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-24
+    InitialWeaponId:
   - Id: soldier-25
     Name: "\u30e2\u30eb\u30b2\u30f3"
     Icon: {fileID: 21300000, guid: aeb3002828e845db9a95d1f248183ce4, type: 3}
@@ -458,13 +459,13 @@ MonoBehaviour:
       width: 0.976
       height: 0.95602837
     InitialStats:
-      HP: 172
-      STR: 13
-      INT: 13
-      FAI: 8
-      AGI: 10
+      HP: 160
+      STR: 40
+      INT: 25
+      FAI: 20
+      AGI: 25
     MaxCP: 100
-    InitialWeaponId: weapon-25
+    InitialWeaponId:
   - Id: soldier-26
     Name: "\u30f4\u30a3\u30b9\u30bf"
     Icon: {fileID: 21300000, guid: a96494de53074725949750f7ffba73a6, type: 3}
@@ -476,311 +477,398 @@ MonoBehaviour:
       width: 0.952
       height: 0.89503546
     InitialStats:
-      HP: 175
-      STR: 14
-      INT: 9
-      FAI: 9
-      AGI: 11
+      HP: 140
+      STR: 35
+      INT: 30
+      FAI: 20
+      AGI: 30
     MaxCP: 100
-    InitialWeaponId: weapon-26
+    InitialWeaponId:
+  ForgeWeights:
+  - {x: 100, y: 0, z: 0, w: 0}
+  - {x: 40, y: 60, z: 0, w: 0}
+  - {x: 20, y: 30, z: 50, w: 0}
+  - {x: 10, y: 20, z: 30, w: 40}
   Weapons:
-  - Id: weapon-01
-    Name: "\u526301"
+  - Id: weapon-1-1
+    Name: "\u8a13\u7df4\u7528\u5263"
     Kind: 1
+    Tier: 1
+    MaxDurability: 5
     Image: {fileID: 0}
     Bonus:
-      HP: 0
-      STR: 1
-      INT: 2
-      FAI: 3
-      AGI: 0
-  - Id: weapon-02
-    Name: "\u76FE01"
-    Kind: 2
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 2
-      INT: 3
+      HP: 3
+      STR: 12
+      INT: 0
       FAI: 0
-      AGI: 1
-  - Id: weapon-03
-    Name: "\u675601"
+      AGI: 0
+  - Id: weapon-1-2
+    Name: "\u8a13\u7df4\u7528\u76fe"
+    Kind: 2
+    Tier: 1
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 9
+      STR: 6
+      INT: 0
+      FAI: 0
+      AGI: 0
+  - Id: weapon-1-3
+    Name: "\u8a13\u7df4\u7528\u6756"
     Kind: 3
+    Tier: 1
+    MaxDurability: 5
     Image: {fileID: 0}
     Bonus:
-      HP: 4
-      STR: 3
-      INT: 4
-      FAI: 1
-      AGI: 2
-  - Id: weapon-04
-    Name: "\u9B54\u5C0E\u66F801"
+      HP: 5
+      STR: 0
+      INT: 10
+      FAI: 0
+      AGI: 0
+  - Id: weapon-1-4
+    Name: "\u8a13\u7df4\u7528\u9b54\u5c0e\u66f8"
     Kind: 4
+    Tier: 1
+    MaxDurability: 5
     Image: {fileID: 0}
     Bonus:
-      HP: 6
-      STR: 4
-      INT: 0
-      FAI: 2
-      AGI: 0
-  - Id: weapon-05
-    Name: "\u8056\u66F801"
+      HP: 0
+      STR: 0
+      INT: 8
+      FAI: 0
+      AGI: 7
+  - Id: weapon-1-5
+    Name: "\u8a13\u7df4\u7528\u8056\u66f8"
     Kind: 5
+    Tier: 1
+    MaxDurability: 5
     Image: {fileID: 0}
     Bonus:
-      HP: 0
-      STR: 5
-      INT: 1
-      FAI: 3
-      AGI: 1
-  - Id: weapon-06
-    Name: "\u30ED\u30B6\u30EA\u30AA01"
-    Kind: 6
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 1
-      INT: 2
-      FAI: 0
-      AGI: 2
-  - Id: weapon-07
-    Name: "\u526302"
-    Kind: 1
-    Image: {fileID: 0}
-    Bonus:
-      HP: 4
-      STR: 2
-      INT: 3
-      FAI: 1
-      AGI: 0
-  - Id: weapon-08
-    Name: "\u76FE02"
-    Kind: 2
-    Image: {fileID: 0}
-    Bonus:
-      HP: 6
-      STR: 3
-      INT: 4
-      FAI: 2
-      AGI: 1
-  - Id: weapon-09
-    Name: "\u675602"
-    Kind: 3
-    Image: {fileID: 0}
-    Bonus:
-      HP: 0
-      STR: 4
-      INT: 0
-      FAI: 3
-      AGI: 2
-  - Id: weapon-10
-    Name: "\u9B54\u5C0E\u66F802"
-    Kind: 4
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 5
-      INT: 1
-      FAI: 0
-      AGI: 0
-  - Id: weapon-11
-    Name: "\u8056\u66F802"
-    Kind: 5
-    Image: {fileID: 0}
-    Bonus:
-      HP: 4
-      STR: 1
-      INT: 2
-      FAI: 1
-      AGI: 1
-  - Id: weapon-12
-    Name: "\u30ED\u30B6\u30EA\u30AA02"
-    Kind: 6
-    Image: {fileID: 0}
-    Bonus:
-      HP: 6
-      STR: 2
-      INT: 3
-      FAI: 2
-      AGI: 2
-  - Id: weapon-13
-    Name: "\u526303"
-    Kind: 1
-    Image: {fileID: 0}
-    Bonus:
-      HP: 0
-      STR: 3
-      INT: 4
-      FAI: 3
-      AGI: 0
-  - Id: weapon-14
-    Name: "\u76FE03"
-    Kind: 2
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 4
-      INT: 0
-      FAI: 0
-      AGI: 1
-  - Id: weapon-15
-    Name: "\u675603"
-    Kind: 3
-    Image: {fileID: 0}
-    Bonus:
-      HP: 4
-      STR: 5
-      INT: 1
-      FAI: 1
-      AGI: 2
-  - Id: weapon-16
-    Name: "\u9B54\u5C0E\u66F803"
-    Kind: 4
-    Image: {fileID: 0}
-    Bonus:
-      HP: 6
-      STR: 1
-      INT: 2
-      FAI: 2
-      AGI: 0
-  - Id: weapon-17
-    Name: "\u8056\u66F803"
-    Kind: 5
-    Image: {fileID: 0}
-    Bonus:
-      HP: 0
-      STR: 2
-      INT: 3
-      FAI: 3
-      AGI: 1
-  - Id: weapon-18
-    Name: "\u30ED\u30B6\u30EA\u30AA03"
-    Kind: 6
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 3
-      INT: 4
-      FAI: 0
-      AGI: 2
-  - Id: weapon-19
-    Name: "\u526304"
-    Kind: 1
-    Image: {fileID: 0}
-    Bonus:
-      HP: 4
-      STR: 4
-      INT: 0
-      FAI: 1
-      AGI: 0
-  - Id: weapon-20
-    Name: "\u76FE04"
-    Kind: 2
-    Image: {fileID: 0}
-    Bonus:
-      HP: 6
-      STR: 5
-      INT: 1
-      FAI: 2
-      AGI: 1
-  - Id: weapon-21
-    Name: "\u675604"
-    Kind: 3
-    Image: {fileID: 0}
-    Bonus:
-      HP: 0
-      STR: 1
-      INT: 2
-      FAI: 3
-      AGI: 2
-  - Id: weapon-22
-    Name: "\u9B54\u5C0E\u66F804"
-    Kind: 4
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 2
-      INT: 3
-      FAI: 0
-      AGI: 0
-  - Id: weapon-23
-    Name: "\u8056\u66F804"
-    Kind: 5
-    Image: {fileID: 0}
-    Bonus:
-      HP: 4
-      STR: 3
-      INT: 4
-      FAI: 1
-      AGI: 1
-  - Id: weapon-24
-    Name: "\u30ED\u30B6\u30EA\u30AA04"
-    Kind: 6
-    Image: {fileID: 0}
-    Bonus:
-      HP: 6
-      STR: 4
-      INT: 0
-      FAI: 2
-      AGI: 2
-  - Id: weapon-25
-    Name: "\u526305"
-    Kind: 1
-    Image: {fileID: 0}
-    Bonus:
-      HP: 0
-      STR: 5
-      INT: 1
-      FAI: 3
-      AGI: 0
-  - Id: weapon-26
-    Name: "\u76FE05"
-    Kind: 2
-    Image: {fileID: 0}
-    Bonus:
-      HP: 2
-      STR: 1
-      INT: 2
-      FAI: 0
-      AGI: 1
-  Schools:
-  - Name: "\u6226\u58EB\u5B66\u6821"
-    Facility: 0
-    InitialLevel: 1
-    FirstWeapon: 1
-    SecondWeapon: 2
-    Gains:
       HP: 0
       STR: 0
       INT: 0
+      FAI: 10
+      AGI: 5
+  - Id: weapon-1-6
+    Name: "\u8a13\u7df4\u7528\u30ed\u30b6\u30ea\u30aa"
+    Kind: 6
+    Tier: 1
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 5
+      STR: 0
+      INT: 0
+      FAI: 10
+      AGI: 0
+  - Id: weapon-2-1
+    Name: "\u5263\u2161"
+    Kind: 1
+    Tier: 2
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 6
+      STR: 24
+      INT: 0
       FAI: 0
       AGI: 0
+  - Id: weapon-2-2
+    Name: "\u76fe\u2161"
+    Kind: 2
+    Tier: 2
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 18
+      STR: 12
+      INT: 0
+      FAI: 0
+      AGI: 0
+  - Id: weapon-2-3
+    Name: "\u6756\u2161"
+    Kind: 3
+    Tier: 2
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 10
+      STR: 0
+      INT: 20
+      FAI: 0
+      AGI: 0
+  - Id: weapon-2-4
+    Name: "\u9b54\u5c0e\u66f8\u2161"
+    Kind: 4
+    Tier: 2
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 0
+      STR: 0
+      INT: 16
+      FAI: 0
+      AGI: 14
+  - Id: weapon-2-5
+    Name: "\u8056\u66f8\u2161"
+    Kind: 5
+    Tier: 2
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 0
+      STR: 0
+      INT: 0
+      FAI: 20
+      AGI: 10
+  - Id: weapon-2-6
+    Name: "\u30ed\u30b6\u30ea\u30aa\u2161"
+    Kind: 6
+    Tier: 2
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 10
+      STR: 0
+      INT: 0
+      FAI: 20
+      AGI: 0
+  - Id: weapon-3-1
+    Name: "\u5263\u2162"
+    Kind: 1
+    Tier: 3
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 9
+      STR: 36
+      INT: 0
+      FAI: 0
+      AGI: 0
+  - Id: weapon-3-2
+    Name: "\u76fe\u2162"
+    Kind: 2
+    Tier: 3
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 27
+      STR: 18
+      INT: 0
+      FAI: 0
+      AGI: 0
+  - Id: weapon-3-3
+    Name: "\u6756\u2162"
+    Kind: 3
+    Tier: 3
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 15
+      STR: 0
+      INT: 30
+      FAI: 0
+      AGI: 0
+  - Id: weapon-3-4
+    Name: "\u9b54\u5c0e\u66f8\u2162"
+    Kind: 4
+    Tier: 3
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 0
+      STR: 0
+      INT: 24
+      FAI: 0
+      AGI: 21
+  - Id: weapon-3-5
+    Name: "\u8056\u66f8\u2162"
+    Kind: 5
+    Tier: 3
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 0
+      STR: 0
+      INT: 0
+      FAI: 30
+      AGI: 15
+  - Id: weapon-3-6
+    Name: "\u30ed\u30b6\u30ea\u30aa\u2162"
+    Kind: 6
+    Tier: 3
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 15
+      STR: 0
+      INT: 0
+      FAI: 30
+      AGI: 0
+  - Id: weapon-4-1
+    Name: "\u5263\u2163"
+    Kind: 1
+    Tier: 4
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 12
+      STR: 48
+      INT: 0
+      FAI: 0
+      AGI: 0
+  - Id: weapon-4-2
+    Name: "\u76fe\u2163"
+    Kind: 2
+    Tier: 4
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 36
+      STR: 24
+      INT: 0
+      FAI: 0
+      AGI: 0
+  - Id: weapon-4-3
+    Name: "\u6756\u2163"
+    Kind: 3
+    Tier: 4
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 20
+      STR: 0
+      INT: 40
+      FAI: 0
+      AGI: 0
+  - Id: weapon-4-4
+    Name: "\u9b54\u5c0e\u66f8\u2163"
+    Kind: 4
+    Tier: 4
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 0
+      STR: 0
+      INT: 32
+      FAI: 0
+      AGI: 28
+  - Id: weapon-4-5
+    Name: "\u8056\u66f8\u2163"
+    Kind: 5
+    Tier: 4
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 0
+      STR: 0
+      INT: 0
+      FAI: 40
+      AGI: 20
+  - Id: weapon-4-6
+    Name: "\u30ed\u30b6\u30ea\u30aa\u2163"
+    Kind: 6
+    Tier: 4
+    MaxDurability: 5
+    Image: {fileID: 0}
+    Bonus:
+      HP: 20
+      STR: 0
+      INT: 0
+      FAI: 40
+      AGI: 0
+  Schools:
+  - Name: "\u6226\u58EB\u5B66\u6821"
+    FirstWeapon: 1
+    SecondWeapon: 2
+    LevelBonusPercent:
+    - HP: 35
+      STR: 50
+      INT: 0
+      FAI: 0
+      AGI: 15
+    - HP: 70
+      STR: 100
+      INT: 0
+      FAI: 0
+      AGI: 30
+    - HP: 105
+      STR: 150
+      INT: 0
+      FAI: 0
+      AGI: 45
+    - HP: 140
+      STR: 200
+      INT: 0
+      FAI: 0
+      AGI: 60
+    - HP: 175
+      STR: 250
+      INT: 0
+      FAI: 0
+      AGI: 75
     FirstSkills: 1e0000001f000000000000000000000000000000
     SecondSkills: 1d00000020000000210000000000000000000000
   - Name: "\u9B54\u6CD5\u5B66\u6821"
-    Facility: 1
-    InitialLevel: 1
     FirstWeapon: 3
     SecondWeapon: 4
-    Gains:
-      HP: 0
+    LevelBonusPercent:
+    - HP: 35
       STR: 0
-      INT: 0
+      INT: 50
       FAI: 0
-      AGI: 0
+      AGI: 15
+    - HP: 70
+      STR: 0
+      INT: 100
+      FAI: 0
+      AGI: 30
+    - HP: 105
+      STR: 0
+      INT: 150
+      FAI: 0
+      AGI: 45
+    - HP: 140
+      STR: 0
+      INT: 200
+      FAI: 0
+      AGI: 60
+    - HP: 175
+      STR: 0
+      INT: 250
+      FAI: 0
+      AGI: 75
     FirstSkills: 12000000170000001a0000000000000000000000
     SecondSkills: 040000000b000000140000001500000019000000
   - Name: "\u6559\u4F1A"
-    Facility: 2
-    InitialLevel: 1
     FirstWeapon: 5
     SecondWeapon: 6
-    Gains:
-      HP: 0
+    LevelBonusPercent:
+    - HP: 35
       STR: 0
       INT: 0
-      FAI: 0
-      AGI: 0
+      FAI: 50
+      AGI: 15
+    - HP: 70
+      STR: 0
+      INT: 0
+      FAI: 100
+      AGI: 30
+    - HP: 105
+      STR: 0
+      INT: 0
+      FAI: 150
+      AGI: 45
+    - HP: 140
+      STR: 0
+      INT: 0
+      FAI: 200
+      AGI: 60
+    - HP: 175
+      STR: 0
+      INT: 0
+      FAI: 250
+      AGI: 75
     FirstSkills: 020000000600000007000000130000001c000000
     SecondSkills: 1000000011000000160000001b00000018000000
